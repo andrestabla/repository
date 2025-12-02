@@ -284,6 +284,8 @@
       docs: seedDocs,
       events: [],
       gaps: [],
+      feedback: [],
+      follows: [],
       config: { iaEnabled: true, versioning: true, locale: 'es' },
       currentUser: null,
       session: null,
@@ -302,7 +304,13 @@
       if (!raw) return structuredClone(seedState);
         try {
           const parsed = JSON.parse(raw);
-          return { ...structuredClone(seedState), ...parsed, session: parsed.session ?? null };
+          return {
+            ...structuredClone(seedState),
+            ...parsed,
+            session: parsed.session ?? null,
+            feedback: parsed.feedback ?? [],
+            follows: parsed.follows ?? []
+          };
         } catch (e) {
         console.warn('Estado corrupto, reseteando');
         return structuredClone(seedState);
@@ -769,6 +777,48 @@
       persist();
     }
 
+    function isFollowing(docId, userId = state.currentUser?.id) {
+      if (!userId) return false;
+      return state.follows.some(f => f.docId === docId && f.userId === userId);
+    }
+
+    function toggleFollow(docId) {
+      const userId = state.currentUser?.id;
+      if (!userId) return;
+      const idx = state.follows.findIndex(f => f.docId === docId && f.userId === userId);
+      if (idx >= 0) {
+        state.follows.splice(idx, 1);
+        logEvent('doc_unfollowed', { docId, userId });
+        toast('Se dejó de seguir');
+      } else {
+        state.follows.push({ id: crypto.randomUUID(), docId, userId, at: Date.now() });
+        logEvent('doc_followed', { docId, userId });
+        toast('Siguiendo documento');
+      }
+      persist();
+    }
+
+    function saveFeedback(docId, value, comment) {
+      const entry = {
+        id: crypto.randomUUID(),
+        docId,
+        value,
+        comment: comment?.trim() || '',
+        userId: state.currentUser?.id,
+        at: Date.now()
+      };
+      state.feedback.push(entry);
+      logEvent('doc_feedback', { docId, value, hasComment: !!entry.comment });
+      persist();
+    }
+
+    function feedbackSummary(docId) {
+      const items = state.feedback.filter(f => f.docId === docId);
+      const useful = items.filter(f => f.value === 'useful').length;
+      const notUseful = items.filter(f => f.value === 'not_useful').length;
+      return { useful, notUseful, total: items.length };
+    }
+
     function renderDoc(id) {
       const doc = state.docs.find(d => d.id === id);
       const container = document.createElement('div');
@@ -783,6 +833,8 @@
       doc.views += 1;
       logEvent('doc_viewed', { docId: doc.id, status: doc.status });
       persist();
+      const stats = feedbackSummary(doc.id);
+      const followers = () => state.follows.filter(f => f.docId === doc.id).length;
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
@@ -805,16 +857,40 @@
         <div class="flex">
           <button class="btn primary" id="useful">👍 Útil</button>
           <button class="btn ghost" id="notUseful">👎 No útil</button>
-          <button class="btn ghost" id="follow">Seguir</button>
+          <button class="btn ghost" id="follow">${isFollowing(doc.id) ? 'Siguiendo' : 'Seguir'}</button>
           <button class="btn ghost" id="report">Reportar obsoleto</button>
         </div>
+        <div class="grid" style="margin-top:8px;">
+          <label for="comment">Comentario (opcional)</label>
+          <textarea id="comment" placeholder="Agrega contexto para mejorar el artículo"></textarea>
+        </div>
+        <span class="small" id="statsLine">Feedback: ${stats.useful} 👍 / ${stats.notUseful} 👎 · Seguidores: ${followers()}</span>
         <span class="small">Última actualización: ${new Date(doc.updatedAt).toLocaleString()} · Vistas: ${doc.views}</span>`;
-      card.querySelector('#useful').onclick = () => { logEvent('doc_feedback', { docId: doc.id, value: 'useful' }); toast('Feedback registrado'); };
-      card.querySelector('#notUseful').onclick = () => { logEvent('doc_feedback', { docId: doc.id, value: 'not_useful' }); toast('Gracias por el feedback'); };
-      card.querySelector('#follow').onclick = () => { logEvent('doc_followed', { docId: doc.id }); toast('Siguiendo documento'); };
+      const commentInput = card.querySelector('#comment');
+      const statsLine = card.querySelector('#statsLine');
+      const followBtn = card.querySelector('#follow');
+      const refreshStats = () => {
+        const next = feedbackSummary(doc.id);
+        statsLine.textContent = `Feedback: ${next.useful} 👍 / ${next.notUseful} 👎 · Seguidores: ${followers()}`;
+        followBtn.textContent = isFollowing(doc.id) ? 'Siguiendo' : 'Seguir';
+      };
+      card.querySelector('#useful').onclick = () => {
+        saveFeedback(doc.id, 'useful', commentInput.value);
+        commentInput.value = '';
+        toast('Feedback registrado');
+        refreshStats();
+      };
+      card.querySelector('#notUseful').onclick = () => {
+        saveFeedback(doc.id, 'not_useful', commentInput.value);
+        commentInput.value = '';
+        toast('Gracias por el feedback');
+        refreshStats();
+      };
+      followBtn.onclick = () => { toggleFollow(doc.id); refreshStats(); };
       card.querySelector('#report').onclick = () => { logEvent('doc_outdated_reported', { docId: doc.id }); toast('Reporte enviado'); };
       container.appendChild(card);
       return container;
+
     }
 
     function renderEditor(id) {
