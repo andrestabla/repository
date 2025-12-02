@@ -6,7 +6,7 @@
   <title>Repositorio de Conocimiento - Algoritmo T</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --midnight: #0c1c35;
@@ -119,10 +119,12 @@
       padding: 18px;
       backdrop-filter: blur(8px);
       box-shadow: 0 16px 50px rgba(0,0,0,0.25);
+      display: grid;
+      gap: 12px;
     }
 
-    .login-card h3 { margin: 0 0 12px; color: #fff; }
-    .input-group { display: grid; gap: 10px; margin-bottom: 12px; }
+    .login-card h3 { margin: 0 0 4px; color: #fff; }
+    .input-group { display: grid; gap: 10px; margin-bottom: 6px; }
     label { font-weight: 600; color: #dbe7ff; font-size: 14px; }
 
     input, select, textarea {
@@ -184,8 +186,11 @@
     .column h4 { margin: 0 0 10px; }
 
     .badge { background: #0c1c35; color: #fff; padding: 6px 10px; border-radius: 10px; font-weight: 700; font-size: 12px; }
-
     .footer { margin: 40px 0 0; text-align: center; color: var(--muted); }
+
+    .timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .step { background: #f7f9fd; border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid; gap: 6px; }
+    .step strong { color: #0c1b33; }
 
     @media (max-width: 720px) {
       header { position: static; border-radius: 0 0 20px 20px; }
@@ -204,10 +209,13 @@
       </div>
       <nav>
         <a href="#login">Login</a>
-        <a href="#captura">Captura</a>
-        <a href="#organizacion">Organización</a>
+        <a href="#bootstrap">Bootstrap</a>
+        <a href="#onboarding">Onboarding</a>
+        <a href="#home">Home</a>
         <a href="#busqueda">Búsqueda</a>
-        <a href="#seguridad">Seguridad</a>
+        <a href="#contenido">Contenido</a>
+        <a href="#creacion">Creación</a>
+        <a href="#workflow">Workflow</a>
         <a href="#analitica">Analítica</a>
         <a href="#operacion">Operación</a>
       </nav>
@@ -216,7 +224,7 @@
     <div class="main-hero" id="login">
       <div class="hero-copy">
         <h1>Aplicación web modular para gestionar el conocimiento</h1>
-        <p>Portal unificado con login seguro, captura estructurada, workflows de aprobación, búsqueda avanzada y analítica continua con look &amp; feel Algoritmo T.</p>
+        <p>Login inicial (SSO/MFA) que arranca los módulos de captura, búsqueda, workflows y analítica continua con look &amp; feel Algoritmo T.</p>
         <div class="chips">
           <div class="chip"><small>IA</small> Búsqueda semántica</div>
           <div class="chip"><small>SSO</small> Azure AD / Google / LDAP</div>
@@ -224,360 +232,401 @@
         </div>
       </div>
       <div class="login-card">
-        <h3>Inicio de sesión</h3>
-        <div class="input-group">
-          <label for="email">Correo corporativo</label>
-          <input id="email" type="email" placeholder="persona@empresa.com" aria-label="Correo corporativo">
-          <label for="password">Contraseña / SSO</label>
-          <input id="password" type="password" placeholder="********" aria-label="Contraseña">
+        <div class="row" style="justify-content: space-between; align-items: baseline;">
+          <h3>Acceder</h3>
+          <small style="color:#dbe7ff;">Pantalla de inicio de sesión</small>
+        </div>
+        <button class="btn" style="width:100%;">Ingresar con SSO</button>
+        <div class="row">
+          <div style="flex:1;">
+            <label for="email">Email corporativo</label>
+            <input id="email" type="email" placeholder="persona@empresa.com" aria-label="Correo corporativo">
+          </div>
+          <div style="flex:1;">
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" placeholder="••••••" aria-label="Contraseña">
+          </div>
         </div>
         <div class="row">
-          <button class="btn" style="flex:1">Ingresar</button>
-          <button class="btn secondary" style="flex:1">SSO / MFA</button>
+          <button class="btn secondary" style="flex:1">Ingresar</button>
+          <button class="btn secondary" style="flex:1">Olvidé mi clave</button>
         </div>
-        <p style="color:#dbe7ff;font-size:13px;">Roles y permisos granulares por espacio, carpeta, documento y sección. Clasificación: público interno, restringido, confidencial.</p>
+        <p style="color:#dbe7ff;font-size:13px;">El acceso está sujeto a políticas corporativas y controles de confidencialidad.</p>
+        <div class="timeline">
+          <div class="step">
+            <strong>SSO</strong>
+            <div>GET /auth/login?provider=azure → IdP → POST /auth/callback</div>
+            <div>Valida state/nonce, tokens y crea sesión segura (Access + Refresh o cookie HttpOnly).</div>
+          </div>
+          <div class="step">
+            <strong>Local</strong>
+            <div>Valida email/clave en Auth Service. MFA opcional.</div>
+            <div>Bloqueo/alerta ante intentos fallidos.</div>
+          </div>
+          <div class="step">
+            <strong>Eventos</strong>
+            <div>auth_login_started / auth_login_success / auth_login_failed</div>
+            <div>Auditoría: usuario, IP, dispositivo, proveedor.</div>
+          </div>
+        </div>
       </div>
     </div>
   </header>
 
   <main>
-    <section class="section" id="captura">
-      <h2>1) Captura y creación de conocimiento</h2>
-      <p class="subtitle">Wiki con editor enriquecido, plantillas y formularios operativos.</p>
+    <section class="section" id="bootstrap">
+      <h2>1) Bootstrap post-login</h2>
+      <p class="subtitle">Al entrar a /app se cargan perfil, roles, espacios y flags de configuración.</p>
       <div class="grid">
         <div class="card module">
-          <div class="tag">Wiki + Editor</div>
-          <strong>Páginas HTML con versión automática</strong>
+          <div class="tag">Bootstrap</div>
           <div class="stack">
-            <div>• Editor enriquecido (rich text, media, menciones).</div>
-            <div>• Plantillas: lecciones aprendidas, SOP, playbooks, casos, FAQs, postmortems.</div>
-            <div>• Carga de archivos Office/PDF/imágenes/video/audio con versionado.</div>
-            <div>• Importación desde Drive, SharePoint, Confluence, correo, CRM y ticketing.</div>
+            <div class="inline"><span class="badge">GET /me</span><span class="badge">/me/roles</span><span class="badge">/me/context</span><span class="badge">/app/config</span></div>
+            <div>Decisiones: sin espacios → onboarding; usuario deshabilitado/licencia → acceso restringido.</div>
+            <div class="inline"><span class="pill">política descarga</span><span class="pill">módulos visibles</span><span class="pill">IA activada</span></div>
           </div>
         </div>
         <div class="card module blue">
-          <div class="tag">Formularios</div>
-          <strong>Captura estructurada</strong>
+          <div class="tag">Seguridad</div>
           <div class="stack">
-            <label for="tipo">Tipo de conocimiento</label>
-            <select id="tipo">
-              <option>Operaciones</option>
-              <option>Soporte</option>
-              <option>Ventas</option>
-              <option>Proyectos</option>
-            </select>
-            <label for="titulo">Título</label>
-            <input id="titulo" placeholder="Ej. Lección aprendida - Incidente DB" aria-label="Título">
-            <label for="detalle">Resumen / contenido</label>
-            <textarea id="detalle" rows="3" placeholder="Describe el contexto, impacto, solución y próximos pasos"></textarea>
-            <button class="btn" style="margin-top:6px;">Guardar en wiki</button>
+            <div>Roles y permisos por espacio/carpeta/documento/sección.</div>
+            <div>Clasificación: público interno, restringido, confidencial.</div>
+            <div>Cifrado en tránsito/en reposo; backups y recuperación.</div>
           </div>
         </div>
         <div class="card module green">
-          <div class="tag">Importación</div>
-          <strong>Conectores y versiones</strong>
+          <div class="tag">Auditoría</div>
           <div class="stack">
-            <div class="inline">
-              <span class="pill">Drive</span>
-              <span class="pill">SharePoint</span>
-              <span class="pill">Confluence</span>
-              <span class="pill">Correo</span>
-              <span class="pill">CRM</span>
-              <span class="pill">Ticketing</span>
-            </div>
-            <div>Auto-versionado, previsualización y control de descargas según política.</div>
-            <div>Checklist de calidad previo a publicar.</div>
+            <div>Registro de “inicio de sesión” y lectura de paneles.</div>
+            <div>Controles de descarga/impresión/compartir según política.</div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="organizacion">
-      <h2>2) Organización y clasificación</h2>
-      <p class="subtitle">Taxonomías jerárquicas, metadatos obligatorios y relaciones entre contenidos.</p>
+    <section class="section" id="onboarding">
+      <h2>2) Onboarding</h2>
+      <p class="subtitle">Completa tu perfil: área, rol, sede, idioma y consents.</p>
       <div class="grid">
         <div class="card">
-          <div class="tag">Taxonomías</div>
+          <div class="tag">Pantalla</div>
           <div class="stack">
-            <strong>Categorías + etiquetas libres</strong>
-            <div>Árbol jerárquico por área, proceso y producto con colecciones TI, Comercial, Operaciones y Talento.</div>
-            <div class="inline">
-              <span class="pill">Área</span><span class="pill">Proceso</span><span class="pill">Producto</span><span class="pill">Cliente</span><span class="pill">Confidencialidad</span><span class="pill">Vigencia</span><span class="pill">Dueño</span>
+            <strong>Completa tu perfil</strong>
+            <div class="row">
+              <select aria-label="Área">
+                <option>TI</option><option>Operaciones</option><option>Comercial</option><option>Talento</option>
+              </select>
+              <select aria-label="Idioma">
+                <option>ES</option><option>EN</option><option>PT</option>
+              </select>
             </div>
+            <label><input type="checkbox"> Acepto políticas de uso y clasificación (incl. IA).</label>
+            <button class="btn">Guardar perfil</button>
           </div>
         </div>
         <div class="card">
-          <div class="tag">Relaciones</div>
+          <div class="tag">Backend</div>
           <div class="stack">
-            <strong>Mapa de vínculos</strong>
-            <div class="table-wrapper">
-              <table class="table">
-                <tr><th>Contenido</th><th>Relaciona con</th></tr>
-                <tr><td>Documento</td><td>Proceso ↔ Proyecto ↔ Incidencia ↔ Cliente</td></tr>
-                <tr><td>Política</td><td>Checklist de calidad + vigencia</td></tr>
-              </table>
-            </div>
-            <div>Caducidad, revisión periódica y archivado programable.</div>
+            <div>POST /me/profile</div>
+            <div>POST /me/consents</div>
+            <div>Eventos: onboarding_started, onboarding_completed</div>
+            <div>Habilita ABAC, recomendaciones y analítica por segmento.</div>
           </div>
         </div>
-        <div class="card">
-          <div class="tag">Vigencia</div>
+      </div>
+    </section>
+
+    <section class="section" id="home">
+      <h2>3) Home / Dashboard</h2>
+      <p class="subtitle">Inicio con buscador central, recomendados, recientes y tareas.</p>
+      <div class="grid">
+        <div class="card module">
+          <div class="tag">Home</div>
           <div class="stack">
-            <strong>Control de ciclo de vida</strong>
-            <div class="inline">
-              <span class="pill">Caducidad</span>
-              <span class="pill">Revisión</span>
-              <span class="pill">Archivado</span>
-            </div>
-            <div>Alertas a content owner y revisores; checklist mínimo por proceso/área.</div>
+            <div class="row"><input placeholder="Buscar..." aria-label="Barra de búsqueda"><button class="btn secondary">Buscar</button></div>
+            <div class="inline"><span class="pill">Recomendados para ti</span><span class="pill">Recientes</span><span class="pill">Novedades</span></div>
+            <div class="inline"><span class="badge">Plantillas</span><span class="badge">Crear artículo</span><span class="badge">Reportar gap</span><span class="badge">Mis tareas</span></div>
+          </div>
+        </div>
+        <div class="card module blue">
+          <div class="tag">Backend</div>
+          <div class="stack">
+            <div>GET /feed/recommended</div>
+            <div>GET /feed/recent</div>
+            <div>GET /feed/announcements</div>
+            <div>GET /tasks (revisión/aprobación)</div>
+            <div>Eventos: home_viewed, feed_item_clicked</div>
           </div>
         </div>
       </div>
     </section>
 
     <section class="section" id="busqueda">
-      <h2>3) Búsqueda y descubrimiento</h2>
-      <p class="subtitle">Full-text con filtros, facetas, sinónimos, corrección y vista previa con IA.</p>
+      <h2>4) Búsqueda y descubrimiento</h2>
+      <p class="subtitle">Full-text con facetas, sinónimos, corrección y búsqueda semántica.</p>
       <div class="grid">
         <div class="card module">
-          <div class="tag">Buscador</div>
+          <div class="tag">Resultados</div>
           <div class="stack">
             <label for="search">Consulta</label>
             <input id="search" placeholder="Busca por intención o palabras clave" aria-label="Buscar">
-            <div class="row">
-              <span class="pill">Sinónimos</span>
-              <span class="pill">Autocompletar</span>
-              <span class="pill">Corrección</span>
-              <span class="pill">Mejor respuesta</span>
-            </div>
             <div class="inline">
-              <span class="badge">Faceta: Tipo</span>
-              <span class="badge">Área</span>
-              <span class="badge">Fecha</span>
-              <span class="badge">Autor</span>
-              <span class="badge">Etiquetas</span>
-              <span class="badge">Confidencialidad</span>
+              <span class="pill">Tipo</span><span class="pill">Espacio</span><span class="pill">Etiquetas</span><span class="pill">Fecha</span><span class="pill">Autor</span><span class="pill">Confidencialidad</span>
             </div>
-            <div>Vista previa con resaltado de coincidencias y ranking por relevancia/uso.</div>
+            <div>Snippets con resaltado y “por qué aparece”; ranking por relevancia/uso.</div>
+            <div>Eventos: search_performed (query_hash, filtros, #results, latency) y search_zero_results.</div>
           </div>
         </div>
         <div class="card module blue">
           <div class="tag">Semántica</div>
           <div class="stack">
-            <strong>Búsqueda por intención</strong>
-            <div>Panel con snippets, sugerencias y FAQ con mejor respuesta destacada.</div>
-            <div>Filtro "solo IA" y trazabilidad de fuentes citadas.</div>
+            <strong>Intención + IA</strong>
+            <div>Autocompletar, sinónimos y sugerencias.</div>
+            <div>Filtro "solo IA" con trazabilidad de fuentes citadas.</div>
           </div>
         </div>
         <div class="card module green">
-          <div class="tag">Preview</div>
+          <div class="tag">Exploración</div>
           <div class="stack">
-            <strong>Resaltado y sugerencias</strong>
-            <div>Vista previa con texto, multimedia y enlaces relacionados.</div>
-            <div>Sugerencias de artículos similares y autocompletar proactivo.</div>
+            <strong>Espacios</strong>
+            <div>GET /spaces, /spaces/{id}/tree, /spaces/{id}/highlights.</div>
+            <div>Eventos: space_opened, folder_opened.</div>
           </div>
+        </div>
+      </div>
+      <div class="timeline" style="margin-top:12px;">
+        <div class="step">
+          <strong>Acción</strong>
+          <div>GET /search?q=...&filters=... aplica permisos (ACL) y ranking.</div>
+        </div>
+        <div class="step">
+          <strong>Apertura</strong>
+          <div>GET /docs/{id}, /docs/{id}/attachments, /docs/{id}/versions.</div>
+          <div>Si sin permiso → Solicitar acceso.</div>
+        </div>
+        <div class="step">
+          <strong>Auditoría</strong>
+          <div>doc_viewed (tiempo de lectura, sección, fuente=search). Registro “lectura”.</div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="versiones">
-      <h2>4) Control de versiones y trazabilidad</h2>
-      <p class="subtitle">Historial, comentarios de edición, bloqueo y auditoría completa.</p>
+    <section class="section" id="contenido">
+      <h2>5) Consumo y feedback de contenido</h2>
+      <p class="subtitle">Vista de documento con metadatos, acciones sociales y seguimiento.</p>
       <div class="grid">
         <div class="card">
-          <div class="tag">Versiones</div>
+          <div class="tag">Documento</div>
           <div class="stack">
-            <strong>Historial y diff</strong>
-            <div>Rollback, comentarios de edición, check-in/check-out para evitar conflictos.</div>
+            <div>Tabla de contenidos + metadatos visibles (dueño, última revisión, etiquetas, clasificación).</div>
+            <div class="inline"><span class="pill">👍 útil</span><span class="pill">👎 no útil</span><span class="pill">Sugerir edición</span><span class="pill">Compartir enlace</span><span class="pill">Seguir</span></div>
+            <div>Reportar desactualizado / gap.</div>
           </div>
         </div>
         <div class="card">
-          <div class="tag">Auditoría</div>
+          <div class="tag">Backend</div>
           <div class="stack">
-            <strong>Quién vio / descargó / editó / compartió</strong>
-            <div>Bitácora exportable y retención legal.</div>
+            <div>POST /docs/{id}/feedback</div>
+            <div>POST /docs/{id}/follow</div>
+            <div>POST /docs/{id}/report (gap/obsoleto)</div>
+            <div>Eventos: doc_feedback_given, doc_shared, doc_followed, doc_outdated_reported</div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="seguridad">
-      <h2>5) Seguridad, acceso y cumplimiento</h2>
-      <p class="subtitle">Roles granulares, SSO + MFA, clasificación y controles de compartición.</p>
+    <section class="section" id="creacion">
+      <h2>6) Creación/edición de conocimiento</h2>
+      <p class="subtitle">Plantillas, adjuntos versionados, metadatos obligatorios y control de calidad.</p>
       <div class="grid">
         <div class="card module">
-          <div class="tag">Acceso</div>
+          <div class="tag">Crear</div>
           <div class="stack">
-            <strong>Permisos por espacio / carpeta / documento / sección</strong>
-            <div>Integración SSO (Azure AD, Google Workspace, LDAP) y MFA.</div>
-            <div>Cifrado en tránsito y en reposo; backups y recuperación.</div>
+            <div class="inline"><span class="pill">Artículo wiki</span><span class="pill">Procedimiento</span><span class="pill">FAQ</span><span class="pill">Postmortem</span><span class="pill">Playbook</span></div>
+            <div>Seleccionar plantilla, espacio y clasificación. Editor enriquecido + secciones obligatorias.</div>
+            <div>Adjuntar archivos Office/PDF/imágenes/video/audio con versionado automático.</div>
+            <div>Importar desde Drive/SharePoint/Confluence/Correo/CRM/Ticketing.</div>
           </div>
         </div>
         <div class="card module blue">
-          <div class="tag">Políticas</div>
+          <div class="tag">Backend</div>
           <div class="stack">
-            <strong>Clasificación y controles</strong>
-            <div class="inline">
-              <span class="pill">Público interno</span>
-              <span class="pill">Restringido</span>
-              <span class="pill">Confidencial</span>
-            </div>
-            <div>Controles de descarga/impresión/compartir según política; retención y eDiscovery.</div>
+            <div>POST /docs (borrador) · PUT /docs/{id} (autosave)</div>
+            <div>POST /docs/{id}/attachments</div>
+            <div>Validación: metadatos obligatorios, etiquetas mínimas, owner asignado.</div>
+            <div>Preview antes de enviar a revisión.</div>
+            <div>Eventos: doc_created, doc_edited, attachment_uploaded</div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="gobernanza">
-      <h2>6) Flujos de aprobación y gobernanza</h2>
-      <p class="subtitle">Workflows de borrador a publicado con dueños, revisores y reglas de calidad.</p>
+    <section class="section" id="workflow">
+      <h2>7) Workflow de publicación y gobernanza</h2>
+      <p class="subtitle">Borrador → Revisión → Aprobación → Publicado con dueños y SLA.</p>
       <div class="kanban">
         <div class="column">
           <h4>Borrador</h4>
-          <div>Redacción inicial con checklist mínimo.</div>
+          <div>Checklist mínimo y clasificación obligatoria.</div>
         </div>
         <div class="column">
           <h4>Revisión</h4>
-          <div>Content owner asigna revisores y verifica metadatos obligatorios.</div>
+          <div>Asignar revisores por reglas del espacio. Tarea generada.</div>
         </div>
         <div class="column">
           <h4>Aprobación</h4>
-          <div>Por rol: dueño del proceso / compliance / seguridad.</div>
+          <div>Dueño del proceso / compliance / seguridad aprueban.</div>
         </div>
         <div class="column">
           <h4>Publicado</h4>
           <div>Notificaciones, suscripciones y vigencia activa.</div>
         </div>
       </div>
-    </section>
-
-    <section class="section" id="colaboracion">
-      <h2>7) Colaboración y socialización</h2>
-      <p class="subtitle">Comentarios, co-edición, suscripciones y Q&A interno.</p>
-      <div class="grid">
-        <div class="card">
-          <div class="tag">Social</div>
-          <div class="stack">
-            <div>Comentarios, menciones, reacciones y discusión por documento.</div>
-            <div>Co-edición y modo sugerencias tipo revisión.</div>
-            <div>Compartición interna con enlaces controlados.</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="tag">Suscripciones</div>
-          <div class="stack">
-            <div>Notificaciones por tema, etiqueta o espacio.</div>
-            <div>Q&A interno conectado al repositorio.</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="experiencia">
-      <h2>8) Experiencia de usuario y consumo</h2>
-      <p class="subtitle">Portal único, personalización, favoritos y accesibilidad.</p>
-      <div class="grid">
-        <div class="card">
-          <div class="tag">Portal</div>
-          <div class="stack">
-            <div>Navegación clara por roles, procesos y casos.</div>
-            <div>Favoritos, leer después, historial y seguir temas.</div>
-            <div>Responsive, móvil y multilenguaje, con WCAG.</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="tag">Personalización</div>
-          <div class="stack">
-            <div>Recomendados, "para ti" y recientes.</div>
-            <div>Perfiles por rol y actividad.</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="integraciones">
-      <h2>9) Integraciones operativas</h2>
-      <p class="subtitle">Extiende el repositorio a chat, ticketing, CRM y LMS.</p>
-      <div class="grid">
-        <div class="card module">
-          <div class="tag">Colaboración</div>
-          <div class="stack">
-            <div>Teams/Slack: buscar y compartir desde chat.</div>
-            <div>Ticketing (Jira/ServiceNow/Zendesk): sugerencias de artículos.</div>
-          </div>
-        </div>
-        <div class="card module blue">
-          <div class="tag">Operación</div>
-          <div class="stack">
-            <div>CRM (Salesforce/HubSpot): playbooks por etapa.</div>
-            <div>API/SDK y webhooks para automatización.</div>
-            <div>Integración LMS para convertir contenido en cursos.</div>
-          </div>
-        </div>
+      <div class="timeline" style="margin-top:12px;">
+        <div class="step"><strong>Submit</strong><div>POST /workflow/submit (doc_id, reviewers, due_date)</div><div>Notificación email/Teams/in-app.</div></div>
+        <div class="step"><strong>Estados</strong><div>Draft → In Review → Approved → Published</div><div>Draft → In Review → Changes Requested → Draft</div></div>
+        <div class="step"><strong>Eventos</strong><div>workflow_submitted, workflow_approved, workflow_rejected, workflow_changes_requested</div></div>
       </div>
     </section>
 
     <section class="section" id="analitica">
-      <h2>10) Analítica y mejora continua</h2>
-      <p class="subtitle">Métricas de uso, calidad y gobernanza con paneles.</p>
+      <h2>8) Analítica – Overview</h2>
+      <p class="subtitle">Solo roles autorizados ven el módulo. Responde si el conocimiento se usa y qué falta.</p>
+      <div class="grid">
+        <div class="card module">
+          <div class="tag">Acceso</div>
+          <div class="stack">
+            <div>GET /me/permissions → can_view_analytics</div>
+            <div>Space Owner ve solo su espacio; Admin global ve todo.</div>
+            <div>Métricas agregadas para contenido confidencial.</div>
+            <div>Auditoría: usuario X consultó analítica Y con filtros Z.</div>
+          </div>
+        </div>
+        <div class="card module blue">
+          <div class="tag">Widgets</div>
+          <div class="stack">
+            <div class="inline"><span class="pill">Adopción (DAU/WAU/MAU)</span><span class="pill">Sesiones</span><span class="pill">Búsquedas</span><span class="pill">Zero results</span></div>
+            <div>Top contenidos (vistas/útiles), salud (% por vencer, sin owner, sin revisión).</div>
+            <div>Self-service: consultas que terminan en “contenido resuelve”.</div>
+            <div class="inline"><span class="badge">GET /analytics/overview</span><span class="badge">GET /analytics/kpis</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="timeline" style="margin-top:12px;">
+        <div class="step"><strong>Filtros</strong><div>Rango de tiempo, espacio/área, tipo de contenido, segmento (sede/rol).</div></div>
+        <div class="step"><strong>Eventos</strong><div>analytics_viewed (panel, filtros)</div></div>
+      </div>
+    </section>
+
+    <section class="section" id="pipeline">
+      <h2>9) Pipeline de datos de Analítica</h2>
+      <p class="subtitle">Captura de eventos, ingesta, almacenamiento y agregados.</p>
       <div class="grid">
         <div class="card">
-          <div class="tag">Uso</div>
+          <div class="tag">Captura</div>
           <div class="stack">
-            <div>Búsquedas, artículos más vistos y sin resultados (gaps).</div>
-            <div>Calidad: tasa de resolución self-service, feedback por artículo.</div>
+            <div>Eventos: search_performed/zero_results, doc_viewed, doc_feedback_given, doc_created/published, access_requested/granted, workflow_approved.</div>
+            <div>No guardar texto sensible: usar query_hash + controles.</div>
+            <div>Contexto: user_id (o pseudónimo), role, space_id, doc_id, timestamp, device, latency_ms.</div>
           </div>
         </div>
         <div class="card">
-          <div class="tag">Gobernanza</div>
+          <div class="tag">Ingesta</div>
           <div class="stack">
-            <div>Detección de duplicados/obsoletos.</div>
-            <div>Panel de pendientes de revisión, SLA de aprobación y owners.</div>
+            <div>POST /telemetry/events (batch) → Telemetry service → cola/stream.</div>
+            <div>Worker enriquece (espacio, owner, clasificación) y anonimiza/pseudonimiza.</div>
+            <div>Almacenamiento: Data Lake/Warehouse + DB agregada para dashboards.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tag">Agregados</div>
+          <div class="stack">
+            <div>Consultas preagregadas: búsquedas por día y tasa de clic.</div>
+            <div>Gaps: zero-results por categoría; views + feedback; aging de contenido.</div>
+            <div>Funnel: búsqueda → apertura → feedback útil.</div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="automata">
-      <h2>11) Automatización e IA</h2>
-      <p class="subtitle">Asistente con fuentes citadas, resúmenes y auto-etiquetado.</p>
+    <section class="section" id="submodules">
+      <h2>10) Submódulos de Analítica</h2>
+      <p class="subtitle">Gaps, salud de contenido, adopción y impacto operativo.</p>
       <div class="grid">
         <div class="card module">
-          <div class="tag">Asistente</div>
+          <div class="tag">Search Gaps</div>
           <div class="stack">
-            <div>Responde con fuentes citadas del repositorio.</div>
-            <div>Resúmenes automáticos, extracción de conceptos y key takeaways.</div>
-            <div>Detección de duplicados/contradicciones y borradores guiados por plantilla.</div>
-            <div>Controles de seguridad: permisos heredados y redacción de datos sensibles.</div>
+            <div>Zero-results o low-click agrupados por tema/espacio.</div>
+            <div>GET /analytics/search-gaps?range=...&space=...</div>
+            <div><button class="btn secondary" style="width:100%;">Crear artículo desde gap</button></div>
+            <div>POST /docs/from-gap genera borrador preetiquetado.</div>
           </div>
         </div>
         <div class="card module blue">
-          <div class="tag">Auto-etiquetado</div>
+          <div class="tag">Content Health</div>
           <div class="stack">
-            <div>Sugerencia de taxonomía y etiquetas; ranking semántico.</div>
-            <div>Webhooks para flujos automáticos.</div>
+            <div>Documentos por vencer, sin owner, sin clasificación, duplicados sospechosos.</div>
+            <div>GET /analytics/content-health</div>
+            <div>Acciones masivas: POST /admin/bulk-assign-owner, POST /workflow/request-review</div>
+          </div>
+        </div>
+        <div class="card module green">
+          <div class="tag">Adopción &amp; Engagement</div>
+          <div class="stack">
+            <div>Uso por equipo, rol, país; cohortes y contenidos más valiosos.</div>
+            <div>GET /analytics/adoption · GET /analytics/engagement</div>
+          </div>
+        </div>
+        <div class="card module purple">
+          <div class="tag">Impacto Operativo</div>
+          <div class="stack">
+            <div>Deflexión de tickets, tiempo de resolución con/sin KB, artículos asociados.</div>
+            <div>GET /analytics/operations-impact (requiere ServiceNow/Jira/Zendesk/CRM).</div>
           </div>
         </div>
       </div>
     </section>
 
     <section class="section" id="operacion">
-      <h2>12) Operación, performance y resiliencia</h2>
-      <p class="subtitle">Alta disponibilidad, monitoreo, DRP y portabilidad.</p>
+      <h2>11) Operación, performance y resiliencia</h2>
+      <p class="subtitle">Alta disponibilidad, monitoreo y DRP para la plataforma.</p>
       <div class="grid">
         <div class="card">
           <div class="tag">Reliability</div>
           <div class="stack">
-            <div>Alta disponibilidad, escalabilidad y rendimiento de búsqueda.</div>
+            <div>Alta disponibilidad, escalabilidad y buen rendimiento de búsqueda.</div>
             <div>Monitorización, logs, alertas y health checks.</div>
             <div>Backups, DRP y pruebas de restauración.</div>
             <div>Exportación y portabilidad para evitar vendor lock-in.</div>
           </div>
         </div>
+        <div class="card">
+          <div class="tag">Seguridad en analítica</div>
+          <div class="stack">
+            <div>Respeta permisos: Space Owner ve su espacio; Admin global ve todo.</div>
+            <div>Contenido confidencial: métricas agregadas sin listar doc_id si la política lo exige.</div>
+            <div>Auditoría de acceso a paneles y filtros consultados.</div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <div class="footer">Diseño Algoritmo T · Login inicial seguido de módulos claros de captura, organización, búsqueda, seguridad, IA y operación.</div>
+    <section class="section" id="happy">
+      <h2>12) Happy path resumido</h2>
+      <p class="subtitle">Secuencia ideal desde login hasta analítica y acciones correctivas.</p>
+      <div class="timeline">
+        <div class="step"><strong>1. Login</strong><div>SSO / MFA crea sesión segura.</div></div>
+        <div class="step"><strong>2. Bootstrap</strong><div>Perfil, roles, espacios, flags.</div></div>
+        <div class="step"><strong>3. Home → Search</strong><div>Busca, abre resultado con permisos.</div></div>
+        <div class="step"><strong>4. Feedback</strong><div>Útil/no útil, seguir, compartir, reportar.</div></div>
+        <div class="step"><strong>5. Crear/editar</strong><div>Borrador con plantilla + adjuntos.</div></div>
+        <div class="step"><strong>6. Workflow</strong><div>Revisión → aprobación → publicación.</div></div>
+        <div class="step"><strong>7. Analítica</strong><div>Overview → Gaps → Content Health.</div></div>
+        <div class="step"><strong>8. Acción</strong><div>Crear desde gap / asignar revisión.</div></div>
+      </div>
+    </section>
+
+    <div class="footer">Diseño Algoritmo T · Login primero, módulos claros de captura, búsqueda, workflows y analítica accionable.</div>
   </main>
 </body>
 </html>
