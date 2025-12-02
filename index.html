@@ -283,6 +283,7 @@
       users: seedUsers,
       docs: seedDocs,
       events: [],
+      gaps: [],
       config: { iaEnabled: true, versioning: true, locale: 'es' },
       currentUser: null,
       session: null,
@@ -550,16 +551,34 @@
       hero.innerHTML = `
         <div class="flex space-between"><h2>Inicio</h2><span class="badge">Rol: ${state.currentUser.role}</span></div>
         <p>Busca, consume y crea conocimiento. Feed personalizado y tareas rápidas.</p>
-        <div class="flex" style="gap:8px; flex-wrap:wrap;">
-          <button class="btn primary" onclick="location.hash='#/search'">Buscar</button>
-          <button class="btn ghost" onclick="location.hash='#/edit/new'" ${['editor','admin'].includes(state.currentUser.role) ? '' : 'disabled'}>Crear artículo</button>
-            <button class="btn ghost" onclick="location.hash='#/analytics'" ${['admin','manager'].includes(state.currentUser.role) ? '' : 'disabled'}>Ver analítica</button>
+        <div class="grid two">
+          <div>
+            <label for="home-search">Buscar</label>
+            <div class="search-box" style="margin-top:6px;">
+              <span>🔍</span>
+              <input id="home-search" placeholder="Buscar en todo..." />
+            </div>
+          </div>
+          <div class="grid" style="align-content:end;">
+            <div class="flex" style="gap:8px; flex-wrap:wrap;">
+              <button class="btn primary" id="home-search-btn">Buscar</button>
+              <button class="btn ghost" onclick="location.hash='#/edit/new'" ${['editor','admin'].includes(state.currentUser.role) ? '' : 'disabled'}>Crear artículo</button>
+              <button class="btn ghost" onclick="location.hash='#/analytics'" ${['admin','manager'].includes(state.currentUser.role) ? '' : 'disabled'}>Ver analítica</button>
+            </div>
+            <span class="small">Tip: usa filtros avanzados en la vista de búsqueda</span>
+          </div>
         </div>`;
+      const homeSearchInput = hero.querySelector('#home-search');
+      hero.querySelector('#home-search-btn').onclick = () => {
+        const q = homeSearchInput.value.trim();
+        logEvent('search_performed', { from: 'home', q });
+        location.hash = `#/search?q=${encodeURIComponent(q)}`;
+      };
       const feeds = document.createElement('div');
       feeds.className = 'grid two';
       feeds.append(
-        buildListCard('Recomendados', topDocsByViews(3)),
-        buildListCard('Recientes', recentDocs(3))
+        buildListCard('Recientes', recentDocs(4)),
+        buildListCard('Populares', topDocsByViews(4))
       );
       const tasks = document.createElement('div');
       tasks.className = 'card';
@@ -620,15 +639,13 @@
       const q = params.q || '';
       const type = params.type || 'all';
       const space = params.space || 'all';
-      const results = state.docs.filter(d => {
-        const matchesQ = q ? (d.title + d.content).toLowerCase().includes(q.toLowerCase()) : true;
-        const matchesType = type === 'all' || d.type === type;
-        const matchesSpace = space === 'all' || d.space === space;
-        return matchesQ && matchesType && matchesSpace;
-      });
-      if (q) {
-        logEvent('search_performed', { q, filters: { type, space }, results: results.length });
-        if (results.length === 0) logEvent('zero_results', { q });
+      const tags = params.tags ? params.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const range = params.range || 'all';
+      const results = searchDocs({ q, type, space, tags, range });
+      const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all';
+      if (attempted) {
+        logEvent('search_performed', { q, filters: { type, space, tags, range }, results: results.length });
+        if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range } });
       }
       const container = document.createElement('div');
       container.className = 'grid';
@@ -662,6 +679,21 @@
             </div>
           </div>
         </div>
+        <div class="grid two" style="margin-top:10px;">
+          <div>
+            <label>Etiquetas (coma)</label>
+            <input id="tags" value="${tags.join(', ')}" placeholder="SOP, FAQ" />
+          </div>
+          <div>
+            <label>Fecha de actualización</label>
+            <select id="range">
+              <option value="all">Cualquier fecha</option>
+              <option value="7">Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+            </select>
+          </div>
+        </div>
         <div class="flex" style="margin-top:10px;">
           <button class="btn primary" id="runSearch">Buscar</button>
           <span class="small">Resultados: ${results.length}</span>
@@ -670,14 +702,31 @@
       typeSel.value = type;
       const spaceSel = card.querySelector('#space');
       spaceSel.value = space;
+      const rangeSel = card.querySelector('#range');
+      rangeSel.value = range;
       card.querySelector('#runSearch').onclick = () => {
         const nextQ = card.querySelector('#q').value.trim();
         const nextType = typeSel.value;
         const nextSpace = spaceSel.value;
-        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}`;
+        const nextTags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
+        const nextRange = rangeSel.value;
+        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange });
+        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange }, results: previewResults.length, source: 'search_form' });
+        if (previewResults.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange } });
+        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}`;
       };
       const list = document.createElement('div');
       list.className = 'grid two';
+      if (results.length === 0 && attempted) {
+        const empty = document.createElement('div');
+        empty.className = 'card';
+        empty.innerHTML = `<h3>Sin resultados</h3><p class="small">No encontramos coincidencias. Reporta un gap para generar contenido.</p><button class="btn primary" id="reportGap">Reportar gap</button>`;
+        empty.querySelector('#reportGap').onclick = () => {
+          addGap({ q, filters: { type, space, tags, range } });
+          toast('Gap registrado');
+        };
+        list.appendChild(empty);
+      }
       results.forEach(r => {
         const item = document.createElement('div');
         item.className = 'card doc-card';
@@ -696,6 +745,28 @@
       });
       container.append(card, list);
       return container;
+    }
+
+    function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all' }) {
+      const normalized = q.trim().toLowerCase();
+      const now = Date.now();
+      const rangeDays = range === 'all' ? null : Number(range);
+      return state.docs.filter(d => {
+        const haystack = `${d.title} ${d.content} ${d.tags.join(' ')}`.toLowerCase();
+        const matchesQ = normalized ? haystack.includes(normalized) : true;
+        const matchesType = type === 'all' || d.type === type;
+        const matchesSpace = space === 'all' || d.space === space;
+        const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
+        const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
+        return matchesQ && matchesType && matchesSpace && matchesTags && matchesDate;
+      });
+    }
+
+    function addGap(payload) {
+      const gap = { id: `gap-${Date.now()}`, ...payload, reporter: state.currentUser?.email || 'anon', createdAt: Date.now() };
+      state.gaps.push(gap);
+      logEvent('gap_reported', gap);
+      persist();
     }
 
     function renderDoc(id) {
@@ -855,7 +926,7 @@
     }
 
     function renderAnalytics() {
-      if (state.currentUser.role !== 'admin') {
+      if (!['admin','manager'].includes(state.currentUser.role)) {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = '<h2>No autorizado</h2>';
@@ -863,7 +934,7 @@
       }
       const card = document.createElement('div');
       card.className = 'card';
-      const zeroResults = state.events.filter(e => e.type === 'zero_results').length;
+      const zeroResults = state.events.filter(e => e.type === 'zero_results' || e.type === 'search_zero_results').length;
       const searches = state.events.filter(e => e.type === 'search_performed').length;
       const views = state.events.filter(e => e.type === 'doc_viewed').length;
       const created = state.events.filter(e => e.type === 'doc_created').length;
@@ -875,6 +946,7 @@
         <div class="grid three" style="margin-top:10px;">
           ${metricTile('Búsquedas', searches)}
           ${metricTile('Zero results', zeroResults, zeroResults>0 ? 'warning' : '')}
+          ${metricTile('Gaps reportados', state.gaps.length, state.gaps.length>0 ? 'warning' : '')}
           ${metricTile('Vistas', views)}
           ${metricTile('Creados', created)}
           ${metricTile('Publicados', published)}
@@ -887,13 +959,14 @@
         <p class="small">Documentos antiguos o sin publicar.</p>
         <div class="grid two" id="health"></div>`;
       const gaps = card.querySelector('#gaps');
-      const gapEvents = state.events.filter(e => e.type === 'zero_results').slice(-5);
-      if (gapEvents.length === 0) gaps.innerHTML = '<p class="small">Sin brechas por ahora.</p>';
-      gapEvents.forEach(ev => {
+      const gapEntries = state.gaps.slice(-5);
+      if (gapEntries.length === 0) gaps.innerHTML = '<p class="small">Sin brechas por ahora.</p>';
+      gapEntries.forEach(ev => {
         const box = document.createElement('div');
         box.className = 'card';
         box.innerHTML = `
-          <div class="flex space-between"><strong>${ev.q || 'Consulta desconocida'}</strong><span class="small">${new Date(ev.at).toLocaleString()}</span></div>
+          <div class="flex space-between"><strong>${ev.q || 'Consulta desconocida'}</strong><span class="small">${new Date(ev.createdAt || ev.at).toLocaleString()}</span></div>
+          <p class="small">Etiquetas: ${(ev.filters?.tags || []).join(', ') || 'n/d'} · Espacio: ${ev.filters?.space || 'todos'}</p>
           <button class="btn primary" onclick="location.hash='#/edit/new'">Crear desde gap</button>`;
         gaps.appendChild(box);
       });
