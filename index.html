@@ -844,11 +844,6 @@
       left.appendChild(quickSearch);
       const right = document.createElement('div');
       right.className = 'right';
-      const createBtn = document.createElement('button');
-      createBtn.className = 'btn primary';
-      createBtn.textContent = 'Crear';
-      createBtn.disabled = !['editor','admin'].includes(state.currentUser.role);
-      createBtn.onclick = () => { location.hash = '#/edit/new'; };
       const userBadge = document.createElement('div');
       userBadge.className = 'pill';
       userBadge.textContent = `${state.currentUser.name} · ${state.currentUser.role}`;
@@ -865,7 +860,8 @@
       logout.className = 'btn ghost';
       logout.textContent = 'Salir';
       logout.onclick = () => { setSession(null); location.hash = '#/login'; };
-      right.append(createBtn, userBadge, themeBtn, logout);
+      if (['editor','admin'].includes(state.currentUser.role)) { right.appendChild((() => { const btn = document.createElement('button'); btn.className = 'btn primary'; btn.textContent = 'Crear'; btn.onclick = () => { location.hash = '#/edit/new'; }; return btn; })()); }
+      right.append(userBadge, themeBtn, logout);
       bar.append(left, right);
       return bar;
     }
@@ -962,8 +958,8 @@
           <div class="grid" style="align-content:end;">
             <div class="flex" style="gap:8px; flex-wrap:wrap;">
               <button class="btn primary" id="home-search-btn">Buscar</button>
-              <button class="btn ghost" onclick="location.hash='#/edit/new'" ${['editor','admin'].includes(state.currentUser.role) ? '' : 'disabled'}>Crear artículo</button>
-              <button class="btn ghost" onclick="location.hash='#/analytics'" ${['admin','manager'].includes(state.currentUser.role) ? '' : 'disabled'}>Ver analítica</button>
+              ${['editor','admin'].includes(state.currentUser.role) ? '<button class="btn ghost" onclick="location.hash=\'#/edit/new\'">Crear artículo</button>' : ''}
+              ${['admin','manager'].includes(state.currentUser.role) ? '<button class="btn ghost" onclick="location.hash=\'#/analytics\'">Ver analítica</button>' : ''}
             </div>
             <span class="small">Tip: usa filtros avanzados en la vista de búsqueda</span>
           </div>
@@ -1292,6 +1288,9 @@
         <div class="grid" style="margin-top:8px;">
           <label for="comment">Comentario (opcional)</label>
           <textarea id="comment" placeholder="Agrega contexto para mejorar el artículo"></textarea>
+          <div class="flex" style="gap:8px;">
+            <button class="btn ghost small" id="commentSend">Enviar comentarios</button>
+          </div>
         </div>
         <span class="small" id="statsLine">Feedback: ${stats.useful} 👍 / ${stats.notUseful} 👎 · Seguidores: ${followers()}</span>
         <span class="small">Última actualización: ${new Date(doc.updatedAt).toLocaleString()} · Vistas: ${doc.views}</span>`;
@@ -1459,6 +1458,13 @@
         toast('Gracias por el feedback');
         refreshStats();
       };
+      card.querySelector('#commentSend').onclick = () => {
+        if (!commentInput.value.trim()) { toast('Agrega un comentario'); return; }
+        saveFeedback(doc.id, 'comment', commentInput.value);
+        commentInput.value = '';
+        toast('Comentarios enviados');
+        refreshStats();
+      };
       followBtn.onclick = () => { toggleFollow(doc.id); refreshStats(); };
       card.querySelector('#report').onclick = () => { logEvent('doc_outdated_reported', { docId: doc.id }); toast('Reporte enviado'); };
       container.appendChild(card);
@@ -1546,6 +1552,18 @@
               <input id="tags" value="${doc.tags.join(', ')}" />
             </div>
           </div>
+          <div class="grid two">
+            <div>
+              <label>Enlazar recurso (URL pública)</label>
+              <input id="resourceUrl" value="${doc.url || ''}" placeholder="https://..." />
+              <span class="small" id="resourceMeta"></span>
+            </div>
+            <div>
+              <label>O subir archivo</label>
+              <input id="resourceUpload" type="file" />
+              <span class="small">Se almacenará como objectURL para esta sesión</span>
+            </div>
+          </div>
           <div>
             <label>Contenido</label>
             <textarea id="content">${doc.content}</textarea>
@@ -1567,6 +1585,29 @@
         if (tpl.title.startsWith('SOP')) card.querySelector('#type').value = 'procedimiento';
         if (tpl.title.startsWith('FAQ')) card.querySelector('#type').value = 'faq';
       };
+      const updateResourceMeta = () => {
+        const msg = `Fuente: ${doc.sourceType === 'upload' ? 'cargado' : 'enlace'} · ${doc.ext?.toUpperCase() || 'sin ext'} · ${doc.mime || ''}`;
+        card.querySelector('#resourceMeta').textContent = msg;
+      };
+      updateResourceMeta();
+      const urlInput = card.querySelector('#resourceUrl');
+      urlInput.onblur = () => {
+        const urlVal = urlInput.value.trim();
+        if (!urlVal) return;
+        const ext = extFromUrl(urlVal) || doc.ext;
+        doc = { ...doc, url: urlVal, ext: normalizeExt(ext || doc.ext), mime: mimeFromExt(ext || doc.ext), sourceType: 'url' };
+        updateResourceMeta();
+      };
+      const uploadInput = card.querySelector('#resourceUpload');
+      uploadInput.onchange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const ext = extFromUrl(file.name) || (file.type ? file.type.split('/').pop() : '') || doc.ext;
+        doc = { ...doc, url, ext: normalizeExt(ext || ''), mime: file.type || mimeFromExt(ext || ''), sourceType: 'upload' };
+        updateResourceMeta();
+      };
+
       const assignAndPersist = (payload, reason) => {
         doc = upsertDoc(payload);
         createSnapshot(doc, reason);
