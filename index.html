@@ -322,6 +322,8 @@
       return (ext || '').toLowerCase().replace(/^\./, '');
     }
 
+    const DATA_VERSION = '2024-embed-refresh';
+
     function mimeFromExt(ext = '') {
       const map = {
         pdf: 'application/pdf',
@@ -566,6 +568,7 @@
     }));
 
     const seedState = {
+      version: DATA_VERSION,
       users: seedUsers,
       docs: seedDocs,
       events: [],
@@ -598,21 +601,26 @@
     function loadState() {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return structuredClone(seedState);
-        try {
-          const parsed = JSON.parse(raw);
-          const mergedConfig = { ...seedState.config, ...(parsed.config || {}) };
-          mergedConfig.analytics = { ...seedState.config.analytics, ...(parsed.config?.analytics || {}) };
-          return {
-            ...structuredClone(seedState),
-            ...parsed,
-            events: (parsed.events || []).slice(-eventLimit),
-            config: mergedConfig,
-            session: parsed.session ?? null,
-            feedback: parsed.feedback ?? [],
-            follows: parsed.follows ?? [],
-            versions: parsed.versions ?? seedVersions
-          };
-        } catch (e) {
+      try {
+        const parsed = JSON.parse(raw);
+        const mergedConfig = { ...seedState.config, ...(parsed.config || {}) };
+        mergedConfig.analytics = { ...seedState.config.analytics, ...(parsed.config?.analytics || {}) };
+
+        if (parsed.version !== DATA_VERSION) {
+          return { ...structuredClone(seedState), config: mergedConfig };
+        }
+
+        return {
+          ...structuredClone(seedState),
+          ...parsed,
+          events: (parsed.events || []).slice(-eventLimit),
+          config: mergedConfig,
+          session: parsed.session ?? null,
+          feedback: parsed.feedback ?? [],
+          follows: parsed.follows ?? [],
+          versions: parsed.versions ?? seedVersions
+        };
+      } catch (e) {
         console.warn('Estado corrupto, reseteando');
         return structuredClone(seedState);
       }
