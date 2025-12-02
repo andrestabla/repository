@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repositorio de Conocimiento - Prototipo SPA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 20% 20%, rgba(95,224,199,0.08), transparent 32%),
+                  radial-gradient(circle at 80% 0%, rgba(239,132,93,0.12), transparent 36%),
+                  linear-gradient(180deg, #0b172a 0%, #0f1f35 36%, #0b172a 100%);
+      --bg: #0b172a;
+      --panel: #0f2038;
+      --card: #112846;
+      --card-bg: rgba(255,255,255,0.04);
+      --surface-1: rgba(255,255,255,0.06);
+      --surface-2: rgba(255,255,255,0.04);
+      --accent: #ef845d;
+      --accent-2: #5fe0c7;
+      --text: #e6edf7;
+      --muted: #9cb1d1;
+      --border: #1d3557;
+      --success: #4ade80;
+      --warning: #facc15;
+    }
+
+    body.light {
+      --bg-gradient: radial-gradient(circle at 30% 20%, rgba(95,224,199,0.12), transparent 30%),
+                  radial-gradient(circle at 90% 0%, rgba(239,132,93,0.18), transparent 32%),
+                  linear-gradient(180deg, #f7f9fc 0%, #e7edf7 46%, #f7f9fc 100%);
+      --bg: #f5f7fb;
+      --panel: #eef2f9;
+      --card: #ffffff;
+      --card-bg: #ffffff;
+      --surface-1: #eef2f9;
+      --surface-2: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #d4dcec;
+      --success: #16a34a;
+      --warning: #d97706;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+      transition: grid-template-columns 0.2s ease;
+    }
+
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 18px 14px;
+      display: grid;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .sidebar.collapsed { width: 68px; grid-template-columns: 1fr; }
+    .sidebar.collapsed .label { display: none; }
+    .sidebar.collapsed .nav-item { justify-content: center; }
+
+    .sidebar .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #f7b38f);
+      color: #0b172a;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      box-shadow: 0 12px 30px rgba(239,132,93,0.35);
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover { background: var(--surface-1); color: var(--text); border-color: var(--border); }
+    .nav-item.active { background: rgba(239,132,93,0.14); color: var(--text); border-color: rgba(239,132,93,0.35); }
+
+    .topbar {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .topbar .left, .topbar .right { display: flex; align-items: center; gap: 10px; }
+
+    .search-box {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 280px;
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      width: 100%;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn.small { padding: 6px 10px; font-size: 12px; }
+
+    .btn.primary { background: var(--accent); color: #0b172a; box-shadow: 0 12px 30px rgba(239,132,93,0.25); }
+    .btn.ghost { background: var(--surface-1); color: var(--text); border: 1px solid var(--border); }
+
+    .main {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.16);
+    }
+
+    h1, h2, h3, h4 { margin: 0; }
+    p { margin: 6px 0 0; color: var(--muted); }
+
+    .grid { display: grid; gap: 12px; }
+    .grid.two { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .grid.three { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: var(--surface-1);
+      color: var(--text);
+      font-size: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .status { padding: 4px 8px; border-radius: 8px; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+    .status.draft { background: rgba(250,204,21,0.15); color: #facc15; }
+    .status.in_review { background: rgba(94,234,212,0.15); color: #5fe0c7; }
+    .status.published { background: rgba(74,222,128,0.18); color: #4ade80; }
+
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+    .table th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.04em; }
+
+    .doc-card { display: grid; gap: 6px; }
+
+    .flex { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .space-between { justify-content: space-between; }
+
+    .toast-container {
+      position: fixed;
+      bottom: 14px;
+      right: 14px;
+      display: grid;
+      gap: 8px;
+      z-index: 50;
+    }
+
+    .toast {
+      background: rgba(17,40,70,0.95);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.24);
+      min-width: 220px;
+    }
+
+    .login-wrapper {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      width: min(420px, 90vw);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.22);
+      display: grid;
+      gap: 12px;
+    }
+
+    label { font-weight: 600; color: var(--text); font-size: 14px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    textarea { min-height: 160px; }
+
+    .badge { background: var(--surface-1); padding: 6px 10px; border-radius: 10px; font-weight: 700; }
+    .small { font-size: 12px; color: var(--muted); }
+
+    .tag { background: var(--surface-1); padding: 4px 8px; border-radius: 8px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="toast-container" id="toasts"></div>
+
+  <script type="module">
+    const storageKey = 'kb-demo-state-v1';
+    const eventLimit = 10000;
+    const eventFlushThreshold = 20;
+    let eventBuffer = [];
+    let flushTimer = null;
+
+    const seedUsers = [
+      { id: 'u1', name: 'Ana Viewer', email: 'ana@demo.local', role: 'viewer', password: 'demo' },
+      { id: 'u2', name: 'Bruno Editor', email: 'bruno@demo.local', role: 'editor', password: 'demo' },
+      { id: 'u3', name: 'Camila Admin', email: 'camila@demo.local', role: 'admin', password: 'demo' }
+    ];
+
+    const spaces = ['TI', 'Operaciones', 'Comercial', 'Talento'];
+    const tagsPool = ['SOP', 'FAQ', 'Postmortem', 'Playbook', 'Onboarding', 'Incidente', 'Ventas'];
+    const templates = {
+      sop: {
+        title: 'SOP: Proceso estándar',
+        content: 'Objetivo\nAlcance\nPre-requisitos\nPasos\nRoles y RACI\nValidación y evidencia'
+      },
+      faq: {
+        title: 'FAQ: Pregunta frecuente',
+        content: 'Pregunta\nRespuesta breve\nDetalles adicionales\nEnlaces relacionados'
+      },
+      lesson: {
+        title: 'Lección aprendida',
+        content: 'Situación\nCausa raíz\nImpacto\nAcciones correctivas\nRecomendaciones futuras'
+      }
+    };
+
+    const baseDocs = Array.from({ length: 10 }).map((_, i) => ({
+      id: `d${i+1}`,
+      title: `Documento ${i+1} - ${['SOP','FAQ','Playbook','Caso','Guía'][i%5]}`,
+      type: ['wiki','faq','procedimiento','postmortem','playbook'][i%5],
+      space: spaces[i % spaces.length],
+      owner: seedUsers[i % seedUsers.length].name,
+      status: ['draft','in_review','published'][i % 3],
+      updatedAt: Date.now() - i * 86400000,
+      tags: [tagsPool[i % tagsPool.length], tagsPool[(i+2)%tagsPool.length]],
+      content: `Contenido de ejemplo para el documento ${i+1}. Incluye contexto de ${spaces[i % spaces.length]} y etiqueta ${tagsPool[i % tagsPool.length]}.`,
+      views: Math.floor(Math.random() * 120) + 4,
+      version: 1,
+      attachments: []
+    }));
+
+    const realResources = [
+      { title: 'Delors - Los cuatro pilares', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/CPP-DC-Delors-Los-cuatro-pilares.pdf', type: 'pdf' },
+      { title: 'Experiencias de aprendizaje significativas en la educación básica y media en Colombia', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Experiencias+de+aprendizaje+significativas+en+la+educaci%C3%B3n+b%C3%A1sica+y+media+en+Colombia.+Una+aproximaci%C3%B3n+desde+sus+actores+y+el+estado+del+arte..pdf', type: 'pdf' },
+      { title: 'Introducción al conocimiento de la ciencia', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Introducci%C3%B3n+al+conocimiento+de+la+ciencia.pdf', type: 'pdf' },
+      { title: 'Necesidad de una educación en un mundo digital', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Necesidad+de+una+educaci%C3%B3n+en+un+mundo+digital.pdf', type: 'pdf' },
+      { title: 'Secretos de Finlandia', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/secretos_finlandia.pdf', type: 'pdf' },
+      { title: 'Líder de alto impacto (video)', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/1.+Lider+de+alto+impacto.mp4', type: 'video' },
+      { title: 'Presencia ejecutiva (video)', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/2-+Presencia-ejecutiva.mp4', type: 'video' }
+    ];
+
+    const resourceDocs = realResources.map((res, idx) => ({
+      id: `r${idx+1}`,
+      title: res.title,
+      type: res.type === 'video' ? 'playbook' : 'wiki',
+      space: spaces[idx % spaces.length],
+      owner: seedUsers[(idx + 1) % seedUsers.length].name,
+      status: 'published',
+      updatedAt: Date.now() - idx * 3600 * 1000,
+      tags: ['Referencia', res.type.toUpperCase()],
+      content: `Recurso embebido disponible: ${res.title}. Usa la vista previa para consultarlo y descarga para obtener el archivo original.`,
+      views: 30 + idx * 3,
+      version: 1,
+      attachments: [res]
+    }));
+
+    const seedDocs = [...baseDocs, ...resourceDocs];
+
+    const seedVersions = seedDocs.map(doc => ({
+      id: crypto.randomUUID(),
+      docId: doc.id,
+      version: 1,
+      snapshotAt: doc.updatedAt,
+      status: doc.status,
+      title: doc.title,
+      content: doc.content,
+      tags: doc.tags,
+      type: doc.type,
+      space: doc.space,
+      attachments: doc.attachments
+    }));
+
+    const seedState = {
+      users: seedUsers,
+      docs: seedDocs,
+      events: [],
+      gaps: [],
+      feedback: [],
+      follows: [],
+      versions: seedVersions,
+      config: {
+        iaEnabled: true,
+        versioning: true,
+        locale: 'es',
+        theme: 'dark',
+        analytics: { range: '30', space: 'all', tab: 'overview', gapSort: 'zero', healthSort: 'stale' }
+      },
+      currentUser: null,
+      session: null,
+      sidebarCollapsed: false
+    };
+
+    const state = loadState();
+    applyTheme(state.config.theme, true);
+    let editorAutoSave = null;
+    const autoSaveMs = 8000;
+
+    if (state.session && !state.currentUser) {
+      const user = state.users.find(u => u.id === state.session.userId);
+      if (user) state.currentUser = user;
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return structuredClone(seedState);
+        try {
+          const parsed = JSON.parse(raw);
+          const mergedConfig = { ...seedState.config, ...(parsed.config || {}) };
+          mergedConfig.analytics = { ...seedState.config.analytics, ...(parsed.config?.analytics || {}) };
+          return {
+            ...structuredClone(seedState),
+            ...parsed,
+            events: (parsed.events || []).slice(-eventLimit),
+            config: mergedConfig,
+            session: parsed.session ?? null,
+            feedback: parsed.feedback ?? [],
+            follows: parsed.follows ?? [],
+            versions: parsed.versions ?? seedVersions
+          };
+        } catch (e) {
+        console.warn('Estado corrupto, reseteando');
+        return structuredClone(seedState);
+      }
+    }
+
+    function persist() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function applyTheme(theme, skipPersist = false) {
+      const next = theme || 'dark';
+      document.body.classList.toggle('light', next === 'light');
+      state.config.theme = next;
+      if (!skipPersist) persist();
+    }
+
+    function resetDemo() {
+      localStorage.removeItem(storageKey);
+      eventBuffer = [];
+      Object.assign(state, structuredClone(seedState));
+      persist();
+      applyTheme(state.config.theme, true);
+      render();
+      toast('Datos de demo restaurados');
+    }
+
+    function toast(message) {
+      const container = document.getElementById('toasts');
+      const node = document.createElement('div');
+      node.className = 'toast';
+      node.textContent = message;
+      container.appendChild(node);
+      setTimeout(() => node.remove(), 2600);
+    }
+
+    function track(type, payload = {}) {
+      const enriched = {
+        id: crypto.randomUUID(),
+        type,
+        at: Date.now(),
+        userId: state.currentUser?.id || null,
+        user: state.currentUser?.email || 'anon',
+        role: state.currentUser?.role || 'anon',
+        route: location.hash || '/login',
+        docId: payload.docId || payload.id || null,
+        ...payload
+      };
+      eventBuffer.push(enriched);
+      if (eventBuffer.length >= eventFlushThreshold) {
+        flushEvents();
+      } else {
+        scheduleFlush();
+      }
+    }
+
+    function scheduleFlush() {
+      clearTimeout(flushTimer);
+      flushTimer = setTimeout(() => flushEvents(), 500);
+    }
+
+    function flushEvents() {
+      if (!eventBuffer.length) return;
+      state.events = [...state.events, ...eventBuffer].slice(-eventLimit);
+      eventBuffer = [];
+      persist();
+    }
+
+    function exportEvents() {
+      flushEvents();
+      const blob = new Blob([JSON.stringify(state.events, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'telemetria-events.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Eventos exportados');
+    }
+
+    function getEvents() {
+      flushEvents();
+      return state.events;
+    }
+
+    function logEvent(type, payload = {}) {
+      track(type, payload);
+    }
+
+    function setUser(user) {
+      state.currentUser = user;
+      persist();
+    }
+
+    function setSession(session) {
+      state.session = session;
+      if (!session) state.currentUser = null;
+      persist();
+    }
+
+    function requireAuth(target) {
+      if ((!state.currentUser || !state.session?.token) && target !== '/login') {
+        location.hash = '#/login';
+        return false;
+      }
+      return true;
+    }
+
+    function router() {
+      const hash = location.hash.slice(1) || '/login';
+      const clean = hash.split('?')[0];
+      const [path, param] = clean.split('/').filter(Boolean);
+      const routes = {
+        'login': '/login',
+        'home': '/home',
+        'search': '/search',
+        'doc': '/doc',
+        'edit': '/edit',
+        'analytics': '/analytics'
+      };
+      const key = routes[path] || '/login';
+      if (!requireAuth(key)) return { key: '/login' };
+      if (key === '/analytics' && !['admin','manager'].includes(state.currentUser.role)) {
+        toast('Necesitas rol admin/manager para Analítica');
+        location.hash = '#/home';
+        return { key: '/home' };
+      }
+      return { key, param };
+    }
+
+    function render() {
+      const { key, param } = router();
+      if (key !== '/edit' && editorAutoSave) { clearInterval(editorAutoSave); editorAutoSave = null; }
+      if (key === '/login') {
+        renderLogin();
+        return;
+      }
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      const shell = document.createElement('div');
+      shell.className = 'app-shell';
+      const sidebar = renderSidebar(key);
+      const content = document.createElement('div');
+      content.style.display = 'flex';
+      content.style.flexDirection = 'column';
+      const topbar = renderTopbar();
+      const main = document.createElement('div');
+      main.className = 'main';
+      switch (key) {
+        case '/home': main.appendChild(renderHome()); break;
+        case '/search': main.appendChild(renderSearch()); break;
+        case '/doc': main.appendChild(renderDoc(param)); break;
+        case '/edit': main.appendChild(renderEditor(param)); break;
+        case '/analytics': main.appendChild(renderAnalytics()); break;
+        default: main.appendChild(renderHome());
+      }
+      content.appendChild(topbar);
+      content.appendChild(main);
+      shell.appendChild(sidebar);
+      shell.appendChild(content);
+      app.replaceChildren(shell);
+    }
+
+    function renderSidebar(active) {
+      const navItems = [
+        { href: '#/home', label: 'Home' },
+        { href: '#/search', label: 'Búsqueda' },
+        { href: '#/edit/new', label: 'Crear', roles: ['editor','admin'] },
+        { href: '#/analytics', label: 'Analítica', roles: ['admin','manager'] },
+      ];
+      const aside = document.createElement('aside');
+      aside.className = 'sidebar' + (state.sidebarCollapsed ? ' collapsed' : '');
+      const brand = document.createElement('div');
+      brand.className = 'brand';
+      brand.innerHTML = `<div class="brand-mark">T</div><span class="label">Repositorio</span>`;
+      const collapseBtn = document.createElement('button');
+      collapseBtn.className = 'btn ghost';
+      collapseBtn.style.width = '100%';
+      collapseBtn.textContent = state.sidebarCollapsed ? 'Expandir' : 'Colapsar';
+      collapseBtn.onclick = () => { state.sidebarCollapsed = !state.sidebarCollapsed; persist(); render(); };
+      const nav = document.createElement('div');
+      nav.className = 'nav';
+      navItems.forEach(item => {
+        if (item.roles && !item.roles.includes(state.currentUser.role)) return;
+        const link = document.createElement('a');
+        link.href = item.href;
+        link.className = 'nav-item' + (location.hash.startsWith(item.href) ? ' active' : '');
+        link.innerHTML = `<span class="label">${item.label}</span>`;
+        nav.appendChild(link);
+      });
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn ghost';
+      resetBtn.innerHTML = '<span class="label">Reset demo</span>';
+      resetBtn.onclick = resetDemo;
+      const exportBtn = document.createElement('button');
+      exportBtn.className = 'btn ghost';
+      exportBtn.innerHTML = '<span class="label">Exportar eventos</span>';
+      exportBtn.onclick = exportEvents;
+      aside.append(brand, nav, collapseBtn, resetBtn, exportBtn);
+      return aside;
+    }
+
+    function renderTopbar() {
+      const bar = document.createElement('div');
+      bar.className = 'topbar';
+      const left = document.createElement('div');
+      left.className = 'left';
+      const quickSearch = document.createElement('div');
+      quickSearch.className = 'search-box';
+      quickSearch.innerHTML = '<span>🔍</span><input placeholder="Buscar..." aria-label="Buscar" />';
+      const input = quickSearch.querySelector('input');
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          const q = input.value.trim();
+          if (q) {
+            state.lastQuery = q;
+            logEvent('search_performed', { q });
+            location.hash = '#/search?q=' + encodeURIComponent(q);
+          }
+        }
+      };
+      left.appendChild(quickSearch);
+      const right = document.createElement('div');
+      right.className = 'right';
+      const createBtn = document.createElement('button');
+      createBtn.className = 'btn primary';
+      createBtn.textContent = 'Crear';
+      createBtn.disabled = !['editor','admin'].includes(state.currentUser.role);
+      createBtn.onclick = () => { location.hash = '#/edit/new'; };
+      const userBadge = document.createElement('div');
+      userBadge.className = 'pill';
+      userBadge.textContent = `${state.currentUser.name} · ${state.currentUser.role}`;
+      const themeBtn = document.createElement('button');
+      themeBtn.className = 'btn ghost';
+      themeBtn.textContent = state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro';
+      themeBtn.onclick = () => {
+        const next = state.config.theme === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+        toast(`Modo ${next === 'light' ? 'claro' : 'oscuro'}`);
+        render();
+      };
+      const logout = document.createElement('button');
+      logout.className = 'btn ghost';
+      logout.textContent = 'Salir';
+      logout.onclick = () => { setSession(null); location.hash = '#/login'; };
+      right.append(createBtn, userBadge, themeBtn, logout);
+      bar.append(left, right);
+      return bar;
+    }
+
+    function renderLogin() {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'login-wrapper';
+      const card = document.createElement('div');
+      card.className = 'login-card';
+      card.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h2>Acceder</h2>
+            <p>Inicia sesión con credenciales demo o simula SSO. El acceso está sujeto a políticas corporativas.</p>
+          </div>
+          <button class="btn ghost" id="themeLogin">${state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</button>
+        </div>
+        <div class="grid">
+          <button class="btn primary" id="ssoBtn">Ingresar con SSO</button>
+          <div class="grid">
+            <label for="email">Correo</label>
+            <input id="email" placeholder="usuario@demo.local" />
+            <label for="password">Clave</label>
+            <input id="password" type="password" placeholder="demo" />
+            <label for="role">Rol</label>
+            <select id="role">
+              <option value="viewer">viewer</option>
+              <option value="editor">editor</option>
+              <option value="admin">admin</option>
+              <option value="manager">manager</option>
+            </select>
+          </div>
+          <button class="btn ghost" id="loginBtn">Ingresar</button>
+          <span class="small">Demo: elige un usuario para autocompletar</span>
+          <div class="flex" id="demoUsers"></div>
+        </div>`;
+      const demoUsers = card.querySelector('#demoUsers');
+      state.users.forEach(u => {
+        const b = document.createElement('button');
+        b.className = 'btn ghost';
+        b.textContent = `${u.name} (${u.role})`;
+        b.onclick = () => {
+          card.querySelector('#email').value = u.email;
+          card.querySelector('#password').value = 'demo';
+          card.querySelector('#role').value = u.role;
+        };
+        demoUsers.appendChild(b);
+      });
+      card.querySelector('#ssoBtn').onclick = () => {
+        toast('Simulando redirección SSO...');
+        setTimeout(() => toast('SSO completado (demo)'), 800);
+      };
+      card.querySelector('#themeLogin').onclick = () => {
+        const next = state.config.theme === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+        toast(`Modo ${next === 'light' ? 'claro' : 'oscuro'}`);
+        render();
+      };
+      card.querySelector('#loginBtn').onclick = () => {
+        const email = card.querySelector('#email').value.trim();
+        const pass = card.querySelector('#password').value.trim();
+        const role = card.querySelector('#role').value;
+        const user = state.users.find(u => u.email === email && u.password === pass);
+        if (!user) { toast('Credenciales inválidas'); return; }
+        if (role !== user.role) { toast('Rol no coincide con el usuario demo'); return; }
+        const token = crypto.randomUUID();
+        setUser(user);
+        setSession({ token, userId: user.id, role: user.role, issuedAt: Date.now() });
+        logEvent('login_success', { email, role });
+        location.hash = '#/home';
+      };
+      wrapper.appendChild(card);
+      app.appendChild(wrapper);
+    }
+
+    function renderHome() {
+      const container = document.createElement('div');
+      container.className = 'grid';
+      const hero = document.createElement('div');
+      hero.className = 'card';
+      hero.innerHTML = `
+        <div class="flex space-between"><h2>Inicio</h2><span class="badge">Rol: ${state.currentUser.role}</span></div>
+        <p>Busca, consume y crea conocimiento. Feed personalizado y tareas rápidas.</p>
+        <div class="grid two">
+          <div>
+            <label for="home-search">Buscar</label>
+            <div class="search-box" style="margin-top:6px;">
+              <span>🔍</span>
+              <input id="home-search" placeholder="Buscar en todo..." />
+            </div>
+          </div>
+          <div class="grid" style="align-content:end;">
+            <div class="flex" style="gap:8px; flex-wrap:wrap;">
+              <button class="btn primary" id="home-search-btn">Buscar</button>
+              <button class="btn ghost" onclick="location.hash='#/edit/new'" ${['editor','admin'].includes(state.currentUser.role) ? '' : 'disabled'}>Crear artículo</button>
+              <button class="btn ghost" onclick="location.hash='#/analytics'" ${['admin','manager'].includes(state.currentUser.role) ? '' : 'disabled'}>Ver analítica</button>
+            </div>
+            <span class="small">Tip: usa filtros avanzados en la vista de búsqueda</span>
+          </div>
+        </div>`;
+      const homeSearchInput = hero.querySelector('#home-search');
+      hero.querySelector('#home-search-btn').onclick = () => {
+        const q = homeSearchInput.value.trim();
+        logEvent('search_performed', { from: 'home', q });
+        location.hash = `#/search?q=${encodeURIComponent(q)}`;
+      };
+      const feeds = document.createElement('div');
+      feeds.className = 'grid two';
+      feeds.append(
+        buildListCard('Recientes', recentDocs(4)),
+        buildListCard('Populares', topDocsByViews(4))
+      );
+      const tasks = document.createElement('div');
+      tasks.className = 'card';
+      const pending = state.docs.filter(d => d.status === 'in_review');
+      tasks.innerHTML = `<div class="flex space-between"><h3>Workflow</h3><span class="small">Draft → Review → Published</span></div>`;
+      if (pending.length === 0) {
+        tasks.innerHTML += '<p>No hay documentos en revisión.</p>';
+      } else {
+        const ul = document.createElement('div');
+        ul.className = 'grid';
+        pending.forEach(d => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.innerHTML = `<span>${d.title}</span><div class="status ${d.status}">${d.status}</div>`;
+          ul.appendChild(row);
+        });
+        tasks.appendChild(ul);
+      }
+      container.append(hero, feeds, tasks);
+      return container;
+    }
+
+    function buildListCard(title, docs) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<h3>${title}</h3>`;
+      docs.forEach(doc => {
+        const div = document.createElement('div');
+        div.className = 'doc-card';
+        div.innerHTML = `
+          <div class="flex space-between">
+            <a href="#/doc/${doc.id}" class="pill">${doc.title}</a>
+            <span class="status ${doc.status}">${doc.status}</span>
+          </div>
+          <div class="flex">
+            <span class="small">${doc.space}</span>
+            <span class="small">${new Date(doc.updatedAt).toLocaleDateString()}</span>
+          </div>`;
+        card.appendChild(div);
+      });
+      return card;
+    }
+
+    function topDocsByViews(n) {
+      return [...state.docs].sort((a,b) => b.views - a.views).slice(0,n);
+    }
+    function recentDocs(n) {
+      return [...state.docs].sort((a,b) => b.updatedAt - a.updatedAt).slice(0,n);
+    }
+
+    function parseQuery() {
+      const hash = location.hash.split('?')[1] || '';
+      return Object.fromEntries(new URLSearchParams(hash));
+    }
+
+    function renderSearch() {
+      const params = parseQuery();
+      const q = params.q || '';
+      const type = params.type || 'all';
+      const space = params.space || 'all';
+      const tags = params.tags ? params.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const range = params.range || 'all';
+      const results = searchDocs({ q, type, space, tags, range });
+      const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all';
+      if (attempted) {
+        logEvent('search_performed', { q, filters: { type, space, tags, range }, results: results.length });
+        if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range } });
+      }
+      const container = document.createElement('div');
+      container.className = 'grid';
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between"><h2>Búsqueda</h2><span class="small">Full-text + filtros</span></div>
+        <div class="grid two">
+          <div>
+            <label>Consulta</label>
+            <input id="q" value="${q}" placeholder="Buscar..." />
+          </div>
+          <div class="grid two">
+            <div>
+              <label>Tipo</label>
+              <select id="type">
+                <option value="all">Todos</option>
+                <option value="wiki">Wiki</option>
+                <option value="faq">FAQ</option>
+                <option value="procedimiento">Procedimiento</option>
+                <option value="postmortem">Postmortem</option>
+                <option value="playbook">Playbook</option>
+              </select>
+            </div>
+            <div>
+              <label>Espacio</label>
+              <select id="space">
+                <option value="all">Todos</option>
+                ${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="grid two" style="margin-top:10px;">
+          <div>
+            <label>Etiquetas (coma)</label>
+            <input id="tags" value="${tags.join(', ')}" placeholder="SOP, FAQ" />
+          </div>
+          <div>
+            <label>Fecha de actualización</label>
+            <select id="range">
+              <option value="all">Cualquier fecha</option>
+              <option value="7">Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex" style="margin-top:10px;">
+          <button class="btn primary" id="runSearch">Buscar</button>
+          <span class="small">Resultados: ${results.length}</span>
+        </div>`;
+      const typeSel = card.querySelector('#type');
+      typeSel.value = type;
+      const spaceSel = card.querySelector('#space');
+      spaceSel.value = space;
+      const rangeSel = card.querySelector('#range');
+      rangeSel.value = range;
+      card.querySelector('#runSearch').onclick = () => {
+        const nextQ = card.querySelector('#q').value.trim();
+        const nextType = typeSel.value;
+        const nextSpace = spaceSel.value;
+        const nextTags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
+        const nextRange = rangeSel.value;
+        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange });
+        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange }, results: previewResults.length, source: 'search_form' });
+        if (previewResults.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange } });
+        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}`;
+      };
+      const list = document.createElement('div');
+      list.className = 'grid two';
+      if (results.length === 0 && attempted) {
+        const empty = document.createElement('div');
+        empty.className = 'card';
+        empty.innerHTML = `<h3>Sin resultados</h3><p class="small">No encontramos coincidencias. Reporta un gap para generar contenido.</p><button class="btn primary" id="reportGap">Reportar gap</button>`;
+        empty.querySelector('#reportGap').onclick = () => {
+          addGap({ q, filters: { type, space, tags, range } });
+          toast('Gap registrado');
+        };
+        list.appendChild(empty);
+      }
+      results.forEach(r => {
+        const item = document.createElement('div');
+        item.className = 'card doc-card';
+        item.innerHTML = `
+          <div class="flex space-between">
+            <a href="#/doc/${r.id}"><h3>${r.title}</h3></a>
+            <span class="status ${r.status}">${r.status}</span>
+          </div>
+          <p>${r.content.slice(0,120)}...</p>
+          <div class="flex">
+            <span class="tag">${r.type}</span>
+            <span class="tag">${r.space}</span>
+            ${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+          </div>`;
+        list.appendChild(item);
+      });
+      container.append(card, list);
+      return container;
+    }
+
+    function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all' }) {
+      const normalized = q.trim().toLowerCase();
+      const now = Date.now();
+      const rangeDays = range === 'all' ? null : Number(range);
+      return state.docs.filter(d => {
+        const haystack = `${d.title} ${d.content} ${d.tags.join(' ')}`.toLowerCase();
+        const matchesQ = normalized ? haystack.includes(normalized) : true;
+        const matchesType = type === 'all' || d.type === type;
+        const matchesSpace = space === 'all' || d.space === space;
+        const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
+        const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
+        return matchesQ && matchesType && matchesSpace && matchesTags && matchesDate;
+      });
+    }
+
+    function addGap(payload) {
+      const gap = { id: `gap-${Date.now()}`, ...payload, reporter: state.currentUser?.email || 'anon', createdAt: Date.now() };
+      state.gaps.push(gap);
+      logEvent('gap_reported', gap);
+      persist();
+    }
+
+    function isFollowing(docId, userId = state.currentUser?.id) {
+      if (!userId) return false;
+      return state.follows.some(f => f.docId === docId && f.userId === userId);
+    }
+
+    function toggleFollow(docId) {
+      const userId = state.currentUser?.id;
+      if (!userId) return;
+      const idx = state.follows.findIndex(f => f.docId === docId && f.userId === userId);
+      if (idx >= 0) {
+        state.follows.splice(idx, 1);
+        logEvent('doc_unfollowed', { docId, userId });
+        toast('Se dejó de seguir');
+      } else {
+        state.follows.push({ id: crypto.randomUUID(), docId, userId, at: Date.now() });
+        logEvent('doc_followed', { docId, userId });
+        toast('Siguiendo documento');
+      }
+      persist();
+    }
+
+    function saveFeedback(docId, value, comment) {
+      const entry = {
+        id: crypto.randomUUID(),
+        docId,
+        value,
+        comment: comment?.trim() || '',
+        userId: state.currentUser?.id,
+        at: Date.now()
+      };
+      state.feedback.push(entry);
+      logEvent('doc_feedback', { docId, value, hasComment: !!entry.comment });
+      persist();
+    }
+
+    function feedbackSummary(docId) {
+      const items = state.feedback.filter(f => f.docId === docId);
+      const useful = items.filter(f => f.value === 'useful').length;
+      const notUseful = items.filter(f => f.value === 'not_useful').length;
+      return { useful, notUseful, total: items.length };
+    }
+
+    function renderDoc(id) {
+      const doc = state.docs.find(d => d.id === id);
+      const container = document.createElement('div');
+      container.className = 'grid';
+      if (!doc) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>Documento no encontrado</h2>';
+        container.appendChild(card);
+        return container;
+      }
+      doc.views += 1;
+      logEvent('doc_viewed', { docId: doc.id, status: doc.status });
+      persist();
+      const stats = feedbackSummary(doc.id);
+      const followers = () => state.follows.filter(f => f.docId === doc.id).length;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between">
+          <div>
+            <h2>${doc.title}</h2>
+            <div class="flex">
+              <span class="tag">${doc.type}</span>
+              <span class="tag">${doc.space}</span>
+              ${doc.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+              <span class="tag">Owner: ${doc.owner}</span>
+            </div>
+          </div>
+          <div class="flex">
+            <div class="status ${doc.status}">${doc.status}</div>
+            ${['editor','admin'].includes(state.currentUser.role) ? `<button class="btn ghost" onclick="location.hash='#/edit/${doc.id}'">Editar</button>` : ''}
+          </div>
+        </div>
+        <p>${doc.content}</p>
+        <div class="flex">
+          <button class="btn primary" id="useful">👍 Útil</button>
+          <button class="btn ghost" id="notUseful">👎 No útil</button>
+          <button class="btn ghost" id="follow">${isFollowing(doc.id) ? 'Siguiendo' : 'Seguir'}</button>
+          <button class="btn ghost" id="report">Reportar obsoleto</button>
+        </div>
+        <div class="grid" style="margin-top:8px;">
+          <label for="comment">Comentario (opcional)</label>
+          <textarea id="comment" placeholder="Agrega contexto para mejorar el artículo"></textarea>
+        </div>
+        <span class="small" id="statsLine">Feedback: ${stats.useful} 👍 / ${stats.notUseful} 👎 · Seguidores: ${followers()}</span>
+        <span class="small">Última actualización: ${new Date(doc.updatedAt).toLocaleString()} · Vistas: ${doc.views}</span>`;
+      if (doc.attachments?.length) {
+        const attachments = document.createElement('div');
+        attachments.className = 'grid';
+        attachments.style.marginTop = '8px';
+        attachments.innerHTML = '<h4>Recursos vinculados</h4>';
+        const preview = document.createElement('div');
+        preview.className = 'card';
+        preview.style.background = 'var(--surface-2)';
+        const renderPreview = (att) => {
+          if (!att) return;
+          preview.innerHTML = `<div class="flex space-between" style="align-items:center;"><div><strong>${att.title}</strong><div class="small">${att.type.toUpperCase()}</div></div><div class="flex" style="gap:6px;"><a class="btn ghost small" href="${att.url}" target="_blank" rel="noopener">Abrir en pestaña</a><a class="btn primary small" href="${att.url}" download>Descargar</a></div></div>`;
+          if (att.type === 'video') {
+            const video = document.createElement('video');
+            video.src = att.url;
+            video.controls = true;
+            video.style.width = '100%';
+            video.style.maxHeight = '320px';
+            video.style.marginTop = '8px';
+            preview.appendChild(video);
+          } else {
+            const iframe = document.createElement('iframe');
+            iframe.src = att.url;
+            iframe.style.width = '100%';
+            iframe.style.height = '360px';
+            iframe.style.border = '1px solid var(--border)';
+            iframe.style.marginTop = '8px';
+            iframe.setAttribute('title', att.title);
+            preview.appendChild(iframe);
+          }
+        };
+        doc.attachments.forEach(att => {
+          const row = document.createElement('div');
+          row.className = 'grid';
+          row.style.gap = '4px';
+          row.innerHTML = `<div class="flex space-between"><div class="flex" style="gap:8px; align-items:center;"><span class="tag">${att.type.toUpperCase()}</span><span>${att.title}</span></div><div class="flex" style="gap:6px;"><button class="btn ghost small">Ver</button><a class="btn primary small" href="${att.url}" download>Descargar</a></div></div>`;
+          row.querySelector('button').onclick = () => renderPreview(att);
+          attachments.appendChild(row);
+        });
+        renderPreview(doc.attachments[0]);
+        attachments.appendChild(preview);
+        card.appendChild(attachments);
+      }
+      const commentInput = card.querySelector('#comment');
+      const statsLine = card.querySelector('#statsLine');
+      const followBtn = card.querySelector('#follow');
+      const refreshStats = () => {
+        const next = feedbackSummary(doc.id);
+        statsLine.textContent = `Feedback: ${next.useful} 👍 / ${next.notUseful} 👎 · Seguidores: ${followers()}`;
+        followBtn.textContent = isFollowing(doc.id) ? 'Siguiendo' : 'Seguir';
+      };
+      card.querySelector('#useful').onclick = () => {
+        saveFeedback(doc.id, 'useful', commentInput.value);
+        commentInput.value = '';
+        toast('Feedback registrado');
+        refreshStats();
+      };
+      card.querySelector('#notUseful').onclick = () => {
+        saveFeedback(doc.id, 'not_useful', commentInput.value);
+        commentInput.value = '';
+        toast('Gracias por el feedback');
+        refreshStats();
+      };
+      followBtn.onclick = () => { toggleFollow(doc.id); refreshStats(); };
+      card.querySelector('#report').onclick = () => { logEvent('doc_outdated_reported', { docId: doc.id }); toast('Reporte enviado'); };
+      container.appendChild(card);
+      const versions = state.versions.filter(v => v.docId === doc.id).sort((a,b) => b.version - a.version);
+      const history = document.createElement('div');
+      history.className = 'card';
+      history.innerHTML = `<h3>Historial de versiones</h3>${versions.length === 0 ? '<p class="small">Sin snapshots aún.</p>' : ''}`;
+      if (versions.length) {
+        const list = document.createElement('table');
+        list.className = 'table';
+        list.innerHTML = '<tr><th>Versión</th><th>Estado</th><th>Fecha</th><th>Razón</th></tr>' + versions.map(v => `<tr><td>${v.version}</td><td>${v.status}</td><td>${new Date(v.snapshotAt).toLocaleString()}</td><td>${v.reason || 'guardado'}</td></tr>`).join('');
+        history.appendChild(list);
+      }
+      container.appendChild(history);
+      return container;
+
+    }
+
+    function renderEditor(id) {
+      const editing = id && id !== 'new';
+      const existing = editing ? state.docs.find(d => d.id === id) : null;
+      let doc = existing ? { ...existing } : {
+        id: `d${Date.now()}`,
+        title: '',
+        type: 'wiki',
+        space: spaces[0],
+        owner: state.currentUser.name,
+        status: 'draft',
+        updatedAt: Date.now(),
+        tags: [],
+        content: '',
+        version: 0,
+        attachments: []
+      };
+      const container = document.createElement('div');
+      container.className = 'grid';
+      if (!['editor','admin'].includes(state.currentUser.role)) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>No autorizado</h2>';
+        container.appendChild(card);
+        return container;
+      }
+      const card = document.createElement('div');
+      card.className = 'card';
+        card.innerHTML = `
+          <div class="flex space-between">
+            <h2>${editing ? 'Editar' : 'Crear'} documento</h2>
+            <div class="status ${doc.status}">${doc.status}</div>
+          </div>
+          <div class="grid two">
+            <div>
+              <label>Título</label>
+              <input id="title" value="${doc.title}" />
+            </div>
+            <div>
+              <label>Plantilla</label>
+              <select id="template">
+                <option value="">Seleccionar plantilla</option>
+                <option value="sop">SOP</option>
+                <option value="faq">FAQ</option>
+                <option value="lesson">Lección aprendida</option>
+              </select>
+            </div>
+            <div>
+              <label>Tipo</label>
+              <select id="type">
+                <option value="wiki">Wiki</option>
+                <option value="faq">FAQ</option>
+                <option value="procedimiento">Procedimiento</option>
+                <option value="postmortem">Postmortem</option>
+                <option value="playbook">Playbook</option>
+              </select>
+            </div>
+            <div>
+              <label>Espacio</label>
+              <select id="space">${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label>Etiquetas (coma)</label>
+              <input id="tags" value="${doc.tags.join(', ')}" />
+            </div>
+          </div>
+          <div>
+            <label>Contenido</label>
+            <textarea id="content">${doc.content}</textarea>
+          </div>
+          <div class="flex" style="margin-top:10px;">
+          <button class="btn primary" id="saveBtn">Guardar versión</button>
+          <button class="btn ghost" id="reviewBtn">Enviar a revisión</button>
+          <button class="btn ghost" id="publishBtn">Aprobar y publicar</button>
+        </div>
+        <span class="small">Autosave cada ${autoSaveMs/1000}s · Versión actual: ${doc.version || 0}</span>`;
+      card.querySelector('#type').value = doc.type;
+      card.querySelector('#space').value = doc.space;
+      const templateSelector = card.querySelector('#template');
+      templateSelector.onchange = (e) => {
+        const tpl = templates[e.target.value];
+        if (!tpl) return;
+        card.querySelector('#title').value = tpl.title;
+        card.querySelector('#content').value = tpl.content;
+        if (tpl.title.startsWith('SOP')) card.querySelector('#type').value = 'procedimiento';
+        if (tpl.title.startsWith('FAQ')) card.querySelector('#type').value = 'faq';
+      };
+      const assignAndPersist = (payload, reason) => {
+        doc = upsertDoc(payload);
+        createSnapshot(doc, reason);
+      };
+      card.querySelector('#saveBtn').onclick = () => {
+        const payload = collectDocFields(card, doc, doc.status || 'draft');
+        const isNew = !state.docs.find(d => d.id === payload.id);
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'guardar');
+        logEvent(isNew ? 'doc_created' : 'doc_edited', { docId: payload.id, version: payload.version, mode: 'manual' });
+        toast('Versión guardada');
+        location.hash = `#/doc/${payload.id}`;
+      };
+      card.querySelector('#reviewBtn').onclick = () => {
+        if (!['editor','admin'].includes(state.currentUser.role)) { toast('Solo editores pueden enviar a revisión'); return; }
+        const payload = collectDocFields(card, doc, 'in_review');
+        const isNew = !state.docs.find(d => d.id === payload.id);
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'envío a revisión');
+        logEvent(isNew ? 'doc_created' : 'doc_edited', { docId: payload.id, version: payload.version, mode: 'review' });
+        logEvent('workflow_submitted', { docId: payload.id });
+        toast('Enviado a revisión');
+        location.hash = `#/doc/${payload.id}`;
+      };
+      card.querySelector('#publishBtn').onclick = () => {
+        if (!['admin','manager'].includes(state.currentUser.role)) { toast('Solo admin/manager aprueban'); return; }
+        if (doc.status !== 'in_review' && doc.status !== 'published') { toast('Debe estar en revisión para aprobar'); return; }
+        const payload = collectDocFields(card, doc, 'published');
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'publicación');
+        logEvent('workflow_approved', { docId: payload.id });
+        logEvent('doc_published', { docId: payload.id, version: payload.version });
+        toast('Publicado');
+        location.hash = `#/doc/${payload.id}`;
+      };
+      const autoSave = () => {
+        const payload = collectDocFields(card, doc, doc.status);
+        const exists = state.docs.some(d => d.id === payload.id);
+        doc = upsertDoc(payload);
+        logEvent(exists ? 'doc_edited' : 'doc_created', { docId: payload.id, mode: 'autosave' });
+      };
+      if (editorAutoSave) clearInterval(editorAutoSave);
+      editorAutoSave = setInterval(autoSave, autoSaveMs);
+      container.appendChild(card);
+      return container;
+    }
+
+    function collectDocFields(card, base, statusOverride) {
+      const title = card.querySelector('#title').value.trim() || 'Sin título';
+      const type = card.querySelector('#type').value;
+      const space = card.querySelector('#space').value;
+      const tags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
+      const content = card.querySelector('#content').value;
+      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0 };
+    }
+
+    function upsertDoc(doc) {
+      const idx = state.docs.findIndex(d => d.id === doc.id);
+      if (idx >= 0) {
+        state.docs[idx] = doc;
+      } else {
+        state.docs.push(doc);
+      }
+      persist();
+      return doc;
+    }
+
+    function createSnapshot(doc, reason) {
+      state.versions.push({
+        id: crypto.randomUUID(),
+        docId: doc.id,
+        version: doc.version || 1,
+        snapshotAt: Date.now(),
+        status: doc.status,
+        title: doc.title,
+        content: doc.content,
+        tags: doc.tags,
+        type: doc.type,
+        space: doc.space,
+        attachments: doc.attachments,
+        reason
+      });
+      persist();
+    }
+
+    const staleThresholdDays = 20;
+    const draftStuckDays = 10;
+
+    function matchesSpace(event, space, docMap) {
+      if (!space || space === 'all') return true;
+      if (event.docId && docMap[event.docId]) return docMap[event.docId].space === space;
+      if (event.space) return event.space === space;
+      if (event.filters?.space) {
+        const f = event.filters.space;
+        return f === 'all' || f === space;
+      }
+      return false;
+    }
+
+    function filterEventsBy(range, space) {
+      const cutoff = range === 'all' ? 0 : Date.now() - Number(range) * 86400000;
+      const docMap = Object.fromEntries(state.docs.map(d => [d.id, d]));
+      return getEvents().filter(e => e.at >= cutoff && matchesSpace(e, space, docMap));
+    }
+
+    function summarizeAnalytics(range, space) {
+      const events = filterEventsBy(range, space);
+      const now = Date.now();
+      const docMap = Object.fromEntries(state.docs.map(d => [d.id, d]));
+      const dayCutoff = now - 86400000;
+      const weekCutoff = now - 7 * 86400000;
+      const dau = new Set(events.filter(e => e.at >= dayCutoff).map(e => e.userId || e.user)).size;
+      const wau = new Set(events.filter(e => e.at >= weekCutoff).map(e => e.userId || e.user)).size;
+      const searches = events.filter(e => e.type === 'search_performed');
+      const zeroResults = events.filter(e => e.type === 'search_zero_results' || e.type === 'zero_results');
+      const docViews = events.filter(e => e.type === 'doc_viewed');
+      const docViewCounts = {};
+      docViews.forEach(ev => {
+        const doc = docMap[ev.docId];
+        if (!doc) return;
+        docViewCounts[doc.id] = (docViewCounts[doc.id] || 0) + 1;
+      });
+      const topViewed = Object.entries(docViewCounts)
+        .map(([id, count]) => ({ id, count, title: docMap[id]?.title || id }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      const feedbackWindow = state.feedback.filter(f => f.at >= (range === 'all' ? 0 : now - Number(range) * 86400000));
+      const feedbackByDoc = {};
+      feedbackWindow.forEach(f => {
+        const doc = docMap[f.docId];
+        if (!doc || !matchesSpace({ docId: f.docId }, space, docMap)) return;
+        if (!feedbackByDoc[f.docId]) feedbackByDoc[f.docId] = { useful: 0, notUseful: 0, title: doc.title };
+        if (f.value === 'useful') feedbackByDoc[f.docId].useful += 1; else feedbackByDoc[f.docId].notUseful += 1;
+      });
+      const topUseful = Object.entries(feedbackByDoc)
+        .map(([id, stats]) => ({ id, score: stats.useful - stats.notUseful, ...stats }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+
+      const zeroGapMap = new Map();
+      zeroResults.forEach(ev => {
+        const key = ev.q || ev.query || 'consulta';
+        const entry = zeroGapMap.get(key) || { q: key, zero: 0, low: 0, lastAt: ev.at, space: ev.filters?.space || 'all' };
+        entry.zero += 1;
+        entry.lastAt = Math.max(entry.lastAt, ev.at);
+        zeroGapMap.set(key, entry);
+      });
+
+      state.gaps
+        .filter(g => g.createdAt >= (range === 'all' ? 0 : now - Number(range) * 86400000))
+        .filter(g => matchesSpace({ space: g.filters?.space || g.space }, space, docMap))
+        .forEach(gap => {
+          const key = gap.q || 'consulta';
+          const entry = zeroGapMap.get(key) || { q: key, zero: 0, low: 0, lastAt: gap.createdAt, space: gap.filters?.space || 'all' };
+          entry.zero += 1;
+          entry.lastAt = Math.max(entry.lastAt, gap.createdAt);
+          zeroGapMap.set(key, entry);
+        });
+
+      const lowClickMap = new Map();
+      const viewsByUser = {};
+      docViews.forEach(v => {
+        if (!v.userId) return;
+        if (!viewsByUser[v.userId]) viewsByUser[v.userId] = [];
+        viewsByUser[v.userId].push(v.at);
+      });
+      searches.forEach(s => {
+        if (!s.results || s.results === 0) return;
+        const userViews = viewsByUser[s.userId] || [];
+        const clicked = userViews.some(v => v >= s.at && v <= s.at + 120000);
+        if (!clicked) {
+          const key = s.q || 'consulta';
+          const entry = lowClickMap.get(key) || { q: key, zero: 0, low: 0, lastAt: s.at, space: s.filters?.space || 'all' };
+          entry.low += 1;
+          entry.lastAt = Math.max(entry.lastAt, s.at);
+          lowClickMap.set(key, entry);
+        }
+      });
+      lowClickMap.forEach((v, k) => {
+        const zeroEntry = zeroGapMap.get(k) || { q: k, zero: 0, low: 0, lastAt: v.lastAt, space: v.space };
+        zeroEntry.low += v.low;
+        zeroEntry.lastAt = Math.max(zeroEntry.lastAt, v.lastAt);
+        zeroGapMap.set(k, zeroEntry);
+      });
+
+      const docsBySpace = state.docs.filter(d => space === 'all' || d.space === space);
+      const health = {
+        noOwner: docsBySpace.filter(d => !d.owner),
+        stale: docsBySpace.filter(d => now - d.updatedAt > staleThresholdDays * 86400000),
+        drafts: docsBySpace.filter(d => d.status !== 'published' && now - d.updatedAt > draftStuckDays * 86400000)
+      };
+
+      return {
+        dau,
+        wau,
+        searches: searches.length,
+        zeroResults: zeroResults.length,
+        zeroRate: searches.length ? Math.round((zeroResults.length / searches.length) * 100) : 0,
+        topViewed,
+        topUseful,
+        gaps: Array.from(zeroGapMap.values()),
+        health
+      };
+    }
+
+    function drawBarChart(canvas, data, color = 'var(--accent)') {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.clientWidth || 480;
+      const height = 180;
+      canvas.width = width;
+      canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+      const max = Math.max(...data.map(d => d.value), 1);
+      const barWidth = (width - 40) / data.length;
+      data.forEach((d, i) => {
+        const h = (d.value / max) * (height - 40);
+        const x = 20 + i * barWidth;
+        const y = height - h - 20;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, barWidth * 0.7, h);
+        ctx.fillStyle = 'var(--muted)';
+        ctx.font = '12px Inter';
+        ctx.fillText(d.label.slice(0, 10), x, height - 6);
+        ctx.fillText(d.value, x, y - 4);
+      });
+    }
+
+    function renderAnalytics() {
+      if (!['admin','manager'].includes(state.currentUser.role)) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>No autorizado</h2>';
+        return card;
+      }
+      const filters = state.config.analytics || seedState.config.analytics;
+      const metrics = summarizeAnalytics(filters.range, filters.space);
+      const wrapper = document.createElement('div');
+      wrapper.className = 'grid';
+
+      const controls = document.createElement('div');
+      controls.className = 'card';
+      controls.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h2>Analítica</h2>
+            <p class="small">Overview · Search gaps · Content health</p>
+          </div>
+          <div class="flex" style="gap:8px; flex-wrap:wrap;">
+            <label class="small">Rango</label>
+            <select id="rangeSel">
+              <option value="7">7d</option>
+              <option value="30">30d</option>
+              <option value="90">90d</option>
+              <option value="all">Todo</option>
+            </select>
+            <label class="small">Espacio</label>
+            <select id="spaceSel">
+              <option value="all">Todos</option>
+              ${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}
+            </select>
+            <button class="btn ghost" id="exportEvents">Exportar eventos (JSON)</button>
+          </div>
+        </div>
+        <div class="flex" style="gap:8px; margin-top:10px;">
+          ${['overview','gaps','health'].map(tab => `<button class="btn ${filters.tab===tab?'primary':'ghost'}" data-tab="${tab}">${tab === 'overview' ? 'Overview' : tab === 'gaps' ? 'Search gaps' : 'Content health'}</button>`).join('')}
+        </div>`;
+      const rangeSel = controls.querySelector('#rangeSel');
+      rangeSel.value = filters.range;
+      const spaceSel = controls.querySelector('#spaceSel');
+      spaceSel.value = filters.space;
+      controls.querySelector('#exportEvents').onclick = exportEvents;
+      rangeSel.onchange = () => { state.config.analytics.range = rangeSel.value; persist(); render(); };
+      spaceSel.onchange = () => { state.config.analytics.space = spaceSel.value; persist(); render(); };
+      controls.querySelectorAll('[data-tab]').forEach(btn => btn.onclick = () => { state.config.analytics.tab = btn.dataset.tab; persist(); render(); });
+
+      wrapper.appendChild(controls);
+      const content = document.createElement('div');
+      content.className = 'grid';
+      if (filters.tab === 'overview') content.appendChild(renderAnalyticsOverview(metrics));
+      if (filters.tab === 'gaps') content.appendChild(renderAnalyticsGaps(metrics, filters));
+      if (filters.tab === 'health') content.appendChild(renderAnalyticsHealth(metrics, filters));
+      wrapper.appendChild(content);
+      return wrapper;
+    }
+
+    function metricTile(label, value, tone) {
+      const color = tone === 'warning' ? 'var(--warning)' : 'var(--accent-2)';
+      return `<div class="card" style="border-color:${color};"><h3>${label}</h3><div style="font-size:28px; font-weight:800;">${value}</div></div>`;
+    }
+
+    function renderAnalyticsOverview(metrics) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="grid three">
+          ${metricTile('DAU (aprox)', metrics.dau)}
+          ${metricTile('WAU (aprox)', metrics.wau)}
+          ${metricTile('Búsquedas', metrics.searches)}
+          ${metricTile('Zero results', `${metrics.zeroResults} (${metrics.zeroRate}% )`, metrics.zeroResults>0 ? 'warning' : '')}
+          ${metricTile('Docs más vistos', metrics.topViewed.length)}
+          ${metricTile('Docs más útiles', metrics.topUseful.length)}
+        </div>
+        <div class="grid two" style="margin-top:12px;">
+          <div class="card">
+            <h4>Search vs Zero</h4>
+            <canvas id="chart-search"></canvas>
+          </div>
+          <div class="card">
+            <h4>Top vistos</h4>
+            <canvas id="chart-views"></canvas>
+          </div>
+        </div>
+        <div class="grid two" style="margin-top:12px;">
+          <div>
+            <h4>Docs más vistos</h4>
+            ${metrics.topViewed.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.count} vistas</span></div>`).join('') || '<p class="small">Sin datos aún.</p>'}
+          </div>
+          <div>
+            <h4>Docs más útiles</h4>
+            ${metrics.topUseful.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">Score ${d.score}</span></div>`).join('') || '<p class="small">Sin feedback aún.</p>'}
+          </div>
+        </div>`;
+      requestAnimationFrame(() => {
+        const searchCanvas = card.querySelector('#chart-search');
+        drawBarChart(searchCanvas, [
+          { label: 'Search', value: metrics.searches },
+          { label: 'Zero', value: metrics.zeroResults }
+        ], 'var(--accent)');
+        const viewCanvas = card.querySelector('#chart-views');
+        const data = metrics.topViewed.map(d => ({ label: d.title, value: d.count }));
+        drawBarChart(viewCanvas, data.length ? data : [{ label: 'N/A', value: 0 }], 'var(--accent-2)');
+      });
+      return card;
+    }
+
+    function renderAnalyticsGaps(metrics, filters) {
+      const card = document.createElement('div');
+      const sorted = [...metrics.gaps].sort((a, b) => {
+        if (filters.gapSort === 'recent') return b.lastAt - a.lastAt;
+        if (filters.gapSort === 'low') return (b.low || 0) - (a.low || 0);
+        const byZero = (b.zero || 0) - (a.zero || 0);
+        return byZero === 0 ? (b.low || 0) - (a.low || 0) : byZero;
+      });
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h3>Search gaps</h3>
+            <p class="small">Zero-results y low-click agrupados por consulta.</p>
+          </div>
+          <div class="flex" style="gap:8px;">
+            <label class="small">Ordenar</label>
+            <select id="gapSort">
+              <option value="zero">Zero desc</option>
+              <option value="low">Low-click desc</option>
+              <option value="recent">Reciente</option>
+            </select>
+          </div>
+        </div>
+        <div class="table" style="width:100%; overflow:auto;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr><th>Consulta</th><th>Zero</th><th>Low-click</th><th>Última vez</th><th>Espacio</th></tr>
+            </thead>
+            <tbody id="gapRows"></tbody>
+          </table>
+        </div>`;
+      card.querySelector('#gapSort').value = filters.gapSort || 'zero';
+      card.querySelector('#gapSort').onchange = (e) => { state.config.analytics.gapSort = e.target.value; persist(); render(); };
+      const tbody = card.querySelector('#gapRows');
+      if (sorted.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="small">Sin gaps registrados.</td></tr>';
+      } else {
+        sorted.forEach(g => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${g.q}</td><td>${g.zero || 0}</td><td>${g.low || 0}</td><td class="small">${new Date(g.lastAt).toLocaleString()}</td><td>${g.space || 'all'}</td>`;
+          tbody.appendChild(tr);
+        });
+      }
+      return card;
+    }
+
+    function renderAnalyticsHealth(metrics, filters) {
+      const card = document.createElement('div');
+      const healthSort = filters.healthSort || 'stale';
+      const sortDocs = (list) => [...list].sort((a, b) => {
+        if (healthSort === 'owner') return (a.owner || '').localeCompare(b.owner || '');
+        return b.updatedAt - a.updatedAt;
+      });
+      const staleList = sortDocs(metrics.health.stale);
+      const draftList = sortDocs(metrics.health.drafts);
+      const noOwnerList = sortDocs(metrics.health.noOwner);
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h3>Content health</h3>
+            <p class="small">Viejos, sin owner o estancados (draft/in review).</p>
+          </div>
+          <div class="flex" style="gap:8px;">
+            <label class="small">Ordenar por</label>
+            <select id="healthSort">
+              <option value="stale">Última revisión</option>
+              <option value="owner">Owner</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid three" style="margin-top:12px;">
+          ${metricTile('Sin owner', noOwnerList.length, noOwnerList.length ? 'warning' : '')}
+          ${metricTile('Viejos', staleList.length, staleList.length ? 'warning' : '')}
+          ${metricTile('Drafts estancados', draftList.length, draftList.length ? 'warning' : '')}
+        </div>
+        <div class="grid three" style="margin-top:12px;">
+          <div>
+            <h4>Sin owner</h4>
+            ${noOwnerList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.space}</span></div>`).join('') || '<p class="small">Todos tienen dueño.</p>'}
+          </div>
+          <div>
+            <h4>Viejos (&gt; ${staleThresholdDays}d)</h4>
+            ${staleList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin pendientes.</p>'}
+          </div>
+          <div>
+            <h4>Draft/In review estancados</h4>
+            ${draftList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.status}</span></div>`).join('') || '<p class="small">Sin estancados.</p>'}
+          </div>
+        </div>`;
+      const sortSel = card.querySelector('#healthSort');
+      sortSel.value = healthSort;
+      sortSel.onchange = (e) => { state.config.analytics.healthSort = e.target.value; persist(); render(); };
+      return card;
+    }
+
+    window.addEventListener('hashchange', render);
+    window.addEventListener('beforeunload', flushEvents);
+    render();
+  </script>
+</body>
+</html>
