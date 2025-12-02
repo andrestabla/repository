@@ -1806,9 +1806,9 @@
       return { results: ordered, facets: { formatCounts: facetFormatCounts, spaceCounts: facetSpaceCounts }, suggestions, semantic };
     }
 
-    function escapeRegExp(str = '') {
-      return str.replace(/[.*+?^${}()|[\]\]/g, '\\$&');
-    }
+      function escapeRegExp(str = '') {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
 
     function highlightText(text, terms = []) {
       if (!terms.length) return text;
