@@ -60,11 +60,17 @@
       display: grid;
       grid-template-columns: var(--sidebar-width, 240px) 1fr;
       min-height: 100vh;
-      transition: grid-template-columns 0.2s ease;
+      transition: grid-template-columns 0.2s ease, margin-left 0.2s ease;
+      position: relative;
     }
 
     .app-shell.collapsed {
       --sidebar-width: 72px;
+    }
+
+    .app-shell.sidebar-hidden {
+      --sidebar-width: 0px;
+      grid-template-columns: 0 1fr;
     }
 
     .sidebar {
@@ -77,11 +83,30 @@
       top: 0;
       height: 100vh;
       width: var(--sidebar-width, 240px);
+      transition: transform 0.2s ease, width 0.2s ease, padding 0.2s ease;
     }
 
     .sidebar.collapsed { width: 72px; grid-template-columns: 1fr; }
     .sidebar.collapsed .label { display: none; }
     .sidebar.collapsed .nav-item { justify-content: center; }
+
+    .sidebar.hidden {
+      width: 0;
+      padding: 0;
+      border-right: none;
+      overflow: hidden;
+    }
+
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(2px);
+      z-index: 4;
+      display: none;
+    }
+
+    .app-shell.showing-sidebar .sidebar-overlay { display: block; }
 
     .sidebar .brand {
       display: flex;
@@ -160,6 +185,12 @@
     }
 
     .topbar .left, .topbar .right { display: flex; align-items: center; gap: 10px; }
+
+    .menu-toggle {
+      display: none;
+      min-width: 44px;
+      justify-content: center;
+    }
 
     .search-box {
       background: var(--surface-1);
@@ -261,6 +292,16 @@
     @media (max-width: 1000px) {
       .doc-layout { grid-template-columns: 1fr; }
       .doc-toc { position: relative; top: 0; max-height: none; }
+    }
+
+    @media (max-width: 980px) {
+      .app-shell { grid-template-columns: 0 1fr; }
+      .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-110%); z-index: 6; width: 260px; height: 100vh; }
+      .sidebar.collapsed { width: 220px; }
+      .app-shell.showing-sidebar .sidebar { transform: translateX(0); }
+      .app-shell.sidebar-hidden .sidebar { transform: translateX(-110%); }
+      .app-shell.sidebar-hidden { margin-left: 0; }
+      .menu-toggle { display: inline-flex; }
     }
 
     .toast-container {
@@ -797,6 +838,7 @@
       currentUser: null,
       session: null,
       sidebarCollapsed: false,
+      sidebarHidden: false,
       lastSearchHash: '#/search'
     };
 
@@ -804,6 +846,22 @@
     applyTheme(state.config.theme, true);
     let editorAutoSave = null;
     const autoSaveMs = 8000;
+    let resizeTimer = null;
+
+    function syncSidebarToViewport() {
+      const shouldHide = window.innerWidth < 980;
+      if (shouldHide !== state.sidebarHidden) {
+        state.sidebarHidden = shouldHide;
+        persist();
+        render();
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(syncSidebarToViewport, 150);
+    });
+    syncSidebarToViewport();
 
     if (state.session && !state.currentUser) {
       const user = state.users.find(u => u.id === state.session.userId);
@@ -836,7 +894,8 @@
           follows: parsed.follows ?? [],
           reviewThreads: parsed.reviewThreads ?? [],
           reviewChecklists: parsed.reviewChecklists ?? [],
-          versions: parsed.versions ?? seedVersions
+          versions: parsed.versions ?? seedVersions,
+          sidebarHidden: parsed.sidebarHidden ?? false
         };
       } catch (e) {
         console.warn('Estado corrupto, reseteando');
@@ -1182,7 +1241,12 @@
       const app = document.getElementById('app');
       app.innerHTML = '';
       const shell = document.createElement('div');
-      shell.className = 'app-shell' + (state.sidebarCollapsed ? ' collapsed' : '');
+      const isMobile = window.innerWidth < 980;
+      const shellClasses = ['app-shell'];
+      if (state.sidebarCollapsed) shellClasses.push('collapsed');
+      if (state.sidebarHidden) shellClasses.push('sidebar-hidden');
+      if (!state.sidebarHidden && isMobile) shellClasses.push('showing-sidebar');
+      shell.className = shellClasses.join(' ');
       const sidebar = renderSidebar(key);
       const content = document.createElement('div');
       content.style.display = 'flex';
@@ -1200,7 +1264,11 @@
       }
       content.appendChild(topbar);
       content.appendChild(main);
+      const overlay = document.createElement('div');
+      overlay.className = 'sidebar-overlay';
+      overlay.onclick = () => { state.sidebarHidden = true; persist(); render(); };
       shell.appendChild(sidebar);
+      shell.appendChild(overlay);
       shell.appendChild(content);
       app.replaceChildren(shell);
     }
@@ -1213,7 +1281,7 @@
         { href: '#/analytics', label: 'Analítica', icon: '📊', roles: ['admin','manager'] },
       ];
       const aside = document.createElement('aside');
-      aside.className = 'sidebar' + (state.sidebarCollapsed ? ' collapsed' : '');
+      aside.className = 'sidebar' + (state.sidebarCollapsed ? ' collapsed' : '') + (state.sidebarHidden ? ' hidden' : '');
       const brand = document.createElement('div');
       brand.className = 'brand';
       brand.innerHTML = `<div class="brand-mark">T</div><span class="label">Repositorio</span>`;
@@ -1222,7 +1290,7 @@
       collapseBtn.style.width = '100%';
       collapseBtn.setAttribute('aria-expanded', (!state.sidebarCollapsed).toString());
       collapseBtn.textContent = state.sidebarCollapsed ? '▶︎ Expandir' : '◀︎ Colapsar';
-      collapseBtn.onclick = () => { state.sidebarCollapsed = !state.sidebarCollapsed; persist(); render(); };
+      collapseBtn.onclick = () => { state.sidebarCollapsed = !state.sidebarCollapsed; state.sidebarHidden = false; persist(); render(); };
       const nav = document.createElement('div');
       nav.className = 'nav';
       navItems.forEach(item => {
@@ -1251,6 +1319,11 @@
       bar.className = 'topbar';
       const left = document.createElement('div');
       left.className = 'left';
+      const menuBtn = document.createElement('button');
+      menuBtn.className = 'btn ghost small menu-toggle';
+      menuBtn.innerHTML = state.sidebarHidden ? '☰' : '✕';
+      menuBtn.setAttribute('aria-label', state.sidebarHidden ? 'Abrir navegación' : 'Cerrar navegación');
+      menuBtn.onclick = () => { state.sidebarHidden = !state.sidebarHidden; persist(); render(); };
       const quickSearch = document.createElement('div');
       quickSearch.className = 'search-box';
       quickSearch.innerHTML = '<span>🔍</span><input placeholder="Buscar..." aria-label="Buscar" />';
@@ -1266,7 +1339,7 @@
           }
         }
       };
-      left.appendChild(quickSearch);
+      left.append(menuBtn, quickSearch);
       const right = document.createElement('div');
       right.className = 'right';
       const userBadge = document.createElement('button');
