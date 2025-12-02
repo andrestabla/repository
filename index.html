@@ -64,10 +64,6 @@
       position: relative;
     }
 
-    .app-shell.collapsed {
-      --sidebar-width: 72px;
-    }
-
     .app-shell.sidebar-hidden {
       --sidebar-width: 0px;
       grid-template-columns: 0 1fr;
@@ -85,10 +81,6 @@
       width: var(--sidebar-width, 240px);
       transition: transform 0.2s ease, width 0.2s ease, padding 0.2s ease;
     }
-
-    .sidebar.collapsed { width: 72px; grid-template-columns: 1fr; }
-    .sidebar.collapsed .label { display: none; }
-    .sidebar.collapsed .nav-item { justify-content: center; }
 
     .sidebar.hidden {
       width: 0;
@@ -128,6 +120,12 @@
       box-shadow: 0 12px 30px rgba(239,132,93,0.35);
     }
 
+    .logo-inline {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+    }
+
     .nav {
       display: grid;
       gap: 8px;
@@ -165,10 +163,6 @@
       z-index: 6;
     }
 
-    .sidebar.collapsed .nav-item:focus-visible .tooltip,
-    .sidebar.collapsed .nav-item:hover .tooltip {
-      display: block;
-    }
 
     .topbar {
       background: var(--panel);
@@ -297,7 +291,6 @@
     @media (max-width: 980px) {
       .app-shell { grid-template-columns: 0 1fr; }
       .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-110%); z-index: 6; width: 260px; height: 100vh; }
-      .sidebar.collapsed { width: 220px; }
       .app-shell.showing-sidebar .sidebar { transform: translateX(0); }
       .app-shell.sidebar-hidden .sidebar { transform: translateX(-110%); }
       .app-shell.sidebar-hidden { margin-left: 0; }
@@ -837,7 +830,6 @@
       },
       currentUser: null,
       session: null,
-      sidebarCollapsed: false,
       sidebarHidden: false,
       lastSearchHash: '#/search'
     };
@@ -1243,7 +1235,6 @@
       const shell = document.createElement('div');
       const isMobile = window.innerWidth < 980;
       const shellClasses = ['app-shell'];
-      if (state.sidebarCollapsed) shellClasses.push('collapsed');
       if (state.sidebarHidden) shellClasses.push('sidebar-hidden');
       if (!state.sidebarHidden && isMobile) shellClasses.push('showing-sidebar');
       shell.className = shellClasses.join(' ');
@@ -1281,16 +1272,10 @@
         { href: '#/analytics', label: 'Analítica', icon: '📊', roles: ['admin','manager'] },
       ];
       const aside = document.createElement('aside');
-      aside.className = 'sidebar' + (state.sidebarCollapsed ? ' collapsed' : '') + (state.sidebarHidden ? ' hidden' : '');
+      aside.className = 'sidebar' + (state.sidebarHidden ? ' hidden' : '');
       const brand = document.createElement('div');
       brand.className = 'brand';
       brand.innerHTML = `<div class="brand-mark">T</div><span class="label">Repositorio</span>`;
-      const collapseBtn = document.createElement('button');
-      collapseBtn.className = 'btn ghost';
-      collapseBtn.style.width = '100%';
-      collapseBtn.setAttribute('aria-expanded', (!state.sidebarCollapsed).toString());
-      collapseBtn.textContent = state.sidebarCollapsed ? '▶︎ Expandir' : '◀︎ Colapsar';
-      collapseBtn.onclick = () => { state.sidebarCollapsed = !state.sidebarCollapsed; state.sidebarHidden = false; persist(); render(); };
       const nav = document.createElement('div');
       nav.className = 'nav';
       navItems.forEach(item => {
@@ -1310,7 +1295,7 @@
       exportBtn.className = 'btn ghost';
       exportBtn.innerHTML = '<span class="label">Exportar eventos</span>';
       exportBtn.onclick = exportEvents;
-      aside.append(brand, nav, collapseBtn, resetBtn, exportBtn);
+      aside.append(brand, nav, resetBtn, exportBtn);
       return aside;
     }
 
@@ -1342,6 +1327,10 @@
       left.append(menuBtn, quickSearch);
       const right = document.createElement('div');
       right.className = 'right';
+      const logo = new Image();
+      logo.src = 'https://www.algoritmot.com/wp-content/uploads/2022/08/Recurso-8.png';
+      logo.alt = 'Algoritmo T';
+      logo.className = 'logo-inline';
       const userBadge = document.createElement('button');
       userBadge.className = 'pill';
       userBadge.textContent = `${state.currentUser.name} · ${state.currentUser.role}`;
@@ -1366,7 +1355,7 @@
       const hasEditableSpace = ['editor','admin'].includes(state.currentUser.role) && spaces.some(s => canAccessSpace(s));
       if (hasEditableSpace) { right.appendChild((() => { const btn = document.createElement('button'); btn.className = 'btn primary'; btn.textContent = 'Crear'; btn.onclick = () => { location.hash = '#/edit/new'; }; return btn; })()); }
       if (state.currentUser.role === 'admin') right.appendChild(userAdminBtn);
-      right.append(userBadge, themeBtn, logout);
+      right.append(logo, userBadge, themeBtn, logout);
       bar.append(left, right);
       return bar;
     }
@@ -1384,7 +1373,10 @@
             <h2>Acceder</h2>
             <p>Inicia sesión con credenciales demo o simula SSO. El acceso está sujeto a políticas corporativas.</p>
           </div>
-          <button class="btn ghost" id="themeLogin">${state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</button>
+          <div class="flex" style="align-items:center; gap:10px;">
+            <img src="https://www.algoritmot.com/wp-content/uploads/2022/08/Recurso-8.png" alt="Algoritmo T" class="logo-inline" style="height:46px;" />
+            <button class="btn ghost" id="themeLogin">${state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</button>
+          </div>
         </div>
         <div class="grid">
           <button class="btn primary" id="ssoBtn">Ingresar con SSO</button>
