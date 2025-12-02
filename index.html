@@ -64,11 +64,6 @@
       position: relative;
     }
 
-    .app-shell.sidebar-hidden {
-      --sidebar-width: 0px;
-      grid-template-columns: 0 1fr;
-    }
-
     .sidebar {
       background: var(--panel);
       border-right: 1px solid var(--border);
@@ -82,30 +77,13 @@
       transition: transform 0.2s ease, width 0.2s ease, padding 0.2s ease;
     }
 
-    .sidebar.hidden {
-      width: 0;
-      padding: 0;
-      border-right: none;
-      overflow: hidden;
-    }
-
-    .sidebar-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(2px);
-      z-index: 4;
-      display: none;
-    }
-
-    .app-shell.showing-sidebar .sidebar-overlay { display: block; }
-
     .sidebar .brand {
       display: flex;
       align-items: center;
       gap: 12px;
       font-weight: 800;
       letter-spacing: 0.01em;
+      flex-wrap: wrap;
     }
 
     .brand-mark {
@@ -125,6 +103,11 @@
       width: auto;
       object-fit: contain;
     }
+
+    .brand .label { font-size: 16px; }
+    .brand .tagline { font-size: 11px; color: var(--muted); display: block; width: 100%; }
+    .app-name { font-weight: 800; font-size: 18px; }
+    .app-tagline { font-size: 12px; color: var(--muted); }
 
     .nav {
       display: grid;
@@ -290,11 +273,7 @@
 
     @media (max-width: 980px) {
       .app-shell { grid-template-columns: 0 1fr; }
-      .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-110%); z-index: 6; width: 260px; height: 100vh; }
-      .app-shell.showing-sidebar .sidebar { transform: translateX(0); }
-      .app-shell.sidebar-hidden .sidebar { transform: translateX(-110%); }
-      .app-shell.sidebar-hidden { margin-left: 0; }
-      .menu-toggle { display: inline-flex; }
+      .sidebar { position: fixed; left: 0; top: 0; z-index: 6; width: 260px; height: 100vh; }
     }
 
     .toast-container {
@@ -388,6 +367,11 @@
     const eventFlushThreshold = 20;
     let eventBuffer = [];
     let flushTimer = null;
+
+    const LOGOS = {
+      light: 'https://www.algoritmot.com/wp-content/uploads/2022/08/Recurso-8.png',
+      dark: 'https://imageneseiconos.s3.us-east-1.amazonaws.com/iconos/Logo_white.png'
+    };
 
     const FORMAT_GROUPS = {
       pdf: ['pdf'],
@@ -830,7 +814,6 @@
       },
       currentUser: null,
       session: null,
-      sidebarHidden: false,
       lastSearchHash: '#/search'
     };
 
@@ -839,21 +822,6 @@
     let editorAutoSave = null;
     const autoSaveMs = 8000;
     let resizeTimer = null;
-
-    function syncSidebarToViewport() {
-      const shouldHide = window.innerWidth < 980;
-      if (shouldHide !== state.sidebarHidden) {
-        state.sidebarHidden = shouldHide;
-        persist();
-        render();
-      }
-    }
-
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(syncSidebarToViewport, 150);
-    });
-    syncSidebarToViewport();
 
     if (state.session && !state.currentUser) {
       const user = state.users.find(u => u.id === state.session.userId);
@@ -886,8 +854,7 @@
           follows: parsed.follows ?? [],
           reviewThreads: parsed.reviewThreads ?? [],
           reviewChecklists: parsed.reviewChecklists ?? [],
-          versions: parsed.versions ?? seedVersions,
-          sidebarHidden: parsed.sidebarHidden ?? false
+          versions: parsed.versions ?? seedVersions
         };
       } catch (e) {
         console.warn('Estado corrupto, reseteando');
@@ -897,6 +864,10 @@
 
     function persist() {
       localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function getLogo(theme = (state.config?.theme || 'dark')) {
+      return theme === 'light' ? LOGOS.light : LOGOS.dark;
     }
 
     function canAccessSpace(space, user = state.currentUser) {
@@ -1234,10 +1205,7 @@
       app.innerHTML = '';
       const shell = document.createElement('div');
       const isMobile = window.innerWidth < 980;
-      const shellClasses = ['app-shell'];
-      if (state.sidebarHidden) shellClasses.push('sidebar-hidden');
-      if (!state.sidebarHidden && isMobile) shellClasses.push('showing-sidebar');
-      shell.className = shellClasses.join(' ');
+      shell.className = 'app-shell';
       const sidebar = renderSidebar(key);
       const content = document.createElement('div');
       content.style.display = 'flex';
@@ -1255,11 +1223,7 @@
       }
       content.appendChild(topbar);
       content.appendChild(main);
-      const overlay = document.createElement('div');
-      overlay.className = 'sidebar-overlay';
-      overlay.onclick = () => { state.sidebarHidden = true; persist(); render(); };
       shell.appendChild(sidebar);
-      shell.appendChild(overlay);
       shell.appendChild(content);
       app.replaceChildren(shell);
     }
@@ -1272,10 +1236,10 @@
         { href: '#/analytics', label: 'Analítica', icon: '📊', roles: ['admin','manager'] },
       ];
       const aside = document.createElement('aside');
-      aside.className = 'sidebar' + (state.sidebarHidden ? ' hidden' : '');
+      aside.className = 'sidebar';
       const brand = document.createElement('div');
       brand.className = 'brand';
-      brand.innerHTML = `<div class="brand-mark">T</div><span class="label">Repositorio</span>`;
+      brand.innerHTML = `<div class="brand-mark">T</div><span class="label">Manage your Knowledge</span><span class="tagline">Tus conocimientos, tus activos</span>`;
       const nav = document.createElement('div');
       nav.className = 'nav';
       navItems.forEach(item => {
@@ -1304,11 +1268,6 @@
       bar.className = 'topbar';
       const left = document.createElement('div');
       left.className = 'left';
-      const menuBtn = document.createElement('button');
-      menuBtn.className = 'btn ghost small menu-toggle';
-      menuBtn.innerHTML = state.sidebarHidden ? '☰' : '✕';
-      menuBtn.setAttribute('aria-label', state.sidebarHidden ? 'Abrir navegación' : 'Cerrar navegación');
-      menuBtn.onclick = () => { state.sidebarHidden = !state.sidebarHidden; persist(); render(); };
       const quickSearch = document.createElement('div');
       quickSearch.className = 'search-box';
       quickSearch.innerHTML = '<span>🔍</span><input placeholder="Buscar..." aria-label="Buscar" />';
@@ -1324,11 +1283,11 @@
           }
         }
       };
-      left.append(menuBtn, quickSearch);
+      left.append(quickSearch);
       const right = document.createElement('div');
       right.className = 'right';
       const logo = new Image();
-      logo.src = 'https://www.algoritmot.com/wp-content/uploads/2022/08/Recurso-8.png';
+      logo.src = getLogo();
       logo.alt = 'Algoritmo T';
       logo.className = 'logo-inline';
       const userBadge = document.createElement('button');
@@ -1368,16 +1327,18 @@
       const card = document.createElement('div');
       card.className = 'login-card';
       card.innerHTML = `
-        <div class="flex space-between" style="align-items:center;">
-          <div>
-            <h2>Acceder</h2>
-            <p>Inicia sesión con credenciales demo o simula SSO. El acceso está sujeto a políticas corporativas.</p>
+        <div class="flex space-between login-head" style="align-items:center; gap:12px;">
+          <div class="flex" style="align-items:center; gap:12px;">
+            <img id="loginLogo" class="logo-inline" style="height:56px;" alt="Algoritmo T" />
+            <div>
+              <div class="app-name">Manage your Knowledge</div>
+              <div class="app-tagline">Tus conocimientos, tus activos</div>
+            </div>
           </div>
-          <div class="flex" style="align-items:center; gap:10px;">
-            <img src="https://www.algoritmot.com/wp-content/uploads/2022/08/Recurso-8.png" alt="Algoritmo T" class="logo-inline" style="height:46px;" />
-            <button class="btn ghost" id="themeLogin">${state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</button>
-          </div>
+          <button class="btn ghost" id="themeLogin">${state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</button>
         </div>
+        <h2>Acceder</h2>
+        <p>Inicia sesión con credenciales demo o simula SSO. El acceso está sujeto a políticas corporativas.</p>
         <div class="grid">
           <button class="btn primary" id="ssoBtn">Ingresar con SSO</button>
           <div class="grid">
@@ -1409,6 +1370,9 @@
         };
         demoUsers.appendChild(b);
       });
+      const loginLogo = card.querySelector('#loginLogo');
+      if (loginLogo) loginLogo.src = getLogo();
+
       card.querySelector('#ssoBtn').onclick = () => {
         toast('Simulando redirección SSO...');
         setTimeout(() => toast('SSO completado (demo)'), 800);
