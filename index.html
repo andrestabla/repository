@@ -298,9 +298,9 @@
     const ALL_EXTS = Object.values(FORMAT_GROUPS).flat();
 
     const seedUsers = [
-      { id: 'u1', name: 'Ana Viewer', email: 'ana@demo.local', role: 'viewer', password: 'demo' },
-      { id: 'u2', name: 'Bruno Editor', email: 'bruno@demo.local', role: 'editor', password: 'demo' },
-      { id: 'u3', name: 'Camila Admin', email: 'camila@demo.local', role: 'admin', password: 'demo' }
+      { id: 'u1', name: 'Ana Viewer', email: 'ana@demo.local', role: 'viewer', password: 'demo', spaces: ['Talento', 'Operaciones'], team: 'Operaciones', area: 'Talento' },
+      { id: 'u2', name: 'Bruno Editor', email: 'bruno@demo.local', role: 'editor', password: 'demo', spaces: ['TI', 'Operaciones'], team: 'TI', area: 'Operaciones' },
+      { id: 'u3', name: 'Camila Admin', email: 'camila@demo.local', role: 'admin', password: 'demo', spaces: ['TI', 'Operaciones', 'Comercial', 'Talento'], team: 'Comercial', area: 'Gobernanza' }
     ];
 
     const spaces = ['TI', 'Operaciones', 'Comercial', 'Talento'];
@@ -324,7 +324,7 @@
       return (ext || '').toLowerCase().replace(/^\./, '');
     }
 
-    const DATA_VERSION = '2024-review-cycle-refresh';
+    const DATA_VERSION = '2024-review-cycle-refresh-v2';
 
     const TAXONOMY_CANONICAL = ['sop','procedimiento','faq','postmortem','playbook','educacion','digital','liderazgo','audio','video','excel','ppt','induccion','referencia','investigacion'];
     const TAXONOMY_NORMALIZATION = {
@@ -701,6 +701,8 @@
       feedback: [],
       follows: [],
       savedSearches: [],
+      reviewThreads: [],
+      reviewChecklists: [],
       versions: seedVersions,
       config: {
         iaEnabled: true,
@@ -747,6 +749,8 @@
           gapTasks: parsed.gapTasks || [],
           feedback: parsed.feedback ?? [],
           follows: parsed.follows ?? [],
+          reviewThreads: parsed.reviewThreads ?? [],
+          reviewChecklists: parsed.reviewChecklists ?? [],
           versions: parsed.versions ?? seedVersions
         };
       } catch (e) {
@@ -757,6 +761,19 @@
 
     function persist() {
       localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function canAccessSpace(space, user = state.currentUser) {
+      if (!user) return false;
+      if (['admin', 'manager'].includes(user.role)) return true;
+      return (user.spaces || []).includes(space);
+    }
+
+    function canViewDoc(doc, user = state.currentUser) {
+      if (!doc || !user) return false;
+      const roleAllowed = !doc.audience || doc.audience.includes(user.role);
+      const spaceAllowed = canAccessSpace(doc.space, user);
+      return roleAllowed && spaceAllowed;
     }
 
     function applyTheme(theme, skipPersist = false) {
@@ -989,7 +1006,8 @@
       logout.className = 'btn ghost';
       logout.textContent = 'Salir';
       logout.onclick = () => { setSession(null); location.hash = '#/login'; };
-      if (['editor','admin'].includes(state.currentUser.role)) { right.appendChild((() => { const btn = document.createElement('button'); btn.className = 'btn primary'; btn.textContent = 'Crear'; btn.onclick = () => { location.hash = '#/edit/new'; }; return btn; })()); }
+      const hasEditableSpace = ['editor','admin'].includes(state.currentUser.role) && spaces.some(s => canAccessSpace(s));
+      if (hasEditableSpace) { right.appendChild((() => { const btn = document.createElement('button'); btn.className = 'btn primary'; btn.textContent = 'Crear'; btn.onclick = () => { location.hash = '#/edit/new'; }; return btn; })()); }
       right.append(userBadge, themeBtn, logout);
       bar.append(left, right);
       return bar;
@@ -1087,7 +1105,7 @@
           <div class="grid" style="align-content:end;">
             <div class="flex" style="gap:8px; flex-wrap:wrap;">
               <button class="btn primary" id="home-search-btn">Buscar</button>
-              ${['editor','admin'].includes(state.currentUser.role) ? '<button class="btn ghost" onclick="location.hash=\'#/edit/new\'">Crear artículo</button>' : ''}
+              ${['editor','admin'].includes(state.currentUser.role) && spaces.some(s => canAccessSpace(s)) ? '<button class="btn ghost" onclick="location.hash=\'#/edit/new\'">Crear artículo</button>' : ''}
               ${['admin','manager'].includes(state.currentUser.role) ? '<button class="btn ghost" onclick="location.hash=\'#/analytics\'">Ver analítica</button>' : ''}
             </div>
             <span class="small">Tip: usa filtros avanzados en la vista de búsqueda</span>
@@ -1107,7 +1125,7 @@
       );
       const tasks = document.createElement('div');
       tasks.className = 'card';
-      const pending = state.docs.filter(d => d.status === 'in_review');
+      const pending = state.docs.filter(d => d.status === 'in_review' && canViewDoc(d));
       tasks.innerHTML = `<div class="flex space-between"><h3>Workflow</h3><span class="small">Draft → Review → Published</span></div>`;
       if (pending.length === 0) {
         tasks.innerHTML += '<p>No hay documentos en revisión.</p>';
@@ -1124,7 +1142,7 @@
       }
       const reviewCard = document.createElement('div');
       reviewCard.className = 'card';
-      const ownDocs = state.docs.filter(d => d.ownerId === state.currentUser.id).map(computeReviewFields);
+      const ownDocs = state.docs.filter(d => d.ownerId === state.currentUser.id && canViewDoc(d)).map(computeReviewFields);
       const dueSoon = ownDocs.filter(d => d.nextReviewAt <= Date.now() + 7 * 86400000);
       reviewCard.innerHTML = `<div class="flex space-between"><h3>Revisiones del owner</h3><span class="small">Frescura automática</span></div>`;
       if (!dueSoon.length) {
@@ -1166,10 +1184,10 @@
     }
 
     function topDocsByViews(n) {
-      return [...state.docs].sort((a,b) => b.views - a.views).slice(0,n);
+      return [...state.docs].filter(canViewDoc).sort((a,b) => b.views - a.views).slice(0,n);
     }
     function recentDocs(n) {
-      return [...state.docs].sort((a,b) => b.updatedAt - a.updatedAt).slice(0,n);
+      return [...state.docs].filter(canViewDoc).sort((a,b) => b.updatedAt - a.updatedAt).slice(0,n);
     }
 
     function parseQuery() {
@@ -1403,7 +1421,8 @@
         const matchesSpace = space === 'all' || d.space === space;
         const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
         const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
-        return matchesType && matchesSpace && matchesTags && matchesDate;
+        const allowed = canViewDoc(d);
+        return matchesType && matchesSpace && matchesTags && matchesDate && allowed;
       });
       const facetSpaceCounts = baseFiltered.reduce((acc, d) => { acc[d.space] = (acc[d.space] || 0) + 1; return acc; }, {});
       facetSpaceCounts.all = baseFiltered.length;
@@ -1459,6 +1478,53 @@
       return highlightText(snippet, terms);
     }
 
+    function insertAtCursor(el, text) {
+      const start = el.selectionStart || 0;
+      const end = el.selectionEnd || 0;
+      const before = el.value.substring(0, start);
+      const after = el.value.substring(end);
+      el.value = `${before}${text}\n${after}`;
+      el.selectionStart = el.selectionEnd = start + text.length + 1;
+      el.dispatchEvent(new Event('input'));
+    }
+
+    function markdownToHtml(md = '') {
+      const esc = (md || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const paragraphs = esc.split(/\n\n+/).map(block => {
+        let html = block
+          .replace(/^###\s+(.*)$/gm, '<h4>$1</h4>')
+          .replace(/^##\s+(.*)$/gm, '<h3>$1</h3>')
+          .replace(/^#\s+(.*)$/gm, '<h2>$1</h2>')
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.+?)\*/g, '<em>$1</em>');
+        if (/^\d+\.\s+/m.test(html) || /^-\s+/m.test(html)) {
+          const lines = html.split(/\n/).map(l => l.replace(/^[-\d\.]+\s+/, ''));
+          html = '<ul><li>' + lines.join('</li><li>') + '</li></ul>';
+        }
+        return `<p>${html.replace(/\n/g, '<br/>')}</p>`;
+      });
+      return paragraphs.join('');
+    }
+
+    function renderDiff(oldText = '', newText = '') {
+      const oldLines = oldText.split('\n');
+      const newLines = newText.split('\n');
+      const max = Math.max(oldLines.length, newLines.length);
+      let html = '<div class="grid">';
+      for (let i = 0; i < max; i++) {
+        const before = oldLines[i] || '';
+        const after = newLines[i] || '';
+        if (before === after) {
+          html += `<div class="small" style="background:var(--surface-2);padding:4px 6px;">${before}</div>`;
+        } else {
+          if (before) html += `<div class="small" style="background:rgba(239,132,93,0.12);padding:4px 6px;">- ${before}</div>`;
+          if (after) html += `<div class="small" style="background:rgba(95,224,199,0.12);padding:4px 6px;">+ ${after}</div>`;
+        }
+      }
+      html += '</div>';
+      return html;
+    }
+
     function suggestAlternatives(terms) {
       const set = new Set();
       terms.forEach(t => {
@@ -1501,7 +1567,12 @@
         id: `d${Date.now()}`,
         title: `Borrador desde gap: ${gap.q || 'consulta'}`,
         type: 'wiki',
-        space: gap.filters?.space && gap.filters.space !== 'all' ? gap.filters.space : spaces[0],
+        space: (() => {
+          const target = gap.filters?.space && gap.filters.space !== 'all' ? gap.filters.space : spaces[0];
+          if (canAccessSpace(target)) return target;
+          const firstAllowed = spaces.find(s => canAccessSpace(s));
+          return firstAllowed || target;
+        })(),
         owner: owner.name,
         ownerId: owner.id,
         classification: 'interno',
@@ -1580,6 +1651,13 @@
         container.appendChild(card);
         return container;
       }
+      if (!canViewDoc(docRef)) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>Acceso restringido</h2><p class="small">No tienes permisos para ver este espacio.</p>';
+        container.appendChild(card);
+        return container;
+      }
       docRef.views = (docRef.views || 0) + 1;
       logEvent('doc_viewed', { docId: docRef.id, status: docRef.status });
       persist();
@@ -1619,7 +1697,7 @@
           </div>
           <div class="flex">
             <div class="status ${doc.status}">${doc.status}</div>
-            ${['editor','admin'].includes(state.currentUser.role) ? `<button class="btn ghost" onclick="location.hash='#/edit/${doc.id}'">Editar</button>` : ''}
+            ${['editor','admin'].includes(state.currentUser.role) && canAccessSpace(doc.space) ? `<button class="btn ghost" onclick="location.hash='#/edit/${doc.id}'">Editar</button>` : ''}
           </div>
         </div>
         <div class="grid two" style="margin:10px 0;">
@@ -1636,7 +1714,7 @@
             <div class="small">Estado: ${doc.freshness || 'al día'}</div>
           </div>
         </div>
-        <p>${doc.content}</p>
+        <div id="docContent"></div>
         <div class="flex">
           <button class="btn primary" id="useful">👍 Útil</button>
           <button class="btn ghost" id="notUseful">👎 No útil</button>
@@ -1652,6 +1730,9 @@
         </div>
         <span class="small" id="statsLine">Feedback: ${stats.useful} 👍 / ${stats.notUseful} 👎 · Seguidores: ${followers()}</span>
         <span class="small">Última actualización: ${new Date(doc.updatedAt).toLocaleString()} · Vistas: ${doc.views}</span>`;
+
+      const docContentArea = card.querySelector('#docContent');
+      docContentArea.innerHTML = markdownToHtml(doc.content || '');
 
       if (assets.length) {
         const viewer = document.createElement('div');
@@ -2023,13 +2104,95 @@
       const history = document.createElement('div');
       history.className = 'card';
       history.innerHTML = `<h3>Historial de versiones</h3>${versions.length === 0 ? '<p class="small">Sin snapshots aún.</p>' : ''}`;
+      const diffBox = document.createElement('div');
+      diffBox.className = 'card';
+      diffBox.style.background = 'var(--surface-2)';
+      diffBox.innerHTML = '<h4>Diff / Rollback</h4><p class="small">Selecciona una versión para comparar o restaurar.</p>';
       if (versions.length) {
         const list = document.createElement('table');
         list.className = 'table';
-        list.innerHTML = '<tr><th>Versión</th><th>Estado</th><th>Fecha</th><th>Razón</th></tr>' + versions.map(v => `<tr><td>${v.version}</td><td>${v.status}</td><td>${new Date(v.snapshotAt).toLocaleString()}</td><td>${v.reason || 'guardado'}</td></tr>`).join('');
+        list.innerHTML = '<tr><th>Versión</th><th>Estado</th><th>Fecha</th><th>Razón</th><th>Acciones</th></tr>' + versions.map(v => `<tr data-ver="${v.version}"><td>${v.version}</td><td>${v.status}</td><td>${new Date(v.snapshotAt).toLocaleString()}</td><td>${v.reason || 'guardado'}</td><td><button class="btn ghost small" data-diff="${v.version}">Diff</button>${['admin','editor','manager'].includes(state.currentUser.role) ? `<button class="btn ghost small" data-rollback="${v.version}">Rollback</button>` : ''}</td></tr>`).join('');
         history.appendChild(list);
+        history.appendChild(diffBox);
+        list.querySelectorAll('[data-diff]').forEach(btn => {
+          btn.onclick = () => {
+            const ver = Number(btn.dataset.diff);
+            const snap = versions.find(v => v.version === ver);
+            if (!snap) return;
+            diffBox.innerHTML = `<h4>Diff v${ver} vs actual</h4>` + renderDiff(snap.content || '', doc.content || '');
+          };
+        });
+        list.querySelectorAll('[data-rollback]').forEach(btn => {
+          btn.onclick = () => {
+            const ver = Number(btn.dataset.rollback);
+            const restored = rollbackDoc(doc.id, ver);
+            if (restored) { toast(`Rollback a v${ver}`); render(); }
+          };
+        });
       }
       container.appendChild(history);
+
+      const reviewSection = document.createElement('div');
+      reviewSection.className = 'card';
+      const versionThreads = state.reviewThreads.filter(r => r.docId === doc.id && r.version === doc.version).sort((a,b) => b.at - a.at);
+      const checklist = state.reviewChecklists.find(c => c.docId === doc.id && c.version === doc.version) || { docId: doc.id, version: doc.version, metadata: false, evidencia: false, riesgos: false };
+      reviewSection.innerHTML = `<h3>Revisión y checklist (v${doc.version})</h3>`;
+      const checklistWrap = document.createElement('div');
+      checklistWrap.className = 'grid';
+      const canApprove = ['admin','manager'].includes(state.currentUser.role);
+      const renderChecklist = () => {
+        checklistWrap.innerHTML = '';
+        ['metadata','evidencia','riesgos'].forEach(key => {
+          const label = key === 'metadata' ? 'Metadatos completos' : key === 'evidencia' ? 'Evidencia/adjunto' : 'Riesgos revisados';
+          const row = document.createElement('label');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.gap = '8px';
+          row.innerHTML = `<input type="checkbox" ${checklist[key] ? 'checked' : ''} ${canApprove ? '' : 'disabled'} /> ${label}`;
+          if (canApprove) {
+            row.querySelector('input').onchange = (e) => {
+              checklist[key] = e.target.checked;
+              const idx = state.reviewChecklists.findIndex(c => c.docId === checklist.docId && c.version === checklist.version);
+              if (idx >= 0) state.reviewChecklists[idx] = checklist; else state.reviewChecklists.push(checklist);
+              persist();
+              toast('Checklist actualizado');
+            };
+          }
+          checklistWrap.appendChild(row);
+        });
+      };
+      renderChecklist();
+      const threadList = document.createElement('div');
+      threadList.className = 'grid';
+      const renderThreads = () => {
+        threadList.innerHTML = '';
+        if (!versionThreads.length) { threadList.innerHTML = '<p class="small">Sin comentarios de revisión.</p>'; return; }
+        versionThreads.forEach(t => {
+          const user = state.users.find(u => u.id === t.userId);
+          const row = document.createElement('div');
+          row.className = 'card';
+          row.style.background = 'var(--surface-2)';
+          row.innerHTML = `<div class="flex space-between"><strong>${user?.name || 'Usuario'}</strong><span class="small">${new Date(t.at).toLocaleString()}</span></div><div class="small">${t.text}</div>`;
+          threadList.appendChild(row);
+        });
+      };
+      renderThreads();
+      const addThread = document.createElement('div');
+      addThread.className = 'grid';
+      addThread.innerHTML = '<label>Nuevo comentario de revisión</label><textarea id="reviewText" placeholder="Pregunta, hallazgo o sugerencia"></textarea><button class="btn ghost small" id="addReview">Agregar al hilo</button>';
+      addThread.querySelector('#addReview').onclick = () => {
+        const text = addThread.querySelector('#reviewText').value.trim();
+        if (!text) { toast('Comentario requerido'); return; }
+        const entry = { id: crypto.randomUUID(), docId: doc.id, version: doc.version, userId: state.currentUser.id, text, at: Date.now() };
+        state.reviewThreads.push(entry);
+        logEvent('review_comment_added', { docId: doc.id, version: doc.version });
+        persist();
+        versionThreads.unshift(entry);
+        addThread.querySelector('#reviewText').value = '';
+        renderThreads();
+      };
+      reviewSection.append(checklistWrap, threadList, addThread);
+      container.appendChild(reviewSection);
       return container;
 
     }
@@ -2041,7 +2204,7 @@
         id: `d${Date.now()}`,
         title: '',
         type: 'wiki',
-        space: spaces[0],
+        space: (spaces.find(s => canAccessSpace(s)) || spaces[0]),
         owner: state.currentUser.name,
         ownerId: state.currentUser.id,
         classification: 'interno',
@@ -2069,6 +2232,14 @@
         container.appendChild(card);
         return container;
       }
+      if (doc.space && !canAccessSpace(doc.space)) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>Acceso restringido al espacio</h2>';
+        container.appendChild(card);
+        return container;
+      }
+      const allowedSpaces = spaces.filter(s => canAccessSpace(s) || ['admin','manager'].includes(state.currentUser.role));
       const card = document.createElement('div');
       card.className = 'card';
         card.innerHTML = `
@@ -2102,7 +2273,7 @@
             </div>
             <div>
               <label>Espacio</label>
-              <select id="space">${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
+              <select id="space">${allowedSpaces.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
             </div>
             <div>
               <label>Etiquetas (coma)</label>
@@ -2160,8 +2331,20 @@
             </div>
           </div>
           <div>
-            <label>Contenido</label>
+            <label>Contenido (Markdown con bloques)</label>
+            <div class="flex" style="gap:6px; flex-wrap:wrap; margin:6px 0;">
+              <button class="btn ghost small" type="button" data-block="## Objetivo\n- ...">Bloque: Objetivo</button>
+              <button class="btn ghost small" type="button" data-block="## Alcance\n- ...">Bloque: Alcance</button>
+              <button class="btn ghost small" type="button" data-block="## Pasos\n1. Paso 1\n2. Paso 2">Bloque: Pasos</button>
+              <button class="btn ghost small" type="button" data-block="## Evidencia\nAdjuntar capturas o URLs">Bloque: Evidencia</button>
+            </div>
+            <div class="flex" style="gap:8px; align-items:center; margin-bottom:6px;">
+              <button class="btn ghost small" id="mdMode">Editar Markdown</button>
+              <button class="btn ghost small" id="mdPreviewBtn">Ver preview</button>
+              <span class="small">Vista dual para SOPs con bloques reutilizables.</span>
+            </div>
             <textarea id="content">${doc.content}</textarea>
+            <div class="card" id="contentPreview" style="margin-top:8px; background:var(--surface-2);"></div>
           </div>
           <div class="flex" style="margin-top:10px;">
           <button class="btn primary" id="saveBtn">Guardar versión</button>
@@ -2206,6 +2389,14 @@
       reviewEveryInput.oninput = refreshReviewPreview;
       lastReviewedInput.onchange = refreshReviewPreview;
       refreshReviewPreview();
+      const contentArea = card.querySelector('#content');
+      const previewArea = card.querySelector('#contentPreview');
+      const updatePreview = () => { previewArea.innerHTML = markdownToHtml(contentArea.value); };
+      contentArea.addEventListener('input', updatePreview);
+      updatePreview();
+      card.querySelector('#mdPreviewBtn').onclick = updatePreview;
+      card.querySelector('#mdMode').onclick = () => { contentArea.focus(); toast('Modo edición Markdown activo'); };
+      card.querySelectorAll('[data-block]').forEach(btn => { btn.onclick = () => insertAtCursor(contentArea, btn.dataset.block); });
       const updateResourceMeta = () => {
         const msg = `Fuente: ${doc.sourceType === 'upload' ? 'cargado' : 'enlace'} · ${doc.ext?.toUpperCase() || 'sin ext'} · ${doc.mime || ''}`;
         card.querySelector('#resourceMeta').textContent = msg;
@@ -2235,6 +2426,7 @@
       };
       card.querySelector('#saveBtn').onclick = () => {
         const payload = collectDocFields(card, doc, doc.status || 'draft');
+        if (!validateDoc(payload, { requireEvidence: false })) return;
         const isNew = !state.docs.find(d => d.id === payload.id);
         payload.version = (payload.version || 0) + 1;
         assignAndPersist(payload, 'guardar');
@@ -2245,6 +2437,7 @@
       card.querySelector('#reviewBtn').onclick = () => {
         if (!['editor','admin'].includes(state.currentUser.role)) { toast('Solo editores pueden enviar a revisión'); return; }
         const payload = collectDocFields(card, doc, 'in_review');
+        if (!validateDoc(payload, { requireEvidence: true })) return;
         const isNew = !state.docs.find(d => d.id === payload.id);
         payload.version = (payload.version || 0) + 1;
         assignAndPersist(payload, 'envío a revisión');
@@ -2257,6 +2450,7 @@
         if (!['admin','manager'].includes(state.currentUser.role)) { toast('Solo admin/manager aprueban'); return; }
         if (doc.status !== 'in_review' && doc.status !== 'published') { toast('Debe estar en revisión para aprobar'); return; }
         const payload = collectDocFields(card, doc, 'published');
+        if (!validateDoc(payload, { requireEvidence: true })) return;
         payload.version = (payload.version || 0) + 1;
         assignAndPersist(payload, 'publicación');
         logEvent('workflow_approved', { docId: payload.id });
@@ -2280,6 +2474,7 @@
       const title = card.querySelector('#title').value.trim() || 'Sin título';
       const type = card.querySelector('#type').value;
       const space = card.querySelector('#space').value;
+      if (!canAccessSpace(space)) { toast('Sin permisos para este espacio'); throw new Error('acl espacio'); }
       const tags = normalizeTags(card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean));
       const ownerId = card.querySelector('#owner').value;
       if (!ownerId) { toast('Elige un owner'); throw new Error('owner requerido'); }
@@ -2291,7 +2486,18 @@
       const audience = Array.from(card.querySelectorAll('#audienceWrap input:checked')).map(i => i.value);
       const content = card.querySelector('#content').value;
       const nextReviewAt = lastReviewedAt + reviewEveryDays * 86400000;
-      return { ...base, title, type, space, tags, content, owner: ownerUser?.name || base.owner || 'Sin owner', ownerId, classification, retentionDays, audience, reviewEveryDays, lastReviewedAt, nextReviewAt, freshness: computeReviewFields({ ...base, reviewEveryDays, lastReviewedAt, nextReviewAt }).freshness, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, ext: base.ext || 'html', mime: base.mime || mimeFromExt(base.ext || 'html'), sourceType: base.sourceType || 'url', url: base.url || 'https://example.com' };
+      const primaryAttachment = { title: base.title || title || 'Recurso principal', url: base.url, ext: base.ext, mime: base.mime, sourceType: base.sourceType };
+      const mergedAttachments = [primaryAttachment, ...(base.attachments || []).filter(a => a.url !== primaryAttachment.url)];
+      return { ...base, title, type, space, tags, content, owner: ownerUser?.name || base.owner || 'Sin owner', ownerId, classification, retentionDays, audience, reviewEveryDays, lastReviewedAt, nextReviewAt, freshness: computeReviewFields({ ...base, reviewEveryDays, lastReviewedAt, nextReviewAt }).freshness, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, ext: base.ext || 'html', mime: base.mime || mimeFromExt(base.ext || 'html'), sourceType: base.sourceType || 'url', url: base.url || 'https://example.com', attachments: mergedAttachments };
+    }
+
+    function validateDoc(payload, { requireEvidence = false } = {}) {
+      if (!payload.title || payload.title === 'Sin título') { toast('Título obligatorio'); return false; }
+      if (!payload.tags || payload.tags.length < 2) { toast('Mínimo 2 tags para control de taxonomía'); return false; }
+      if (!payload.ownerId) { toast('Owner requerido'); return false; }
+      const hasEvidence = !!payload.url || (payload.attachments || []).length > 0;
+      if (requireEvidence && !hasEvidence) { toast('Adjunta evidencia o recurso antes de enviar'); return false; }
+      return true;
     }
 
     function upsertDoc(doc) {
@@ -2326,6 +2532,19 @@
         reason
       });
       persist();
+    }
+
+    function rollbackDoc(docId, version) {
+      const snapshot = state.versions.find(v => v.docId === docId && v.version === version);
+      const idx = state.docs.findIndex(d => d.id === docId);
+      if (!snapshot || idx < 0) return null;
+      const base = state.docs[idx];
+      const restored = { ...base, ...snapshot, status: 'draft', updatedAt: Date.now(), version: (base.version || snapshot.version || 0) + 1 };
+      state.docs[idx] = computeReviewFields(restored);
+      createSnapshot(restored, `rollback desde v${version}`);
+      logEvent('doc_rollback', { docId, fromVersion: version });
+      persist();
+      return restored;
     }
 
     const staleThresholdDays = 20;
