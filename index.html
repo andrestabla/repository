@@ -353,6 +353,24 @@
     .small { font-size: 12px; color: var(--muted); }
 
     .tag { background: var(--surface-1); padding: 4px 8px; border-radius: 8px; font-size: 12px; }
+    .format-chip-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 8px; margin-top: 6px; }
+    .format-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: var(--text);
+      font-weight: 600;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+    }
+    .format-chip .count { background: var(--surface-1); padding: 2px 8px; border-radius: 10px; font-size: 12px; color: var(--muted); }
+    .format-chip:hover { border-color: rgba(239,132,93,0.6); }
+    .format-chip.active { background: rgba(239,132,93,0.16); border-color: rgba(239,132,93,0.65); box-shadow: 0 6px 14px rgba(239,132,93,0.12); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -382,6 +400,16 @@
       excel: ['xls', 'xlsx', 'csv'],
       ppt: ['ppt', 'pptx']
     };
+    const FORMAT_CHIPS = [
+      { key: 'pdf', label: 'PDF', icon: '📄' },
+      { key: 'video', label: 'Video', icon: '🎞️' },
+      { key: 'audio', label: 'Audio', icon: '🎧' },
+      { key: 'image', label: 'Imagen', icon: '🖼️' },
+      { key: 'word', label: 'Word', icon: '📝' },
+      { key: 'excel', label: 'Excel', icon: '📊' },
+      { key: 'ppt', label: 'PPT', icon: '📑' },
+      { key: 'otros', label: 'Otros', icon: '✨' }
+    ];
     const ALL_EXTS = Object.values(FORMAT_GROUPS).flat();
 
     const seedUsers = [
@@ -1541,7 +1569,7 @@
         const nextSpace = spaceSel.value;
         const nextTags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
         const nextRange = rangeSel.value;
-        const nextFormats = Array.from(card.querySelectorAll('.formatCheck:checked')).map(c => c.value);
+        const nextFormats = Array.from(card.querySelectorAll('.format-chip.active')).map(c => c.dataset.group);
         location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormats.join(',')}&page=1`;
       };
       const scheduleSearch = (source = 'debounced') => {
@@ -1593,13 +1621,16 @@
               </div>
               <div>
                 <label>Formato</label>
-                <div id="formatFilters" class="grid" style="grid-template-columns: repeat(auto-fit,minmax(120px,1fr)); gap:6px;">
-                  ${Object.keys(FORMAT_GROUPS).map(g => `
-                    <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);">
-                      <input type="checkbox" value="${g}" class="formatCheck" ${selectedFormats.includes(g) ? 'checked' : ''}/>
-                      ${g.toUpperCase()} (${facets.formatCounts[g] || 0})
-                    </label>
-                  `).join('')}
+                <div class="format-chip-row" role="group" aria-label="Filtro de formato">
+                  ${FORMAT_CHIPS.map(chip => {
+                    const active = selectedFormats.includes(chip.key);
+                    const count = facets.formatCounts[chip.key] ?? 0;
+                    return `<button type="button" class="format-chip ${active ? 'active' : ''}" data-group="${chip.key}" aria-pressed="${active}">
+                      <span>${chip.icon}</span>
+                      <span>${chip.label}</span>
+                      <span class="count">${count}</span>
+                    </button>`;
+                  }).join('')}
                 </div>
               </div>
             </div>
@@ -1620,7 +1651,15 @@
       typeSel.onchange = () => runSearch('filter_change');
       spaceSel.onchange = () => runSearch('filter_change');
       rangeSel.onchange = () => runSearch('filter_change');
-      card.querySelectorAll('.formatCheck').forEach(ch => ch.onchange = () => runSearch('filter_change'));
+      card.querySelectorAll('.format-chip').forEach(btn => {
+        btn.onclick = () => {
+          const nextSet = new Set(Array.from(card.querySelectorAll('.format-chip.active')).map(c => c.dataset.group));
+          const key = btn.dataset.group;
+          nextSet.has(key) ? nextSet.delete(key) : nextSet.add(key);
+          const nextFormats = Array.from(nextSet);
+          location.hash = `#/search?q=${encodeURIComponent(card.querySelector('#q').value.trim())}&type=${typeSel.value}&space=${spaceSel.value}&tags=${encodeURIComponent(card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean).join(','))}&range=${rangeSel.value}&format=${nextFormats.join(',')}&page=1`;
+        };
+      });
       const activeFilters = document.createElement('div');
       activeFilters.className = 'flex';
       activeFilters.style.gap = '6px';
@@ -1629,7 +1668,10 @@
       if (space !== 'all') chips.push({ label: `Espacio: ${space}`, action: () => location.hash = location.hash.replace(/space=[^&]*/, 'space=all') });
       tags.forEach(t => chips.push({ label: `Tag: ${t}`, action: () => location.hash = `#/search?q=${encodeURIComponent(q)}&type=${type}&space=${space}&range=${range}` }));
       if (range !== 'all') chips.push({ label: `Rango: ${range}d`, action: () => location.hash = location.hash.replace(/range=[^&]*/, 'range=all') });
-      selectedFormats.forEach(f => chips.push({ label: `Formato: ${f}`, action: () => location.hash = '#/search' }));
+      selectedFormats.forEach(f => chips.push({ label: `Formato: ${f}`, action: () => {
+        const remaining = selectedFormats.filter(x => x !== f);
+        location.hash = `#/search?q=${encodeURIComponent(q)}&type=${type}&space=${space}&tags=${encodeURIComponent(tags.join(','))}&range=${range}&format=${remaining.join(',')}`;
+      }}));
       if (chips.length) {
         chips.forEach(c => {
           const pill = document.createElement('span');
@@ -1738,8 +1780,16 @@
 
     function filterByFormat(docs, selectedGroups = []) {
       if (!selectedGroups.length) return docs;
-      const allowed = new Set(selectedGroups.flatMap(g => FORMAT_GROUPS[g] || []));
-      return docs.filter(d => allowed.has(normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '')));
+      const selected = new Set(selectedGroups);
+      const includesOthers = selected.has('otros');
+      const allowed = new Set([...selected].filter(g => g !== 'otros').flatMap(g => FORMAT_GROUPS[g] || []));
+      const isKnownExt = (ext) => Object.values(FORMAT_GROUPS).some(list => list.includes(ext));
+      return docs.filter(d => {
+        const ext = normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '');
+        const inGroup = allowed.has(ext);
+        const inOther = includesOthers && !isKnownExt(ext);
+        return inGroup || inOther;
+      });
     }
 
     function normalizeText(str = '') {
@@ -1801,11 +1851,18 @@
       });
       const facetSpaceCounts = baseFiltered.reduce((acc, d) => { acc[d.space] = (acc[d.space] || 0) + 1; return acc; }, {});
       facetSpaceCounts.all = baseFiltered.length;
-      const facetFormatCounts = baseFiltered.reduce((acc, d) => {
+      const facetFormatCounts = FORMAT_CHIPS.reduce((acc, chip) => ({ ...acc, [chip.key]: 0 }), {});
+      baseFiltered.forEach(d => {
         const ext = normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '');
-        Object.entries(FORMAT_GROUPS).forEach(([g, list]) => { if (list.includes(ext)) acc[g] = (acc[g] || 0) + 1; });
-        return acc;
-      }, {});
+        let matched = false;
+        Object.entries(FORMAT_GROUPS).forEach(([g, list]) => {
+          if (list.includes(ext)) {
+            facetFormatCounts[g] = (facetFormatCounts[g] || 0) + 1;
+            matched = true;
+          }
+        });
+        if (!matched) facetFormatCounts.otros = (facetFormatCounts.otros || 0) + 1;
+      });
       const scored = baseFiltered.map(doc => {
         const docTags = doc.tags || [];
         let score = 0;
