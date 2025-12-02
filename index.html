@@ -285,18 +285,24 @@
       events: [],
       config: { iaEnabled: true, versioning: true, locale: 'es' },
       currentUser: null,
+      session: null,
       sidebarCollapsed: false
     };
 
     const state = loadState();
 
+    if (state.session && !state.currentUser) {
+      const user = state.users.find(u => u.id === state.session.userId);
+      if (user) state.currentUser = user;
+    }
+
     function loadState() {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return structuredClone(seedState);
-      try {
-        const parsed = JSON.parse(raw);
-        return { ...structuredClone(seedState), ...parsed };
-      } catch (e) {
+        try {
+          const parsed = JSON.parse(raw);
+          return { ...structuredClone(seedState), ...parsed, session: parsed.session ?? null };
+        } catch (e) {
         console.warn('Estado corrupto, reseteando');
         return structuredClone(seedState);
       }
@@ -332,8 +338,14 @@
       persist();
     }
 
+    function setSession(session) {
+      state.session = session;
+      if (!session) state.currentUser = null;
+      persist();
+    }
+
     function requireAuth(target) {
-      if (!state.currentUser && target !== '/login') {
+      if ((!state.currentUser || !state.session?.token) && target !== '/login') {
         location.hash = '#/login';
         return false;
       }
@@ -354,6 +366,11 @@
       };
       const key = routes[path] || '/login';
       if (!requireAuth(key)) return { key: '/login' };
+      if (key === '/analytics' && !['admin','manager'].includes(state.currentUser.role)) {
+        toast('Necesitas rol admin/manager para Analítica');
+        location.hash = '#/home';
+        return { key: '/home' };
+      }
       return { key, param };
     }
 
@@ -394,7 +411,7 @@
         { href: '#/home', label: 'Home' },
         { href: '#/search', label: 'Búsqueda' },
         { href: '#/edit/new', label: 'Crear', roles: ['editor','admin'] },
-        { href: '#/analytics', label: 'Analítica', roles: ['admin'] },
+        { href: '#/analytics', label: 'Analítica', roles: ['admin','manager'] },
       ];
       const aside = document.createElement('aside');
       aside.className = 'sidebar' + (state.sidebarCollapsed ? ' collapsed' : '');
@@ -457,7 +474,7 @@
       const logout = document.createElement('button');
       logout.className = 'btn ghost';
       logout.textContent = 'Salir';
-      logout.onclick = () => { setUser(null); location.hash = '#/login'; };
+      logout.onclick = () => { setSession(null); location.hash = '#/login'; };
       right.append(createBtn, userBadge, logout);
       bar.append(left, right);
       return bar;
@@ -472,7 +489,7 @@
       card.className = 'login-card';
       card.innerHTML = `
         <h2>Acceder</h2>
-        <p>Inicia sesión con SSO o credenciales locales. El acceso está sujeto a políticas corporativas.</p>
+        <p>Inicia sesión con credenciales demo o simula SSO. El acceso está sujeto a políticas corporativas.</p>
         <div class="grid">
           <button class="btn primary" id="ssoBtn">Ingresar con SSO</button>
           <div class="grid">
@@ -480,6 +497,13 @@
             <input id="email" placeholder="usuario@demo.local" />
             <label for="password">Clave</label>
             <input id="password" type="password" placeholder="demo" />
+            <label for="role">Rol</label>
+            <select id="role">
+              <option value="viewer">viewer</option>
+              <option value="editor">editor</option>
+              <option value="admin">admin</option>
+              <option value="manager">manager</option>
+            </select>
           </div>
           <button class="btn ghost" id="loginBtn">Ingresar</button>
           <span class="small">Demo: elige un usuario para autocompletar</span>
@@ -493,6 +517,7 @@
         b.onclick = () => {
           card.querySelector('#email').value = u.email;
           card.querySelector('#password').value = 'demo';
+          card.querySelector('#role').value = u.role;
         };
         demoUsers.appendChild(b);
       });
@@ -503,10 +528,14 @@
       card.querySelector('#loginBtn').onclick = () => {
         const email = card.querySelector('#email').value.trim();
         const pass = card.querySelector('#password').value.trim();
+        const role = card.querySelector('#role').value;
         const user = state.users.find(u => u.email === email && u.password === pass);
         if (!user) { toast('Credenciales inválidas'); return; }
+        if (role !== user.role) { toast('Rol no coincide con el usuario demo'); return; }
+        const token = crypto.randomUUID();
         setUser(user);
-        logEvent('login_success', { email });
+        setSession({ token, userId: user.id, role: user.role, issuedAt: Date.now() });
+        logEvent('login_success', { email, role });
         location.hash = '#/home';
       };
       wrapper.appendChild(card);
@@ -524,7 +553,7 @@
         <div class="flex" style="gap:8px; flex-wrap:wrap;">
           <button class="btn primary" onclick="location.hash='#/search'">Buscar</button>
           <button class="btn ghost" onclick="location.hash='#/edit/new'" ${['editor','admin'].includes(state.currentUser.role) ? '' : 'disabled'}>Crear artículo</button>
-          <button class="btn ghost" onclick="location.hash='#/analytics'" ${state.currentUser.role==='admin' ? '' : 'disabled'}>Ver analítica</button>
+            <button class="btn ghost" onclick="location.hash='#/analytics'" ${['admin','manager'].includes(state.currentUser.role) ? '' : 'disabled'}>Ver analítica</button>
         </div>`;
       const feeds = document.createElement('div');
       feeds.className = 'grid two';
