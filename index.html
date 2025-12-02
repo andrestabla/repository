@@ -1,0 +1,3417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repositorio de Conocimiento - Prototipo SPA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 20% 20%, rgba(95,224,199,0.08), transparent 32%),
+                  radial-gradient(circle at 80% 0%, rgba(239,132,93,0.12), transparent 36%),
+                  linear-gradient(180deg, #0b172a 0%, #0f1f35 36%, #0b172a 100%);
+      --bg: #0b172a;
+      --panel: #0f2038;
+      --card: #112846;
+      --card-bg: rgba(255,255,255,0.04);
+      --surface-1: rgba(255,255,255,0.06);
+      --surface-2: rgba(255,255,255,0.04);
+      --accent: #ef845d;
+      --accent-2: #5fe0c7;
+      --text: #e6edf7;
+      --muted: #9cb1d1;
+      --border: #1d3557;
+      --success: #4ade80;
+      --warning: #facc15;
+    }
+
+    body.light {
+      --bg-gradient: radial-gradient(circle at 30% 20%, rgba(95,224,199,0.12), transparent 30%),
+                  radial-gradient(circle at 90% 0%, rgba(239,132,93,0.18), transparent 32%),
+                  linear-gradient(180deg, #f7f9fc 0%, #e7edf7 46%, #f7f9fc 100%);
+      --bg: #f5f7fb;
+      --panel: #eef2f9;
+      --card: #ffffff;
+      --card-bg: #ffffff;
+      --surface-1: #eef2f9;
+      --surface-2: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #d4dcec;
+      --success: #16a34a;
+      --warning: #d97706;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-width, 240px) 1fr;
+      min-height: 100vh;
+      transition: grid-template-columns 0.2s ease, margin-left 0.2s ease;
+      position: relative;
+    }
+
+    .app-shell.sidebar-hidden {
+      --sidebar-width: 0px;
+      grid-template-columns: 0 1fr;
+    }
+
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 18px 14px;
+      display: grid;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: var(--sidebar-width, 240px);
+      transition: transform 0.2s ease, width 0.2s ease, padding 0.2s ease;
+    }
+
+    .sidebar.hidden {
+      width: 0;
+      padding: 0;
+      border-right: none;
+      overflow: hidden;
+    }
+
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(2px);
+      z-index: 4;
+      display: none;
+    }
+
+    .app-shell.showing-sidebar .sidebar-overlay { display: block; }
+
+    .sidebar .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #f7b38f);
+      color: #0b172a;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      box-shadow: 0 12px 30px rgba(239,132,93,0.35);
+    }
+
+    .logo-inline {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .nav-item:hover { background: var(--surface-1); color: var(--text); border-color: var(--border); }
+    .nav-item.active { background: rgba(239,132,93,0.14); color: var(--text); border-color: rgba(239,132,93,0.35); }
+
+    .nav-item .tooltip {
+      display: none;
+      position: absolute;
+      left: 58px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.18);
+      white-space: nowrap;
+      z-index: 6;
+    }
+
+
+    .topbar {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .topbar .left, .topbar .right { display: flex; align-items: center; gap: 10px; }
+
+    .menu-toggle {
+      display: none;
+      min-width: 44px;
+      justify-content: center;
+    }
+
+    .search-box {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 280px;
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      width: 100%;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible, .nav-item:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .btn.small { padding: 6px 10px; font-size: 12px; }
+
+    .btn.primary { background: var(--accent); color: #0b172a; box-shadow: 0 12px 30px rgba(239,132,93,0.25); }
+    .btn.ghost { background: var(--surface-1); color: var(--text); border: 1px solid var(--border); }
+
+    .main {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.16);
+    }
+
+    h1, h2, h3, h4 { margin: 0; }
+    p { margin: 6px 0 0; color: var(--muted); }
+
+    .grid { display: grid; gap: 12px; }
+    .grid.two { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .grid.three { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: var(--surface-1);
+      color: var(--text);
+      font-size: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .status { padding: 4px 8px; border-radius: 8px; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+    .status.draft { background: rgba(250,204,21,0.15); color: #facc15; }
+    .status.in_review { background: rgba(94,234,212,0.15); color: #5fe0c7; }
+    .status.published { background: rgba(74,222,128,0.18); color: #4ade80; }
+
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+    .table th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.04em; }
+
+    .doc-card { display: grid; gap: 6px; }
+
+    .flex { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .space-between { justify-content: space-between; }
+
+    .doc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 14px; align-items: flex-start; }
+    .doc-toc { position: sticky; top: 82px; max-height: calc(100vh - 120px); overflow: auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.12); }
+    .doc-toc h4 { margin-bottom: 8px; }
+    .toc-list { display: grid; gap: 6px; }
+    .toc-link { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); padding: 6px 8px; border-radius: 10px; border: 1px solid transparent; }
+    .toc-link:hover { background: var(--surface-1); border-color: var(--border); }
+    .toc-link .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); display: inline-block; }
+    .toc-link.level-3 { padding-left: 16px; font-size: 13px; }
+
+    @media (max-width: 1000px) {
+      .doc-layout { grid-template-columns: 1fr; }
+      .doc-toc { position: relative; top: 0; max-height: none; }
+    }
+
+    @media (max-width: 980px) {
+      .app-shell { grid-template-columns: 0 1fr; }
+      .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-110%); z-index: 6; width: 260px; height: 100vh; }
+      .app-shell.showing-sidebar .sidebar { transform: translateX(0); }
+      .app-shell.sidebar-hidden .sidebar { transform: translateX(-110%); }
+      .app-shell.sidebar-hidden { margin-left: 0; }
+      .menu-toggle { display: inline-flex; }
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 14px;
+      right: 14px;
+      display: grid;
+      gap: 8px;
+      z-index: 50;
+    }
+
+    .toast {
+      background: rgba(17,40,70,0.95);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.24);
+      min-width: 220px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: grid;
+      place-items: center;
+      z-index: 99;
+      padding: 20px;
+    }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      max-width: 720px;
+      width: min(720px, 95vw);
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      display: grid;
+      gap: 14px;
+    }
+    .modal .actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .pill.muted { background: var(--surface-1); color: var(--muted); }
+
+    .login-wrapper {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      width: min(420px, 90vw);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.22);
+      display: grid;
+      gap: 12px;
+    }
+
+    label { font-weight: 600; color: var(--text); font-size: 14px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    textarea { min-height: 160px; }
+
+    .badge { background: var(--surface-1); padding: 6px 10px; border-radius: 10px; font-weight: 700; }
+    .small { font-size: 12px; color: var(--muted); }
+
+    .tag { background: var(--surface-1); padding: 4px 8px; border-radius: 8px; font-size: 12px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="toast-container" id="toasts"></div>
+
+  <script type="module">
+    const storageKey = 'kb-demo-state-v1';
+    const eventLimit = 10000;
+    const eventFlushThreshold = 20;
+    let eventBuffer = [];
+    let flushTimer = null;
+
+    const FORMAT_GROUPS = {
+      pdf: ['pdf'],
+      video: ['mp4', 'webm', 'mov'],
+      audio: ['mp3', 'wav', 'm4a', 'ogg'],
+      image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+      word: ['doc', 'docx'],
+      excel: ['xls', 'xlsx', 'csv'],
+      ppt: ['ppt', 'pptx']
+    };
+    const ALL_EXTS = Object.values(FORMAT_GROUPS).flat();
+
+    const seedUsers = [
+      { id: 'u1', name: 'Ana Viewer', email: 'ana@demo.local', role: 'viewer', password: 'demo', spaces: ['Talento', 'Operaciones'], team: 'Operaciones', area: 'Talento', jobTitle: 'Analista', status: 'active', createdAt: Date.now() - 86400000 * 60 },
+      { id: 'u2', name: 'Bruno Editor', email: 'bruno@demo.local', role: 'editor', password: 'demo', spaces: ['TI', 'Operaciones'], team: 'TI', area: 'Operaciones', jobTitle: 'Especialista', status: 'active', createdAt: Date.now() - 86400000 * 45 },
+      { id: 'u3', name: 'Camila Admin', email: 'camila@demo.local', role: 'admin', password: 'demo', spaces: ['TI', 'Operaciones', 'Comercial', 'Talento'], team: 'Comercial', area: 'Gobernanza', jobTitle: 'Manager', status: 'active', createdAt: Date.now() - 86400000 * 90 }
+    ];
+
+    const spaces = ['TI', 'Operaciones', 'Comercial', 'Talento'];
+    const tagsPool = ['SOP', 'FAQ', 'Postmortem', 'Playbook', 'Onboarding', 'Incidente', 'Ventas'];
+    const templates = {
+      sop: {
+        title: 'SOP: Proceso estándar',
+        content: 'Objetivo\nAlcance\nPre-requisitos\nPasos\nRoles y RACI\nValidación y evidencia'
+      },
+      faq: {
+        title: 'FAQ: Pregunta frecuente',
+        content: 'Pregunta\nRespuesta breve\nDetalles adicionales\nEnlaces relacionados'
+      },
+      lesson: {
+        title: 'Lección aprendida',
+        content: 'Situación\nCausa raíz\nImpacto\nAcciones correctivas\nRecomendaciones futuras'
+      }
+    };
+
+    function normalizeExt(ext = '') {
+      return (ext || '').toLowerCase().replace(/^\./, '');
+    }
+
+    const DATA_VERSION = '2024-review-cycle-refresh-v3';
+
+    const TAXONOMY_CANONICAL = ['sop','procedimiento','faq','postmortem','playbook','educacion','digital','liderazgo','audio','video','excel','ppt','induccion','referencia','investigacion'];
+    const TAXONOMY_NORMALIZATION = {
+      'sops': 'sop',
+      's.o.p': 'sop',
+      'procedimientos': 'procedimiento',
+      'procedimiento': 'procedimiento',
+      'procedures': 'procedimiento',
+      'faqs': 'faq',
+      'preguntas': 'faq',
+      'post mortem': 'postmortem',
+      'post-mortem': 'postmortem',
+      'ppt': 'ppt',
+      'pptx': 'ppt',
+      'excel': 'excel',
+      'xls': 'excel',
+      'xlsx': 'excel'
+    };
+
+    function normalizeTags(rawTags = []) {
+      const normalized = rawTags.map(t => {
+        const key = t.trim().toLowerCase();
+        if (TAXONOMY_NORMALIZATION[key]) return TAXONOMY_NORMALIZATION[key];
+        if (TAXONOMY_CANONICAL.includes(key)) return key;
+        return key;
+      }).filter(Boolean);
+      return Array.from(new Set(normalized));
+    }
+
+    function normalizeUser(user) {
+      return {
+        jobTitle: '',
+        status: 'active',
+        createdAt: Date.now(),
+        ...user,
+        spaces: user.spaces || [],
+        area: user.area || '',
+        name: user.name || 'Usuario',
+        email: user.email || '',
+        role: user.role || 'viewer'
+      };
+    }
+
+    function mimeFromExt(ext = '') {
+      const map = {
+        pdf: 'application/pdf',
+        mp4: 'video/mp4',
+        webm: 'video/webm',
+        mov: 'video/quicktime',
+        mp3: 'audio/mpeg',
+        wav: 'audio/wav',
+        m4a: 'audio/mp4',
+        ogg: 'audio/ogg',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        gif: 'image/gif',
+        webp: 'image/webp',
+        svg: 'image/svg+xml',
+        doc: 'application/msword',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        xls: 'application/vnd.ms-excel',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        csv: 'text/csv',
+        ppt: 'application/vnd.ms-powerpoint',
+        pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        html: 'text/html'
+      };
+      return map[normalizeExt(ext)] || 'application/octet-stream';
+    }
+
+    function extFromUrl(url = '') {
+      try {
+        const clean = url.split('?')[0];
+        const parts = clean.split('.');
+        return normalizeExt(parts[parts.length - 1] || '');
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function computeReviewFields(doc) {
+      const fallbackReviewed = doc.lastReviewedAt || doc.updatedAt || Date.now();
+      const reviewEveryDays = doc.reviewEveryDays || 45;
+      const nextReviewAt = doc.nextReviewAt || (fallbackReviewed + reviewEveryDays * 86400000);
+      const freshness = (() => {
+        const now = Date.now();
+        if (nextReviewAt < now) return 'vencido';
+        if (nextReviewAt < now + 7 * 86400000) return 'por vencer';
+        return 'al día';
+      })();
+      return {
+        ...doc,
+        owner: doc.owner || 'Sin owner',
+        ownerId: doc.ownerId || '',
+        tags: normalizeTags(doc.tags || []),
+        classification: doc.classification || 'interno',
+        retentionDays: doc.retentionDays || 365,
+        audience: doc.audience || ['viewer','editor','admin','manager'],
+        lastReviewedAt: fallbackReviewed,
+        reviewEveryDays,
+        nextReviewAt,
+        freshness
+      };
+    }
+
+    const baseDocs = [
+      {
+        id: 'd1',
+        title: 'Delors - Los cuatro pilares',
+        type: 'wiki',
+        space: 'Talento',
+        owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['editor','admin','manager','viewer'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 25 * 86400000,
+        status: 'published',
+        updatedAt: Date.now() - 1 * 86400000,
+        tags: ['educacion', 'referencia'],
+        content: 'Lectura clave sobre los pilares fundamentales de la educación, disponible en PDF para consulta directa.',
+        views: 84,
+        version: 1,
+        attachments: [{ title: 'PDF principal', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/CPP-DC-Delors-Los-cuatro-pilares.pdf', ext: 'pdf', mime: mimeFromExt('pdf'), sourceType: 'url' }],
+        ext: 'pdf',
+        mime: mimeFromExt('pdf'),
+        sourceType: 'url',
+        url: 'https://academicrepository.s3.us-east-1.amazonaws.com/CPP-DC-Delors-Los-cuatro-pilares.pdf'
+      },
+      {
+        id: 'd2',
+        title: 'Experiencias de aprendizaje significativas en Colombia',
+        type: 'wiki',
+        space: 'Operaciones',
+        owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['editor','admin','manager'],
+        reviewEveryDays: 60,
+        lastReviewedAt: Date.now() - 30 * 86400000,
+        status: 'published',
+        updatedAt: Date.now() - 2 * 86400000,
+        tags: ['investigacion', 'colombia'],
+        content: 'Documento de referencia sobre experiencias de aprendizaje en educación básica y media.',
+        views: 73,
+        version: 1,
+        attachments: [{ title: 'PDF de estudio', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Experiencias+de+aprendizaje+significativas+en+la+educaci%C3%B3n+b%C3%A1sica+y+media+en+Colombia.+Una+aproximaci%C3%B3n+desde+sus+actores+y+el+estado+del+arte..pdf', ext: 'pdf', mime: mimeFromExt('pdf'), sourceType: 'url' }],
+        ext: 'pdf',
+        mime: mimeFromExt('pdf'),
+        sourceType: 'url',
+        url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Experiencias+de+aprendizaje+significativas+en+la+educaci%C3%B3n+b%C3%A1sica+y+media+en+Colombia.+Una+aproximaci%C3%B3n+desde+sus+actores+y+el+estado+del+arte..pdf'
+      },
+      {
+        id: 'd3',
+        title: 'Introducción al conocimiento de la ciencia',
+        type: 'faq',
+        space: 'TI',
+        owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'interno',
+        retentionDays: 730,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 120,
+        lastReviewedAt: Date.now() - 50 * 86400000,
+        status: 'published',
+        updatedAt: Date.now() - 3 * 86400000,
+        tags: ['ciencia', 'base'],
+        content: 'Material de apoyo para nuevas inducciones sobre fundamentos científicos.',
+        views: 65,
+        version: 1,
+        attachments: [{ title: 'PDF completo', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Introducci%C3%B3n+al+conocimiento+de+la+ciencia.pdf', ext: 'pdf', mime: mimeFromExt('pdf'), sourceType: 'url' }],
+        ext: 'pdf',
+        mime: mimeFromExt('pdf'),
+        sourceType: 'url',
+        url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Introducci%C3%B3n+al+conocimiento+de+la+ciencia.pdf'
+      },
+      {
+        id: 'd4',
+        title: 'Necesidad de una educación en un mundo digital',
+        type: 'postmortem',
+        space: 'Comercial',
+        owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'confidencial',
+        retentionDays: 180,
+        audience: ['editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now() - 20 * 86400000,
+        status: 'in_review',
+        updatedAt: Date.now() - 4 * 86400000,
+        tags: ['digital', 'transformacion'],
+        content: 'Análisis sobre retos y necesidades de la educación en contextos digitales.',
+        views: 54,
+        version: 1,
+        attachments: [{ title: 'PDF digital', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Necesidad+de+una+educaci%C3%B3n+en+un+mundo+digital.pdf', ext: 'pdf', mime: mimeFromExt('pdf'), sourceType: 'url' }],
+        ext: 'pdf',
+        mime: mimeFromExt('pdf'),
+        sourceType: 'url',
+        url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Necesidad+de+una+educaci%C3%B3n+en+un+mundo+digital.pdf'
+      },
+      {
+        id: 'd5',
+        title: 'Secretos de Finlandia',
+        type: 'playbook',
+        space: 'Operaciones',
+        owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'restringido',
+        retentionDays: 365,
+        audience: ['admin','manager'],
+        reviewEveryDays: 30,
+        lastReviewedAt: Date.now() - 35 * 86400000,
+        status: 'published',
+        updatedAt: Date.now() - 5 * 86400000,
+        tags: ['benchmark', 'educacion'],
+        content: 'Benchmark internacional con aprendizajes exportables a nuestros procesos.',
+        views: 62,
+        version: 1,
+        attachments: [{ title: 'PDF Finlandia', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/secretos_finlandia.pdf', ext: 'pdf', mime: mimeFromExt('pdf'), sourceType: 'url' }],
+        ext: 'pdf',
+        mime: mimeFromExt('pdf'),
+        sourceType: 'url',
+        url: 'https://academicrepository.s3.us-east-1.amazonaws.com/secretos_finlandia.pdf'
+      },
+      {
+        id: 'd6',
+        title: 'Líder de alto impacto - Módulo 1',
+        type: 'playbook',
+        space: 'Talento',
+        owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 10 * 86400000,
+        status: 'published',
+        updatedAt: Date.now() - 6 * 86400000,
+        tags: ['liderazgo', 'video'],
+        content: 'Video introductorio de liderazgo de alto impacto.',
+        views: 58,
+        version: 1,
+        attachments: [{ title: 'Video módulo 1', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/1.+Lider+de+alto+impacto.mp4', ext: 'mp4', mime: mimeFromExt('mp4'), sourceType: 'url' }],
+        ext: 'mp4',
+        mime: mimeFromExt('mp4'),
+        sourceType: 'url',
+        url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/1.+Lider+de+alto+impacto.mp4'
+      },
+      {
+        id: 'd7',
+        title: 'Presencia ejecutiva - Módulo 1',
+        type: 'playbook',
+        space: 'TI',
+        owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 12 * 86400000,
+        status: 'published',
+        updatedAt: Date.now() - 7 * 86400000,
+        tags: ['liderazgo', 'comunicacion'],
+        content: 'Sesión sobre presencia ejecutiva con ejemplos prácticos.',
+        views: 55,
+        version: 1,
+        attachments: [{ title: 'Video presencia ejecutiva', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/2-+Presencia-ejecutiva.mp4', ext: 'mp4', mime: mimeFromExt('mp4'), sourceType: 'url' }],
+        ext: 'mp4',
+        mime: mimeFromExt('mp4'),
+        sourceType: 'url',
+        url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/2-+Presencia-ejecutiva.mp4'
+      },
+      {
+        id: 'd8',
+        title: 'Audio guía de inducción',
+        type: 'procedimiento',
+        space: 'Operaciones',
+        owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'interno',
+        retentionDays: 90,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 60,
+        lastReviewedAt: Date.now() - 18 * 86400000,
+        status: 'published',
+        updatedAt: Date.now() - 8 * 86400000,
+        tags: ['audio', 'induccion'],
+        content: 'Guía en formato audio para recorridos rápidos de onboarding.',
+        views: 46,
+        version: 1,
+        attachments: [{ title: 'Audio de inducción', url: 'https://www.w3schools.com/html/horse.mp3', ext: 'mp3', mime: mimeFromExt('mp3'), sourceType: 'url' }],
+        ext: 'mp3',
+        mime: mimeFromExt('mp3'),
+        sourceType: 'url',
+        url: 'https://www.w3schools.com/html/horse.mp3'
+      },
+      {
+        id: 'd9',
+        title: 'Presupuesto trimestral (XLS)',
+        type: 'procedimiento',
+        space: 'Comercial',
+        owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'confidencial',
+        retentionDays: 180,
+        audience: ['admin','manager'],
+        reviewEveryDays: 30,
+        lastReviewedAt: Date.now() - 15 * 86400000,
+        status: 'draft',
+        updatedAt: Date.now() - 9 * 86400000,
+        tags: ['finanzas', 'excel'],
+        content: 'Hoja de cálculo con presupuesto trimestral y supuestos de ventas.',
+        views: 32,
+        version: 1,
+        attachments: [{ title: 'XLS de presupuesto', url: 'https://file-examples.com/storage/fe28416c0daac82466e0e5c5/2017/02/file_example_XLS_10.xls', ext: 'xls', mime: mimeFromExt('xls'), sourceType: 'url' }],
+        ext: 'xls',
+        mime: mimeFromExt('xls'),
+        sourceType: 'url',
+        url: 'https://file-examples.com/storage/fe28416c0daac82466e0e5c5/2017/02/file_example_XLS_10.xls'
+      },
+      {
+        id: 'd10',
+        title: 'Presentación estrategia (PPT)',
+        type: 'playbook',
+        space: 'TI',
+        owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'restringido',
+        retentionDays: 365,
+        audience: ['admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now() - 22 * 86400000,
+        status: 'in_review',
+        updatedAt: Date.now() - 10 * 86400000,
+        tags: ['estrategia', 'ppt'],
+        content: 'Presentación ejecutiva para socializar roadmap de producto.',
+        views: 41,
+        version: 1,
+        attachments: [{ title: 'PPT estrategia', url: 'https://file-examples.com/storage/fe77ae3fb053845ed54f9b89/2017/08/file_example_PPT_500kB.ppt', ext: 'ppt', mime: mimeFromExt('ppt'), sourceType: 'url' }],
+        ext: 'ppt',
+        mime: mimeFromExt('ppt'),
+        sourceType: 'url',
+        url: 'https://file-examples.com/storage/fe77ae3fb053845ed54f9b89/2017/08/file_example_PPT_500kB.ppt'
+      }
+    ];
+
+    const resourceDocs = [];
+
+    const seedDocs = [...baseDocs, ...resourceDocs].map(computeReviewFields);
+
+    const seedVersions = seedDocs.map(doc => ({
+      id: crypto.randomUUID(),
+      docId: doc.id,
+      version: 1,
+      snapshotAt: doc.updatedAt,
+      status: doc.status,
+      title: doc.title,
+      content: doc.content,
+      tags: doc.tags,
+      type: doc.type,
+      space: doc.space,
+      owner: doc.owner,
+      ownerId: doc.ownerId,
+      classification: doc.classification,
+      retentionDays: doc.retentionDays,
+      audience: doc.audience,
+      reviewEveryDays: doc.reviewEveryDays,
+      lastReviewedAt: doc.lastReviewedAt,
+      nextReviewAt: doc.nextReviewAt,
+      freshness: doc.freshness,
+      attachments: doc.attachments,
+      ext: doc.ext,
+      mime: doc.mime,
+      sourceType: doc.sourceType,
+      url: doc.url
+    }));
+
+    const seedState = {
+      version: DATA_VERSION,
+      users: seedUsers.map(normalizeUser),
+      docs: seedDocs,
+      events: [],
+      gaps: [],
+      gapTasks: [],
+      feedback: [],
+      follows: [],
+      savedSearches: [],
+      reviewThreads: [],
+      reviewChecklists: [],
+      versions: seedVersions,
+      config: {
+        iaEnabled: true,
+        versioning: true,
+        locale: 'es',
+        theme: 'dark',
+        analytics: { range: '30', space: 'all', tab: 'overview', gapSort: 'zero', healthSort: 'stale' }
+      },
+      currentUser: null,
+      session: null,
+      sidebarHidden: false,
+      lastSearchHash: '#/search'
+    };
+
+    const state = loadState();
+    applyTheme(state.config.theme, true);
+    let editorAutoSave = null;
+    const autoSaveMs = 8000;
+    let resizeTimer = null;
+
+    function syncSidebarToViewport() {
+      const shouldHide = window.innerWidth < 980;
+      if (shouldHide !== state.sidebarHidden) {
+        state.sidebarHidden = shouldHide;
+        persist();
+        render();
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(syncSidebarToViewport, 150);
+    });
+    syncSidebarToViewport();
+
+    if (state.session && !state.currentUser) {
+      const user = state.users.find(u => u.id === state.session.userId);
+      if (user) state.currentUser = user;
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return structuredClone(seedState);
+      try {
+        const parsed = JSON.parse(raw);
+        const mergedConfig = { ...seedState.config, ...(parsed.config || {}) };
+        mergedConfig.analytics = { ...seedState.config.analytics, ...(parsed.config?.analytics || {}) };
+
+        if (parsed.version !== DATA_VERSION) {
+          return { ...structuredClone(seedState), config: mergedConfig };
+        }
+
+        return {
+          ...structuredClone(seedState),
+          ...parsed,
+          users: (parsed.users || seedUsers).map(normalizeUser),
+          docs: (parsed.docs || seedDocs).map(computeReviewFields),
+          events: (parsed.events || []).slice(-eventLimit),
+          config: mergedConfig,
+          session: parsed.session ?? null,
+          savedSearches: parsed.savedSearches || [],
+          gapTasks: parsed.gapTasks || [],
+          feedback: parsed.feedback ?? [],
+          follows: parsed.follows ?? [],
+          reviewThreads: parsed.reviewThreads ?? [],
+          reviewChecklists: parsed.reviewChecklists ?? [],
+          versions: parsed.versions ?? seedVersions,
+          sidebarHidden: parsed.sidebarHidden ?? false
+        };
+      } catch (e) {
+        console.warn('Estado corrupto, reseteando');
+        return structuredClone(seedState);
+      }
+    }
+
+    function persist() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function canAccessSpace(space, user = state.currentUser) {
+      if (!user) return false;
+      if (['admin', 'manager'].includes(user.role)) return true;
+      return (user.spaces || []).includes(space);
+    }
+
+    function canViewDoc(doc, user = state.currentUser) {
+      if (!doc || !user) return false;
+      const roleAllowed = !doc.audience || doc.audience.includes(user.role);
+      const spaceAllowed = canAccessSpace(doc.space, user);
+      return roleAllowed && spaceAllowed;
+    }
+
+    function applyTheme(theme, skipPersist = false) {
+      const next = theme || 'dark';
+      document.body.classList.toggle('light', next === 'light');
+      state.config.theme = next;
+      if (!skipPersist) persist();
+    }
+
+    function resetDemo() {
+      localStorage.removeItem(storageKey);
+      eventBuffer = [];
+      Object.assign(state, structuredClone(seedState));
+      persist();
+      applyTheme(state.config.theme, true);
+      render();
+      toast('Datos de demo restaurados');
+    }
+
+    function toast(message) {
+      const container = document.getElementById('toasts');
+      const node = document.createElement('div');
+      node.className = 'toast';
+      node.textContent = message;
+      container.appendChild(node);
+      setTimeout(() => node.remove(), 2600);
+    }
+
+    function showModal(title, content, actions = []) {
+      const backdrop = document.createElement('div');
+      backdrop.className = 'modal-backdrop';
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      const header = document.createElement('div');
+      header.className = 'flex space-between';
+      const h = document.createElement('h3');
+      h.textContent = title;
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn ghost';
+      closeBtn.textContent = 'Cerrar';
+      closeBtn.onclick = () => backdrop.remove();
+      header.append(h, closeBtn);
+      modal.appendChild(header);
+      modal.appendChild(content);
+      if (actions.length) {
+        const footer = document.createElement('div');
+        footer.className = 'actions';
+        actions.forEach(btn => footer.appendChild(btn));
+        modal.appendChild(footer);
+      }
+      backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+      backdrop.appendChild(modal);
+      document.body.appendChild(backdrop);
+      closeBtn.focus();
+      return { close: () => backdrop.remove() };
+    }
+
+    function openProfileModal() {
+      const user = { ...state.currentUser };
+      const form = document.createElement('div');
+      form.className = 'grid two';
+      form.innerHTML = `
+        <div class="grid">
+          <label>Nombre</label>
+          <input id="pf-name" value="${user.name || ''}" />
+        </div>
+        <div class="grid">
+          <label>Correo electrónico</label>
+          <input id="pf-email" value="${user.email || ''}" />
+        </div>
+        <div class="grid">
+          <label>Cargo</label>
+          <input id="pf-job" value="${user.jobTitle || ''}" />
+        </div>
+        <div class="grid">
+          <label>Área</label>
+          <input id="pf-area" value="${user.area || ''}" />
+        </div>
+      `;
+      const save = document.createElement('button');
+      save.className = 'btn primary';
+      save.textContent = 'Guardar';
+      const modal = showModal('Editar perfil', form, [save]);
+      save.onclick = () => {
+        const updated = {
+          ...user,
+          name: form.querySelector('#pf-name').value.trim() || user.name,
+          email: form.querySelector('#pf-email').value.trim() || user.email,
+          jobTitle: form.querySelector('#pf-job').value.trim(),
+          area: form.querySelector('#pf-area').value.trim()
+        };
+        const idx = state.users.findIndex(u => u.id === user.id);
+        if (idx >= 0) state.users[idx] = normalizeUser({ ...state.users[idx], ...updated });
+        state.currentUser = state.users[idx] || updated;
+        persist();
+        toast('Perfil actualizado');
+        logEvent('profile_updated', { fields: ['name','email','jobTitle','area'] });
+        modal.close();
+        render();
+      };
+    }
+
+    function openUserAdminModal() {
+      if (state.currentUser.role !== 'admin') { toast('Solo admin puede gestionar usuarios'); return; }
+      const container = document.createElement('div');
+      const list = document.createElement('div');
+      list.className = 'grid';
+      const form = document.createElement('div');
+      form.className = 'grid two';
+      form.innerHTML = `
+        <div class="grid">
+          <label>Nombre</label>
+          <input id="nu-name" placeholder="Nombre" />
+        </div>
+        <div class="grid">
+          <label>Correo</label>
+          <input id="nu-email" placeholder="correo@demo.local" />
+        </div>
+        <div class="grid">
+          <label>Cargo</label>
+          <input id="nu-job" placeholder="Cargo" />
+        </div>
+        <div class="grid">
+          <label>Área</label>
+          <input id="nu-area" placeholder="Área" />
+        </div>
+        <div class="grid">
+          <label>Rol</label>
+          <select id="nu-role">
+            <option value="viewer">viewer</option>
+            <option value="editor">editor</option>
+            <option value="manager">manager</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <div class="grid">
+          <label>Espacios</label>
+          <div class="flex" style="gap:6px; flex-wrap:wrap;">
+            ${spaces.map(s => `<label class="pill muted"><input type="checkbox" value="${s}" class="nu-space" checked /> ${s}</label>`).join('')}
+          </div>
+        </div>
+      `;
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn primary';
+      addBtn.textContent = 'Agregar usuario';
+      addBtn.onclick = () => {
+        const name = form.querySelector('#nu-name').value.trim();
+        const email = form.querySelector('#nu-email').value.trim();
+        if (!name || !email) { toast('Nombre y correo son obligatorios'); return; }
+        const role = form.querySelector('#nu-role').value;
+        const jobTitle = form.querySelector('#nu-job').value.trim();
+        const area = form.querySelector('#nu-area').value.trim();
+        const selectedSpaces = Array.from(form.querySelectorAll('.nu-space:checked')).map(i => i.value);
+        const newUser = normalizeUser({ id: crypto.randomUUID(), name, email, jobTitle, area, role, password: 'demo', spaces: selectedSpaces, status: 'pending', createdAt: Date.now() });
+        state.users.push(newUser);
+        persist();
+        toast('Usuario agregado (pendiente de aprobación)');
+        logEvent('user_added', { userId: newUser.id, role });
+        renderUserRows();
+      };
+
+      function renderUserRows() {
+        list.innerHTML = '<div class="flex space-between"><h4>Usuarios</h4><span class="small">Aprobar o eliminar</span></div>';
+        state.users.forEach(u => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between card';
+          row.style.margin = '4px 0';
+          row.innerHTML = `<div><div><strong>${u.name}</strong> · ${u.email}</div><div class="small">${u.role} · ${u.area || ''} · ${u.jobTitle || ''}</div></div>`;
+          const actions = document.createElement('div');
+          actions.className = 'flex';
+          actions.style.gap = '6px';
+          const status = document.createElement('span');
+          status.className = 'pill muted';
+          status.textContent = u.status || 'active';
+          actions.appendChild(status);
+          if (u.status !== 'active') {
+            const accept = document.createElement('button');
+            accept.className = 'btn primary';
+            accept.textContent = 'Aceptar';
+            accept.onclick = () => {
+              u.status = 'active';
+              persist();
+              toast('Usuario aceptado');
+              logEvent('user_accepted', { userId: u.id });
+              renderUserRows();
+            };
+            actions.appendChild(accept);
+          }
+          if (u.id !== state.currentUser.id) {
+            const del = document.createElement('button');
+            del.className = 'btn ghost';
+            del.textContent = 'Eliminar';
+            del.onclick = () => {
+              state.users = state.users.filter(us => us.id !== u.id);
+              persist();
+              toast('Usuario eliminado');
+              logEvent('user_deleted', { userId: u.id });
+              renderUserRows();
+            };
+            actions.appendChild(del);
+          }
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+      }
+
+      renderUserRows();
+      container.append(list);
+      container.append(document.createElement('hr'));
+      const addWrap = document.createElement('div');
+      addWrap.className = 'grid';
+      addWrap.innerHTML = '<h4>Agregar usuario</h4>';
+      addWrap.appendChild(form);
+      addWrap.appendChild(addBtn);
+      container.append(addWrap);
+      showModal('Administrar usuarios', container);
+    }
+
+    function track(type, payload = {}) {
+      const enriched = {
+        id: crypto.randomUUID(),
+        type,
+        at: Date.now(),
+        userId: state.currentUser?.id || null,
+        user: state.currentUser?.email || 'anon',
+        role: state.currentUser?.role || 'anon',
+        route: location.hash || '/login',
+        docId: payload.docId || payload.id || null,
+        ...payload
+      };
+      eventBuffer.push(enriched);
+      if (eventBuffer.length >= eventFlushThreshold) {
+        flushEvents();
+      } else {
+        scheduleFlush();
+      }
+    }
+
+    function scheduleFlush() {
+      clearTimeout(flushTimer);
+      flushTimer = setTimeout(() => flushEvents(), 500);
+    }
+
+    function flushEvents() {
+      if (!eventBuffer.length) return;
+      state.events = [...state.events, ...eventBuffer].slice(-eventLimit);
+      eventBuffer = [];
+      persist();
+    }
+
+    function exportEvents() {
+      flushEvents();
+      const blob = new Blob([JSON.stringify(state.events, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'telemetria-events.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Eventos exportados');
+    }
+
+    function getEvents() {
+      flushEvents();
+      return state.events;
+    }
+
+    function logEvent(type, payload = {}) {
+      track(type, payload);
+    }
+
+    function setUser(user) {
+      state.currentUser = normalizeUser(user);
+      persist();
+    }
+
+    function setSession(session) {
+      state.session = session;
+      if (!session) state.currentUser = null;
+      persist();
+    }
+
+    function requireAuth(target) {
+      if ((!state.currentUser || !state.session?.token) && target !== '/login') {
+        location.hash = '#/login';
+        return false;
+      }
+      return true;
+    }
+
+    function router() {
+      const rawHash = location.hash.slice(1) || '/login';
+      const [clean, queryString = ''] = rawHash.split('?');
+      const [path, param] = clean.split('/').filter(Boolean);
+      const query = Object.fromEntries(new URLSearchParams(queryString));
+      const routes = {
+        'login': '/login',
+        'home': '/home',
+        'search': '/search',
+        'doc': '/doc',
+        'edit': '/edit',
+        'analytics': '/analytics'
+      };
+      const key = routes[path] || '/login';
+      if (!requireAuth(key)) return { key: '/login' };
+      if (key === '/analytics' && !['admin','manager'].includes(state.currentUser.role)) {
+        toast('Necesitas rol admin/manager para Analítica');
+        location.hash = '#/home';
+        return { key: '/home' };
+      }
+      return { key, param, query };
+    }
+
+    function render() {
+      const { key, param, query } = router();
+      if (key !== '/edit' && editorAutoSave) { clearInterval(editorAutoSave); editorAutoSave = null; }
+      if (key === '/login') {
+        renderLogin();
+        return;
+      }
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      const shell = document.createElement('div');
+      const isMobile = window.innerWidth < 980;
+      const shellClasses = ['app-shell'];
+      if (state.sidebarHidden) shellClasses.push('sidebar-hidden');
+      if (!state.sidebarHidden && isMobile) shellClasses.push('showing-sidebar');
+      shell.className = shellClasses.join(' ');
+      const sidebar = renderSidebar(key);
+      const content = document.createElement('div');
+      content.style.display = 'flex';
+      content.style.flexDirection = 'column';
+      const topbar = renderTopbar();
+      const main = document.createElement('div');
+      main.className = 'main';
+      switch (key) {
+        case '/home': main.appendChild(renderHome()); break;
+        case '/search': main.appendChild(renderSearch()); break;
+        case '/doc': main.appendChild(renderDoc(param, query)); break;
+        case '/edit': main.appendChild(renderEditor(param)); break;
+        case '/analytics': main.appendChild(renderAnalytics()); break;
+        default: main.appendChild(renderHome());
+      }
+      content.appendChild(topbar);
+      content.appendChild(main);
+      const overlay = document.createElement('div');
+      overlay.className = 'sidebar-overlay';
+      overlay.onclick = () => { state.sidebarHidden = true; persist(); render(); };
+      shell.appendChild(sidebar);
+      shell.appendChild(overlay);
+      shell.appendChild(content);
+      app.replaceChildren(shell);
+    }
+
+    function renderSidebar(active) {
+      const navItems = [
+        { href: '#/home', label: 'Home', icon: '🏠' },
+        { href: '#/search', label: 'Búsqueda', icon: '🔍' },
+        { href: '#/edit/new', label: 'Crear', icon: '✏️', roles: ['editor','admin'] },
+        { href: '#/analytics', label: 'Analítica', icon: '📊', roles: ['admin','manager'] },
+      ];
+      const aside = document.createElement('aside');
+      aside.className = 'sidebar' + (state.sidebarHidden ? ' hidden' : '');
+      const brand = document.createElement('div');
+      brand.className = 'brand';
+      brand.innerHTML = `<div class="brand-mark">T</div><span class="label">Repositorio</span>`;
+      const nav = document.createElement('div');
+      nav.className = 'nav';
+      navItems.forEach(item => {
+        if (item.roles && !item.roles.includes(state.currentUser.role)) return;
+        const link = document.createElement('a');
+        link.href = item.href;
+        link.className = 'nav-item' + (location.hash.startsWith(item.href) ? ' active' : '');
+        link.setAttribute('aria-label', item.label);
+        link.innerHTML = `${item.icon || ''}<span class="label">${item.label}</span><span class="tooltip">${item.label}</span>`;
+        nav.appendChild(link);
+      });
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn ghost';
+      resetBtn.innerHTML = '<span class="label">Reset demo</span>';
+      resetBtn.onclick = resetDemo;
+      const exportBtn = document.createElement('button');
+      exportBtn.className = 'btn ghost';
+      exportBtn.innerHTML = '<span class="label">Exportar eventos</span>';
+      exportBtn.onclick = exportEvents;
+      aside.append(brand, nav, resetBtn, exportBtn);
+      return aside;
+    }
+
+    function renderTopbar() {
+      const bar = document.createElement('div');
+      bar.className = 'topbar';
+      const left = document.createElement('div');
+      left.className = 'left';
+      const menuBtn = document.createElement('button');
+      menuBtn.className = 'btn ghost small menu-toggle';
+      menuBtn.innerHTML = state.sidebarHidden ? '☰' : '✕';
+      menuBtn.setAttribute('aria-label', state.sidebarHidden ? 'Abrir navegación' : 'Cerrar navegación');
+      menuBtn.onclick = () => { state.sidebarHidden = !state.sidebarHidden; persist(); render(); };
+      const quickSearch = document.createElement('div');
+      quickSearch.className = 'search-box';
+      quickSearch.innerHTML = '<span>🔍</span><input placeholder="Buscar..." aria-label="Buscar" />';
+      const input = quickSearch.querySelector('input');
+      input.setAttribute('aria-label', 'Búsqueda global');
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          const q = input.value.trim();
+          if (q) {
+            state.lastQuery = q;
+            logEvent('search_performed', { q });
+            location.hash = '#/search?q=' + encodeURIComponent(q);
+          }
+        }
+      };
+      left.append(menuBtn, quickSearch);
+      const right = document.createElement('div');
+      right.className = 'right';
+      const logo = new Image();
+      logo.src = 'https://www.algoritmot.com/wp-content/uploads/2022/08/Recurso-8.png';
+      logo.alt = 'Algoritmo T';
+      logo.className = 'logo-inline';
+      const userBadge = document.createElement('button');
+      userBadge.className = 'pill';
+      userBadge.textContent = `${state.currentUser.name} · ${state.currentUser.role}`;
+      userBadge.onclick = () => openProfileModal();
+      const themeBtn = document.createElement('button');
+      themeBtn.className = 'btn ghost';
+      themeBtn.textContent = state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro';
+      themeBtn.onclick = () => {
+        const next = state.config.theme === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+        toast(`Modo ${next === 'light' ? 'claro' : 'oscuro'}`);
+        render();
+      };
+      const userAdminBtn = document.createElement('button');
+      userAdminBtn.className = 'btn ghost';
+      userAdminBtn.textContent = 'Usuarios';
+      userAdminBtn.onclick = openUserAdminModal;
+      const logout = document.createElement('button');
+      logout.className = 'btn ghost';
+      logout.textContent = 'Salir';
+      logout.onclick = () => { setSession(null); location.hash = '#/login'; };
+      const hasEditableSpace = ['editor','admin'].includes(state.currentUser.role) && spaces.some(s => canAccessSpace(s));
+      if (hasEditableSpace) { right.appendChild((() => { const btn = document.createElement('button'); btn.className = 'btn primary'; btn.textContent = 'Crear'; btn.onclick = () => { location.hash = '#/edit/new'; }; return btn; })()); }
+      if (state.currentUser.role === 'admin') right.appendChild(userAdminBtn);
+      right.append(logo, userBadge, themeBtn, logout);
+      bar.append(left, right);
+      return bar;
+    }
+
+    function renderLogin() {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'login-wrapper';
+      const card = document.createElement('div');
+      card.className = 'login-card';
+      card.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h2>Acceder</h2>
+            <p>Inicia sesión con credenciales demo o simula SSO. El acceso está sujeto a políticas corporativas.</p>
+          </div>
+          <div class="flex" style="align-items:center; gap:10px;">
+            <img src="https://www.algoritmot.com/wp-content/uploads/2022/08/Recurso-8.png" alt="Algoritmo T" class="logo-inline" style="height:46px;" />
+            <button class="btn ghost" id="themeLogin">${state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</button>
+          </div>
+        </div>
+        <div class="grid">
+          <button class="btn primary" id="ssoBtn">Ingresar con SSO</button>
+          <div class="grid">
+            <label for="email">Correo</label>
+            <input id="email" placeholder="usuario@demo.local" />
+            <label for="password">Clave</label>
+            <input id="password" type="password" placeholder="demo" />
+            <label for="role">Rol</label>
+            <select id="role">
+              <option value="viewer">viewer</option>
+              <option value="editor">editor</option>
+              <option value="admin">admin</option>
+              <option value="manager">manager</option>
+            </select>
+          </div>
+          <button class="btn ghost" id="loginBtn">Ingresar</button>
+          <span class="small">Demo: elige un usuario para autocompletar</span>
+          <div class="flex" id="demoUsers"></div>
+        </div>`;
+      const demoUsers = card.querySelector('#demoUsers');
+      state.users.forEach(u => {
+        const b = document.createElement('button');
+        b.className = 'btn ghost';
+        b.textContent = `${u.name} (${u.role})`;
+        b.onclick = () => {
+          card.querySelector('#email').value = u.email;
+          card.querySelector('#password').value = 'demo';
+          card.querySelector('#role').value = u.role;
+        };
+        demoUsers.appendChild(b);
+      });
+      card.querySelector('#ssoBtn').onclick = () => {
+        toast('Simulando redirección SSO...');
+        setTimeout(() => toast('SSO completado (demo)'), 800);
+      };
+      card.querySelector('#themeLogin').onclick = () => {
+        const next = state.config.theme === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+        toast(`Modo ${next === 'light' ? 'claro' : 'oscuro'}`);
+        render();
+      };
+      card.querySelector('#loginBtn').onclick = () => {
+        const email = card.querySelector('#email').value.trim();
+        const pass = card.querySelector('#password').value.trim();
+        const role = card.querySelector('#role').value;
+        const user = state.users.find(u => u.email === email && u.password === pass);
+        if (!user) { toast('Credenciales inválidas'); return; }
+        if (user.status !== 'active') { toast('Usuario pendiente de aprobación'); return; }
+        if (role !== user.role) { toast('Rol no coincide con el usuario demo'); return; }
+        const token = crypto.randomUUID();
+        setUser(user);
+        setSession({ token, userId: user.id, role: user.role, issuedAt: Date.now() });
+        logEvent('login_success', { email, role });
+        location.hash = '#/home';
+      };
+      wrapper.appendChild(card);
+      app.appendChild(wrapper);
+    }
+
+    function renderHome() {
+      const container = document.createElement('div');
+      container.className = 'grid';
+      const hero = document.createElement('div');
+      hero.className = 'card';
+      hero.innerHTML = `
+        <div class="flex space-between"><h2>Inicio</h2><span class="badge">Rol: ${state.currentUser.role}</span></div>
+        <p>Busca, consume y crea conocimiento. Feed personalizado y tareas rápidas.</p>
+        <div class="grid two">
+          <div>
+            <label for="home-search">Buscar</label>
+            <div class="search-box" style="margin-top:6px;">
+              <span>🔍</span>
+              <input id="home-search" placeholder="Buscar en todo..." />
+            </div>
+          </div>
+          <div class="grid" style="align-content:end;">
+            <div class="flex" style="gap:8px; flex-wrap:wrap;">
+              <button class="btn primary" id="home-search-btn">Buscar</button>
+              <button class="btn ghost" onclick="openProfileModal()">Editar perfil</button>
+              ${['editor','admin'].includes(state.currentUser.role) && spaces.some(s => canAccessSpace(s)) ? '<button class="btn ghost" onclick="location.hash=\'#/edit/new\'">Crear artículo</button>' : ''}
+              ${['admin','manager'].includes(state.currentUser.role) ? '<button class="btn ghost" onclick="location.hash=\'#/analytics\'">Ver analítica</button>' : ''}
+            </div>
+            <span class="small">Tip: usa filtros avanzados en la vista de búsqueda</span>
+          </div>
+        </div>`;
+      const homeSearchInput = hero.querySelector('#home-search');
+      hero.querySelector('#home-search-btn').onclick = () => {
+        const q = homeSearchInput.value.trim();
+        logEvent('search_performed', { from: 'home', q });
+        location.hash = `#/search?q=${encodeURIComponent(q)}`;
+      };
+      const feeds = document.createElement('div');
+      feeds.className = 'grid two';
+      feeds.append(
+        buildListCard('Recientes', recentDocs(4)),
+        buildListCard('Populares', topDocsByViews(4))
+      );
+      const tasks = document.createElement('div');
+      tasks.className = 'card';
+      const pending = state.docs.filter(d => d.status === 'in_review' && canViewDoc(d));
+      tasks.innerHTML = `<div class="flex space-between"><h3>Workflow</h3><span class="small">Draft → Review → Published</span></div>`;
+      if (pending.length === 0) {
+        tasks.innerHTML += '<p>No hay documentos en revisión.</p>';
+      } else {
+        const ul = document.createElement('div');
+        ul.className = 'grid';
+        pending.forEach(d => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.innerHTML = `<span>${d.title}</span><div class="status ${d.status}">${d.status}</div>`;
+          ul.appendChild(row);
+        });
+        tasks.appendChild(ul);
+      }
+      const reviewCard = document.createElement('div');
+      reviewCard.className = 'card';
+      const ownDocs = state.docs.filter(d => d.ownerId === state.currentUser.id && canViewDoc(d)).map(computeReviewFields);
+      const dueSoon = ownDocs.filter(d => d.nextReviewAt <= Date.now() + 7 * 86400000);
+      reviewCard.innerHTML = `<div class="flex space-between"><h3>Revisiones del owner</h3><span class="small">Frescura automática</span></div>`;
+      if (!dueSoon.length) {
+        reviewCard.innerHTML += '<p class="small">Sin pendientes próximos.</p>';
+      } else {
+        const list = document.createElement('div');
+        list.className = 'grid';
+        dueSoon.sort((a, b) => a.nextReviewAt - b.nextReviewAt).forEach(d => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.innerHTML = `<span>${d.title}</span><span class="small">Revisar antes de ${new Date(d.nextReviewAt).toLocaleDateString()} (${d.freshness})</span>`;
+          list.appendChild(row);
+        });
+        reviewCard.appendChild(list);
+      }
+      container.append(hero, feeds, tasks, reviewCard);
+      return container;
+    }
+
+    function buildListCard(title, docs) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<h3>${title}</h3>`;
+      docs.forEach(doc => {
+        const div = document.createElement('div');
+        div.className = 'doc-card';
+        div.innerHTML = `
+          <div class="flex space-between">
+            <a href="#/doc/${doc.id}" class="pill">${doc.title}</a>
+            <span class="status ${doc.status}">${doc.status}</span>
+          </div>
+          <div class="flex">
+            <span class="small">${doc.space}</span>
+            <span class="small">${new Date(doc.updatedAt).toLocaleDateString()}</span>
+          </div>`;
+        card.appendChild(div);
+      });
+      return card;
+    }
+
+    function topDocsByViews(n) {
+      return [...state.docs].filter(canViewDoc).sort((a,b) => b.views - a.views).slice(0,n);
+    }
+    function recentDocs(n) {
+      return [...state.docs].filter(canViewDoc).sort((a,b) => b.updatedAt - a.updatedAt).slice(0,n);
+    }
+
+    function parseQuery() {
+      const hash = location.hash.split('?')[1] || '';
+      return Object.fromEntries(new URLSearchParams(hash));
+    }
+
+    function renderSearch() {
+      const params = parseQuery();
+      const q = params.q || '';
+      const type = params.type || 'all';
+      const space = params.space || 'all';
+      const tags = params.tags ? params.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const range = params.range || 'all';
+      const selectedFormats = params.format ? params.format.split(',').filter(Boolean) : [];
+      const { results, facets, suggestions, semantic } = searchDocs({ q, type, space, tags, range, formats: selectedFormats });
+      const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all' || selectedFormats.length;
+      if (attempted) {
+        logEvent('search_performed', { q, filters: { type, space, tags, range, formats: selectedFormats }, results: results.length, top: results[0]?.id });
+        if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range, formats: selectedFormats } });
+        state.lastSearchHash = location.hash;
+        persist();
+      }
+      const container = document.createElement('div');
+      container.className = 'grid';
+      const card = document.createElement('div');
+      card.className = 'card';
+      let debounceHandle;
+      const debounceDelay = 300;
+      const runSearch = (source = 'search_form') => {
+        const nextQ = card.querySelector('#q').value.trim();
+        const nextType = typeSel.value;
+        const nextSpace = spaceSel.value;
+        const nextTags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
+        const nextRange = rangeSel.value;
+        const nextFormats = Array.from(card.querySelectorAll('.formatCheck:checked')).map(c => c.value);
+        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats });
+        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats }, results: previewResults.results.length, source });
+        if (previewResults.results.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats } });
+        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormats.join(',')}`;
+      };
+      const scheduleSearch = (source = 'debounced') => {
+        clearTimeout(debounceHandle);
+        debounceHandle = setTimeout(() => runSearch(source), debounceDelay);
+      };
+      card.innerHTML = `
+        <div class="flex space-between"><h2>Búsqueda</h2><span class="small">Full-text + filtros</span></div>
+        <div class="grid two">
+          <div>
+            <label>Consulta</label>
+            <input id="q" value="${q}" placeholder="Buscar..." />
+          </div>
+            <div class="grid two">
+              <div>
+                <label>Tipo</label>
+                <select id="type">
+                  <option value="all">Todos</option>
+                  <option value="wiki">Wiki</option>
+                  <option value="faq">FAQ</option>
+                  <option value="procedimiento">Procedimiento</option>
+                  <option value="postmortem">Postmortem</option>
+                  <option value="playbook">Playbook</option>
+                </select>
+              </div>
+              <div>
+                <label>Espacio</label>
+                <select id="space">
+                  <option value="all">Todos (${facets.spaceCounts.all || state.docs.length})</option>
+                  ${spaces.map(s => `<option value="${s}">${s} (${facets.spaceCounts[s] || 0})</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="grid two" style="margin-top:10px;">
+            <div>
+              <label>Etiquetas (coma)</label>
+              <input id="tags" value="${tags.join(', ')}" placeholder="SOP, FAQ" />
+            </div>
+            <div class="grid two" style="gap:8px;">
+              <div>
+                <label>Fecha de actualización</label>
+                <select id="range">
+                  <option value="all">Cualquier fecha</option>
+                  <option value="7">Últimos 7 días</option>
+                  <option value="30">Últimos 30 días</option>
+                  <option value="90">Últimos 90 días</option>
+                </select>
+              </div>
+              <div>
+                <label>Formato</label>
+                <div id="formatFilters" class="grid" style="grid-template-columns: repeat(auto-fit,minmax(120px,1fr)); gap:6px;">
+                  ${Object.keys(FORMAT_GROUPS).map(g => `
+                    <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);">
+                      <input type="checkbox" value="${g}" class="formatCheck" ${selectedFormats.includes(g) ? 'checked' : ''}/>
+                      ${g.toUpperCase()} (${facets.formatCounts[g] || 0})
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex" style="margin-top:10px;">
+            <button class="btn primary" id="runSearch">Buscar</button>
+            <span class="small">Resultados: ${results.length}</span>
+          </div>`;
+      const typeSel = card.querySelector('#type');
+      typeSel.value = type;
+      const spaceSel = card.querySelector('#space');
+      spaceSel.value = space;
+      const rangeSel = card.querySelector('#range');
+      rangeSel.value = range;
+      card.querySelector('#runSearch').onclick = () => runSearch('search_form');
+      card.querySelector('#q').addEventListener('input', () => scheduleSearch('debounced_input'));
+      card.querySelector('#tags').addEventListener('input', () => scheduleSearch('debounced_tags'));
+      typeSel.onchange = () => runSearch('filter_change');
+      spaceSel.onchange = () => runSearch('filter_change');
+      rangeSel.onchange = () => runSearch('filter_change');
+      card.querySelectorAll('.formatCheck').forEach(ch => ch.onchange = () => runSearch('filter_change'));
+      const activeFilters = document.createElement('div');
+      activeFilters.className = 'flex';
+      activeFilters.style.gap = '6px';
+      const chips = [];
+      if (type !== 'all') chips.push({ label: `Tipo: ${type}`, action: () => location.hash = location.hash.replace(/type=[^&]*/, 'type=all') });
+      if (space !== 'all') chips.push({ label: `Espacio: ${space}`, action: () => location.hash = location.hash.replace(/space=[^&]*/, 'space=all') });
+      tags.forEach(t => chips.push({ label: `Tag: ${t}`, action: () => location.hash = `#/search?q=${encodeURIComponent(q)}&type=${type}&space=${space}&range=${range}` }));
+      if (range !== 'all') chips.push({ label: `Rango: ${range}d`, action: () => location.hash = location.hash.replace(/range=[^&]*/, 'range=all') });
+      selectedFormats.forEach(f => chips.push({ label: `Formato: ${f}`, action: () => location.hash = '#/search' }));
+      if (chips.length) {
+        chips.forEach(c => {
+          const pill = document.createElement('span');
+          pill.className = 'tag';
+          pill.style.cursor = 'pointer';
+          pill.textContent = c.label + ' ×';
+          pill.onclick = c.action;
+          activeFilters.appendChild(pill);
+        });
+        const clear = document.createElement('button');
+        clear.className = 'btn ghost small';
+        clear.textContent = 'Limpiar todo';
+        clear.onclick = () => location.hash = '#/search';
+        activeFilters.appendChild(clear);
+        card.appendChild(activeFilters);
+      }
+      const savedWrap = document.createElement('div');
+      savedWrap.className = 'grid';
+      savedWrap.style.marginTop = '8px';
+      savedWrap.innerHTML = `<label class="small">Guardar búsqueda</label><div class="flex" style="gap:6px; flex-wrap:wrap;"><input id="saveName" placeholder="Nombre" /><button class="btn ghost small" id="saveSearch">Guardar</button></div>`;
+      savedWrap.querySelector('#saveSearch').onclick = () => {
+        const name = savedWrap.querySelector('#saveName').value.trim() || `Búsqueda ${new Date().toLocaleString()}`;
+        state.savedSearches.push({ id: crypto.randomUUID(), name, q, filters: { type, space, tags, range, formats: selectedFormats }, alert: false, createdAt: Date.now() });
+        persist();
+        toast('Búsqueda guardada');
+        render();
+      };
+      if (state.savedSearches.length) {
+        const list = document.createElement('div');
+        list.className = 'grid';
+        list.innerHTML = '<label class="small">Saved searches / alertas</label>';
+        state.savedSearches.forEach(s => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.innerHTML = `<span>${s.name}</span>`;
+          const actions = document.createElement('div');
+          actions.className = 'flex';
+          const apply = document.createElement('button');
+          apply.className = 'btn ghost small';
+          apply.textContent = 'Aplicar';
+          apply.onclick = () => {
+            const f = s.filters || {};
+            location.hash = `#/search?q=${encodeURIComponent(s.q||'')}&type=${f.type||'all'}&space=${f.space||'all'}&tags=${encodeURIComponent((f.tags||[]).join(','))}&range=${f.range||'all'}&format=${(f.formats||[]).join(',')}`;
+          };
+          const alertToggle = document.createElement('button');
+          alertToggle.className = s.alert ? 'btn primary small' : 'btn ghost small';
+          alertToggle.textContent = s.alert ? 'Alerta on' : 'Crear alerta';
+          alertToggle.onclick = () => { s.alert = !s.alert; persist(); render(); };
+          actions.append(apply, alertToggle);
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+        savedWrap.appendChild(list);
+      }
+      card.appendChild(savedWrap);
+      const list = document.createElement('div');
+      list.className = 'grid two';
+      if (results.length === 0 && attempted) {
+        const empty = document.createElement('div');
+        empty.className = 'card';
+        empty.innerHTML = `<h3>Sin resultados</h3><p class="small">No encontramos coincidencias. Reporta un gap para generar contenido.</p><ul class="small"><li>Prueba quitar filtros o elegir otro espacio</li><li>Usa menos palabras o sin acentos</li><li>Revisa documentos similares recomendados abajo</li></ul><div class="grid"> <label>Asignar como tarea</label><select id="gapOwner">${state.users.map(u => `<option value="${u.id}">${u.name}</option>`).join('')}</select><input id="gapSla" type="number" min="1" value="7" placeholder="SLA días" /><button class="btn primary" id="reportGap">Reportar gap</button></div>`;
+        empty.querySelector('#reportGap').onclick = () => {
+          const assignedTo = empty.querySelector('#gapOwner').value;
+          const sla = Number(empty.querySelector('#gapSla').value) || 7;
+          const gap = addGap({ q, filters: { type, space, tags, range, formats: selectedFormats } });
+          addGapTask({ gapId: gap.id, assignedTo, slaDays: sla, status: 'open' });
+          toast('Gap registrado y tarea asignada');
+        };
+        list.appendChild(empty);
+      }
+      if (suggestions.length) {
+        const sugCard = document.createElement('div');
+        sugCard.className = 'card';
+        sugCard.innerHTML = `<h4>Quizás buscabas...</h4><div class="flex" style="gap:6px;">${suggestions.map(s => `<a class="tag" href="#/search?q=${encodeURIComponent(s)}">${s}</a>`).join('')}</div>`;
+        list.appendChild(sugCard);
+      }
+      results.forEach(r => {
+        const docHref = q ? `#/doc/${r.id}?highlight=${encodeURIComponent(q)}` : `#/doc/${r.id}`;
+        const item = document.createElement('div');
+        item.className = 'card doc-card';
+        item.innerHTML = `
+          <div class="flex space-between">
+            <a href="${docHref}"><h3>${r.highlightedTitle || r.title}</h3></a>
+            <span class="status ${r.status}">${r.status}</span>
+          </div>
+          <p>${r.snippet || r.content.slice(0,120)}...</p>
+          <div class="flex">
+            <span class="tag">${r.type}</span>
+            <span class="tag">${r.space}</span>
+            ${r.ext ? `<span class="tag">${r.ext.toUpperCase()}</span>` : ''}
+            ${r.classification ? `<span class="tag">${r.classification}</span>` : ''}
+            ${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+            <span class="small">Score ${r.score?.toFixed(2) || 0}</span>
+          </div>`;
+        list.appendChild(item);
+      });
+      if (semantic && semantic.source) {
+        const iaCard = document.createElement('div');
+        iaCard.className = 'card';
+        iaCard.innerHTML = `<h4>Respuesta IA (demo)</h4><p>${semantic.answer}</p><div class="small">Fuente: <a href="#/doc/${semantic.source.id}">${semantic.source.title}</a></div>`;
+        list.prepend(iaCard);
+      }
+      container.append(card, list);
+      return container;
+    }
+
+    function filterByFormat(docs, selectedGroups = []) {
+      if (!selectedGroups.length) return docs;
+      const allowed = new Set(selectedGroups.flatMap(g => FORMAT_GROUPS[g] || []));
+      return docs.filter(d => allowed.has(normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '')));
+    }
+
+    function normalizeText(str = '') {
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '');
+    }
+
+    function levenshtein(a = '', b = '') {
+      const lenA = a.length;
+      const lenB = b.length;
+      if (lenA === 0) return lenB;
+      if (lenB === 0) return lenA;
+      const dp = Array.from({ length: lenA + 1 }, () => new Array(lenB + 1).fill(0));
+      for (let i = 0; i <= lenA; i++) dp[i][0] = i;
+      for (let j = 0; j <= lenB; j++) dp[0][j] = j;
+      for (let i = 1; i <= lenA; i++) {
+        for (let j = 1; j <= lenB; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      }
+      return dp[lenA][lenB];
+    }
+
+    function bestFuzzyScore(text = '', term = '') {
+      const normalizedText = normalizeText(text);
+      const normalizedTerm = normalizeText(term);
+      if (!normalizedTerm) return 0;
+      if (normalizedText.includes(normalizedTerm)) return 1;
+      const words = normalizedText.split(/[^a-z0-9]+/).filter(Boolean);
+      let best = 0;
+      const targetLen = normalizedTerm.length;
+      const maxAllowed = Math.max(1, Math.floor(targetLen * 0.35));
+      for (const w of words) {
+        const dist = levenshtein(w, normalizedTerm);
+        if (dist <= maxAllowed) {
+          const denom = Math.max(w.length, targetLen) || 1;
+          best = Math.max(best, 1 - dist / denom);
+        }
+      }
+      return best;
+    }
+
+    function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all', formats = [] }) {
+      const normalized = normalizeText(q.trim());
+      const terms = normalized.split(/\s+/).filter(Boolean);
+      const now = Date.now();
+      const rangeDays = range === 'all' ? null : Number(range);
+      const baseFiltered = state.docs.filter(d => {
+        const matchesType = type === 'all' || d.type === type;
+        const matchesSpace = space === 'all' || d.space === space;
+        const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
+        const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
+        const allowed = canViewDoc(d);
+        return matchesType && matchesSpace && matchesTags && matchesDate && allowed;
+      });
+      const facetSpaceCounts = baseFiltered.reduce((acc, d) => { acc[d.space] = (acc[d.space] || 0) + 1; return acc; }, {});
+      facetSpaceCounts.all = baseFiltered.length;
+      const facetFormatCounts = baseFiltered.reduce((acc, d) => {
+        const ext = normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '');
+        Object.entries(FORMAT_GROUPS).forEach(([g, list]) => { if (list.includes(ext)) acc[g] = (acc[g] || 0) + 1; });
+        return acc;
+      }, {});
+      const scored = baseFiltered.map(doc => {
+        let score = 0;
+        if (terms.length === 0 && !normalized) score += Math.log1p(doc.views || 0);
+        terms.forEach(t => {
+          const titleProx = bestFuzzyScore(doc.title, t);
+          if (titleProx >= 0.35) score += 3 * titleProx;
+          const tagProx = Math.max(0, ...doc.tags.map(tag => bestFuzzyScore(tag, t)));
+          if (tagProx >= 0.35) score += 2 * tagProx;
+          const contentProx = bestFuzzyScore(doc.content, t);
+          if (contentProx >= 0.35) score += 1.5 * contentProx;
+        });
+        if (doc.status === 'published') score += 2; else if (doc.status === 'in_review') score += 1;
+        if (doc.freshness === 'al día') score += 1; else if (doc.freshness === 'vencido') score -= 1;
+        const fb = feedbackSummary(doc.id);
+        score += (fb.useful - fb.notUseful) * 0.5;
+        score += Math.log1p(doc.views || 0);
+        const recency = 1 / (1 + ((now - doc.updatedAt) / 86400000));
+        score += recency;
+        const ext = normalizeExt(doc.ext || doc.attachments?.[0]?.ext || '');
+        return { ...doc, score, snippet: buildSnippet(doc.content, terms), highlightedTitle: highlightText(doc.title, terms), ext };
+      });
+      const formatFiltered = filterByFormat(scored, formats);
+      const withQueryMatch = terms.length ? formatFiltered.filter(d => d.score > 0) : formatFiltered;
+      const ordered = withQueryMatch.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
+      const suggestions = !ordered.length && terms.length ? suggestAlternatives(terms) : [];
+      const semantic = semanticAnswer(ordered, terms, normalized);
+      return { results: ordered, facets: { formatCounts: facetFormatCounts, spaceCounts: facetSpaceCounts }, suggestions, semantic };
+    }
+
+      function escapeRegExp(str = '') {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+
+    function highlightText(text, terms = []) {
+      if (!terms.length) return text;
+      let out = text;
+      terms.forEach(t => {
+        if (!t) return;
+        const re = new RegExp(`(${escapeRegExp(t)})`, 'ig');
+        out = out.replace(re, '<mark class="search-hit">$1</mark>');
+      });
+      return out;
+    }
+
+    function buildSnippet(content, terms = []) {
+      if (!content) return '';
+      if (!terms.length) return content.slice(0, 140);
+      const lower = content.toLowerCase();
+      const idx = terms.map(t => lower.indexOf(t)).find(i => i >= 0);
+      const start = idx && idx > 40 ? idx - 40 : 0;
+      const snippet = content.slice(start, start + 180);
+      return highlightText(snippet, terms);
+    }
+
+    function highlightElement(el, terms = []) {
+      if (!el || !terms.length) return;
+      el.innerHTML = highlightText(el.innerHTML, terms);
+      const first = el.querySelector('mark.search-hit');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function slugify(text = '') {
+      const base = text.toString().toLowerCase()
+        .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return base || `sec-${crypto.randomUUID()}`;
+    }
+
+    function insertAtCursor(el, text) {
+      const start = el.selectionStart || 0;
+      const end = el.selectionEnd || 0;
+      const before = el.value.substring(0, start);
+      const after = el.value.substring(end);
+      el.value = `${before}${text}\n${after}`;
+      el.selectionStart = el.selectionEnd = start + text.length + 1;
+      el.dispatchEvent(new Event('input'));
+    }
+
+    function markdownToHtml(md = '') {
+      const esc = (md || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const paragraphs = esc.split(/\n\n+/).map(block => {
+        let html = block
+          .replace(/^###\s+(.*)$/gm, '<h4>$1</h4>')
+          .replace(/^##\s+(.*)$/gm, '<h3>$1</h3>')
+          .replace(/^#\s+(.*)$/gm, '<h2>$1</h2>')
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.+?)\*/g, '<em>$1</em>');
+        if (/^\d+\.\s+/m.test(html) || /^-\s+/m.test(html)) {
+          const lines = html.split(/\n/).map(l => l.replace(/^[-\d\.]+\s+/, ''));
+          html = '<ul><li>' + lines.join('</li><li>') + '</li></ul>';
+        }
+        return `<p>${html.replace(/\n/g, '<br/>')}</p>`;
+      });
+      return paragraphs.join('');
+    }
+
+    function renderDiff(oldText = '', newText = '') {
+      const oldLines = oldText.split('\n');
+      const newLines = newText.split('\n');
+      const max = Math.max(oldLines.length, newLines.length);
+      let html = '<div class="grid">';
+      for (let i = 0; i < max; i++) {
+        const before = oldLines[i] || '';
+        const after = newLines[i] || '';
+        if (before === after) {
+          html += `<div class="small" style="background:var(--surface-2);padding:4px 6px;">${before}</div>`;
+        } else {
+          if (before) html += `<div class="small" style="background:rgba(239,132,93,0.12);padding:4px 6px;">- ${before}</div>`;
+          if (after) html += `<div class="small" style="background:rgba(95,224,199,0.12);padding:4px 6px;">+ ${after}</div>`;
+        }
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function suggestAlternatives(terms) {
+      const set = new Set();
+      terms.forEach(t => {
+        state.docs.forEach(d => {
+          d.tags.forEach(tag => { if (tag.toLowerCase().includes(t)) set.add(tag); });
+          if (d.title.toLowerCase().includes(t)) set.add(d.title);
+        });
+      });
+      return Array.from(set).slice(0, 5);
+    }
+
+    function semanticAnswer(results, terms, normalized) {
+      if (!normalized || !results.length) return null;
+      const top = results[0];
+      const snippet = buildSnippet(top.content, terms);
+      return { answer: `Posible respuesta: ${snippet}`, source: { id: top.id, title: top.title } };
+    }
+
+    function addGap(payload) {
+      const gap = { id: `gap-${Date.now()}`, ...payload, reporter: state.currentUser?.email || 'anon', createdAt: Date.now() };
+      state.gaps.push(gap);
+      logEvent('gap_reported', gap);
+      persist();
+      return gap;
+    }
+
+    function addGapTask({ gapId, assignedTo, slaDays = 7, status = 'open' }) {
+      const task = { id: crypto.randomUUID(), gapId, assignedTo, slaDays, status, createdAt: Date.now(), dueAt: Date.now() + slaDays * 86400000 };
+      state.gapTasks.push(task);
+      logEvent('gap_task_created', task);
+      persist();
+      return task;
+    }
+
+    function createDocFromGap(gapId) {
+      const gap = state.gaps.find(g => g.id === gapId);
+      if (!gap) return null;
+      const owner = state.users.find(u => u.id === state.currentUser?.id) || state.users[0];
+      const doc = computeReviewFields({
+        id: `d${Date.now()}`,
+        title: `Borrador desde gap: ${gap.q || 'consulta'}`,
+        type: 'wiki',
+        space: (() => {
+          const target = gap.filters?.space && gap.filters.space !== 'all' ? gap.filters.space : spaces[0];
+          if (canAccessSpace(target)) return target;
+          const firstAllowed = spaces.find(s => canAccessSpace(s));
+          return firstAllowed || target;
+        })(),
+        owner: owner.name,
+        ownerId: owner.id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now(),
+        status: 'draft',
+        updatedAt: Date.now(),
+        tags: normalizeTags(gap.filters?.tags || []),
+        content: `Contexto del gap: ${gap.q || ''}. Detalle: ${JSON.stringify(gap.filters || {})}`,
+        version: 0,
+        attachments: [],
+        ext: 'html',
+        mime: mimeFromExt('html'),
+        sourceType: 'url',
+        url: 'https://example.com'
+      });
+      state.docs.push(doc);
+      state.versions.push({ id: crypto.randomUUID(), docId: doc.id, version: 1, snapshotAt: doc.updatedAt, status: doc.status, title: doc.title, content: doc.content });
+      logEvent('doc_created', { docId: doc.id, fromGap: gapId });
+      persist();
+      return doc;
+    }
+
+    function isFollowing(docId, userId = state.currentUser?.id) {
+      if (!userId) return false;
+      return state.follows.some(f => f.docId === docId && f.userId === userId);
+    }
+
+    function toggleFollow(docId) {
+      const userId = state.currentUser?.id;
+      if (!userId) return;
+      const idx = state.follows.findIndex(f => f.docId === docId && f.userId === userId);
+      if (idx >= 0) {
+        state.follows.splice(idx, 1);
+        logEvent('doc_unfollowed', { docId, userId });
+        toast('Se dejó de seguir');
+      } else {
+        state.follows.push({ id: crypto.randomUUID(), docId, userId, at: Date.now() });
+        logEvent('doc_followed', { docId, userId });
+        toast('Siguiendo documento');
+      }
+      persist();
+    }
+
+    function saveFeedback(docId, value, comment) {
+      const entry = {
+        id: crypto.randomUUID(),
+        docId,
+        value,
+        comment: comment?.trim() || '',
+        userId: state.currentUser?.id,
+        at: Date.now()
+      };
+      state.feedback.push(entry);
+      logEvent('doc_feedback', { docId, value, hasComment: !!entry.comment });
+      persist();
+    }
+
+    function feedbackSummary(docId) {
+      const items = state.feedback.filter(f => f.docId === docId);
+      const useful = items.filter(f => f.value === 'useful').length;
+      const notUseful = items.filter(f => f.value === 'not_useful').length;
+      return { useful, notUseful, total: items.length };
+    }
+
+    function buildDocTocElement(docId, contentEl) {
+      const tocCard = document.createElement('div');
+      tocCard.className = 'doc-toc card';
+      tocCard.innerHTML = '<h4>Contenido</h4>';
+      const list = document.createElement('div');
+      list.className = 'toc-list';
+      const headings = Array.from(contentEl.querySelectorAll('h2, h3'));
+      const usedIds = new Set();
+      if (!headings.length) {
+        const empty = document.createElement('p');
+        empty.className = 'small';
+        empty.textContent = 'No se detectaron secciones en este documento.';
+        tocCard.appendChild(empty);
+        return tocCard;
+      }
+      headings.forEach((h, idx) => {
+        const text = h.textContent?.trim() || `Sección ${idx + 1}`;
+        let id = h.id || slugify(text);
+        while (usedIds.has(id)) id = `${slugify(text)}-${idx}`;
+        h.id = id;
+        usedIds.add(id);
+        const link = document.createElement('a');
+        link.href = `#${id}`;
+        link.className = `toc-link level-${h.tagName === 'H3' ? '3' : '2'}`;
+        link.innerHTML = `<span class="dot"></span><span>${text}</span>`;
+        link.onclick = (e) => {
+          e.preventDefault();
+          document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          logEvent('doc_toc_navigate', { docId, heading: text, level: h.tagName.toLowerCase() });
+        };
+        list.appendChild(link);
+      });
+      tocCard.appendChild(list);
+      return tocCard;
+    }
+
+    function renderDoc(id, query = {}) {
+      const docRef = state.docs.find(d => d.id === id);
+      const container = document.createElement('div');
+      container.className = 'grid';
+      if (!docRef) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>Documento no encontrado</h2>';
+        container.appendChild(card);
+        return container;
+      }
+      if (!canViewDoc(docRef)) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>Acceso restringido</h2><p class="small">No tienes permisos para ver este espacio.</p>';
+        container.appendChild(card);
+        return container;
+      }
+      docRef.views = (docRef.views || 0) + 1;
+      logEvent('doc_viewed', { docId: docRef.id, status: docRef.status });
+      persist();
+      const doc = computeReviewFields(docRef);
+
+      const assetFrom = (item, fallbackTitle) => {
+        const ext = normalizeExt(item?.ext || item?.type || extFromUrl(item?.url));
+        return {
+          title: item?.title || fallbackTitle || doc.title,
+          url: item?.url || doc.url,
+          ext,
+          mime: item?.mime || mimeFromExt(ext),
+          sourceType: item?.sourceType || 'url'
+        };
+      };
+
+      const assets = [assetFrom(doc, doc.title), ...(doc.attachments || []).map(a => assetFrom(a, a.title))].filter(a => a.url);
+      const stats = feedbackSummary(doc.id);
+      const followers = () => state.follows.filter(f => f.docId === doc.id).length;
+      const commentsForDoc = () => state.feedback.filter(f => f.docId === doc.id && f.comment?.trim());
+      const breadcrumbs = document.createElement('div');
+      breadcrumbs.className = 'flex space-between';
+      breadcrumbs.style.alignItems = 'center';
+      const trail = document.createElement('div');
+      trail.className = 'flex';
+      trail.style.gap = '6px';
+      trail.style.flexWrap = 'wrap';
+      trail.innerHTML = `<a class="tag" href="#/home" aria-label="Ir a Home">Inicio</a>→<a class="tag" href="#/search?space=${encodeURIComponent(doc.space)}" aria-label="Filtrar por espacio">${doc.space}</a>→<span class="tag">${doc.type}</span>→<span class="tag">${doc.title}</span>`;
+      const backBtn = document.createElement('button');
+      backBtn.className = 'btn ghost small';
+      backBtn.textContent = 'Volver a resultados';
+      backBtn.onclick = () => { location.hash = state.lastSearchHash || '#/search'; };
+      breadcrumbs.append(trail, backBtn);
+
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between">
+          <div>
+            <h2>${doc.title}</h2>
+            <div class="flex">
+              <span class="tag">${doc.type}</span>
+              <span class="tag">${doc.space}</span>
+              ${doc.ext ? `<span class="tag">${doc.ext.toUpperCase()}</span>` : ''}
+              ${doc.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+              <span class="tag">Owner: ${doc.owner}</span>
+              <span class="tag">Clasificación: ${doc.classification || 'interno'}</span>
+              <span class="tag">Retención: ${doc.retentionDays || 365}d</span>
+              <span class="tag">Frescura: ${doc.freshness || 'al día'}</span>
+            </div>
+          </div>
+          <div class="flex">
+            <div class="status ${doc.status}">${doc.status}</div>
+            ${['editor','admin'].includes(state.currentUser.role) && canAccessSpace(doc.space) ? `<button class="btn ghost" onclick="location.hash='#/edit/${doc.id}'">Editar</button>` : ''}
+          </div>
+        </div>
+        <div class="grid two" style="margin:10px 0;">
+          <div class="card" style="padding:10px; background:var(--surface-2);">
+            <div class="small">Owner</div>
+            <strong>${doc.owner}</strong>
+            <div class="small">Audiencia: ${(doc.audience || []).join(', ') || 'Todas'}</div>
+            <div class="small">Clasificación: ${doc.classification || 'interno'} · Retención: ${doc.retentionDays || 365} días</div>
+          </div>
+          <div class="card" style="padding:10px; background:var(--surface-2);">
+            <div class="small">Revisión</div>
+            <strong>Próxima: ${new Date(doc.nextReviewAt || Date.now()).toLocaleDateString()}</strong>
+            <div class="small">Última: ${new Date(doc.lastReviewedAt || doc.updatedAt).toLocaleDateString()} · Cada ${doc.reviewEveryDays || 45} días</div>
+            <div class="small">Estado: ${doc.freshness || 'al día'}</div>
+          </div>
+        </div>
+        <div id="docContent"></div>
+        <div class="flex">
+          <button class="btn primary" id="useful">👍 Útil</button>
+          <button class="btn ghost" id="notUseful">👎 No útil</button>
+          <button class="btn ghost" id="follow">${isFollowing(doc.id) ? 'Siguiendo' : 'Seguir'}</button>
+          <button class="btn ghost" id="report">Reportar obsoleto</button>
+        </div>
+        <div class="grid" style="margin-top:8px;">
+          <label for="comment">Comentario (opcional)</label>
+          <textarea id="comment" placeholder="Agrega contexto para mejorar el artículo"></textarea>
+          <div class="flex" style="gap:8px;">
+            <button class="btn ghost small" id="commentSend">Enviar comentarios</button>
+          </div>
+        </div>
+        <span class="small" id="statsLine">Feedback: ${stats.useful} 👍 / ${stats.notUseful} 👎 · Seguidores: ${followers()}</span>
+        <span class="small">Última actualización: ${new Date(doc.updatedAt).toLocaleString()} · Vistas: ${doc.views}</span>`;
+
+      const docContentArea = card.querySelector('#docContent');
+      docContentArea.innerHTML = markdownToHtml(doc.content || '');
+      const highlightTerms = (query.highlight || '').toString().toLowerCase().split(/\s+/).filter(Boolean);
+      if (highlightTerms.length) {
+        highlightElement(docContentArea, highlightTerms);
+        logEvent('doc_highlight_applied', { docId: doc.id, terms: highlightTerms });
+      }
+
+      if (assets.length) {
+        const viewer = document.createElement('div');
+        viewer.className = 'card';
+        viewer.style.background = 'var(--surface-2)';
+        viewer.innerHTML = '<h4>Vista previa embebida</h4>';
+        const previewArea = document.createElement('div');
+        viewer.appendChild(previewArea);
+
+        const renderEmbedded = (asset) => {
+          previewArea.innerHTML = '';
+          const ext = normalizeExt(asset.ext);
+          const url = asset.url;
+          const controls = document.createElement('div');
+          controls.className = 'flex';
+          controls.style.gap = '6px';
+          controls.style.marginBottom = '6px';
+          const open = document.createElement('a');
+          open.className = 'btn ghost small';
+          open.textContent = 'Abrir en pestaña';
+          open.href = url;
+          open.target = '_blank';
+          open.rel = 'noopener';
+          open.onclick = () => logEvent('doc_open_external', { docId: doc.id, ext });
+          const copy = document.createElement('button');
+          copy.className = 'btn ghost small';
+          copy.textContent = 'Copiar enlace';
+          copy.onclick = async () => {
+            try { await navigator.clipboard.writeText(url); toast('Enlace copiado'); }
+            catch { toast('No se pudo copiar'); }
+          };
+          const report = document.createElement('button');
+          report.className = 'btn ghost small';
+          report.textContent = 'Reportar problema';
+          report.onclick = () => {
+            const reason = prompt('Describe el problema (CORS, formato, bloqueo, etc.)');
+            logEvent('doc_preview_reported', { docId: doc.id, ext, reason: reason || 'no_reason' });
+            toast('Reporte enviado');
+          };
+          const download = document.createElement('a');
+          download.className = 'btn primary small';
+          download.textContent = 'Descargar';
+          download.href = url;
+          download.download = asset.title || doc.title;
+          download.onclick = () => logEvent('doc_downloaded', { docId: doc.id, ext });
+          controls.append(open, copy, download, report);
+          previewArea.appendChild(controls);
+
+          const skeleton = document.createElement('div');
+          skeleton.className = 'skeleton';
+          skeleton.style.height = '32px';
+          skeleton.style.marginBottom = '8px';
+          previewArea.appendChild(skeleton);
+
+          const renderFallback = (reason) => {
+            skeleton.remove();
+            const fallback = document.createElement('div');
+            fallback.className = 'card';
+            fallback.style.background = 'var(--surface-1)';
+            fallback.innerHTML = `<strong>${asset.title || 'Archivo'}</strong><div class="small">${ext.toUpperCase()} · ${reason || 'Sin vista previa disponible'}</div>`;
+            const buttons = document.createElement('div');
+            buttons.className = 'flex';
+            buttons.style.gap = '6px';
+            const openBtn = document.createElement('a');
+            openBtn.className = 'btn ghost small';
+            openBtn.href = url;
+            openBtn.target = '_blank';
+            openBtn.rel = 'noopener';
+            openBtn.textContent = 'Abrir';
+            openBtn.onclick = () => logEvent('doc_open_external', { docId: doc.id, ext });
+            const dlBtn = document.createElement('a');
+            dlBtn.className = 'btn primary small';
+            dlBtn.href = url;
+            dlBtn.download = asset.title || doc.title;
+            dlBtn.textContent = 'Descargar';
+            dlBtn.onclick = () => logEvent('doc_downloaded', { docId: doc.id, ext });
+            buttons.append(openBtn, dlBtn);
+            fallback.appendChild(buttons);
+            previewArea.appendChild(fallback);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'fallback' });
+            logEvent('preview_fallback', { docId: doc.id, ext });
+          };
+
+          const isGroup = (group) => FORMAT_GROUPS[group]?.includes(ext);
+
+          const removeSkeleton = () => skeleton.remove();
+
+          const renderPdf = () => {
+            const tools = document.createElement('div');
+            tools.className = 'flex';
+            tools.style.gap = '8px';
+            tools.style.marginBottom = '6px';
+            const search = document.createElement('input');
+            search.placeholder = 'Buscar en PDF';
+            search.className = 'input';
+            search.onchange = () => { iframe.src = `${url}#search=${encodeURIComponent(search.value)}`; };
+            const pageJump = document.createElement('input');
+            pageJump.type = 'number';
+            pageJump.min = 1;
+            pageJump.placeholder = 'Ir a página';
+            pageJump.onchange = () => { if (!pageJump.value) return; iframe.src = `${url}#page=${pageJump.value}`; };
+            tools.append(search, pageJump);
+            previewArea.appendChild(tools);
+            const thumbs = document.createElement('div');
+            thumbs.className = 'flex';
+            thumbs.style.gap = '6px';
+            thumbs.style.flexWrap = 'wrap';
+            for (let i = 1; i <= 5; i++) {
+              const thumb = document.createElement('button');
+              thumb.className = 'btn ghost small';
+              thumb.textContent = `Pág ${i}`;
+              thumb.onclick = () => { iframe.src = `${url}#page=${i}`; };
+              thumbs.appendChild(thumb);
+            }
+            previewArea.appendChild(thumbs);
+            const iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.style.width = '100%';
+            iframe.style.height = '70vh';
+            iframe.style.border = '0';
+            iframe.loading = 'lazy';
+            iframe.onload = () => removeSkeleton();
+            iframe.onerror = () => renderFallback('CORS o bloqueo al cargar PDF');
+            previewArea.appendChild(iframe);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_pdf' });
+          };
+
+          const renderVideoAudio = (isVideo) => {
+            const media = document.createElement(isVideo ? 'video' : 'audio');
+            media.src = url;
+            media.controls = true;
+            if (isVideo) {
+              media.style.width = '100%';
+              media.style.maxHeight = '70vh';
+              media.style.borderRadius = '12px';
+            } else {
+              media.style.width = '100%';
+            }
+            const speed = document.createElement('select');
+            speed.className = 'input';
+            [0.75, 1, 1.25, 1.5, 2].forEach(v => {
+              const opt = document.createElement('option');
+              opt.value = v;
+              opt.textContent = `${v}x`;
+              if (v === 1) opt.selected = true;
+              speed.appendChild(opt);
+            });
+            speed.onchange = () => media.playbackRate = Number(speed.value);
+
+            const transcript = document.createElement('textarea');
+            transcript.readOnly = true;
+            transcript.className = 'input';
+            transcript.style.height = '120px';
+            transcript.value = asset.transcript || doc.content || 'Transcripción no disponible';
+            const finder = document.createElement('input');
+            finder.placeholder = 'Buscar en transcripción';
+            finder.className = 'input';
+            finder.oninput = () => {
+              const q = finder.value.toLowerCase();
+              const idx = transcript.value.toLowerCase().indexOf(q);
+              if (idx >= 0) { transcript.focus(); transcript.setSelectionRange(idx, idx + q.length); }
+            };
+
+            const chapters = document.createElement('div');
+            chapters.className = 'flex';
+            chapters.style.gap = '6px';
+            ['00:00 Intro', '02:00 Clave', '05:00 Cierre'].forEach(mark => {
+              const btn = document.createElement('button');
+              btn.className = 'btn ghost small';
+              btn.textContent = mark;
+              btn.onclick = () => { const mins = Number(mark.split(':')[0]); media.currentTime = mins * 60; media.play(); };
+              chapters.appendChild(btn);
+            });
+
+            const tools = document.createElement('div');
+            tools.className = 'grid';
+            tools.style.gap = '6px';
+            tools.appendChild(speed);
+            tools.appendChild(chapters);
+            tools.appendChild(finder);
+            tools.appendChild(transcript);
+
+            media.onloadstart = () => skeleton.textContent = 'Cargando recurso...';
+            media.oncanplay = () => removeSkeleton();
+            media.onerror = () => renderFallback('No se pudo reproducir media (CORS/bloqueado)');
+            previewArea.append(media, tools);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: isVideo ? 'embed_video' : 'embed_audio' });
+          };
+
+          const renderImage = () => {
+            const wrap = document.createElement('div');
+            wrap.style.overflow = 'auto';
+            wrap.style.maxHeight = '70vh';
+            wrap.style.borderRadius = '12px';
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = asset.title || doc.title;
+            img.style.width = '100%';
+            img.style.objectFit = 'contain';
+            let zoom = 1;
+            const zoomCtl = document.createElement('input');
+            zoomCtl.type = 'range';
+            zoomCtl.min = '0.5';
+            zoomCtl.max = '2';
+            zoomCtl.step = '0.1';
+            zoomCtl.value = '1';
+            zoomCtl.oninput = () => { zoom = Number(zoomCtl.value); img.style.transform = `scale(${zoom})`; };
+            const meta = document.createElement('div');
+            meta.className = 'small';
+            meta.textContent = `Formato ${ext.toUpperCase()} · ${asset.mime || 'desconocido'}`;
+            img.onload = () => removeSkeleton();
+            img.onerror = () => renderFallback('No se pudo cargar la imagen');
+            wrap.appendChild(img);
+            previewArea.append(wrap, zoomCtl, meta);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_image' });
+          };
+
+          const renderOfficeLocal = async () => {
+            try {
+              const res = await fetch(url);
+              const buf = await res.arrayBuffer();
+              if (FORMAT_GROUPS.word.includes(ext) && window.mammoth) {
+                const result = await window.mammoth.convertToHtml({ arrayBuffer: buf });
+                const html = document.createElement('div');
+                html.innerHTML = result.value;
+                previewArea.appendChild(html);
+                removeSkeleton();
+                logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'parsed_word' });
+                return;
+              }
+              if (FORMAT_GROUPS.excel.includes(ext) && window.XLSX) {
+                const wb = XLSX.read(buf, { type: 'array' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const table = document.createElement('div');
+                table.innerHTML = XLSX.utils.sheet_to_html(sheet);
+                previewArea.appendChild(table);
+                removeSkeleton();
+                logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'parsed_excel' });
+                return;
+              }
+              renderFallback('Vista previa no soportada para archivo local');
+            } catch (e) {
+              renderFallback('Error al leer archivo local');
+            }
+          };
+
+          if (ext === 'pdf') return renderPdf();
+          if (isGroup('video')) return renderVideoAudio(true);
+          if (isGroup('audio')) return renderVideoAudio(false);
+          if (isGroup('image')) return renderImage();
+
+          const isOffice = () => isGroup('word') || isGroup('excel') || isGroup('ppt');
+          if (isOffice()) {
+            if (url.startsWith('http')) {
+              const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+              const iframe = document.createElement('iframe');
+              iframe.src = officeUrl;
+              iframe.style.width = '100%';
+              iframe.style.height = '70vh';
+              iframe.style.border = '0';
+              iframe.loading = 'lazy';
+              iframe.onload = () => removeSkeleton();
+              iframe.onerror = () => renderFallback('CORS o bloqueo en Office viewer');
+              previewArea.appendChild(iframe);
+              logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'office' });
+              return;
+            }
+            return renderOfficeLocal();
+          }
+
+          renderFallback('Vista previa no soportada');
+        };
+
+        const list = document.createElement('div');
+        list.className = 'grid';
+        list.style.marginTop = '10px';
+        list.innerHTML = '<div class="small">Selecciona un recurso para previsualizar</div>';
+        assets.forEach(asset => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.style.alignItems = 'center';
+          row.innerHTML = `<div class="flex" style="gap:8px;align-items:center;"><span class="tag">${(asset.ext || 'file').toUpperCase()}</span><span>${asset.title || 'Archivo'}</span></div>`;
+          const btn = document.createElement('button');
+          btn.className = 'btn ghost small';
+          btn.textContent = 'Ver';
+          btn.onclick = () => renderEmbedded(asset);
+          row.appendChild(btn);
+          list.appendChild(row);
+        });
+        viewer.append(list, previewArea);
+        card.appendChild(viewer);
+        renderEmbedded(assets[0]);
+      }
+
+      const commentInput = card.querySelector('#comment');
+      const statsLine = card.querySelector('#statsLine');
+      const followBtn = card.querySelector('#follow');
+      const refreshStats = () => {
+        const next = feedbackSummary(doc.id);
+        statsLine.textContent = `Feedback: ${next.useful} 👍 / ${next.notUseful} 👎 · Seguidores: ${followers()}`;
+        followBtn.textContent = isFollowing(doc.id) ? 'Siguiendo' : 'Seguir';
+        renderComments();
+      };
+      card.querySelector('#useful').onclick = () => {
+        saveFeedback(doc.id, 'useful', commentInput.value);
+        commentInput.value = '';
+        toast('Feedback registrado');
+        refreshStats();
+      };
+      card.querySelector('#notUseful').onclick = () => {
+        saveFeedback(doc.id, 'not_useful', commentInput.value);
+        commentInput.value = '';
+        toast('Gracias por el feedback');
+        refreshStats();
+      };
+      card.querySelector('#commentSend').onclick = () => {
+        if (!commentInput.value.trim()) { toast('Agrega un comentario'); return; }
+        saveFeedback(doc.id, 'comment', commentInput.value);
+        commentInput.value = '';
+        toast('Comentarios enviados');
+        refreshStats();
+      };
+      followBtn.onclick = () => { toggleFollow(doc.id); refreshStats(); };
+      card.querySelector('#report').onclick = () => { logEvent('doc_outdated_reported', { docId: doc.id }); toast('Reporte enviado'); };
+
+      const commentsCard = document.createElement('div');
+      commentsCard.className = 'card';
+      commentsCard.innerHTML = '<h3>Comentarios públicos</h3>';
+      const commentsList = document.createElement('div');
+      commentsCard.appendChild(commentsList);
+
+      const renderComments = () => {
+        commentsList.innerHTML = '';
+        const comments = commentsForDoc().sort((a, b) => b.at - a.at);
+        if (!comments.length) {
+          const empty = document.createElement('p');
+          empty.className = 'small';
+          empty.textContent = 'Aún no hay comentarios. Comparte tu feedback para ayudar a otros.';
+          commentsList.appendChild(empty);
+          return;
+        }
+        comments.forEach(c => {
+          const row = document.createElement('div');
+          row.className = 'card';
+          row.style.background = 'var(--surface-2)';
+          row.style.marginTop = '8px';
+          const user = state.users.find(u => u.id === c.userId);
+          const label = c.value === 'useful' ? '👍 Útil' : c.value === 'not_useful' ? '👎 No útil' : '💬 Comentario';
+          row.innerHTML = `
+            <div class="flex space-between" style="gap:12px; align-items:flex-start;">
+              <div class="grid" style="gap:6px;">
+                <div class="flex" style="gap:8px; align-items:center;">
+                  <strong>${user?.name || 'Usuario'}</strong>
+                  <span class="tag">${label}</span>
+                </div>
+                <div class="small">${c.comment}</div>
+              </div>
+              <span class="small" style="white-space:nowrap;">${new Date(c.at).toLocaleString()}</span>
+            </div>
+          `;
+          commentsList.appendChild(row);
+        });
+      };
+      renderComments();
+
+      const versions = state.versions.filter(v => v.docId === doc.id).sort((a,b) => b.version - a.version);
+      const history = document.createElement('div');
+      history.className = 'card';
+      history.innerHTML = `<h3>Historial de versiones</h3>${versions.length === 0 ? '<p class="small">Sin snapshots aún.</p>' : ''}`;
+      const diffBox = document.createElement('div');
+      diffBox.className = 'card';
+      diffBox.style.background = 'var(--surface-2)';
+      diffBox.innerHTML = '<h4>Diff / Rollback</h4><p class="small">Selecciona una versión para comparar o restaurar.</p>';
+      if (versions.length) {
+        const list = document.createElement('table');
+        list.className = 'table';
+        list.innerHTML = '<tr><th>Versión</th><th>Estado</th><th>Fecha</th><th>Razón</th><th>Acciones</th></tr>' + versions.map(v => `<tr data-ver="${v.version}"><td>${v.version}</td><td>${v.status}</td><td>${new Date(v.snapshotAt).toLocaleString()}</td><td>${v.reason || 'guardado'}</td><td><button class="btn ghost small" data-diff="${v.version}">Diff</button>${['admin','editor','manager'].includes(state.currentUser.role) ? `<button class="btn ghost small" data-rollback="${v.version}">Rollback</button>` : ''}</td></tr>`).join('');
+        history.appendChild(list);
+        history.appendChild(diffBox);
+        list.querySelectorAll('[data-diff]').forEach(btn => {
+          btn.onclick = () => {
+            const ver = Number(btn.dataset.diff);
+            const snap = versions.find(v => v.version === ver);
+            if (!snap) return;
+            diffBox.innerHTML = `<h4>Diff v${ver} vs actual</h4>` + renderDiff(snap.content || '', doc.content || '');
+          };
+        });
+        list.querySelectorAll('[data-rollback]').forEach(btn => {
+          btn.onclick = () => {
+            const ver = Number(btn.dataset.rollback);
+            const restored = rollbackDoc(doc.id, ver);
+            if (restored) { toast(`Rollback a v${ver}`); render(); }
+          };
+        });
+      }
+      const reviewSection = document.createElement('div');
+      reviewSection.className = 'card';
+      const versionThreads = state.reviewThreads.filter(r => r.docId === doc.id && r.version === doc.version).sort((a,b) => b.at - a.at);
+      const checklist = state.reviewChecklists.find(c => c.docId === doc.id && c.version === doc.version) || { docId: doc.id, version: doc.version, metadata: false, evidencia: false, riesgos: false };
+      reviewSection.innerHTML = `<h3>Revisión y checklist (v${doc.version})</h3>`;
+      const checklistWrap = document.createElement('div');
+      checklistWrap.className = 'grid';
+      const canApprove = ['admin','manager'].includes(state.currentUser.role);
+      const renderChecklist = () => {
+        checklistWrap.innerHTML = '';
+        ['metadata','evidencia','riesgos'].forEach(key => {
+          const label = key === 'metadata' ? 'Metadatos completos' : key === 'evidencia' ? 'Evidencia/adjunto' : 'Riesgos revisados';
+          const row = document.createElement('label');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.gap = '8px';
+          row.innerHTML = `<input type="checkbox" ${checklist[key] ? 'checked' : ''} ${canApprove ? '' : 'disabled'} /> ${label}`;
+          if (canApprove) {
+            row.querySelector('input').onchange = (e) => {
+              checklist[key] = e.target.checked;
+              const idx = state.reviewChecklists.findIndex(c => c.docId === checklist.docId && c.version === checklist.version);
+              if (idx >= 0) state.reviewChecklists[idx] = checklist; else state.reviewChecklists.push(checklist);
+              persist();
+              toast('Checklist actualizado');
+            };
+          }
+          checklistWrap.appendChild(row);
+        });
+      };
+      renderChecklist();
+      const threadList = document.createElement('div');
+      threadList.className = 'grid';
+      const renderThreads = () => {
+        threadList.innerHTML = '';
+        if (!versionThreads.length) { threadList.innerHTML = '<p class="small">Sin comentarios de revisión.</p>'; return; }
+        versionThreads.forEach(t => {
+          const user = state.users.find(u => u.id === t.userId);
+          const row = document.createElement('div');
+          row.className = 'card';
+          row.style.background = 'var(--surface-2)';
+          row.innerHTML = `<div class="flex space-between"><strong>${user?.name || 'Usuario'}</strong><span class="small">${new Date(t.at).toLocaleString()}</span></div><div class="small">${t.text}</div>`;
+          threadList.appendChild(row);
+        });
+      };
+      renderThreads();
+      const addThread = document.createElement('div');
+      addThread.className = 'grid';
+      addThread.innerHTML = '<label>Nuevo comentario de revisión</label><textarea id="reviewText" placeholder="Pregunta, hallazgo o sugerencia"></textarea><button class="btn ghost small" id="addReview">Agregar al hilo</button>';
+      addThread.querySelector('#addReview').onclick = () => {
+        const text = addThread.querySelector('#reviewText').value.trim();
+        if (!text) { toast('Comentario requerido'); return; }
+        const entry = { id: crypto.randomUUID(), docId: doc.id, version: doc.version, userId: state.currentUser.id, text, at: Date.now() };
+        state.reviewThreads.push(entry);
+        logEvent('review_comment_added', { docId: doc.id, version: doc.version });
+        persist();
+        versionThreads.unshift(entry);
+        addThread.querySelector('#reviewText').value = '';
+        renderThreads();
+      };
+      reviewSection.append(checklistWrap, threadList, addThread);
+
+      const layout = document.createElement('div');
+      layout.className = 'doc-layout';
+      const mainCol = document.createElement('div');
+      mainCol.className = 'grid';
+      mainCol.append(card, commentsCard, history, reviewSection);
+      const tocCol = buildDocTocElement(doc.id, docContentArea);
+      layout.append(mainCol, tocCol);
+      container.append(breadcrumbs, layout);
+      return container;
+
+    }
+
+    function renderEditor(id) {
+      const editing = id && id !== 'new';
+      const existing = editing ? state.docs.find(d => d.id === id) : null;
+      let doc = existing ? { ...existing } : {
+        id: `d${Date.now()}`,
+        title: '',
+        type: 'wiki',
+        space: (spaces.find(s => canAccessSpace(s)) || spaces[0]),
+        owner: state.currentUser.name,
+        ownerId: state.currentUser.id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now(),
+        status: 'draft',
+        updatedAt: Date.now(),
+        tags: [],
+        content: '',
+        version: 0,
+        attachments: [],
+        ext: 'html',
+        mime: mimeFromExt('html'),
+        sourceType: 'url',
+        url: 'https://example.com'
+      };
+      const container = document.createElement('div');
+      container.className = 'grid';
+      if (!['editor','admin'].includes(state.currentUser.role)) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>No autorizado</h2>';
+        container.appendChild(card);
+        return container;
+      }
+      if (doc.space && !canAccessSpace(doc.space)) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>Acceso restringido al espacio</h2>';
+        container.appendChild(card);
+        return container;
+      }
+      const allowedSpaces = spaces.filter(s => canAccessSpace(s) || ['admin','manager'].includes(state.currentUser.role));
+      const card = document.createElement('div');
+      card.className = 'card';
+        card.innerHTML = `
+          <div class="flex space-between">
+            <h2>${editing ? 'Editar' : 'Crear'} documento</h2>
+            <div class="status ${doc.status}">${doc.status}</div>
+          </div>
+          <div class="grid two">
+            <div>
+              <label>Título</label>
+              <input id="title" value="${doc.title}" />
+            </div>
+            <div>
+              <label>Plantilla</label>
+              <select id="template">
+                <option value="">Seleccionar plantilla</option>
+                <option value="sop">SOP</option>
+                <option value="faq">FAQ</option>
+                <option value="lesson">Lección aprendida</option>
+              </select>
+            </div>
+            <div>
+              <label>Tipo</label>
+              <select id="type">
+                <option value="wiki">Wiki</option>
+                <option value="faq">FAQ</option>
+                <option value="procedimiento">Procedimiento</option>
+                <option value="postmortem">Postmortem</option>
+                <option value="playbook">Playbook</option>
+              </select>
+            </div>
+            <div>
+              <label>Espacio</label>
+              <select id="space">${allowedSpaces.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label>Etiquetas (coma)</label>
+              <input id="tags" list="tagSuggestions" value="${doc.tags.join(', ')}" />
+              <datalist id="tagSuggestions">${TAXONOMY_CANONICAL.map(t => `<option value="${t}"></option>`).join('')}</datalist>
+              <span class="small">Taxonomía controlada: sugerimos ${TAXONOMY_CANONICAL.slice(0,6).join(', ')}...</span>
+            </div>
+            <div>
+              <label>Owner (obligatorio)</label>
+              <select id="owner">${state.users.filter(u => u.status === 'active').map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('')}</select>
+            </div>
+            <div>
+              <label>Clasificación</label>
+              <select id="classification">
+                <option value="interno">Interno</option>
+                <option value="confidencial">Confidencial</option>
+                <option value="restringido">Restringido</option>
+              </select>
+            </div>
+            <div>
+              <label>Retención (días)</label>
+              <input id="retention" type="number" min="30" value="${doc.retentionDays || 365}" />
+            </div>
+          </div>
+          <div class="grid two">
+            <div>
+              <label>Audiencia (roles)</label>
+              <div id="audienceWrap" class="grid" style="grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap:6px;"></div>
+            </div>
+            <div>
+              <label>Ciclo de revisión</label>
+              <div class="grid two">
+                <div>
+                  <label class="small">Cada (días)</label>
+                  <input id="reviewEvery" type="number" min="7" value="${doc.reviewEveryDays || 45}" />
+                </div>
+                <div>
+                  <label class="small">Última revisión</label>
+                  <input id="lastReviewed" type="date" value="${new Date(doc.lastReviewedAt || Date.now()).toISOString().slice(0,10)}" />
+                </div>
+              </div>
+              <div class="small" id="reviewPreview">Próxima revisión: --</div>
+            </div>
+          </div>
+          <div class="grid two">
+            <div>
+              <label>Enlazar recurso (URL pública)</label>
+              <input id="resourceUrl" value="${doc.url || ''}" placeholder="https://..." />
+              <span class="small" id="resourceMeta"></span>
+            </div>
+            <div>
+              <label>O subir archivo</label>
+              <input id="resourceUpload" type="file" />
+              <span class="small">Se almacenará como objectURL para esta sesión</span>
+            </div>
+          </div>
+          <div>
+            <label>Contenido (Markdown con bloques)</label>
+            <div class="flex" style="gap:6px; flex-wrap:wrap; margin:6px 0;">
+              <button class="btn ghost small" type="button" data-block="## Objetivo\n- ...">Bloque: Objetivo</button>
+              <button class="btn ghost small" type="button" data-block="## Alcance\n- ...">Bloque: Alcance</button>
+              <button class="btn ghost small" type="button" data-block="## Pasos\n1. Paso 1\n2. Paso 2">Bloque: Pasos</button>
+              <button class="btn ghost small" type="button" data-block="## Evidencia\nAdjuntar capturas o URLs">Bloque: Evidencia</button>
+            </div>
+            <div class="flex" style="gap:8px; align-items:center; margin-bottom:6px;">
+              <button class="btn ghost small" id="mdMode">Editar Markdown</button>
+              <button class="btn ghost small" id="mdPreviewBtn">Ver preview</button>
+              <span class="small">Vista dual para SOPs con bloques reutilizables.</span>
+            </div>
+            <textarea id="content">${doc.content}</textarea>
+            <div class="card" id="contentPreview" style="margin-top:8px; background:var(--surface-2);"></div>
+          </div>
+          <div class="flex" style="margin-top:10px;">
+          <button class="btn primary" id="saveBtn">Guardar versión</button>
+          <button class="btn ghost" id="reviewBtn">Enviar a revisión</button>
+          <button class="btn ghost" id="publishBtn">Aprobar y publicar</button>
+        </div>
+        <span class="small">Autosave cada ${autoSaveMs/1000}s · Versión actual: ${doc.version || 0}</span>`;
+      card.querySelector('#type').value = doc.type;
+      card.querySelector('#space').value = doc.space;
+      card.querySelector('#owner').value = doc.ownerId || state.currentUser.id;
+      card.querySelector('#classification').value = doc.classification || 'interno';
+      const templateSelector = card.querySelector('#template');
+      templateSelector.onchange = (e) => {
+        const tpl = templates[e.target.value];
+        if (!tpl) return;
+        card.querySelector('#title').value = tpl.title;
+        card.querySelector('#content').value = tpl.content;
+        if (tpl.title.startsWith('SOP')) card.querySelector('#type').value = 'procedimiento';
+        if (tpl.title.startsWith('FAQ')) card.querySelector('#type').value = 'faq';
+      };
+
+      const audienceWrap = card.querySelector('#audienceWrap');
+      const selectedAudience = new Set(doc.audience || ['viewer','editor','admin','manager']);
+      ['viewer','editor','admin','manager'].forEach(role => {
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '6px';
+        label.innerHTML = `<input type="checkbox" value="${role}" ${selectedAudience.has(role) ? 'checked' : ''}/> ${role}`;
+        audienceWrap.appendChild(label);
+      });
+
+      const reviewPreview = card.querySelector('#reviewPreview');
+      const reviewEveryInput = card.querySelector('#reviewEvery');
+      const lastReviewedInput = card.querySelector('#lastReviewed');
+      const refreshReviewPreview = () => {
+        const every = Number(reviewEveryInput.value) || 30;
+        const last = new Date(lastReviewedInput.value || new Date()).getTime();
+        const computed = computeReviewFields({ ...doc, reviewEveryDays: every, lastReviewedAt: last });
+        reviewPreview.textContent = `Próxima revisión: ${new Date(computed.nextReviewAt).toLocaleDateString()} · Frescura: ${computed.freshness}`;
+      };
+      reviewEveryInput.oninput = refreshReviewPreview;
+      lastReviewedInput.onchange = refreshReviewPreview;
+      refreshReviewPreview();
+      const contentArea = card.querySelector('#content');
+      const previewArea = card.querySelector('#contentPreview');
+      const updatePreview = () => { previewArea.innerHTML = markdownToHtml(contentArea.value); };
+      contentArea.addEventListener('input', updatePreview);
+      updatePreview();
+      card.querySelector('#mdPreviewBtn').onclick = updatePreview;
+      card.querySelector('#mdMode').onclick = () => { contentArea.focus(); toast('Modo edición Markdown activo'); };
+      card.querySelectorAll('[data-block]').forEach(btn => { btn.onclick = () => insertAtCursor(contentArea, btn.dataset.block); });
+      const updateResourceMeta = () => {
+        const msg = `Fuente: ${doc.sourceType === 'upload' ? 'cargado' : 'enlace'} · ${doc.ext?.toUpperCase() || 'sin ext'} · ${doc.mime || ''}`;
+        card.querySelector('#resourceMeta').textContent = msg;
+      };
+      updateResourceMeta();
+      const urlInput = card.querySelector('#resourceUrl');
+      urlInput.onblur = () => {
+        const urlVal = urlInput.value.trim();
+        if (!urlVal) return;
+        const ext = extFromUrl(urlVal) || doc.ext;
+        doc = { ...doc, url: urlVal, ext: normalizeExt(ext || doc.ext), mime: mimeFromExt(ext || doc.ext), sourceType: 'url' };
+        updateResourceMeta();
+      };
+      const uploadInput = card.querySelector('#resourceUpload');
+      uploadInput.onchange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const ext = extFromUrl(file.name) || (file.type ? file.type.split('/').pop() : '') || doc.ext;
+        doc = { ...doc, url, ext: normalizeExt(ext || ''), mime: file.type || mimeFromExt(ext || ''), sourceType: 'upload' };
+        updateResourceMeta();
+      };
+
+      const assignAndPersist = (payload, reason) => {
+        doc = upsertDoc(payload);
+        createSnapshot(doc, reason);
+      };
+      card.querySelector('#saveBtn').onclick = () => {
+        const payload = collectDocFields(card, doc, doc.status || 'draft');
+        if (!validateDoc(payload, { requireEvidence: false })) return;
+        const isNew = !state.docs.find(d => d.id === payload.id);
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'guardar');
+        logEvent(isNew ? 'doc_created' : 'doc_edited', { docId: payload.id, version: payload.version, mode: 'manual' });
+        toast('Versión guardada');
+        location.hash = `#/doc/${payload.id}`;
+      };
+      card.querySelector('#reviewBtn').onclick = () => {
+        if (!['editor','admin'].includes(state.currentUser.role)) { toast('Solo editores pueden enviar a revisión'); return; }
+        const payload = collectDocFields(card, doc, 'in_review');
+        if (!validateDoc(payload, { requireEvidence: true })) return;
+        const isNew = !state.docs.find(d => d.id === payload.id);
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'envío a revisión');
+        logEvent(isNew ? 'doc_created' : 'doc_edited', { docId: payload.id, version: payload.version, mode: 'review' });
+        logEvent('workflow_submitted', { docId: payload.id });
+        toast('Enviado a revisión');
+        location.hash = `#/doc/${payload.id}`;
+      };
+      card.querySelector('#publishBtn').onclick = () => {
+        if (!['admin','manager'].includes(state.currentUser.role)) { toast('Solo admin/manager aprueban'); return; }
+        if (doc.status !== 'in_review' && doc.status !== 'published') { toast('Debe estar en revisión para aprobar'); return; }
+        const payload = collectDocFields(card, doc, 'published');
+        if (!validateDoc(payload, { requireEvidence: true })) return;
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'publicación');
+        logEvent('workflow_approved', { docId: payload.id });
+        logEvent('doc_published', { docId: payload.id, version: payload.version });
+        toast('Publicado');
+        location.hash = `#/doc/${payload.id}`;
+      };
+      const autoSave = () => {
+        const payload = collectDocFields(card, doc, doc.status);
+        const exists = state.docs.some(d => d.id === payload.id);
+        doc = upsertDoc(payload);
+        logEvent(exists ? 'doc_edited' : 'doc_created', { docId: payload.id, mode: 'autosave' });
+      };
+      if (editorAutoSave) clearInterval(editorAutoSave);
+      editorAutoSave = setInterval(autoSave, autoSaveMs);
+      container.appendChild(card);
+      return container;
+    }
+
+    function collectDocFields(card, base, statusOverride) {
+      const title = card.querySelector('#title').value.trim() || 'Sin título';
+      const type = card.querySelector('#type').value;
+      const space = card.querySelector('#space').value;
+      if (!canAccessSpace(space)) { toast('Sin permisos para este espacio'); throw new Error('acl espacio'); }
+      const tags = normalizeTags(card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean));
+      const ownerId = card.querySelector('#owner').value;
+      if (!ownerId) { toast('Elige un owner'); throw new Error('owner requerido'); }
+      const ownerUser = state.users.find(u => u.id === ownerId);
+      const classification = card.querySelector('#classification').value;
+      const retentionDays = Number(card.querySelector('#retention').value) || 365;
+      const reviewEveryDays = Number(card.querySelector('#reviewEvery').value) || 45;
+      const lastReviewedAt = new Date(card.querySelector('#lastReviewed').value || new Date()).getTime();
+      const audience = Array.from(card.querySelectorAll('#audienceWrap input:checked')).map(i => i.value);
+      const content = card.querySelector('#content').value;
+      const nextReviewAt = lastReviewedAt + reviewEveryDays * 86400000;
+      const primaryAttachment = { title: base.title || title || 'Recurso principal', url: base.url, ext: base.ext, mime: base.mime, sourceType: base.sourceType };
+      const mergedAttachments = [primaryAttachment, ...(base.attachments || []).filter(a => a.url !== primaryAttachment.url)];
+      return { ...base, title, type, space, tags, content, owner: ownerUser?.name || base.owner || 'Sin owner', ownerId, classification, retentionDays, audience, reviewEveryDays, lastReviewedAt, nextReviewAt, freshness: computeReviewFields({ ...base, reviewEveryDays, lastReviewedAt, nextReviewAt }).freshness, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, ext: base.ext || 'html', mime: base.mime || mimeFromExt(base.ext || 'html'), sourceType: base.sourceType || 'url', url: base.url || 'https://example.com', attachments: mergedAttachments };
+    }
+
+    function validateDoc(payload, { requireEvidence = false } = {}) {
+      if (!payload.title || payload.title === 'Sin título') { toast('Título obligatorio'); return false; }
+      if (!payload.tags || payload.tags.length < 2) { toast('Mínimo 2 tags para control de taxonomía'); return false; }
+      if (!payload.ownerId) { toast('Owner requerido'); return false; }
+      const hasEvidence = !!payload.url || (payload.attachments || []).length > 0;
+      if (requireEvidence && !hasEvidence) { toast('Adjunta evidencia o recurso antes de enviar'); return false; }
+      return true;
+    }
+
+    function upsertDoc(doc) {
+      const normalizedDoc = computeReviewFields(doc);
+      const idx = state.docs.findIndex(d => d.id === normalizedDoc.id);
+      if (idx >= 0) {
+        state.docs[idx] = normalizedDoc;
+      } else {
+        state.docs.push(normalizedDoc);
+      }
+      persist();
+      return normalizedDoc;
+    }
+
+    function createSnapshot(doc, reason) {
+      state.versions.push({
+        id: crypto.randomUUID(),
+        docId: doc.id,
+        version: doc.version || 1,
+        snapshotAt: Date.now(),
+        status: doc.status,
+        title: doc.title,
+        content: doc.content,
+        tags: doc.tags,
+        type: doc.type,
+        space: doc.space,
+        ext: doc.ext || 'html',
+        mime: doc.mime || mimeFromExt(doc.ext || 'html'),
+        sourceType: doc.sourceType || 'url',
+        url: doc.url || '',
+        attachments: doc.attachments,
+        reason
+      });
+      persist();
+    }
+
+    function rollbackDoc(docId, version) {
+      const snapshot = state.versions.find(v => v.docId === docId && v.version === version);
+      const idx = state.docs.findIndex(d => d.id === docId);
+      if (!snapshot || idx < 0) return null;
+      const base = state.docs[idx];
+      const restored = { ...base, ...snapshot, status: 'draft', updatedAt: Date.now(), version: (base.version || snapshot.version || 0) + 1 };
+      state.docs[idx] = computeReviewFields(restored);
+      createSnapshot(restored, `rollback desde v${version}`);
+      logEvent('doc_rollback', { docId, fromVersion: version });
+      persist();
+      return restored;
+    }
+
+    const staleThresholdDays = 20;
+    const draftStuckDays = 10;
+
+    function matchesSpace(event, space, docMap) {
+      if (!space || space === 'all') return true;
+      if (event.docId && docMap[event.docId]) return docMap[event.docId].space === space;
+      if (event.space) return event.space === space;
+      if (event.filters?.space) {
+        const f = event.filters.space;
+        return f === 'all' || f === space;
+      }
+      return false;
+    }
+
+    function filterEventsBy(range, space) {
+      const cutoff = range === 'all' ? 0 : Date.now() - Number(range) * 86400000;
+      const docMap = Object.fromEntries(state.docs.map(d => [d.id, d]));
+      return getEvents().filter(e => e.at >= cutoff && matchesSpace(e, space, docMap));
+    }
+
+    function summarizeAnalytics(range, space) {
+      const events = filterEventsBy(range, space);
+      const now = Date.now();
+      const docMap = Object.fromEntries(state.docs.map(d => [d.id, d]));
+      const dayCutoff = now - 86400000;
+      const weekCutoff = now - 7 * 86400000;
+      const dau = new Set(events.filter(e => e.at >= dayCutoff).map(e => e.userId || e.user)).size;
+      const wau = new Set(events.filter(e => e.at >= weekCutoff).map(e => e.userId || e.user)).size;
+      const searches = events.filter(e => e.type === 'search_performed');
+      const zeroResults = events.filter(e => e.type === 'search_zero_results' || e.type === 'zero_results');
+      const docViews = events.filter(e => e.type === 'doc_viewed');
+      const docViewCounts = {};
+      docViews.forEach(ev => {
+        const doc = docMap[ev.docId];
+        if (!doc) return;
+        docViewCounts[doc.id] = (docViewCounts[doc.id] || 0) + 1;
+      });
+      const topViewed = Object.entries(docViewCounts)
+        .map(([id, count]) => ({ id, count, title: docMap[id]?.title || id }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      const feedbackWindow = state.feedback.filter(f => f.at >= (range === 'all' ? 0 : now - Number(range) * 86400000));
+      const feedbackByDoc = {};
+      feedbackWindow.forEach(f => {
+        const doc = docMap[f.docId];
+        if (!doc || !matchesSpace({ docId: f.docId }, space, docMap)) return;
+        if (!feedbackByDoc[f.docId]) feedbackByDoc[f.docId] = { useful: 0, notUseful: 0, title: doc.title };
+        if (f.value === 'useful') feedbackByDoc[f.docId].useful += 1; else feedbackByDoc[f.docId].notUseful += 1;
+      });
+      const topUseful = Object.entries(feedbackByDoc)
+        .map(([id, stats]) => ({ id, score: stats.useful - stats.notUseful, ...stats }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+
+      const zeroGapMap = new Map();
+      zeroResults.forEach(ev => {
+        const key = ev.q || ev.query || 'consulta';
+        const entry = zeroGapMap.get(key) || { q: key, zero: 0, low: 0, lastAt: ev.at, space: ev.filters?.space || 'all' };
+        entry.zero += 1;
+        entry.lastAt = Math.max(entry.lastAt, ev.at);
+        zeroGapMap.set(key, entry);
+      });
+
+      state.gaps
+        .filter(g => g.createdAt >= (range === 'all' ? 0 : now - Number(range) * 86400000))
+        .filter(g => matchesSpace({ space: g.filters?.space || g.space }, space, docMap))
+        .forEach(gap => {
+          const key = gap.q || 'consulta';
+          const entry = zeroGapMap.get(key) || { q: key, zero: 0, low: 0, lastAt: gap.createdAt, space: gap.filters?.space || 'all' };
+          entry.zero += 1;
+          entry.lastAt = Math.max(entry.lastAt, gap.createdAt);
+          zeroGapMap.set(key, entry);
+        });
+
+      const lowClickMap = new Map();
+      const viewsByUser = {};
+      docViews.forEach(v => {
+        if (!v.userId) return;
+        if (!viewsByUser[v.userId]) viewsByUser[v.userId] = [];
+        viewsByUser[v.userId].push(v.at);
+      });
+      searches.forEach(s => {
+        if (!s.results || s.results === 0) return;
+        const userViews = viewsByUser[s.userId] || [];
+        const clicked = userViews.some(v => v >= s.at && v <= s.at + 120000);
+        if (!clicked) {
+          const key = s.q || 'consulta';
+          const entry = lowClickMap.get(key) || { q: key, zero: 0, low: 0, lastAt: s.at, space: s.filters?.space || 'all' };
+          entry.low += 1;
+          entry.lastAt = Math.max(entry.lastAt, s.at);
+          lowClickMap.set(key, entry);
+        }
+      });
+      lowClickMap.forEach((v, k) => {
+        const zeroEntry = zeroGapMap.get(k) || { q: k, zero: 0, low: 0, lastAt: v.lastAt, space: v.space };
+        zeroEntry.low += v.low;
+        zeroEntry.lastAt = Math.max(zeroEntry.lastAt, v.lastAt);
+        zeroGapMap.set(k, zeroEntry);
+      });
+
+      const docsBySpace = state.docs.filter(d => space === 'all' || d.space === space);
+      const health = {
+        noOwner: docsBySpace.filter(d => !d.owner),
+        stale: docsBySpace.filter(d => computeReviewFields(d).freshness === 'vencido'),
+        dueSoon: docsBySpace.filter(d => computeReviewFields(d).freshness === 'por vencer'),
+        drafts: docsBySpace.filter(d => d.status !== 'published' && now - d.updatedAt > draftStuckDays * 86400000)
+      };
+
+      return {
+        dau,
+        wau,
+        searches: searches.length,
+        zeroResults: zeroResults.length,
+        zeroRate: searches.length ? Math.round((zeroResults.length / searches.length) * 100) : 0,
+        topViewed,
+        topUseful,
+        gaps: Array.from(zeroGapMap.values()),
+        health
+      };
+    }
+
+    function drawBarChart(canvas, data, color = 'var(--accent)') {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.clientWidth || 480;
+      const height = 180;
+      canvas.width = width;
+      canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+      const max = Math.max(...data.map(d => d.value), 1);
+      const barWidth = (width - 40) / data.length;
+      data.forEach((d, i) => {
+        const h = (d.value / max) * (height - 40);
+        const x = 20 + i * barWidth;
+        const y = height - h - 20;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, barWidth * 0.7, h);
+        ctx.fillStyle = 'var(--muted)';
+        ctx.font = '12px Inter';
+        ctx.fillText(d.label.slice(0, 10), x, height - 6);
+        ctx.fillText(d.value, x, y - 4);
+      });
+    }
+
+    function renderAnalytics() {
+      if (!['admin','manager'].includes(state.currentUser.role)) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<h2>No autorizado</h2>';
+        return card;
+      }
+      const filters = state.config.analytics || seedState.config.analytics;
+      const metrics = summarizeAnalytics(filters.range, filters.space);
+      const wrapper = document.createElement('div');
+      wrapper.className = 'grid';
+
+      const controls = document.createElement('div');
+      controls.className = 'card';
+      controls.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h2>Analítica</h2>
+            <p class="small">Overview · Search gaps · Content health</p>
+          </div>
+          <div class="flex" style="gap:8px; flex-wrap:wrap;">
+            <label class="small">Rango</label>
+            <select id="rangeSel">
+              <option value="7">7d</option>
+              <option value="30">30d</option>
+              <option value="90">90d</option>
+              <option value="all">Todo</option>
+            </select>
+            <label class="small">Espacio</label>
+            <select id="spaceSel">
+              <option value="all">Todos</option>
+              ${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}
+            </select>
+            <button class="btn ghost" id="exportEvents">Exportar eventos (JSON)</button>
+          </div>
+        </div>
+        <div class="flex" style="gap:8px; margin-top:10px;">
+          ${['overview','gaps','health'].map(tab => `<button class="btn ${filters.tab===tab?'primary':'ghost'}" data-tab="${tab}">${tab === 'overview' ? 'Overview' : tab === 'gaps' ? 'Search gaps' : 'Content health'}</button>`).join('')}
+        </div>`;
+      const rangeSel = controls.querySelector('#rangeSel');
+      rangeSel.value = filters.range;
+      const spaceSel = controls.querySelector('#spaceSel');
+      spaceSel.value = filters.space;
+      controls.querySelector('#exportEvents').onclick = exportEvents;
+      rangeSel.onchange = () => { state.config.analytics.range = rangeSel.value; persist(); render(); };
+      spaceSel.onchange = () => { state.config.analytics.space = spaceSel.value; persist(); render(); };
+      controls.querySelectorAll('[data-tab]').forEach(btn => btn.onclick = () => { state.config.analytics.tab = btn.dataset.tab; persist(); render(); });
+
+      wrapper.appendChild(controls);
+      const content = document.createElement('div');
+      content.className = 'grid';
+      if (filters.tab === 'overview') content.appendChild(renderAnalyticsOverview(metrics));
+      if (filters.tab === 'gaps') content.appendChild(renderAnalyticsGaps(metrics, filters));
+      if (filters.tab === 'health') content.appendChild(renderAnalyticsHealth(metrics, filters));
+      wrapper.appendChild(content);
+      return wrapper;
+    }
+
+    function metricTile(label, value, tone) {
+      const color = tone === 'warning' ? 'var(--warning)' : 'var(--accent-2)';
+      return `<div class="card" style="border-color:${color};"><h3>${label}</h3><div style="font-size:28px; font-weight:800;">${value}</div></div>`;
+    }
+
+    function renderAnalyticsOverview(metrics) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="grid three">
+          ${metricTile('DAU (aprox)', metrics.dau)}
+          ${metricTile('WAU (aprox)', metrics.wau)}
+          ${metricTile('Búsquedas', metrics.searches)}
+          ${metricTile('Zero results', `${metrics.zeroResults} (${metrics.zeroRate}% )`, metrics.zeroResults>0 ? 'warning' : '')}
+          ${metricTile('Docs más vistos', metrics.topViewed.length)}
+          ${metricTile('Docs más útiles', metrics.topUseful.length)}
+        </div>
+        <div class="grid two" style="margin-top:12px;">
+          <div class="card">
+            <h4>Search vs Zero</h4>
+            <canvas id="chart-search"></canvas>
+          </div>
+          <div class="card">
+            <h4>Top vistos</h4>
+            <canvas id="chart-views"></canvas>
+          </div>
+        </div>
+        <div class="grid two" style="margin-top:12px;">
+          <div>
+            <h4>Docs más vistos</h4>
+            ${metrics.topViewed.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.count} vistas</span></div>`).join('') || '<p class="small">Sin datos aún.</p>'}
+          </div>
+          <div>
+            <h4>Docs más útiles</h4>
+            ${metrics.topUseful.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">Score ${d.score}</span></div>`).join('') || '<p class="small">Sin feedback aún.</p>'}
+          </div>
+        </div>`;
+      requestAnimationFrame(() => {
+        const searchCanvas = card.querySelector('#chart-search');
+        drawBarChart(searchCanvas, [
+          { label: 'Search', value: metrics.searches },
+          { label: 'Zero', value: metrics.zeroResults }
+        ], 'var(--accent)');
+        const viewCanvas = card.querySelector('#chart-views');
+        const data = metrics.topViewed.map(d => ({ label: d.title, value: d.count }));
+        drawBarChart(viewCanvas, data.length ? data : [{ label: 'N/A', value: 0 }], 'var(--accent-2)');
+      });
+      return card;
+    }
+
+    function renderAnalyticsGaps(metrics, filters) {
+      const card = document.createElement('div');
+      const sorted = [...metrics.gaps].sort((a, b) => {
+        if (filters.gapSort === 'recent') return b.lastAt - a.lastAt;
+        if (filters.gapSort === 'low') return (b.low || 0) - (a.low || 0);
+        const byZero = (b.zero || 0) - (a.zero || 0);
+        return byZero === 0 ? (b.low || 0) - (a.low || 0) : byZero;
+      });
+      const taskByGap = state.gapTasks.reduce((acc, t) => { acc[t.gapId] = t; return acc; }, {});
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h3>Search gaps</h3>
+            <p class="small">Zero-results y low-click agrupados por consulta.</p>
+          </div>
+          <div class="flex" style="gap:8px;">
+            <label class="small">Ordenar</label>
+            <select id="gapSort">
+              <option value="zero">Zero desc</option>
+              <option value="low">Low-click desc</option>
+              <option value="recent">Reciente</option>
+            </select>
+          </div>
+        </div>
+        <div class="table" style="width:100%; overflow:auto;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr><th>Consulta</th><th>Zero</th><th>Low-click</th><th>Última vez</th><th>Tarea</th><th>Acción</th></tr>
+            </thead>
+            <tbody id="gapRows"></tbody>
+          </table>
+        </div>`;
+      card.querySelector('#gapSort').value = filters.gapSort || 'zero';
+      card.querySelector('#gapSort').onchange = (e) => { state.config.analytics.gapSort = e.target.value; persist(); render(); };
+      const tbody = card.querySelector('#gapRows');
+      if (sorted.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="small">Sin gaps registrados.</td></tr>';
+      } else {
+        sorted.forEach(g => {
+          const tr = document.createElement('tr');
+          const task = taskByGap[g.id];
+          tr.innerHTML = `<td>${g.q}</td><td>${g.zero || 0}</td><td>${g.low || 0}</td><td class="small">${new Date(g.lastAt).toLocaleString()}</td><td class="small">${task ? `Asignado a ${state.users.find(u => u.id===task.assignedTo)?.name || 'N/A'} · vence ${new Date(task.dueAt).toLocaleDateString()}` : 'No asignado'}</td>`;
+          const actionTd = document.createElement('td');
+          const btn = document.createElement('button');
+          btn.className = 'btn ghost small';
+          btn.textContent = task ? 'Crear borrador' : 'Asignar + crear';
+          btn.onclick = () => {
+            let currentTask = taskByGap[g.id];
+            if (!currentTask) currentTask = addGapTask({ gapId: g.id, assignedTo: state.currentUser.id, slaDays: 7 });
+            const draft = createDocFromGap(g.id);
+            toast('Borrador creado desde gap');
+            if (draft) location.hash = `#/edit/${draft.id}`;
+          };
+          actionTd.appendChild(btn);
+          tr.appendChild(actionTd);
+          tbody.appendChild(tr);
+        });
+      }
+      return card;
+    }
+
+    function renderAnalyticsHealth(metrics, filters) {
+      const card = document.createElement('div');
+      const healthSort = filters.healthSort || 'stale';
+      const sortDocs = (list) => [...list].sort((a, b) => {
+        if (healthSort === 'owner') return (a.owner || '').localeCompare(b.owner || '');
+        return b.updatedAt - a.updatedAt;
+      });
+      const staleList = sortDocs(metrics.health.stale);
+      const dueSoonList = sortDocs(metrics.health.dueSoon || []);
+      const draftList = sortDocs(metrics.health.drafts);
+      const noOwnerList = sortDocs(metrics.health.noOwner);
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h3>Content health</h3>
+            <p class="small">Viejos, sin owner o estancados (draft/in review).</p>
+          </div>
+          <div class="flex" style="gap:8px;">
+            <label class="small">Ordenar por</label>
+            <select id="healthSort">
+              <option value="stale">Última revisión</option>
+              <option value="owner">Owner</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid two" style="margin-top:12px;">
+          ${metricTile('Sin owner', noOwnerList.length, noOwnerList.length ? 'warning' : '')}
+          ${metricTile('Revisión vencida', staleList.length, staleList.length ? 'warning' : '')}
+          ${metricTile('Por vencer', dueSoonList.length, dueSoonList.length ? 'warning' : '')}
+          ${metricTile('Drafts estancados', draftList.length, draftList.length ? 'warning' : '')}
+        </div>
+        <div class="grid three" style="margin-top:12px;">
+          <div>
+            <h4>Sin owner</h4>
+            ${noOwnerList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.space}</span></div>`).join('') || '<p class="small">Todos tienen dueño.</p>'}
+          </div>
+          <div>
+            <h4>Revisión vencida</h4>
+            ${staleList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.nextReviewAt || d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin pendientes.</p>'}
+          </div>
+          <div>
+            <h4>Por vencer (&lt;7d)</h4>
+            ${dueSoonList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.nextReviewAt || d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin próximos vencimientos.</p>'}
+          </div>
+          <div>
+            <h4>Draft/In review estancados</h4>
+            ${draftList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.status}</span></div>`).join('') || '<p class="small">Sin estancados.</p>'}
+          </div>
+        </div>`;
+      const sortSel = card.querySelector('#healthSort');
+      sortSel.value = healthSort;
+      sortSel.onchange = (e) => { state.config.analytics.healthSort = e.target.value; persist(); render(); };
+      return card;
+    }
+
+    window.addEventListener('hashchange', render);
+    window.addEventListener('beforeunload', flushEvents);
+    render();
+  </script>
+</body>
+</html>
