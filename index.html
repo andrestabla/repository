@@ -695,8 +695,10 @@
       docs: seedDocs,
       events: [],
       gaps: [],
+      gapTasks: [],
       feedback: [],
       follows: [],
+      savedSearches: [],
       versions: seedVersions,
       config: {
         iaEnabled: true,
@@ -739,6 +741,8 @@
           events: (parsed.events || []).slice(-eventLimit),
           config: mergedConfig,
           session: parsed.session ?? null,
+          savedSearches: parsed.savedSearches || [],
+          gapTasks: parsed.gapTasks || [],
           feedback: parsed.feedback ?? [],
           follows: parsed.follows ?? [],
           versions: parsed.versions ?? seedVersions
@@ -1179,10 +1183,10 @@
       const tags = params.tags ? params.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
       const range = params.range || 'all';
       const selectedFormats = params.format ? params.format.split(',').filter(Boolean) : [];
-      const results = searchDocs({ q, type, space, tags, range, formats: selectedFormats });
+      const { results, facets, suggestions, semantic } = searchDocs({ q, type, space, tags, range, formats: selectedFormats });
       const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all' || selectedFormats.length;
       if (attempted) {
-        logEvent('search_performed', { q, filters: { type, space, tags, range, formats: selectedFormats }, results: results.length });
+        logEvent('search_performed', { q, filters: { type, space, tags, range, formats: selectedFormats }, results: results.length, top: results[0]?.id });
         if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range, formats: selectedFormats } });
       }
       const container = document.createElement('div');
@@ -1211,8 +1215,8 @@
               <div>
                 <label>Espacio</label>
                 <select id="space">
-                  <option value="all">Todos</option>
-                  ${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}
+                  <option value="all">Todos (${facets.spaceCounts.all || state.docs.length})</option>
+                  ${spaces.map(s => `<option value="${s}">${s} (${facets.spaceCounts[s] || 0})</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -1238,7 +1242,7 @@
                   ${Object.keys(FORMAT_GROUPS).map(g => `
                     <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);">
                       <input type="checkbox" value="${g}" class="formatCheck" ${selectedFormats.includes(g) ? 'checked' : ''}/>
-                      ${g.toUpperCase()}
+                      ${g.toUpperCase()} (${facets.formatCounts[g] || 0})
                     </label>
                   `).join('')}
                 </div>
@@ -1263,40 +1267,120 @@
         const nextRange = rangeSel.value;
         const nextFormats = Array.from(card.querySelectorAll('.formatCheck:checked')).map(c => c.value);
         const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats });
-        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats }, results: previewResults.length, source: 'search_form' });
-        if (previewResults.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats } });
+        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats }, results: previewResults.results.length, source: 'search_form' });
+        if (previewResults.results.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats } });
         location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormats.join(',')}`;
       };
+      const activeFilters = document.createElement('div');
+      activeFilters.className = 'flex';
+      activeFilters.style.gap = '6px';
+      const chips = [];
+      if (type !== 'all') chips.push({ label: `Tipo: ${type}`, action: () => location.hash = location.hash.replace(/type=[^&]*/, 'type=all') });
+      if (space !== 'all') chips.push({ label: `Espacio: ${space}`, action: () => location.hash = location.hash.replace(/space=[^&]*/, 'space=all') });
+      tags.forEach(t => chips.push({ label: `Tag: ${t}`, action: () => location.hash = `#/search?q=${encodeURIComponent(q)}&type=${type}&space=${space}&range=${range}` }));
+      if (range !== 'all') chips.push({ label: `Rango: ${range}d`, action: () => location.hash = location.hash.replace(/range=[^&]*/, 'range=all') });
+      selectedFormats.forEach(f => chips.push({ label: `Formato: ${f}`, action: () => location.hash = '#/search' }));
+      if (chips.length) {
+        chips.forEach(c => {
+          const pill = document.createElement('span');
+          pill.className = 'tag';
+          pill.style.cursor = 'pointer';
+          pill.textContent = c.label + ' ×';
+          pill.onclick = c.action;
+          activeFilters.appendChild(pill);
+        });
+        const clear = document.createElement('button');
+        clear.className = 'btn ghost small';
+        clear.textContent = 'Limpiar todo';
+        clear.onclick = () => location.hash = '#/search';
+        activeFilters.appendChild(clear);
+        card.appendChild(activeFilters);
+      }
+      const savedWrap = document.createElement('div');
+      savedWrap.className = 'grid';
+      savedWrap.style.marginTop = '8px';
+      savedWrap.innerHTML = `<label class="small">Guardar búsqueda</label><div class="flex" style="gap:6px; flex-wrap:wrap;"><input id="saveName" placeholder="Nombre" /><button class="btn ghost small" id="saveSearch">Guardar</button></div>`;
+      savedWrap.querySelector('#saveSearch').onclick = () => {
+        const name = savedWrap.querySelector('#saveName').value.trim() || `Búsqueda ${new Date().toLocaleString()}`;
+        state.savedSearches.push({ id: crypto.randomUUID(), name, q, filters: { type, space, tags, range, formats: selectedFormats }, alert: false, createdAt: Date.now() });
+        persist();
+        toast('Búsqueda guardada');
+        render();
+      };
+      if (state.savedSearches.length) {
+        const list = document.createElement('div');
+        list.className = 'grid';
+        list.innerHTML = '<label class="small">Saved searches / alertas</label>';
+        state.savedSearches.forEach(s => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.innerHTML = `<span>${s.name}</span>`;
+          const actions = document.createElement('div');
+          actions.className = 'flex';
+          const apply = document.createElement('button');
+          apply.className = 'btn ghost small';
+          apply.textContent = 'Aplicar';
+          apply.onclick = () => {
+            const f = s.filters || {};
+            location.hash = `#/search?q=${encodeURIComponent(s.q||'')}&type=${f.type||'all'}&space=${f.space||'all'}&tags=${encodeURIComponent((f.tags||[]).join(','))}&range=${f.range||'all'}&format=${(f.formats||[]).join(',')}`;
+          };
+          const alertToggle = document.createElement('button');
+          alertToggle.className = s.alert ? 'btn primary small' : 'btn ghost small';
+          alertToggle.textContent = s.alert ? 'Alerta on' : 'Crear alerta';
+          alertToggle.onclick = () => { s.alert = !s.alert; persist(); render(); };
+          actions.append(apply, alertToggle);
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+        savedWrap.appendChild(list);
+      }
+      card.appendChild(savedWrap);
       const list = document.createElement('div');
       list.className = 'grid two';
       if (results.length === 0 && attempted) {
         const empty = document.createElement('div');
         empty.className = 'card';
-        empty.innerHTML = `<h3>Sin resultados</h3><p class="small">No encontramos coincidencias. Reporta un gap para generar contenido.</p><button class="btn primary" id="reportGap">Reportar gap</button>`;
+        empty.innerHTML = `<h3>Sin resultados</h3><p class="small">No encontramos coincidencias. Reporta un gap para generar contenido.</p><div class="grid"> <label>Asignar como tarea</label><select id="gapOwner">${state.users.map(u => `<option value="${u.id}">${u.name}</option>`).join('')}</select><input id="gapSla" type="number" min="1" value="7" placeholder="SLA días" /><button class="btn primary" id="reportGap">Reportar gap</button></div>`;
         empty.querySelector('#reportGap').onclick = () => {
-          addGap({ q, filters: { type, space, tags, range, formats: selectedFormats } });
-          toast('Gap registrado');
+          const assignedTo = empty.querySelector('#gapOwner').value;
+          const sla = Number(empty.querySelector('#gapSla').value) || 7;
+          const gap = addGap({ q, filters: { type, space, tags, range, formats: selectedFormats } });
+          addGapTask({ gapId: gap.id, assignedTo, slaDays: sla, status: 'open' });
+          toast('Gap registrado y tarea asignada');
         };
         list.appendChild(empty);
+      }
+      if (suggestions.length) {
+        const sugCard = document.createElement('div');
+        sugCard.className = 'card';
+        sugCard.innerHTML = `<h4>Quizás buscabas...</h4><div class="flex" style="gap:6px;">${suggestions.map(s => `<a class="tag" href="#/search?q=${encodeURIComponent(s)}">${s}</a>`).join('')}</div>`;
+        list.appendChild(sugCard);
       }
       results.forEach(r => {
         const item = document.createElement('div');
         item.className = 'card doc-card';
         item.innerHTML = `
           <div class="flex space-between">
-            <a href="#/doc/${r.id}"><h3>${r.title}</h3></a>
+            <a href="#/doc/${r.id}"><h3>${r.highlightedTitle || r.title}</h3></a>
             <span class="status ${r.status}">${r.status}</span>
           </div>
-          <p>${r.content.slice(0,120)}...</p>
+          <p>${r.snippet || r.content.slice(0,120)}...</p>
           <div class="flex">
             <span class="tag">${r.type}</span>
             <span class="tag">${r.space}</span>
             ${r.ext ? `<span class="tag">${r.ext.toUpperCase()}</span>` : ''}
             ${r.classification ? `<span class="tag">${r.classification}</span>` : ''}
             ${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+            <span class="small">Score ${r.score?.toFixed(2) || 0}</span>
           </div>`;
         list.appendChild(item);
       });
+      if (semantic && semantic.source) {
+        const iaCard = document.createElement('div');
+        iaCard.className = 'card';
+        iaCard.innerHTML = `<h4>Respuesta IA (demo)</h4><p>${semantic.answer}</p><div class="small">Fuente: <a href="#/doc/${semantic.source.id}">${semantic.source.title}</a></div>`;
+        list.prepend(iaCard);
+      }
       container.append(card, list);
       return container;
     }
@@ -1309,18 +1393,86 @@
 
     function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all', formats = [] }) {
       const normalized = q.trim().toLowerCase();
+      const terms = normalized.split(/\s+/).filter(Boolean);
       const now = Date.now();
       const rangeDays = range === 'all' ? null : Number(range);
-      const filtered = state.docs.filter(d => {
-        const haystack = `${d.title} ${d.content} ${d.tags.join(' ')}`.toLowerCase();
-        const matchesQ = normalized ? haystack.includes(normalized) : true;
+      const baseFiltered = state.docs.filter(d => {
         const matchesType = type === 'all' || d.type === type;
         const matchesSpace = space === 'all' || d.space === space;
         const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
         const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
-        return matchesQ && matchesType && matchesSpace && matchesTags && matchesDate;
+        return matchesType && matchesSpace && matchesTags && matchesDate;
       });
-      return filterByFormat(filtered, formats);
+      const facetSpaceCounts = baseFiltered.reduce((acc, d) => { acc[d.space] = (acc[d.space] || 0) + 1; return acc; }, {});
+      facetSpaceCounts.all = baseFiltered.length;
+      const facetFormatCounts = baseFiltered.reduce((acc, d) => {
+        const ext = normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '');
+        Object.entries(FORMAT_GROUPS).forEach(([g, list]) => { if (list.includes(ext)) acc[g] = (acc[g] || 0) + 1; });
+        return acc;
+      }, {});
+      const scored = baseFiltered.map(doc => {
+        let score = 0;
+        if (terms.length === 0 && !normalized) score += Math.log1p(doc.views || 0);
+        terms.forEach(t => {
+          if (doc.title.toLowerCase().includes(t)) score += 3;
+          if (doc.tags.some(tag => tag.toLowerCase().includes(t))) score += 2;
+          if (doc.content.toLowerCase().includes(t)) score += 1;
+        });
+        if (doc.status === 'published') score += 2; else if (doc.status === 'in_review') score += 1;
+        if (doc.freshness === 'al día') score += 1; else if (doc.freshness === 'vencido') score -= 1;
+        const fb = feedbackSummary(doc.id);
+        score += (fb.useful - fb.notUseful) * 0.5;
+        score += Math.log1p(doc.views || 0);
+        const recency = 1 / (1 + ((now - doc.updatedAt) / 86400000));
+        score += recency;
+        const ext = normalizeExt(doc.ext || doc.attachments?.[0]?.ext || '');
+        return { ...doc, score, snippet: buildSnippet(doc.content, terms), highlightedTitle: highlightText(doc.title, terms), ext };
+      });
+      const formatFiltered = filterByFormat(scored, formats);
+      const withQueryMatch = terms.length ? formatFiltered.filter(d => d.score > 0) : formatFiltered;
+      const ordered = withQueryMatch.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
+      const suggestions = !ordered.length && terms.length ? suggestAlternatives(terms) : [];
+      const semantic = semanticAnswer(ordered, terms, normalized);
+      return { results: ordered, facets: { formatCounts: facetFormatCounts, spaceCounts: facetSpaceCounts }, suggestions, semantic };
+    }
+
+    function highlightText(text, terms = []) {
+      if (!terms.length) return text;
+      let out = text;
+      terms.forEach(t => {
+        if (!t) return;
+        const re = new RegExp(`(${t})`, 'ig');
+        out = out.replace(re, '<mark>$1</mark>');
+      });
+      return out;
+    }
+
+    function buildSnippet(content, terms = []) {
+      if (!content) return '';
+      if (!terms.length) return content.slice(0, 140);
+      const lower = content.toLowerCase();
+      const idx = terms.map(t => lower.indexOf(t)).find(i => i >= 0);
+      const start = idx && idx > 40 ? idx - 40 : 0;
+      const snippet = content.slice(start, start + 180);
+      return highlightText(snippet, terms);
+    }
+
+    function suggestAlternatives(terms) {
+      const set = new Set();
+      terms.forEach(t => {
+        state.docs.forEach(d => {
+          d.tags.forEach(tag => { if (tag.toLowerCase().includes(t)) set.add(tag); });
+          if (d.title.toLowerCase().includes(t)) set.add(d.title);
+        });
+      });
+      return Array.from(set).slice(0, 5);
+    }
+
+    function semanticAnswer(results, terms, normalized) {
+      if (!normalized || !results.length) return null;
+      const top = results[0];
+      const snippet = buildSnippet(top.content, terms);
+      return { answer: `Posible respuesta: ${snippet}`, source: { id: top.id, title: top.title } };
     }
 
     function addGap(payload) {
@@ -1328,6 +1480,49 @@
       state.gaps.push(gap);
       logEvent('gap_reported', gap);
       persist();
+      return gap;
+    }
+
+    function addGapTask({ gapId, assignedTo, slaDays = 7, status = 'open' }) {
+      const task = { id: crypto.randomUUID(), gapId, assignedTo, slaDays, status, createdAt: Date.now(), dueAt: Date.now() + slaDays * 86400000 };
+      state.gapTasks.push(task);
+      logEvent('gap_task_created', task);
+      persist();
+      return task;
+    }
+
+    function createDocFromGap(gapId) {
+      const gap = state.gaps.find(g => g.id === gapId);
+      if (!gap) return null;
+      const owner = state.users.find(u => u.id === state.currentUser?.id) || state.users[0];
+      const doc = computeReviewFields({
+        id: `d${Date.now()}`,
+        title: `Borrador desde gap: ${gap.q || 'consulta'}`,
+        type: 'wiki',
+        space: gap.filters?.space && gap.filters.space !== 'all' ? gap.filters.space : spaces[0],
+        owner: owner.name,
+        ownerId: owner.id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now(),
+        status: 'draft',
+        updatedAt: Date.now(),
+        tags: normalizeTags(gap.filters?.tags || []),
+        content: `Contexto del gap: ${gap.q || ''}. Detalle: ${JSON.stringify(gap.filters || {})}`,
+        version: 0,
+        attachments: [],
+        ext: 'html',
+        mime: mimeFromExt('html'),
+        sourceType: 'url',
+        url: 'https://example.com'
+      });
+      state.docs.push(doc);
+      state.versions.push({ id: crypto.randomUUID(), docId: doc.id, version: 1, snapshotAt: doc.updatedAt, status: doc.status, title: doc.title, content: doc.content });
+      logEvent('doc_created', { docId: doc.id, fromGap: gapId });
+      persist();
+      return doc;
     }
 
     function isFollowing(docId, userId = state.currentUser?.id) {
@@ -2242,6 +2437,7 @@
         const byZero = (b.zero || 0) - (a.zero || 0);
         return byZero === 0 ? (b.low || 0) - (a.low || 0) : byZero;
       });
+      const taskByGap = state.gapTasks.reduce((acc, t) => { acc[t.gapId] = t; return acc; }, {});
       card.className = 'card';
       card.innerHTML = `
         <div class="flex space-between" style="align-items:center;">
@@ -2261,7 +2457,7 @@
         <div class="table" style="width:100%; overflow:auto;">
           <table style="width:100%; border-collapse:collapse;">
             <thead>
-              <tr><th>Consulta</th><th>Zero</th><th>Low-click</th><th>Última vez</th><th>Espacio</th></tr>
+              <tr><th>Consulta</th><th>Zero</th><th>Low-click</th><th>Última vez</th><th>Tarea</th><th>Acción</th></tr>
             </thead>
             <tbody id="gapRows"></tbody>
           </table>
@@ -2270,11 +2466,25 @@
       card.querySelector('#gapSort').onchange = (e) => { state.config.analytics.gapSort = e.target.value; persist(); render(); };
       const tbody = card.querySelector('#gapRows');
       if (sorted.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="small">Sin gaps registrados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="small">Sin gaps registrados.</td></tr>';
       } else {
         sorted.forEach(g => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${g.q}</td><td>${g.zero || 0}</td><td>${g.low || 0}</td><td class="small">${new Date(g.lastAt).toLocaleString()}</td><td>${g.space || 'all'}</td>`;
+          const task = taskByGap[g.id];
+          tr.innerHTML = `<td>${g.q}</td><td>${g.zero || 0}</td><td>${g.low || 0}</td><td class="small">${new Date(g.lastAt).toLocaleString()}</td><td class="small">${task ? `Asignado a ${state.users.find(u => u.id===task.assignedTo)?.name || 'N/A'} · vence ${new Date(task.dueAt).toLocaleDateString()}` : 'No asignado'}</td>`;
+          const actionTd = document.createElement('td');
+          const btn = document.createElement('button');
+          btn.className = 'btn ghost small';
+          btn.textContent = task ? 'Crear borrador' : 'Asignar + crear';
+          btn.onclick = () => {
+            let currentTask = taskByGap[g.id];
+            if (!currentTask) currentTask = addGapTask({ gapId: g.id, assignedTo: state.currentUser.id, slaDays: 7 });
+            const draft = createDocFromGap(g.id);
+            toast('Borrador creado desde gap');
+            if (draft) location.hash = `#/edit/${draft.id}`;
+          };
+          actionTd.appendChild(btn);
+          tr.appendChild(actionTd);
           tbody.appendChild(tr);
         });
       }
