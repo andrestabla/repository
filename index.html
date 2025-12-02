@@ -319,7 +319,8 @@
       content: `Contenido de ejemplo para el documento ${i+1}. Incluye contexto de ${spaces[i % spaces.length]} y etiqueta ${tagsPool[i % tagsPool.length]}.`,
       views: Math.floor(Math.random() * 120) + 4,
       version: 1,
-      attachments: []
+      attachments: [],
+      format: 'html'
     }));
 
     const realResources = [
@@ -329,7 +330,12 @@
       { title: 'Necesidad de una educación en un mundo digital', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Necesidad+de+una+educaci%C3%B3n+en+un+mundo+digital.pdf', type: 'pdf' },
       { title: 'Secretos de Finlandia', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/secretos_finlandia.pdf', type: 'pdf' },
       { title: 'Líder de alto impacto (video)', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/1.+Lider+de+alto+impacto.mp4', type: 'video' },
-      { title: 'Presencia ejecutiva (video)', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/2-+Presencia-ejecutiva.mp4', type: 'video' }
+      { title: 'Presencia ejecutiva (video)', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/2-+Presencia-ejecutiva.mp4', type: 'video' },
+      { title: 'Audio guía de inducción', url: 'https://www.w3schools.com/html/horse.mp3', type: 'audio' },
+      { title: 'Infografía resumida', url: 'https://via.placeholder.com/1200x720.png?text=Infografia+Visual', type: 'image' },
+      { title: 'Plan de proyecto (DOC)', url: 'https://file-examples.com/storage/fe3dcf1c1e0f3996bd6f66a7/2017/02/file-sample_100kB.doc', type: 'doc' },
+      { title: 'Presupuesto trimestral (XLS)', url: 'https://file-examples.com/storage/fe28416c0daac82466e0e5c5/2017/02/file_example_XLS_10.xls', type: 'xls' },
+      { title: 'Presentación estrategia (PPT)', url: 'https://file-examples.com/storage/fe77ae3fb053845ed54f9b89/2017/08/file_example_PPT_500kB.ppt', type: 'pptx' }
     ];
 
     const resourceDocs = realResources.map((res, idx) => ({
@@ -344,7 +350,8 @@
       content: `Recurso embebido disponible: ${res.title}. Usa la vista previa para consultarlo y descarga para obtener el archivo original.`,
       views: 30 + idx * 3,
       version: 1,
-      attachments: [res]
+      attachments: [res],
+      format: res.type
     }));
 
     const seedDocs = [...baseDocs, ...resourceDocs];
@@ -360,7 +367,8 @@
       tags: doc.tags,
       type: doc.type,
       space: doc.space,
-      attachments: doc.attachments
+      attachments: doc.attachments,
+      format: doc.format || 'html'
     }));
 
     const seedState = {
@@ -831,11 +839,12 @@
       const space = params.space || 'all';
       const tags = params.tags ? params.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
       const range = params.range || 'all';
-      const results = searchDocs({ q, type, space, tags, range });
-      const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all';
+      const format = params.format || 'all';
+      const results = searchDocs({ q, type, space, tags, range, format });
+      const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all' || format !== 'all';
       if (attempted) {
-        logEvent('search_performed', { q, filters: { type, space, tags, range }, results: results.length });
-        if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range } });
+        logEvent('search_performed', { q, filters: { type, space, tags, range, format }, results: results.length });
+        if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range, format } });
       }
       const container = document.createElement('div');
       container.className = 'grid';
@@ -848,62 +857,81 @@
             <label>Consulta</label>
             <input id="q" value="${q}" placeholder="Buscar..." />
           </div>
-          <div class="grid two">
-            <div>
-              <label>Tipo</label>
-              <select id="type">
-                <option value="all">Todos</option>
-                <option value="wiki">Wiki</option>
-                <option value="faq">FAQ</option>
-                <option value="procedimiento">Procedimiento</option>
-                <option value="postmortem">Postmortem</option>
-                <option value="playbook">Playbook</option>
-              </select>
+            <div class="grid two">
+              <div>
+                <label>Tipo</label>
+                <select id="type">
+                  <option value="all">Todos</option>
+                  <option value="wiki">Wiki</option>
+                  <option value="faq">FAQ</option>
+                  <option value="procedimiento">Procedimiento</option>
+                  <option value="postmortem">Postmortem</option>
+                  <option value="playbook">Playbook</option>
+                </select>
+              </div>
+              <div>
+                <label>Espacio</label>
+                <select id="space">
+                  <option value="all">Todos</option>
+                  ${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}
+                </select>
+              </div>
             </div>
+          </div>
+          <div class="grid two" style="margin-top:10px;">
             <div>
-              <label>Espacio</label>
-              <select id="space">
-                <option value="all">Todos</option>
-                ${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}
-              </select>
+              <label>Etiquetas (coma)</label>
+              <input id="tags" value="${tags.join(', ')}" placeholder="SOP, FAQ" />
+            </div>
+            <div class="grid two" style="gap:8px;">
+              <div>
+                <label>Fecha de actualización</label>
+                <select id="range">
+                  <option value="all">Cualquier fecha</option>
+                  <option value="7">Últimos 7 días</option>
+                  <option value="30">Últimos 30 días</option>
+                  <option value="90">Últimos 90 días</option>
+                </select>
+              </div>
+              <div>
+                <label>Formato adjunto</label>
+                <select id="format">
+                  <option value="all">Cualquiera</option>
+                  <option value="pdf">PDF</option>
+                  <option value="video">Video (mp4)</option>
+                  <option value="audio">Audio (mp3)</option>
+                  <option value="image">Imagen (jpg/png)</option>
+                  <option value="doc">Word/Doc</option>
+                  <option value="xls">Excel/XLS</option>
+                  <option value="pptx">PPT/PPTX</option>
+                  <option value="other">Otros</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="grid two" style="margin-top:10px;">
-          <div>
-            <label>Etiquetas (coma)</label>
-            <input id="tags" value="${tags.join(', ')}" placeholder="SOP, FAQ" />
-          </div>
-          <div>
-            <label>Fecha de actualización</label>
-            <select id="range">
-              <option value="all">Cualquier fecha</option>
-              <option value="7">Últimos 7 días</option>
-              <option value="30">Últimos 30 días</option>
-              <option value="90">Últimos 90 días</option>
-            </select>
-          </div>
-        </div>
-        <div class="flex" style="margin-top:10px;">
-          <button class="btn primary" id="runSearch">Buscar</button>
-          <span class="small">Resultados: ${results.length}</span>
-        </div>`;
+          <div class="flex" style="margin-top:10px;">
+            <button class="btn primary" id="runSearch">Buscar</button>
+            <span class="small">Resultados: ${results.length}</span>
+          </div>`;
       const typeSel = card.querySelector('#type');
       typeSel.value = type;
       const spaceSel = card.querySelector('#space');
       spaceSel.value = space;
       const rangeSel = card.querySelector('#range');
       rangeSel.value = range;
+      const formatSel = card.querySelector('#format');
+      formatSel.value = format;
       card.querySelector('#runSearch').onclick = () => {
         const nextQ = card.querySelector('#q').value.trim();
         const nextType = typeSel.value;
         const nextSpace = spaceSel.value;
         const nextTags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
         const nextRange = rangeSel.value;
-        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange });
-        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange }, results: previewResults.length, source: 'search_form' });
-        if (previewResults.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange } });
-        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}`;
+        const nextFormat = formatSel.value;
+        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange, format: nextFormat });
+        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, format: nextFormat }, results: previewResults.length, source: 'search_form' });
+        if (previewResults.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, format: nextFormat } });
+        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormat}`;
       };
       const list = document.createElement('div');
       list.className = 'grid two';
@@ -929,6 +957,7 @@
           <div class="flex">
             <span class="tag">${r.type}</span>
             <span class="tag">${r.space}</span>
+            ${r.format ? `<span class="tag">${r.format.toUpperCase()}</span>` : ''}
             ${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}
           </div>`;
         list.appendChild(item);
@@ -937,7 +966,7 @@
       return container;
     }
 
-    function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all' }) {
+    function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all', format = 'all' }) {
       const normalized = q.trim().toLowerCase();
       const now = Date.now();
       const rangeDays = range === 'all' ? null : Number(range);
@@ -948,7 +977,9 @@
         const matchesSpace = space === 'all' || d.space === space;
         const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
         const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
-        return matchesQ && matchesType && matchesSpace && matchesTags && matchesDate;
+        const docFormat = d.format || d.attachments?.[0]?.type || 'other';
+        const matchesFormat = format === 'all' || (format === 'other' ? !['pdf','video','audio','image','doc','xls','pptx'].includes(docFormat) : docFormat === format);
+        return matchesQ && matchesType && matchesSpace && matchesTags && matchesDate && matchesFormat;
       });
     }
 
@@ -1026,6 +1057,7 @@
             <div class="flex">
               <span class="tag">${doc.type}</span>
               <span class="tag">${doc.space}</span>
+              ${doc.format ? `<span class="tag">${doc.format.toUpperCase()}</span>` : ''}
               ${doc.tags.map(t => `<span class="tag">${t}</span>`).join('')}
               <span class="tag">Owner: ${doc.owner}</span>
             </div>
@@ -1059,7 +1091,8 @@
         const renderPreview = (att) => {
           if (!att) return;
           preview.innerHTML = `<div class="flex space-between" style="align-items:center;"><div><strong>${att.title}</strong><div class="small">${att.type.toUpperCase()}</div></div><div class="flex" style="gap:6px;"><a class="btn ghost small" href="${att.url}" target="_blank" rel="noopener">Abrir en pestaña</a><a class="btn primary small" href="${att.url}" download>Descargar</a></div></div>`;
-          if (att.type === 'video') {
+          const type = att.type;
+          if (type === 'video') {
             const video = document.createElement('video');
             video.src = att.url;
             video.controls = true;
@@ -1067,6 +1100,21 @@
             video.style.maxHeight = '320px';
             video.style.marginTop = '8px';
             preview.appendChild(video);
+          } else if (type === 'audio') {
+            const audio = document.createElement('audio');
+            audio.src = att.url;
+            audio.controls = true;
+            audio.style.width = '100%';
+            audio.style.marginTop = '8px';
+            preview.appendChild(audio);
+          } else if (type === 'image') {
+            const img = document.createElement('img');
+            img.src = att.url;
+            img.alt = att.title;
+            img.style.width = '100%';
+            img.style.marginTop = '8px';
+            img.style.borderRadius = '12px';
+            preview.appendChild(img);
           } else {
             const iframe = document.createElement('iframe');
             iframe.src = att.url;
@@ -1075,7 +1123,13 @@
             iframe.style.border = '1px solid var(--border)';
             iframe.style.marginTop = '8px';
             iframe.setAttribute('title', att.title);
+            iframe.onload = () => { iframe.style.background = 'white'; };
             preview.appendChild(iframe);
+            const hint = document.createElement('div');
+            hint.className = 'small';
+            hint.style.marginTop = '6px';
+            hint.textContent = type === 'pdf' ? 'Vista previa PDF embebida.' : 'Vista previa embebida; si el navegador no soporta el formato, usa Descargar o Abrir en pestaña.';
+            preview.appendChild(hint);
           }
         };
         doc.attachments.forEach(att => {
@@ -1142,7 +1196,8 @@
         tags: [],
         content: '',
         version: 0,
-        attachments: []
+        attachments: [],
+        format: 'html'
       };
       const container = document.createElement('div');
       container.className = 'grid';
@@ -1267,7 +1322,7 @@
       const space = card.querySelector('#space').value;
       const tags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
       const content = card.querySelector('#content').value;
-      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0 };
+      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, format: base.format || 'html' };
     }
 
     function upsertDoc(doc) {
@@ -1293,6 +1348,7 @@
         tags: doc.tags,
         type: doc.type,
         space: doc.space,
+        format: doc.format || 'html',
         attachments: doc.attachments,
         reason
       });
