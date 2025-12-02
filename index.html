@@ -265,6 +265,20 @@
 
     const spaces = ['TI', 'Operaciones', 'Comercial', 'Talento'];
     const tagsPool = ['SOP', 'FAQ', 'Postmortem', 'Playbook', 'Onboarding', 'Incidente', 'Ventas'];
+    const templates = {
+      sop: {
+        title: 'SOP: Proceso estándar',
+        content: 'Objetivo\nAlcance\nPre-requisitos\nPasos\nRoles y RACI\nValidación y evidencia'
+      },
+      faq: {
+        title: 'FAQ: Pregunta frecuente',
+        content: 'Pregunta\nRespuesta breve\nDetalles adicionales\nEnlaces relacionados'
+      },
+      lesson: {
+        title: 'Lección aprendida',
+        content: 'Situación\nCausa raíz\nImpacto\nAcciones correctivas\nRecomendaciones futuras'
+      }
+    };
 
     const seedDocs = Array.from({ length: 10 }).map((_, i) => ({
       id: `d${i+1}`,
@@ -276,7 +290,21 @@
       updatedAt: Date.now() - i * 86400000,
       tags: [tagsPool[i % tagsPool.length], tagsPool[(i+2)%tagsPool.length]],
       content: `Contenido de ejemplo para el documento ${i+1}. Incluye contexto de ${spaces[i % spaces.length]} y etiqueta ${tagsPool[i % tagsPool.length]}.`,
-      views: Math.floor(Math.random() * 120) + 4
+      views: Math.floor(Math.random() * 120) + 4,
+      version: 1
+    }));
+
+    const seedVersions = seedDocs.map(doc => ({
+      id: crypto.randomUUID(),
+      docId: doc.id,
+      version: 1,
+      snapshotAt: doc.updatedAt,
+      status: doc.status,
+      title: doc.title,
+      content: doc.content,
+      tags: doc.tags,
+      type: doc.type,
+      space: doc.space
     }));
 
     const seedState = {
@@ -286,6 +314,7 @@
       gaps: [],
       feedback: [],
       follows: [],
+      versions: seedVersions,
       config: { iaEnabled: true, versioning: true, locale: 'es' },
       currentUser: null,
       session: null,
@@ -293,6 +322,8 @@
     };
 
     const state = loadState();
+    let editorAutoSave = null;
+    const autoSaveMs = 8000;
 
     if (state.session && !state.currentUser) {
       const user = state.users.find(u => u.id === state.session.userId);
@@ -309,7 +340,8 @@
             ...parsed,
             session: parsed.session ?? null,
             feedback: parsed.feedback ?? [],
-            follows: parsed.follows ?? []
+            follows: parsed.follows ?? [],
+            versions: parsed.versions ?? seedVersions
           };
         } catch (e) {
         console.warn('Estado corrupto, reseteando');
@@ -385,6 +417,7 @@
 
     function render() {
       const { key, param } = router();
+      if (key !== '/edit' && editorAutoSave) { clearInterval(editorAutoSave); editorAutoSave = null; }
       if (key === '/login') {
         renderLogin();
         return;
@@ -889,13 +922,25 @@
       followBtn.onclick = () => { toggleFollow(doc.id); refreshStats(); };
       card.querySelector('#report').onclick = () => { logEvent('doc_outdated_reported', { docId: doc.id }); toast('Reporte enviado'); };
       container.appendChild(card);
+      const versions = state.versions.filter(v => v.docId === doc.id).sort((a,b) => b.version - a.version);
+      const history = document.createElement('div');
+      history.className = 'card';
+      history.innerHTML = `<h3>Historial de versiones</h3>${versions.length === 0 ? '<p class="small">Sin snapshots aún.</p>' : ''}`;
+      if (versions.length) {
+        const list = document.createElement('table');
+        list.className = 'table';
+        list.innerHTML = '<tr><th>Versión</th><th>Estado</th><th>Fecha</th><th>Razón</th></tr>' + versions.map(v => `<tr><td>${v.version}</td><td>${v.status}</td><td>${new Date(v.snapshotAt).toLocaleString()}</td><td>${v.reason || 'guardado'}</td></tr>`).join('');
+        history.appendChild(list);
+      }
+      container.appendChild(history);
       return container;
 
     }
 
     function renderEditor(id) {
       const editing = id && id !== 'new';
-      const doc = editing ? state.docs.find(d => d.id === id) : {
+      const existing = editing ? state.docs.find(d => d.id === id) : null;
+      let doc = existing ? { ...existing } : {
         id: `d${Date.now()}`,
         title: '',
         type: 'wiki',
@@ -904,7 +949,8 @@
         status: 'draft',
         updatedAt: Date.now(),
         tags: [],
-        content: ''
+        content: '',
+        version: 0
       };
       const container = document.createElement('div');
       container.className = 'grid';
@@ -917,67 +963,108 @@
       }
       const card = document.createElement('div');
       card.className = 'card';
-      card.innerHTML = `
-        <div class="flex space-between">
-          <h2>${editing ? 'Editar' : 'Crear'} documento</h2>
-          <div class="status ${doc.status}">${doc.status}</div>
-        </div>
-        <div class="grid two">
-          <div>
-            <label>Título</label>
-            <input id="title" value="${doc.title}" />
+        card.innerHTML = `
+          <div class="flex space-between">
+            <h2>${editing ? 'Editar' : 'Crear'} documento</h2>
+            <div class="status ${doc.status}">${doc.status}</div>
+          </div>
+          <div class="grid two">
+            <div>
+              <label>Título</label>
+              <input id="title" value="${doc.title}" />
+            </div>
+            <div>
+              <label>Plantilla</label>
+              <select id="template">
+                <option value="">Seleccionar plantilla</option>
+                <option value="sop">SOP</option>
+                <option value="faq">FAQ</option>
+                <option value="lesson">Lección aprendida</option>
+              </select>
+            </div>
+            <div>
+              <label>Tipo</label>
+              <select id="type">
+                <option value="wiki">Wiki</option>
+                <option value="faq">FAQ</option>
+                <option value="procedimiento">Procedimiento</option>
+                <option value="postmortem">Postmortem</option>
+                <option value="playbook">Playbook</option>
+              </select>
+            </div>
+            <div>
+              <label>Espacio</label>
+              <select id="space">${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label>Etiquetas (coma)</label>
+              <input id="tags" value="${doc.tags.join(', ')}" />
+            </div>
           </div>
           <div>
-            <label>Tipo</label>
-            <select id="type">
-              <option value="wiki">Wiki</option>
-              <option value="faq">FAQ</option>
-              <option value="procedimiento">Procedimiento</option>
-              <option value="postmortem">Postmortem</option>
-              <option value="playbook">Playbook</option>
-            </select>
+            <label>Contenido</label>
+            <textarea id="content">${doc.content}</textarea>
           </div>
-          <div>
-            <label>Espacio</label>
-            <select id="space">${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
-          </div>
-          <div>
-            <label>Etiquetas (coma)</label>
-            <input id="tags" value="${doc.tags.join(', ')}" />
-          </div>
-        </div>
-        <div>
-          <label>Contenido</label>
-          <textarea id="content">${doc.content}</textarea>
-        </div>
-        <div class="flex" style="margin-top:10px;">
-          <button class="btn primary" id="saveBtn">Guardar</button>
+          <div class="flex" style="margin-top:10px;">
+          <button class="btn primary" id="saveBtn">Guardar versión</button>
           <button class="btn ghost" id="reviewBtn">Enviar a revisión</button>
-          <button class="btn ghost" id="publishBtn">Publicar</button>
-        </div>`;
+          <button class="btn ghost" id="publishBtn">Aprobar y publicar</button>
+        </div>
+        <span class="small">Autosave cada ${autoSaveMs/1000}s · Versión actual: ${doc.version || 0}</span>`;
       card.querySelector('#type').value = doc.type;
       card.querySelector('#space').value = doc.space;
+      const templateSelector = card.querySelector('#template');
+      templateSelector.onchange = (e) => {
+        const tpl = templates[e.target.value];
+        if (!tpl) return;
+        card.querySelector('#title').value = tpl.title;
+        card.querySelector('#content').value = tpl.content;
+        if (tpl.title.startsWith('SOP')) card.querySelector('#type').value = 'procedimiento';
+        if (tpl.title.startsWith('FAQ')) card.querySelector('#type').value = 'faq';
+      };
+      const assignAndPersist = (payload, reason) => {
+        doc = upsertDoc(payload);
+        createSnapshot(doc, reason);
+      };
       card.querySelector('#saveBtn').onclick = () => {
-        const payload = collectDocFields(card, doc);
-        upsertDoc(payload, editing);
-        toast('Guardado');
-        logEvent(editing ? 'doc_edited' : 'doc_created', { docId: payload.id });
+        const payload = collectDocFields(card, doc, doc.status || 'draft');
+        const isNew = !state.docs.find(d => d.id === payload.id);
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'guardar');
+        logEvent(isNew ? 'doc_created' : 'doc_edited', { docId: payload.id, version: payload.version, mode: 'manual' });
+        toast('Versión guardada');
         location.hash = `#/doc/${payload.id}`;
       };
       card.querySelector('#reviewBtn').onclick = () => {
+        if (!['editor','admin'].includes(state.currentUser.role)) { toast('Solo editores pueden enviar a revisión'); return; }
         const payload = collectDocFields(card, doc, 'in_review');
-        upsertDoc(payload, editing);
-        toast('Enviado a revisión');
+        const isNew = !state.docs.find(d => d.id === payload.id);
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'envío a revisión');
+        logEvent(isNew ? 'doc_created' : 'doc_edited', { docId: payload.id, version: payload.version, mode: 'review' });
         logEvent('workflow_submitted', { docId: payload.id });
+        toast('Enviado a revisión');
         location.hash = `#/doc/${payload.id}`;
       };
       card.querySelector('#publishBtn').onclick = () => {
+        if (!['admin','manager'].includes(state.currentUser.role)) { toast('Solo admin/manager aprueban'); return; }
+        if (doc.status !== 'in_review' && doc.status !== 'published') { toast('Debe estar en revisión para aprobar'); return; }
         const payload = collectDocFields(card, doc, 'published');
-        upsertDoc(payload, editing);
+        payload.version = (payload.version || 0) + 1;
+        assignAndPersist(payload, 'publicación');
+        logEvent('workflow_approved', { docId: payload.id });
+        logEvent('doc_published', { docId: payload.id, version: payload.version });
         toast('Publicado');
-        logEvent('doc_published', { docId: payload.id });
         location.hash = `#/doc/${payload.id}`;
       };
+      const autoSave = () => {
+        const payload = collectDocFields(card, doc, doc.status);
+        const exists = state.docs.some(d => d.id === payload.id);
+        doc = upsertDoc(payload);
+        logEvent(exists ? 'doc_edited' : 'doc_created', { docId: payload.id, mode: 'autosave' });
+      };
+      if (editorAutoSave) clearInterval(editorAutoSave);
+      editorAutoSave = setInterval(autoSave, autoSaveMs);
       container.appendChild(card);
       return container;
     }
@@ -988,16 +1075,34 @@
       const space = card.querySelector('#space').value;
       const tags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
       const content = card.querySelector('#content').value;
-      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now() };
+      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0 };
     }
 
-    function upsertDoc(doc, editing) {
-      if (editing) {
-        const idx = state.docs.findIndex(d => d.id === doc.id);
+    function upsertDoc(doc) {
+      const idx = state.docs.findIndex(d => d.id === doc.id);
+      if (idx >= 0) {
         state.docs[idx] = doc;
       } else {
         state.docs.push(doc);
       }
+      persist();
+      return doc;
+    }
+
+    function createSnapshot(doc, reason) {
+      state.versions.push({
+        id: crypto.randomUUID(),
+        docId: doc.id,
+        version: doc.version || 1,
+        snapshotAt: Date.now(),
+        status: doc.status,
+        title: doc.title,
+        content: doc.content,
+        tags: doc.tags,
+        type: doc.type,
+        space: doc.space,
+        reason
+      });
       persist();
     }
 
