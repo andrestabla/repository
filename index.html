@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repositorio de Conocimiento - Algoritmo T</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --midnight: #0c1c35;
+      --ink: #112d4e;
+      --accent: #ef845d;
+      --accent-2: #69e0c9;
+      --surface: #f4f7fb;
+      --muted: #6c7a92;
+      --card: #ffffff;
+      --border: #e3e9f2;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--surface);
+      color: #0c1b33;
+      line-height: 1.6;
+    }
+
+    header {
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 32%),
+                  radial-gradient(circle at 80% 0%, rgba(255,255,255,0.12), transparent 30%),
+                  linear-gradient(135deg, var(--midnight), #154070);
+      color: #fff;
+      padding: 32px 28px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), #f5b185);
+      color: var(--midnight);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      box-shadow: 0 10px 30px rgba(239,132,93,0.35);
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: #dbe7ff;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: inherit;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: background .2s ease, transform .2s ease;
+    }
+
+    nav a:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+
+    .main-hero {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 22px;
+      align-items: center;
+    }
+
+    .hero-copy h1 { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.2; }
+    .hero-copy p { color: #d6e5ff; margin: 14px 0 20px; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    .chip small { background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 8px; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+    .login-card {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
+      padding: 18px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 16px 50px rgba(0,0,0,0.25);
+    }
+
+    .login-card h3 { margin: 0 0 12px; color: #fff; }
+    .input-group { display: grid; gap: 10px; margin-bottom: 12px; }
+    label { font-weight: 600; color: #dbe7ff; font-size: 14px; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #d2d9e5;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .btn {
+      background: var(--accent);
+      border: none;
+      color: var(--midnight);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(239,132,93,0.3);
+    }
+
+    .btn.secondary { background: #fff; color: var(--ink); box-shadow: none; border: 1px solid #d2d9e5; }
+
+    main { max-width: 1240px; margin: 26px auto 72px; padding: 0 20px; }
+
+    .section { margin-top: 26px; }
+    .section h2 { margin: 0 0 4px; }
+    .subtitle { color: var(--muted); margin-bottom: 14px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 18px;
+      box-shadow: 0 16px 40px rgba(12,28,53,0.08);
+      display: grid;
+      gap: 10px;
+    }
+
+    .tag { display: inline-block; padding: 6px 10px; border-radius: 10px; background: #f7f1eb; color: #b8552f; font-weight: 700; font-size: 12px; }
+    .pill { padding: 6px 10px; border-radius: 10px; background: #e6f6f1; color: #0c7d63; font-weight: 700; font-size: 12px; }
+    .stack { display: grid; gap: 8px; }
+    .inline { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    .module { border-left: 4px solid var(--accent); padding-left: 12px; }
+    .module.blue { border-color: #5f9df7; }
+    .module.green { border-color: #69e0c9; }
+    .module.purple { border-color: #9a7bff; }
+
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+    .table th { background: #f7f9fd; }
+
+    .kanban { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .column { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; box-shadow: 0 8px 30px rgba(12,28,53,0.08); }
+    .column h4 { margin: 0 0 10px; }
+
+    .badge { background: #0c1c35; color: #fff; padding: 6px 10px; border-radius: 10px; font-weight: 700; font-size: 12px; }
+
+    .footer { margin: 40px 0 0; text-align: center; color: var(--muted); }
+
+    @media (max-width: 720px) {
+      header { position: static; border-radius: 0 0 20px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">AT</div>
+        <div>
+          <div>Algoritmo T</div>
+          <small style="color:#cddcfe;font-weight:600;">Repositorio de conocimiento</small>
+        </div>
+      </div>
+      <nav>
+        <a href="#login">Login</a>
+        <a href="#captura">Captura</a>
+        <a href="#organizacion">Organización</a>
+        <a href="#busqueda">Búsqueda</a>
+        <a href="#seguridad">Seguridad</a>
+        <a href="#analitica">Analítica</a>
+        <a href="#operacion">Operación</a>
+      </nav>
+    </div>
+
+    <div class="main-hero" id="login">
+      <div class="hero-copy">
+        <h1>Aplicación web modular para gestionar el conocimiento</h1>
+        <p>Portal unificado con login seguro, captura estructurada, workflows de aprobación, búsqueda avanzada y analítica continua con look &amp; feel Algoritmo T.</p>
+        <div class="chips">
+          <div class="chip"><small>IA</small> Búsqueda semántica</div>
+          <div class="chip"><small>SSO</small> Azure AD / Google / LDAP</div>
+          <div class="chip"><small>SecOps</small> MFA + auditoría completa</div>
+        </div>
+      </div>
+      <div class="login-card">
+        <h3>Inicio de sesión</h3>
+        <div class="input-group">
+          <label for="email">Correo corporativo</label>
+          <input id="email" type="email" placeholder="persona@empresa.com" aria-label="Correo corporativo">
+          <label for="password">Contraseña / SSO</label>
+          <input id="password" type="password" placeholder="********" aria-label="Contraseña">
+        </div>
+        <div class="row">
+          <button class="btn" style="flex:1">Ingresar</button>
+          <button class="btn secondary" style="flex:1">SSO / MFA</button>
+        </div>
+        <p style="color:#dbe7ff;font-size:13px;">Roles y permisos granulares por espacio, carpeta, documento y sección. Clasificación: público interno, restringido, confidencial.</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" id="captura">
+      <h2>1) Captura y creación de conocimiento</h2>
+      <p class="subtitle">Wiki con editor enriquecido, plantillas y formularios operativos.</p>
+      <div class="grid">
+        <div class="card module">
+          <div class="tag">Wiki + Editor</div>
+          <strong>Páginas HTML con versión automática</strong>
+          <div class="stack">
+            <div>• Editor enriquecido (rich text, media, menciones).</div>
+            <div>• Plantillas: lecciones aprendidas, SOP, playbooks, casos, FAQs, postmortems.</div>
+            <div>• Carga de archivos Office/PDF/imágenes/video/audio con versionado.</div>
+            <div>• Importación desde Drive, SharePoint, Confluence, correo, CRM y ticketing.</div>
+          </div>
+        </div>
+        <div class="card module blue">
+          <div class="tag">Formularios</div>
+          <strong>Captura estructurada</strong>
+          <div class="stack">
+            <label for="tipo">Tipo de conocimiento</label>
+            <select id="tipo">
+              <option>Operaciones</option>
+              <option>Soporte</option>
+              <option>Ventas</option>
+              <option>Proyectos</option>
+            </select>
+            <label for="titulo">Título</label>
+            <input id="titulo" placeholder="Ej. Lección aprendida - Incidente DB" aria-label="Título">
+            <label for="detalle">Resumen / contenido</label>
+            <textarea id="detalle" rows="3" placeholder="Describe el contexto, impacto, solución y próximos pasos"></textarea>
+            <button class="btn" style="margin-top:6px;">Guardar en wiki</button>
+          </div>
+        </div>
+        <div class="card module green">
+          <div class="tag">Importación</div>
+          <strong>Conectores y versiones</strong>
+          <div class="stack">
+            <div class="inline">
+              <span class="pill">Drive</span>
+              <span class="pill">SharePoint</span>
+              <span class="pill">Confluence</span>
+              <span class="pill">Correo</span>
+              <span class="pill">CRM</span>
+              <span class="pill">Ticketing</span>
+            </div>
+            <div>Auto-versionado, previsualización y control de descargas según política.</div>
+            <div>Checklist de calidad previo a publicar.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="organizacion">
+      <h2>2) Organización y clasificación</h2>
+      <p class="subtitle">Taxonomías jerárquicas, metadatos obligatorios y relaciones entre contenidos.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="tag">Taxonomías</div>
+          <div class="stack">
+            <strong>Categorías + etiquetas libres</strong>
+            <div>Árbol jerárquico por área, proceso y producto con colecciones TI, Comercial, Operaciones y Talento.</div>
+            <div class="inline">
+              <span class="pill">Área</span><span class="pill">Proceso</span><span class="pill">Producto</span><span class="pill">Cliente</span><span class="pill">Confidencialidad</span><span class="pill">Vigencia</span><span class="pill">Dueño</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tag">Relaciones</div>
+          <div class="stack">
+            <strong>Mapa de vínculos</strong>
+            <div class="table-wrapper">
+              <table class="table">
+                <tr><th>Contenido</th><th>Relaciona con</th></tr>
+                <tr><td>Documento</td><td>Proceso ↔ Proyecto ↔ Incidencia ↔ Cliente</td></tr>
+                <tr><td>Política</td><td>Checklist de calidad + vigencia</td></tr>
+              </table>
+            </div>
+            <div>Caducidad, revisión periódica y archivado programable.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tag">Vigencia</div>
+          <div class="stack">
+            <strong>Control de ciclo de vida</strong>
+            <div class="inline">
+              <span class="pill">Caducidad</span>
+              <span class="pill">Revisión</span>
+              <span class="pill">Archivado</span>
+            </div>
+            <div>Alertas a content owner y revisores; checklist mínimo por proceso/área.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="busqueda">
+      <h2>3) Búsqueda y descubrimiento</h2>
+      <p class="subtitle">Full-text con filtros, facetas, sinónimos, corrección y vista previa con IA.</p>
+      <div class="grid">
+        <div class="card module">
+          <div class="tag">Buscador</div>
+          <div class="stack">
+            <label for="search">Consulta</label>
+            <input id="search" placeholder="Busca por intención o palabras clave" aria-label="Buscar">
+            <div class="row">
+              <span class="pill">Sinónimos</span>
+              <span class="pill">Autocompletar</span>
+              <span class="pill">Corrección</span>
+              <span class="pill">Mejor respuesta</span>
+            </div>
+            <div class="inline">
+              <span class="badge">Faceta: Tipo</span>
+              <span class="badge">Área</span>
+              <span class="badge">Fecha</span>
+              <span class="badge">Autor</span>
+              <span class="badge">Etiquetas</span>
+              <span class="badge">Confidencialidad</span>
+            </div>
+            <div>Vista previa con resaltado de coincidencias y ranking por relevancia/uso.</div>
+          </div>
+        </div>
+        <div class="card module blue">
+          <div class="tag">Semántica</div>
+          <div class="stack">
+            <strong>Búsqueda por intención</strong>
+            <div>Panel con snippets, sugerencias y FAQ con mejor respuesta destacada.</div>
+            <div>Filtro "solo IA" y trazabilidad de fuentes citadas.</div>
+          </div>
+        </div>
+        <div class="card module green">
+          <div class="tag">Preview</div>
+          <div class="stack">
+            <strong>Resaltado y sugerencias</strong>
+            <div>Vista previa con texto, multimedia y enlaces relacionados.</div>
+            <div>Sugerencias de artículos similares y autocompletar proactivo.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="versiones">
+      <h2>4) Control de versiones y trazabilidad</h2>
+      <p class="subtitle">Historial, comentarios de edición, bloqueo y auditoría completa.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="tag">Versiones</div>
+          <div class="stack">
+            <strong>Historial y diff</strong>
+            <div>Rollback, comentarios de edición, check-in/check-out para evitar conflictos.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tag">Auditoría</div>
+          <div class="stack">
+            <strong>Quién vio / descargó / editó / compartió</strong>
+            <div>Bitácora exportable y retención legal.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="seguridad">
+      <h2>5) Seguridad, acceso y cumplimiento</h2>
+      <p class="subtitle">Roles granulares, SSO + MFA, clasificación y controles de compartición.</p>
+      <div class="grid">
+        <div class="card module">
+          <div class="tag">Acceso</div>
+          <div class="stack">
+            <strong>Permisos por espacio / carpeta / documento / sección</strong>
+            <div>Integración SSO (Azure AD, Google Workspace, LDAP) y MFA.</div>
+            <div>Cifrado en tránsito y en reposo; backups y recuperación.</div>
+          </div>
+        </div>
+        <div class="card module blue">
+          <div class="tag">Políticas</div>
+          <div class="stack">
+            <strong>Clasificación y controles</strong>
+            <div class="inline">
+              <span class="pill">Público interno</span>
+              <span class="pill">Restringido</span>
+              <span class="pill">Confidencial</span>
+            </div>
+            <div>Controles de descarga/impresión/compartir según política; retención y eDiscovery.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="gobernanza">
+      <h2>6) Flujos de aprobación y gobernanza</h2>
+      <p class="subtitle">Workflows de borrador a publicado con dueños, revisores y reglas de calidad.</p>
+      <div class="kanban">
+        <div class="column">
+          <h4>Borrador</h4>
+          <div>Redacción inicial con checklist mínimo.</div>
+        </div>
+        <div class="column">
+          <h4>Revisión</h4>
+          <div>Content owner asigna revisores y verifica metadatos obligatorios.</div>
+        </div>
+        <div class="column">
+          <h4>Aprobación</h4>
+          <div>Por rol: dueño del proceso / compliance / seguridad.</div>
+        </div>
+        <div class="column">
+          <h4>Publicado</h4>
+          <div>Notificaciones, suscripciones y vigencia activa.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="colaboracion">
+      <h2>7) Colaboración y socialización</h2>
+      <p class="subtitle">Comentarios, co-edición, suscripciones y Q&A interno.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="tag">Social</div>
+          <div class="stack">
+            <div>Comentarios, menciones, reacciones y discusión por documento.</div>
+            <div>Co-edición y modo sugerencias tipo revisión.</div>
+            <div>Compartición interna con enlaces controlados.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tag">Suscripciones</div>
+          <div class="stack">
+            <div>Notificaciones por tema, etiqueta o espacio.</div>
+            <div>Q&A interno conectado al repositorio.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="experiencia">
+      <h2>8) Experiencia de usuario y consumo</h2>
+      <p class="subtitle">Portal único, personalización, favoritos y accesibilidad.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="tag">Portal</div>
+          <div class="stack">
+            <div>Navegación clara por roles, procesos y casos.</div>
+            <div>Favoritos, leer después, historial y seguir temas.</div>
+            <div>Responsive, móvil y multilenguaje, con WCAG.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tag">Personalización</div>
+          <div class="stack">
+            <div>Recomendados, "para ti" y recientes.</div>
+            <div>Perfiles por rol y actividad.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="integraciones">
+      <h2>9) Integraciones operativas</h2>
+      <p class="subtitle">Extiende el repositorio a chat, ticketing, CRM y LMS.</p>
+      <div class="grid">
+        <div class="card module">
+          <div class="tag">Colaboración</div>
+          <div class="stack">
+            <div>Teams/Slack: buscar y compartir desde chat.</div>
+            <div>Ticketing (Jira/ServiceNow/Zendesk): sugerencias de artículos.</div>
+          </div>
+        </div>
+        <div class="card module blue">
+          <div class="tag">Operación</div>
+          <div class="stack">
+            <div>CRM (Salesforce/HubSpot): playbooks por etapa.</div>
+            <div>API/SDK y webhooks para automatización.</div>
+            <div>Integración LMS para convertir contenido en cursos.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="analitica">
+      <h2>10) Analítica y mejora continua</h2>
+      <p class="subtitle">Métricas de uso, calidad y gobernanza con paneles.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="tag">Uso</div>
+          <div class="stack">
+            <div>Búsquedas, artículos más vistos y sin resultados (gaps).</div>
+            <div>Calidad: tasa de resolución self-service, feedback por artículo.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tag">Gobernanza</div>
+          <div class="stack">
+            <div>Detección de duplicados/obsoletos.</div>
+            <div>Panel de pendientes de revisión, SLA de aprobación y owners.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="automata">
+      <h2>11) Automatización e IA</h2>
+      <p class="subtitle">Asistente con fuentes citadas, resúmenes y auto-etiquetado.</p>
+      <div class="grid">
+        <div class="card module">
+          <div class="tag">Asistente</div>
+          <div class="stack">
+            <div>Responde con fuentes citadas del repositorio.</div>
+            <div>Resúmenes automáticos, extracción de conceptos y key takeaways.</div>
+            <div>Detección de duplicados/contradicciones y borradores guiados por plantilla.</div>
+            <div>Controles de seguridad: permisos heredados y redacción de datos sensibles.</div>
+          </div>
+        </div>
+        <div class="card module blue">
+          <div class="tag">Auto-etiquetado</div>
+          <div class="stack">
+            <div>Sugerencia de taxonomía y etiquetas; ranking semántico.</div>
+            <div>Webhooks para flujos automáticos.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="operacion">
+      <h2>12) Operación, performance y resiliencia</h2>
+      <p class="subtitle">Alta disponibilidad, monitoreo, DRP y portabilidad.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="tag">Reliability</div>
+          <div class="stack">
+            <div>Alta disponibilidad, escalabilidad y rendimiento de búsqueda.</div>
+            <div>Monitorización, logs, alertas y health checks.</div>
+            <div>Backups, DRP y pruebas de restauración.</div>
+            <div>Exportación y portabilidad para evitar vendor lock-in.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">Diseño Algoritmo T · Login inicial seguido de módulos claros de captura, organización, búsqueda, seguridad, IA y operación.</div>
+  </main>
+</body>
+</html>
