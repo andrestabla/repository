@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Repositorio de Gestión del Conocimiento - Algoritmo T</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --midnight: #0b2742;
+      --ink: #112d4e;
+      --accent: #ef845d;
+      --soft-accent: #f9e8e0;
+      --card: #ffffff;
+      --muted: #6c7a92;
+      --surface: #f5f7fb;
+      --border: #e4e8f0;
+      --success: #3ac29f;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #0c1b33;
+      background: var(--surface);
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--midnight), #0c375f);
+      color: #fff;
+      padding: 28px 28px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 35%),
+                  radial-gradient(circle at 80% 0%, rgba(255,255,255,0.12), transparent 30%);
+      pointer-events: none;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #f3b38a);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: var(--midnight);
+    }
+
+    .nav {
+      display: flex;
+      gap: 18px;
+      font-weight: 600;
+      color: #d9e6ff;
+      flex-wrap: wrap;
+    }
+
+    .nav span {
+      cursor: default;
+      padding: 8px 12px;
+      border-radius: 10px;
+      transition: all .2s ease;
+    }
+
+    .nav span:hover { background: rgba(255,255,255,0.1); }
+
+    .hero {
+      position: relative;
+      z-index: 1;
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 1.2;
+    }
+
+    .hero p { color: #d9e6ff; margin: 16px 0 24px; }
+
+    .chips { display: flex; gap: 12px; flex-wrap: wrap; }
+    .chip {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 10px 14px;
+      border-radius: 12px;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .chip small {
+      background: rgba(0,0,0,0.25);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .cta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .button {
+      background: var(--accent);
+      color: #0b2742;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(239,132,93,0.3);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .button.secondary {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      box-shadow: none;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    .button:hover { transform: translateY(-2px); }
+
+    .glass {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      padding: 18px;
+      color: #d9e6ff;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .quick {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .quick small { color: #c7d9ff; font-weight: 500; }
+
+    main { padding: 40px 28px 64px; max-width: 1260px; margin: -80px auto 0; position: relative; z-index: 2; }
+
+    .panel {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 20px 50px rgba(9,24,55,0.12);
+      border: 1px solid var(--border);
+    }
+
+    .panel h2 { margin: 0 0 12px; color: var(--ink); }
+    .panel h3 { margin: 12px 0 8px; color: var(--midnight); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 16px;
+      display: grid;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(12,29,66,0.08);
+    }
+
+    .card .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: var(--midnight);
+    }
+
+    .pill { background: var(--soft-accent); color: var(--midnight); padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; }
+    .muted { color: var(--muted); font-size: 14px; }
+
+    .tagline { color: var(--muted); margin: 0 0 16px; }
+
+    .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    .list li { display: flex; gap: 10px; align-items: flex-start; }
+    .list li::before { content: '•'; color: var(--accent); font-weight: 900; }
+
+    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; align-items: start; }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+    .meta { padding: 10px; border-radius: 10px; border: 1px dashed var(--border); background: #f9fbff; }
+
+    .timeline { border-left: 3px solid var(--border); padding-left: 14px; display: grid; gap: 12px; }
+    .timeline-item { position: relative; padding-left: 12px; }
+    .timeline-item::before { content: ''; position: absolute; left: -22px; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 6px rgba(239,132,93,0.18); }
+
+    .search-panel {
+      background: linear-gradient(135deg, #0e2f50, #113864);
+      color: #fff;
+      border-radius: 16px;
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 18px 40px rgba(12,29,66,0.3);
+    }
+
+    .search-bar { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+    .search-bar input {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 8px 10px; border-radius: 10px; font-weight: 600; color: #fff; font-size: 14px; }
+
+    .flex { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .footnote { color: var(--muted); font-size: 13px; margin-top: 12px; }
+
+    .badge { background: #e8f6f1; color: #107a5d; padding: 4px 8px; border-radius: 8px; font-weight: 700; font-size: 12px; }
+
+    .roles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .role { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: #fbfcff; }
+
+    .grid.mini { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+    footer { text-align: center; padding: 22px; color: var(--muted); }
+    @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } header { padding-bottom: 64px; } main { margin-top: -50px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">T</div>
+        <div>
+          <div>Algoritmo T</div>
+          <small style="color:#d9e6ff; opacity: .8">Repositorio de Gestión del Conocimiento</small>
+        </div>
+      </div>
+      <div class="nav">
+        <span>Captura</span><span>Organización</span><span>Búsqueda</span><span>Seguridad</span><span>Analytics</span>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <p style="color:#cde2ff;font-weight:600;margin:0 0 8px;">Portal único · SSO · Control de versiones</p>
+        <h1>12 años de aprendizajes convertidos en un repositorio vivo</h1>
+        <p>Diseñado para equipos que capturan, gobiernan y consumen conocimiento con trazabilidad, seguridad y experiencia tipo Algoritmo T.</p>
+        <div class="chips">
+          <div class="chip"><small>IA Ops</small> Búsqueda semántica y sinónimos</div>
+          <div class="chip"><small>Governance</small> Flujos de aprobación y auditoría</div>
+          <div class="chip"><small>Productividad</small> Plantillas y co-edición</div>
+        </div>
+        <div class="cta">
+          <button class="button">Crear documento wiki</button>
+          <button class="button secondary">Explorar colecciones</button>
+        </div>
+      </div>
+      <div class="glass">
+        <h3 style="margin:0 0 6px;color:#fff;">Acciones rápidas</h3>
+        <p style="color:#cde2ff;margin:0 0 12px;font-size:14px;">Centraliza la captura de conocimiento con metadatos obligatorios y versionado automático.</p>
+        <div class="quick-grid">
+          <div class="quick">📄 Nueva página wiki <small>Editor enriquecido + plantillas</small></div>
+          <div class="quick">📎 Subir archivo <small>PDF, Office, imagen, audio, video</small></div>
+          <div class="quick">📥 Importar <small>Drive, SharePoint, Confluence, correo</small></div>
+          <div class="quick">🧭 Asistente IA <small>Respuestas citadas y auto-etiquetado</small></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Captura y creación de conocimiento</h2>
+      <p class="tagline">Wiki colaborativo, formularios guiados y plantillas operativas para SOPs, postmortems, playbooks y FAQs.</p>
+      <div class="split">
+        <div class="card">
+          <div class="label">📑 Editor enriquecido</div>
+          <p class="muted">Bloques, imágenes, checklists, código, incrustaciones y control de versiones por cada guardado.</p>
+          <div class="pill">Plantillas</div>
+          <ul class="list">
+            <li>Lección aprendida, postmortem, runbook, caso/FAQ.</li>
+            <li>Campos obligatorios: dueño, confidencialidad, vigencia.</li>
+            <li>Checklist de calidad y estructura mínima por proceso.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="label">🧾 Formularios inteligentes</div>
+          <p class="muted">Captura estructurada para operaciones, soporte, ventas y proyectos con lógica de validación.</p>
+          <div class="meta-grid">
+            <div class="meta"><strong>Área</strong><div class="muted">TI / Operaciones</div></div>
+            <div class="meta"><strong>Proceso</strong><div class="muted">Onboarding, DRP</div></div>
+            <div class="meta"><strong>Producto</strong><div class="muted">Plataforma X</div></div>
+            <div class="meta"><strong>Cliente</strong><div class="muted">Cuenta clave</div></div>
+          </div>
+          <div class="footnote">Carga de archivos con versionado automático y bloqueo check-in/check-out.</div>
+        </div>
+        <div class="card">
+          <div class="label">🔌 Integraciones</div>
+          <p class="muted">Importa fuentes externas (Drive, SharePoint, Confluence, correo, CRM, ticketing) con mapeo de metadatos.</p>
+          <div class="pill">API & Webhooks</div>
+          <ul class="list">
+            <li>Conecta con Jira/ServiceNow para sugerir artículos en tickets.</li>
+            <li>Expone SDK y webhooks para automatizaciones.</li>
+            <li>Convertir contenido en cursos (LMS) o playbooks por etapa de CRM.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Organización, clasificación y gobernanza</h2>
+      <p class="tagline">Taxonomías jerárquicas, etiquetas libres y reglas de vigencia con owners asignados.</p>
+      <div class="split">
+        <div class="card">
+          <div class="label">🗂 Taxonomías</div>
+          <ul class="list">
+            <li>Árbol de categorías por áreas (TI, Comercial, Operaciones, Talento).</li>
+            <li>Metadatos: proceso, producto, cliente, confidencialidad, vigencia.</li>
+            <li>Relaciones documento ↔ proceso ↔ proyecto ↔ incidente ↔ cliente.</li>
+          </ul>
+          <div class="badge">Gestión de vigencia y archivado</div>
+        </div>
+        <div class="card">
+          <div class="label">🛡 Seguridad y acceso</div>
+          <p class="muted">Roles y permisos granulares por espacio, carpeta, documento o sección, integrados con SSO y MFA.</p>
+          <div class="roles">
+            <div class="role"><strong>Viewer</strong><div class="muted">Lee + comentarios</div></div>
+            <div class="role"><strong>Editor</strong><div class="muted">Co-edita y sugiere</div></div>
+            <div class="role"><strong>Owner</strong><div class="muted">Aprobaciones</div></div>
+            <div class="role"><strong>Auditor</strong><div class="muted">Trazabilidad</div></div>
+          </div>
+          <div class="footnote">Controles de descarga/impresión/compartición según política y clasificación de la información.</div>
+        </div>
+        <div class="card">
+          <div class="label">✅ Flujos de aprobación</div>
+          <div class="timeline">
+            <div class="timeline-item"><strong>Borrador</strong> → revisión</div>
+            <div class="timeline-item"><strong>Aprobación</strong> por dueño/compliance/seguridad</div>
+            <div class="timeline-item"><strong>Publicado</strong> con revisiones periódicas y checklist</div>
+          </div>
+          <div class="footnote">Checklists de calidad, reglas de contenido mínimo y asignación de responsables.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Búsqueda y descubrimiento</h2>
+      <p class="tagline">Full-text, filtros por metadatos, facetas y búsqueda semántica con sugerencias.</p>
+      <div class="split">
+        <div class="search-panel">
+          <div class="search-bar">
+            <input type="text" placeholder="Buscar runbook, postmortem, playbook..." />
+            <button class="button" style="box-shadow:none;">Buscar</button>
+          </div>
+          <div class="filters">
+            <div class="filter">Área: Operaciones</div>
+            <div class="filter">Tipo: SOP</div>
+            <div class="filter">Confidencialidad: Interno</div>
+            <div class="filter">Autor: Equipo DRP</div>
+            <div class="filter">Fecha: Últimos 90 días</div>
+          </div>
+          <div class="footnote" style="color:#d9e6ff;">Incluye sinónimos, autocorrección, autocompletar, mejor respuesta (FAQs) y ranking por uso.</div>
+        </div>
+        <div class="card" style="background: #f9fbff;">
+          <div class="label">✨ IA y descubrimiento</div>
+          <ul class="list">
+            <li>Vista previa con resaltado de coincidencias y snippets.</li>
+            <li>Búsqueda por intención y sugerencias proactivas en chats (Teams/Slack).</li>
+            <li>Auto-etiquetado, detección de duplicados/contradicciones y resúmenes automáticos.</li>
+          </ul>
+          <div class="pill" style="margin-top: 6px;">Asistente con fuentes citadas</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Versiones, trazabilidad y auditoría</h2>
+      <p class="tagline">Historial completo, diffs, bloqueo de edición y evidencias de quién vio, descargó o compartió.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="label">📜 Historial</div>
+          <ul class="list">
+            <li>Versiones numeradas con rollback y comentarios de edición.</li>
+            <li>Comparación visual (diff) y modo sugerencias.</li>
+            <li>Check-in/check-out para evitar conflictos.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="label">🧭 Auditoría</div>
+          <p class="muted">Bitácora completa: quién vio, descargó, editó, aprobó o compartió, con retención legal y eDiscovery.</p>
+          <div class="badge">Cifrado en tránsito y reposo · Backups y DRP</div>
+        </div>
+        <div class="card">
+          <div class="label">🔔 Notificaciones</div>
+          <ul class="list">
+            <li>Suscripciones por tema, etiqueta o espacio.</li>
+            <li>Alertas de vigencia, revisiones pendientes y SLA de aprobación.</li>
+            <li>Enlaces internos controlados para compartición segura.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Experiencia de usuario y consumo</h2>
+      <p class="tagline">Portal responsivo, personalizable y accesible con recomendaciones "para ti".</p>
+      <div class="grid mini">
+        <div class="card">
+          <div class="label">🎯 Personalización</div>
+          <p class="muted">Recomendados según rol, historial y temas seguidos. Favoritos, lectura posterior y recientes.</p>
+        </div>
+        <div class="card">
+          <div class="label">💬 Colaboración</div>
+          <p class="muted">Comentarios, menciones, reacciones y Q&A interno conectado al repositorio.</p>
+        </div>
+        <div class="card">
+          <div class="label">📱 Movilidad</div>
+          <p class="muted">Acceso móvil, responsive y accesibilidad WCAG.</p>
+        </div>
+        <div class="card">
+          <div class="label">🤝 Integraciones</div>
+          <p class="muted">Teams/Slack para buscar y compartir; CRM y ticketing para sugerir artículos in-context.</p>
+        </div>
+        <div class="card">
+          <div class="label">📊 Analítica</div>
+          <p class="muted">Búsquedas, artículos más vistos, gaps sin resultados, duplicados y panel de gobernanza.</p>
+        </div>
+        <div class="card">
+          <div class="label">⚙️ Operación</div>
+          <p class="muted">Alta disponibilidad, monitoreo, logs, alertas y exportación/portabilidad.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Algoritmo T · Repositorio de Gestión del Conocimiento · Seguridad, trazabilidad y experiencia premium.
+  </footer>
+</body>
+</html>
