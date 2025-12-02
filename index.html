@@ -316,8 +316,34 @@
       tags: [tagsPool[i % tagsPool.length], tagsPool[(i+2)%tagsPool.length]],
       content: `Contenido de ejemplo para el documento ${i+1}. Incluye contexto de ${spaces[i % spaces.length]} y etiqueta ${tagsPool[i % tagsPool.length]}.`,
       views: Math.floor(Math.random() * 120) + 4,
-      version: 1
+      version: 1,
+      attachments: []
     }));
+
+    const realResources = [
+      { title: 'Delors - Los cuatro pilares', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/CPP-DC-Delors-Los-cuatro-pilares.pdf', type: 'pdf' },
+      { title: 'Experiencias de aprendizaje significativas en la educación básica y media en Colombia', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Experiencias+de+aprendizaje+significativas+en+la+educaci%C3%B3n+b%C3%A1sica+y+media+en+Colombia.+Una+aproximaci%C3%B3n+desde+sus+actores+y+el+estado+del+arte..pdf', type: 'pdf' },
+      { title: 'Introducción al conocimiento de la ciencia', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Introducci%C3%B3n+al+conocimiento+de+la+ciencia.pdf', type: 'pdf' },
+      { title: 'Necesidad de una educación en un mundo digital', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/Necesidad+de+una+educaci%C3%B3n+en+un+mundo+digital.pdf', type: 'pdf' },
+      { title: 'Secretos de Finlandia', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/secretos_finlandia.pdf', type: 'pdf' },
+      { title: 'Líder de alto impacto (video)', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/1.+Lider+de+alto+impacto.mp4', type: 'video' },
+      { title: 'Presencia ejecutiva (video)', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/2-+Presencia-ejecutiva.mp4', type: 'video' }
+    ];
+
+    seedDocs.push({
+      id: 'd11',
+      title: 'Repositorio vivo de referencias educativas',
+      type: 'wiki',
+      space: 'Talento',
+      owner: 'Camila Admin',
+      status: 'published',
+      updatedAt: Date.now() - 3600 * 1000,
+      tags: ['Repositorio', 'PDF', 'Video'],
+      content: 'Colección curada de referencias reales para el equipo. Incluye PDFs y videos de liderazgo como muestras del repositorio.',
+      views: 42,
+      version: 1,
+      attachments: realResources
+    });
 
     const seedVersions = seedDocs.map(doc => ({
       id: crypto.randomUUID(),
@@ -329,7 +355,8 @@
       content: doc.content,
       tags: doc.tags,
       type: doc.type,
-      space: doc.space
+      space: doc.space,
+      attachments: doc.attachments
     }));
 
     const seedState = {
@@ -637,8 +664,13 @@
       const card = document.createElement('div');
       card.className = 'login-card';
       card.innerHTML = `
-        <h2>Acceder</h2>
-        <p>Inicia sesión con credenciales demo o simula SSO. El acceso está sujeto a políticas corporativas.</p>
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h2>Acceder</h2>
+            <p>Inicia sesión con credenciales demo o simula SSO. El acceso está sujeto a políticas corporativas.</p>
+          </div>
+          <button class="btn ghost" id="themeLogin">${state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</button>
+        </div>
         <div class="grid">
           <button class="btn primary" id="ssoBtn">Ingresar con SSO</button>
           <div class="grid">
@@ -673,6 +705,12 @@
       card.querySelector('#ssoBtn').onclick = () => {
         toast('Simulando redirección SSO...');
         setTimeout(() => toast('SSO completado (demo)'), 800);
+      };
+      card.querySelector('#themeLogin').onclick = () => {
+        const next = state.config.theme === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+        toast(`Modo ${next === 'light' ? 'claro' : 'oscuro'}`);
+        render();
       };
       card.querySelector('#loginBtn').onclick = () => {
         const email = card.querySelector('#email').value.trim();
@@ -1006,6 +1044,28 @@
         </div>
         <span class="small" id="statsLine">Feedback: ${stats.useful} 👍 / ${stats.notUseful} 👎 · Seguidores: ${followers()}</span>
         <span class="small">Última actualización: ${new Date(doc.updatedAt).toLocaleString()} · Vistas: ${doc.views}</span>`;
+      if (doc.attachments?.length) {
+        const attachments = document.createElement('div');
+        attachments.className = 'grid';
+        attachments.style.marginTop = '8px';
+        attachments.innerHTML = '<h4>Recursos vinculados</h4>';
+        doc.attachments.forEach(att => {
+          const row = document.createElement('div');
+          row.className = 'grid';
+          row.style.gap = '4px';
+          row.innerHTML = `<div class="flex space-between"><a href="${att.url}" target="_blank" rel="noopener">${att.title}</a><span class="tag">${att.type.toUpperCase()}</span></div>`;
+          if (att.type === 'video') {
+            const video = document.createElement('video');
+            video.src = att.url;
+            video.controls = true;
+            video.style.width = '100%';
+            video.style.maxHeight = '220px';
+            row.appendChild(video);
+          }
+          attachments.appendChild(row);
+        });
+        card.appendChild(attachments);
+      }
       const commentInput = card.querySelector('#comment');
       const statsLine = card.querySelector('#statsLine');
       const followBtn = card.querySelector('#follow');
@@ -1057,7 +1117,8 @@
         updatedAt: Date.now(),
         tags: [],
         content: '',
-        version: 0
+        version: 0,
+        attachments: []
       };
       const container = document.createElement('div');
       container.className = 'grid';
@@ -1208,6 +1269,7 @@
         tags: doc.tags,
         type: doc.type,
         space: doc.space,
+        attachments: doc.attachments,
         reason
       });
       persist();
