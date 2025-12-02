@@ -165,6 +165,8 @@
       gap: 8px;
     }
 
+    .btn.small { padding: 6px 10px; font-size: 12px; }
+
     .btn.primary { background: var(--accent); color: #0b172a; box-shadow: 0 12px 30px rgba(239,132,93,0.25); }
     .btn.ghost { background: var(--surface-1); color: var(--text); border: 1px solid var(--border); }
 
@@ -305,7 +307,7 @@
       }
     };
 
-    const seedDocs = Array.from({ length: 10 }).map((_, i) => ({
+    const baseDocs = Array.from({ length: 10 }).map((_, i) => ({
       id: `d${i+1}`,
       title: `Documento ${i+1} - ${['SOP','FAQ','Playbook','Caso','Guía'][i%5]}`,
       type: ['wiki','faq','procedimiento','postmortem','playbook'][i%5],
@@ -330,20 +332,22 @@
       { title: 'Presencia ejecutiva (video)', url: 'https://liderazgoestrategico.s3.us-east-1.amazonaws.com/Liderazgo+de+Alto+Impacto/Modulo+1-+Introduccion/2-+Presencia-ejecutiva.mp4', type: 'video' }
     ];
 
-    seedDocs.push({
-      id: 'd11',
-      title: 'Repositorio vivo de referencias educativas',
-      type: 'wiki',
-      space: 'Talento',
-      owner: 'Camila Admin',
+    const resourceDocs = realResources.map((res, idx) => ({
+      id: `r${idx+1}`,
+      title: res.title,
+      type: res.type === 'video' ? 'playbook' : 'wiki',
+      space: spaces[idx % spaces.length],
+      owner: seedUsers[(idx + 1) % seedUsers.length].name,
       status: 'published',
-      updatedAt: Date.now() - 3600 * 1000,
-      tags: ['Repositorio', 'PDF', 'Video'],
-      content: 'Colección curada de referencias reales para el equipo. Incluye PDFs y videos de liderazgo como muestras del repositorio.',
-      views: 42,
+      updatedAt: Date.now() - idx * 3600 * 1000,
+      tags: ['Referencia', res.type.toUpperCase()],
+      content: `Recurso embebido disponible: ${res.title}. Usa la vista previa para consultarlo y descarga para obtener el archivo original.`,
+      views: 30 + idx * 3,
       version: 1,
-      attachments: realResources
-    });
+      attachments: [res]
+    }));
+
+    const seedDocs = [...baseDocs, ...resourceDocs];
 
     const seedVersions = seedDocs.map(doc => ({
       id: crypto.randomUUID(),
@@ -1049,21 +1053,41 @@
         attachments.className = 'grid';
         attachments.style.marginTop = '8px';
         attachments.innerHTML = '<h4>Recursos vinculados</h4>';
-        doc.attachments.forEach(att => {
-          const row = document.createElement('div');
-          row.className = 'grid';
-          row.style.gap = '4px';
-          row.innerHTML = `<div class="flex space-between"><a href="${att.url}" target="_blank" rel="noopener">${att.title}</a><span class="tag">${att.type.toUpperCase()}</span></div>`;
+        const preview = document.createElement('div');
+        preview.className = 'card';
+        preview.style.background = 'var(--surface-2)';
+        const renderPreview = (att) => {
+          if (!att) return;
+          preview.innerHTML = `<div class="flex space-between" style="align-items:center;"><div><strong>${att.title}</strong><div class="small">${att.type.toUpperCase()}</div></div><div class="flex" style="gap:6px;"><a class="btn ghost small" href="${att.url}" target="_blank" rel="noopener">Abrir en pestaña</a><a class="btn primary small" href="${att.url}" download>Descargar</a></div></div>`;
           if (att.type === 'video') {
             const video = document.createElement('video');
             video.src = att.url;
             video.controls = true;
             video.style.width = '100%';
-            video.style.maxHeight = '220px';
-            row.appendChild(video);
+            video.style.maxHeight = '320px';
+            video.style.marginTop = '8px';
+            preview.appendChild(video);
+          } else {
+            const iframe = document.createElement('iframe');
+            iframe.src = att.url;
+            iframe.style.width = '100%';
+            iframe.style.height = '360px';
+            iframe.style.border = '1px solid var(--border)';
+            iframe.style.marginTop = '8px';
+            iframe.setAttribute('title', att.title);
+            preview.appendChild(iframe);
           }
+        };
+        doc.attachments.forEach(att => {
+          const row = document.createElement('div');
+          row.className = 'grid';
+          row.style.gap = '4px';
+          row.innerHTML = `<div class="flex space-between"><div class="flex" style="gap:8px; align-items:center;"><span class="tag">${att.type.toUpperCase()}</span><span>${att.title}</span></div><div class="flex" style="gap:6px;"><button class="btn ghost small">Ver</button><a class="btn primary small" href="${att.url}" download>Descargar</a></div></div>`;
+          row.querySelector('button').onclick = () => renderPreview(att);
           attachments.appendChild(row);
         });
+        renderPreview(doc.attachments[0]);
+        attachments.appendChild(preview);
         card.appendChild(attachments);
       }
       const commentInput = card.querySelector('#comment');
