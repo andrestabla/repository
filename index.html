@@ -272,6 +272,8 @@
 
     .tag { background: var(--surface-1); padding: 4px 8px; border-radius: 8px; font-size: 12px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -1674,16 +1676,38 @@
           open.target = '_blank';
           open.rel = 'noopener';
           open.onclick = () => logEvent('doc_open_external', { docId: doc.id, ext });
+          const copy = document.createElement('button');
+          copy.className = 'btn ghost small';
+          copy.textContent = 'Copiar enlace';
+          copy.onclick = async () => {
+            try { await navigator.clipboard.writeText(url); toast('Enlace copiado'); }
+            catch { toast('No se pudo copiar'); }
+          };
+          const report = document.createElement('button');
+          report.className = 'btn ghost small';
+          report.textContent = 'Reportar problema';
+          report.onclick = () => {
+            const reason = prompt('Describe el problema (CORS, formato, bloqueo, etc.)');
+            logEvent('doc_preview_reported', { docId: doc.id, ext, reason: reason || 'no_reason' });
+            toast('Reporte enviado');
+          };
           const download = document.createElement('a');
           download.className = 'btn primary small';
           download.textContent = 'Descargar';
           download.href = url;
           download.download = asset.title || doc.title;
           download.onclick = () => logEvent('doc_downloaded', { docId: doc.id, ext });
-          controls.append(open, download);
+          controls.append(open, copy, download, report);
           previewArea.appendChild(controls);
 
+          const skeleton = document.createElement('div');
+          skeleton.className = 'skeleton';
+          skeleton.style.height = '32px';
+          skeleton.style.marginBottom = '8px';
+          previewArea.appendChild(skeleton);
+
           const renderFallback = (reason) => {
+            skeleton.remove();
             const fallback = document.createElement('div');
             fallback.className = 'card';
             fallback.style.background = 'var(--surface-1)';
@@ -1712,62 +1736,190 @@
           };
 
           const isGroup = (group) => FORMAT_GROUPS[group]?.includes(ext);
-          if (ext === 'pdf') {
+
+          const removeSkeleton = () => skeleton.remove();
+
+          const renderPdf = () => {
+            const tools = document.createElement('div');
+            tools.className = 'flex';
+            tools.style.gap = '8px';
+            tools.style.marginBottom = '6px';
+            const search = document.createElement('input');
+            search.placeholder = 'Buscar en PDF';
+            search.className = 'input';
+            search.onchange = () => { iframe.src = `${url}#search=${encodeURIComponent(search.value)}`; };
+            const pageJump = document.createElement('input');
+            pageJump.type = 'number';
+            pageJump.min = 1;
+            pageJump.placeholder = 'Ir a página';
+            pageJump.onchange = () => { if (!pageJump.value) return; iframe.src = `${url}#page=${pageJump.value}`; };
+            tools.append(search, pageJump);
+            previewArea.appendChild(tools);
+            const thumbs = document.createElement('div');
+            thumbs.className = 'flex';
+            thumbs.style.gap = '6px';
+            thumbs.style.flexWrap = 'wrap';
+            for (let i = 1; i <= 5; i++) {
+              const thumb = document.createElement('button');
+              thumb.className = 'btn ghost small';
+              thumb.textContent = `Pág ${i}`;
+              thumb.onclick = () => { iframe.src = `${url}#page=${i}`; };
+              thumbs.appendChild(thumb);
+            }
+            previewArea.appendChild(thumbs);
             const iframe = document.createElement('iframe');
             iframe.src = url;
             iframe.style.width = '100%';
             iframe.style.height = '70vh';
             iframe.style.border = '0';
             iframe.loading = 'lazy';
+            iframe.onload = () => removeSkeleton();
+            iframe.onerror = () => renderFallback('CORS o bloqueo al cargar PDF');
             previewArea.appendChild(iframe);
             logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_pdf' });
-            return;
-          }
-          if (isGroup('video')) {
-            const video = document.createElement('video');
-            video.src = url;
-            video.controls = true;
-            video.style.width = '100%';
-            video.style.maxHeight = '70vh';
-            video.style.borderRadius = '12px';
-            previewArea.appendChild(video);
-            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_video' });
-            return;
-          }
-          if (isGroup('audio')) {
-            const audio = document.createElement('audio');
-            audio.src = url;
-            audio.controls = true;
-            audio.style.width = '100%';
-            previewArea.appendChild(audio);
-            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_audio' });
-            return;
-          }
-          if (isGroup('image')) {
+          };
+
+          const renderVideoAudio = (isVideo) => {
+            const media = document.createElement(isVideo ? 'video' : 'audio');
+            media.src = url;
+            media.controls = true;
+            if (isVideo) {
+              media.style.width = '100%';
+              media.style.maxHeight = '70vh';
+              media.style.borderRadius = '12px';
+            } else {
+              media.style.width = '100%';
+            }
+            const speed = document.createElement('select');
+            speed.className = 'input';
+            [0.75, 1, 1.25, 1.5, 2].forEach(v => {
+              const opt = document.createElement('option');
+              opt.value = v;
+              opt.textContent = `${v}x`;
+              if (v === 1) opt.selected = true;
+              speed.appendChild(opt);
+            });
+            speed.onchange = () => media.playbackRate = Number(speed.value);
+
+            const transcript = document.createElement('textarea');
+            transcript.readOnly = true;
+            transcript.className = 'input';
+            transcript.style.height = '120px';
+            transcript.value = asset.transcript || doc.content || 'Transcripción no disponible';
+            const finder = document.createElement('input');
+            finder.placeholder = 'Buscar en transcripción';
+            finder.className = 'input';
+            finder.oninput = () => {
+              const q = finder.value.toLowerCase();
+              const idx = transcript.value.toLowerCase().indexOf(q);
+              if (idx >= 0) { transcript.focus(); transcript.setSelectionRange(idx, idx + q.length); }
+            };
+
+            const chapters = document.createElement('div');
+            chapters.className = 'flex';
+            chapters.style.gap = '6px';
+            ['00:00 Intro', '02:00 Clave', '05:00 Cierre'].forEach(mark => {
+              const btn = document.createElement('button');
+              btn.className = 'btn ghost small';
+              btn.textContent = mark;
+              btn.onclick = () => { const mins = Number(mark.split(':')[0]); media.currentTime = mins * 60; media.play(); };
+              chapters.appendChild(btn);
+            });
+
+            const tools = document.createElement('div');
+            tools.className = 'grid';
+            tools.style.gap = '6px';
+            tools.appendChild(speed);
+            tools.appendChild(chapters);
+            tools.appendChild(finder);
+            tools.appendChild(transcript);
+
+            media.onloadstart = () => skeleton.textContent = 'Cargando recurso...';
+            media.oncanplay = () => removeSkeleton();
+            media.onerror = () => renderFallback('No se pudo reproducir media (CORS/bloqueado)');
+            previewArea.append(media, tools);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: isVideo ? 'embed_video' : 'embed_audio' });
+          };
+
+          const renderImage = () => {
+            const wrap = document.createElement('div');
+            wrap.style.overflow = 'auto';
+            wrap.style.maxHeight = '70vh';
+            wrap.style.borderRadius = '12px';
             const img = document.createElement('img');
             img.src = url;
             img.alt = asset.title || doc.title;
             img.style.width = '100%';
-            img.style.maxHeight = '70vh';
             img.style.objectFit = 'contain';
-            img.style.borderRadius = '12px';
-            previewArea.appendChild(img);
+            let zoom = 1;
+            const zoomCtl = document.createElement('input');
+            zoomCtl.type = 'range';
+            zoomCtl.min = '0.5';
+            zoomCtl.max = '2';
+            zoomCtl.step = '0.1';
+            zoomCtl.value = '1';
+            zoomCtl.oninput = () => { zoom = Number(zoomCtl.value); img.style.transform = `scale(${zoom})`; };
+            const meta = document.createElement('div');
+            meta.className = 'small';
+            meta.textContent = `Formato ${ext.toUpperCase()} · ${asset.mime || 'desconocido'}`;
+            img.onload = () => removeSkeleton();
+            img.onerror = () => renderFallback('No se pudo cargar la imagen');
+            wrap.appendChild(img);
+            previewArea.append(wrap, zoomCtl, meta);
             logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_image' });
-            return;
-          }
+          };
+
+          const renderOfficeLocal = async () => {
+            try {
+              const res = await fetch(url);
+              const buf = await res.arrayBuffer();
+              if (FORMAT_GROUPS.word.includes(ext) && window.mammoth) {
+                const result = await window.mammoth.convertToHtml({ arrayBuffer: buf });
+                const html = document.createElement('div');
+                html.innerHTML = result.value;
+                previewArea.appendChild(html);
+                removeSkeleton();
+                logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'parsed_word' });
+                return;
+              }
+              if (FORMAT_GROUPS.excel.includes(ext) && window.XLSX) {
+                const wb = XLSX.read(buf, { type: 'array' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const table = document.createElement('div');
+                table.innerHTML = XLSX.utils.sheet_to_html(sheet);
+                previewArea.appendChild(table);
+                removeSkeleton();
+                logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'parsed_excel' });
+                return;
+              }
+              renderFallback('Vista previa no soportada para archivo local');
+            } catch (e) {
+              renderFallback('Error al leer archivo local');
+            }
+          };
+
+          if (ext === 'pdf') return renderPdf();
+          if (isGroup('video')) return renderVideoAudio(true);
+          if (isGroup('audio')) return renderVideoAudio(false);
+          if (isGroup('image')) return renderImage();
 
           const isOffice = () => isGroup('word') || isGroup('excel') || isGroup('ppt');
-          if (isOffice() && url.startsWith('http')) {
-            const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
-            const iframe = document.createElement('iframe');
-            iframe.src = officeUrl;
-            iframe.style.width = '100%';
-            iframe.style.height = '70vh';
-            iframe.style.border = '0';
-            iframe.loading = 'lazy';
-            previewArea.appendChild(iframe);
-            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'office' });
-            return;
+          if (isOffice()) {
+            if (url.startsWith('http')) {
+              const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+              const iframe = document.createElement('iframe');
+              iframe.src = officeUrl;
+              iframe.style.width = '100%';
+              iframe.style.height = '70vh';
+              iframe.style.border = '0';
+              iframe.loading = 'lazy';
+              iframe.onload = () => removeSkeleton();
+              iframe.onerror = () => renderFallback('CORS o bloqueo en Office viewer');
+              previewArea.appendChild(iframe);
+              logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'office' });
+              return;
+            }
+            return renderOfficeLocal();
           }
 
           renderFallback('Vista previa no soportada');
