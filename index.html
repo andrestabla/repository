@@ -249,6 +249,20 @@
     .flex { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .space-between { justify-content: space-between; }
 
+    .doc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 14px; align-items: flex-start; }
+    .doc-toc { position: sticky; top: 82px; max-height: calc(100vh - 120px); overflow: auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.12); }
+    .doc-toc h4 { margin-bottom: 8px; }
+    .toc-list { display: grid; gap: 6px; }
+    .toc-link { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); padding: 6px 8px; border-radius: 10px; border: 1px solid transparent; }
+    .toc-link:hover { background: var(--surface-1); border-color: var(--border); }
+    .toc-link .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); display: inline-block; }
+    .toc-link.level-3 { padding-left: 16px; font-size: 13px; }
+
+    @media (max-width: 1000px) {
+      .doc-layout { grid-template-columns: 1fr; }
+      .doc-toc { position: relative; top: 0; max-height: none; }
+    }
+
     .toast-container {
       position: fixed;
       bottom: 14px;
@@ -267,6 +281,29 @@
       box-shadow: 0 12px 30px rgba(0,0,0,0.24);
       min-width: 220px;
     }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: grid;
+      place-items: center;
+      z-index: 99;
+      padding: 20px;
+    }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      max-width: 720px;
+      width: min(720px, 95vw);
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      display: grid;
+      gap: 14px;
+    }
+    .modal .actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .pill.muted { background: var(--surface-1); color: var(--muted); }
 
     .login-wrapper {
       min-height: 100vh;
@@ -330,9 +367,9 @@
     const ALL_EXTS = Object.values(FORMAT_GROUPS).flat();
 
     const seedUsers = [
-      { id: 'u1', name: 'Ana Viewer', email: 'ana@demo.local', role: 'viewer', password: 'demo', spaces: ['Talento', 'Operaciones'], team: 'Operaciones', area: 'Talento' },
-      { id: 'u2', name: 'Bruno Editor', email: 'bruno@demo.local', role: 'editor', password: 'demo', spaces: ['TI', 'Operaciones'], team: 'TI', area: 'Operaciones' },
-      { id: 'u3', name: 'Camila Admin', email: 'camila@demo.local', role: 'admin', password: 'demo', spaces: ['TI', 'Operaciones', 'Comercial', 'Talento'], team: 'Comercial', area: 'Gobernanza' }
+      { id: 'u1', name: 'Ana Viewer', email: 'ana@demo.local', role: 'viewer', password: 'demo', spaces: ['Talento', 'Operaciones'], team: 'Operaciones', area: 'Talento', jobTitle: 'Analista', status: 'active', createdAt: Date.now() - 86400000 * 60 },
+      { id: 'u2', name: 'Bruno Editor', email: 'bruno@demo.local', role: 'editor', password: 'demo', spaces: ['TI', 'Operaciones'], team: 'TI', area: 'Operaciones', jobTitle: 'Especialista', status: 'active', createdAt: Date.now() - 86400000 * 45 },
+      { id: 'u3', name: 'Camila Admin', email: 'camila@demo.local', role: 'admin', password: 'demo', spaces: ['TI', 'Operaciones', 'Comercial', 'Talento'], team: 'Comercial', area: 'Gobernanza', jobTitle: 'Manager', status: 'active', createdAt: Date.now() - 86400000 * 90 }
     ];
 
     const spaces = ['TI', 'Operaciones', 'Comercial', 'Talento'];
@@ -356,7 +393,7 @@
       return (ext || '').toLowerCase().replace(/^\./, '');
     }
 
-    const DATA_VERSION = '2024-review-cycle-refresh-v2';
+    const DATA_VERSION = '2024-review-cycle-refresh-v3';
 
     const TAXONOMY_CANONICAL = ['sop','procedimiento','faq','postmortem','playbook','educacion','digital','liderazgo','audio','video','excel','ppt','induccion','referencia','investigacion'];
     const TAXONOMY_NORMALIZATION = {
@@ -384,6 +421,20 @@
         return key;
       }).filter(Boolean);
       return Array.from(new Set(normalized));
+    }
+
+    function normalizeUser(user) {
+      return {
+        jobTitle: '',
+        status: 'active',
+        createdAt: Date.now(),
+        ...user,
+        spaces: user.spaces || [],
+        area: user.area || '',
+        name: user.name || 'Usuario',
+        email: user.email || '',
+        role: user.role || 'viewer'
+      };
     }
 
     function mimeFromExt(ext = '') {
@@ -725,7 +776,7 @@
 
     const seedState = {
       version: DATA_VERSION,
-      users: seedUsers,
+      users: seedUsers.map(normalizeUser),
       docs: seedDocs,
       events: [],
       gaps: [],
@@ -774,6 +825,7 @@
         return {
           ...structuredClone(seedState),
           ...parsed,
+          users: (parsed.users || seedUsers).map(normalizeUser),
           docs: (parsed.docs || seedDocs).map(computeReviewFields),
           events: (parsed.events || []).slice(-eventLimit),
           config: mergedConfig,
@@ -835,6 +887,196 @@
       setTimeout(() => node.remove(), 2600);
     }
 
+    function showModal(title, content, actions = []) {
+      const backdrop = document.createElement('div');
+      backdrop.className = 'modal-backdrop';
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      const header = document.createElement('div');
+      header.className = 'flex space-between';
+      const h = document.createElement('h3');
+      h.textContent = title;
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn ghost';
+      closeBtn.textContent = 'Cerrar';
+      closeBtn.onclick = () => backdrop.remove();
+      header.append(h, closeBtn);
+      modal.appendChild(header);
+      modal.appendChild(content);
+      if (actions.length) {
+        const footer = document.createElement('div');
+        footer.className = 'actions';
+        actions.forEach(btn => footer.appendChild(btn));
+        modal.appendChild(footer);
+      }
+      backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+      backdrop.appendChild(modal);
+      document.body.appendChild(backdrop);
+      closeBtn.focus();
+      return { close: () => backdrop.remove() };
+    }
+
+    function openProfileModal() {
+      const user = { ...state.currentUser };
+      const form = document.createElement('div');
+      form.className = 'grid two';
+      form.innerHTML = `
+        <div class="grid">
+          <label>Nombre</label>
+          <input id="pf-name" value="${user.name || ''}" />
+        </div>
+        <div class="grid">
+          <label>Correo electrónico</label>
+          <input id="pf-email" value="${user.email || ''}" />
+        </div>
+        <div class="grid">
+          <label>Cargo</label>
+          <input id="pf-job" value="${user.jobTitle || ''}" />
+        </div>
+        <div class="grid">
+          <label>Área</label>
+          <input id="pf-area" value="${user.area || ''}" />
+        </div>
+      `;
+      const save = document.createElement('button');
+      save.className = 'btn primary';
+      save.textContent = 'Guardar';
+      const modal = showModal('Editar perfil', form, [save]);
+      save.onclick = () => {
+        const updated = {
+          ...user,
+          name: form.querySelector('#pf-name').value.trim() || user.name,
+          email: form.querySelector('#pf-email').value.trim() || user.email,
+          jobTitle: form.querySelector('#pf-job').value.trim(),
+          area: form.querySelector('#pf-area').value.trim()
+        };
+        const idx = state.users.findIndex(u => u.id === user.id);
+        if (idx >= 0) state.users[idx] = normalizeUser({ ...state.users[idx], ...updated });
+        state.currentUser = state.users[idx] || updated;
+        persist();
+        toast('Perfil actualizado');
+        logEvent('profile_updated', { fields: ['name','email','jobTitle','area'] });
+        modal.close();
+        render();
+      };
+    }
+
+    function openUserAdminModal() {
+      if (state.currentUser.role !== 'admin') { toast('Solo admin puede gestionar usuarios'); return; }
+      const container = document.createElement('div');
+      const list = document.createElement('div');
+      list.className = 'grid';
+      const form = document.createElement('div');
+      form.className = 'grid two';
+      form.innerHTML = `
+        <div class="grid">
+          <label>Nombre</label>
+          <input id="nu-name" placeholder="Nombre" />
+        </div>
+        <div class="grid">
+          <label>Correo</label>
+          <input id="nu-email" placeholder="correo@demo.local" />
+        </div>
+        <div class="grid">
+          <label>Cargo</label>
+          <input id="nu-job" placeholder="Cargo" />
+        </div>
+        <div class="grid">
+          <label>Área</label>
+          <input id="nu-area" placeholder="Área" />
+        </div>
+        <div class="grid">
+          <label>Rol</label>
+          <select id="nu-role">
+            <option value="viewer">viewer</option>
+            <option value="editor">editor</option>
+            <option value="manager">manager</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <div class="grid">
+          <label>Espacios</label>
+          <div class="flex" style="gap:6px; flex-wrap:wrap;">
+            ${spaces.map(s => `<label class="pill muted"><input type="checkbox" value="${s}" class="nu-space" checked /> ${s}</label>`).join('')}
+          </div>
+        </div>
+      `;
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn primary';
+      addBtn.textContent = 'Agregar usuario';
+      addBtn.onclick = () => {
+        const name = form.querySelector('#nu-name').value.trim();
+        const email = form.querySelector('#nu-email').value.trim();
+        if (!name || !email) { toast('Nombre y correo son obligatorios'); return; }
+        const role = form.querySelector('#nu-role').value;
+        const jobTitle = form.querySelector('#nu-job').value.trim();
+        const area = form.querySelector('#nu-area').value.trim();
+        const selectedSpaces = Array.from(form.querySelectorAll('.nu-space:checked')).map(i => i.value);
+        const newUser = normalizeUser({ id: crypto.randomUUID(), name, email, jobTitle, area, role, password: 'demo', spaces: selectedSpaces, status: 'pending', createdAt: Date.now() });
+        state.users.push(newUser);
+        persist();
+        toast('Usuario agregado (pendiente de aprobación)');
+        logEvent('user_added', { userId: newUser.id, role });
+        renderUserRows();
+      };
+
+      function renderUserRows() {
+        list.innerHTML = '<div class="flex space-between"><h4>Usuarios</h4><span class="small">Aprobar o eliminar</span></div>';
+        state.users.forEach(u => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between card';
+          row.style.margin = '4px 0';
+          row.innerHTML = `<div><div><strong>${u.name}</strong> · ${u.email}</div><div class="small">${u.role} · ${u.area || ''} · ${u.jobTitle || ''}</div></div>`;
+          const actions = document.createElement('div');
+          actions.className = 'flex';
+          actions.style.gap = '6px';
+          const status = document.createElement('span');
+          status.className = 'pill muted';
+          status.textContent = u.status || 'active';
+          actions.appendChild(status);
+          if (u.status !== 'active') {
+            const accept = document.createElement('button');
+            accept.className = 'btn primary';
+            accept.textContent = 'Aceptar';
+            accept.onclick = () => {
+              u.status = 'active';
+              persist();
+              toast('Usuario aceptado');
+              logEvent('user_accepted', { userId: u.id });
+              renderUserRows();
+            };
+            actions.appendChild(accept);
+          }
+          if (u.id !== state.currentUser.id) {
+            const del = document.createElement('button');
+            del.className = 'btn ghost';
+            del.textContent = 'Eliminar';
+            del.onclick = () => {
+              state.users = state.users.filter(us => us.id !== u.id);
+              persist();
+              toast('Usuario eliminado');
+              logEvent('user_deleted', { userId: u.id });
+              renderUserRows();
+            };
+            actions.appendChild(del);
+          }
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+      }
+
+      renderUserRows();
+      container.append(list);
+      container.append(document.createElement('hr'));
+      const addWrap = document.createElement('div');
+      addWrap.className = 'grid';
+      addWrap.innerHTML = '<h4>Agregar usuario</h4>';
+      addWrap.appendChild(form);
+      addWrap.appendChild(addBtn);
+      container.append(addWrap);
+      showModal('Administrar usuarios', container);
+    }
+
     function track(type, payload = {}) {
       const enriched = {
         id: crypto.randomUUID(),
@@ -889,7 +1131,7 @@
     }
 
     function setUser(user) {
-      state.currentUser = user;
+      state.currentUser = normalizeUser(user);
       persist();
     }
 
@@ -908,9 +1150,10 @@
     }
 
     function router() {
-      const hash = location.hash.slice(1) || '/login';
-      const clean = hash.split('?')[0];
+      const rawHash = location.hash.slice(1) || '/login';
+      const [clean, queryString = ''] = rawHash.split('?');
       const [path, param] = clean.split('/').filter(Boolean);
+      const query = Object.fromEntries(new URLSearchParams(queryString));
       const routes = {
         'login': '/login',
         'home': '/home',
@@ -926,11 +1169,11 @@
         location.hash = '#/home';
         return { key: '/home' };
       }
-      return { key, param };
+      return { key, param, query };
     }
 
     function render() {
-      const { key, param } = router();
+      const { key, param, query } = router();
       if (key !== '/edit' && editorAutoSave) { clearInterval(editorAutoSave); editorAutoSave = null; }
       if (key === '/login') {
         renderLogin();
@@ -950,7 +1193,7 @@
       switch (key) {
         case '/home': main.appendChild(renderHome()); break;
         case '/search': main.appendChild(renderSearch()); break;
-        case '/doc': main.appendChild(renderDoc(param)); break;
+        case '/doc': main.appendChild(renderDoc(param, query)); break;
         case '/edit': main.appendChild(renderEditor(param)); break;
         case '/analytics': main.appendChild(renderAnalytics()); break;
         default: main.appendChild(renderHome());
@@ -1026,9 +1269,10 @@
       left.appendChild(quickSearch);
       const right = document.createElement('div');
       right.className = 'right';
-      const userBadge = document.createElement('div');
+      const userBadge = document.createElement('button');
       userBadge.className = 'pill';
       userBadge.textContent = `${state.currentUser.name} · ${state.currentUser.role}`;
+      userBadge.onclick = () => openProfileModal();
       const themeBtn = document.createElement('button');
       themeBtn.className = 'btn ghost';
       themeBtn.textContent = state.config.theme === 'light' ? 'Modo oscuro' : 'Modo claro';
@@ -1038,12 +1282,17 @@
         toast(`Modo ${next === 'light' ? 'claro' : 'oscuro'}`);
         render();
       };
+      const userAdminBtn = document.createElement('button');
+      userAdminBtn.className = 'btn ghost';
+      userAdminBtn.textContent = 'Usuarios';
+      userAdminBtn.onclick = openUserAdminModal;
       const logout = document.createElement('button');
       logout.className = 'btn ghost';
       logout.textContent = 'Salir';
       logout.onclick = () => { setSession(null); location.hash = '#/login'; };
       const hasEditableSpace = ['editor','admin'].includes(state.currentUser.role) && spaces.some(s => canAccessSpace(s));
       if (hasEditableSpace) { right.appendChild((() => { const btn = document.createElement('button'); btn.className = 'btn primary'; btn.textContent = 'Crear'; btn.onclick = () => { location.hash = '#/edit/new'; }; return btn; })()); }
+      if (state.currentUser.role === 'admin') right.appendChild(userAdminBtn);
       right.append(userBadge, themeBtn, logout);
       bar.append(left, right);
       return bar;
@@ -1111,6 +1360,7 @@
         const role = card.querySelector('#role').value;
         const user = state.users.find(u => u.email === email && u.password === pass);
         if (!user) { toast('Credenciales inválidas'); return; }
+        if (user.status !== 'active') { toast('Usuario pendiente de aprobación'); return; }
         if (role !== user.role) { toast('Rol no coincide con el usuario demo'); return; }
         const token = crypto.randomUUID();
         setUser(user);
@@ -1141,6 +1391,7 @@
           <div class="grid" style="align-content:end;">
             <div class="flex" style="gap:8px; flex-wrap:wrap;">
               <button class="btn primary" id="home-search-btn">Buscar</button>
+              <button class="btn ghost" onclick="openProfileModal()">Editar perfil</button>
               ${['editor','admin'].includes(state.currentUser.role) && spaces.some(s => canAccessSpace(s)) ? '<button class="btn ghost" onclick="location.hash=\'#/edit/new\'">Crear artículo</button>' : ''}
               ${['admin','manager'].includes(state.currentUser.role) ? '<button class="btn ghost" onclick="location.hash=\'#/analytics\'">Ver analítica</button>' : ''}
             </div>
@@ -1251,6 +1502,24 @@
       container.className = 'grid';
       const card = document.createElement('div');
       card.className = 'card';
+      let debounceHandle;
+      const debounceDelay = 300;
+      const runSearch = (source = 'search_form') => {
+        const nextQ = card.querySelector('#q').value.trim();
+        const nextType = typeSel.value;
+        const nextSpace = spaceSel.value;
+        const nextTags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
+        const nextRange = rangeSel.value;
+        const nextFormats = Array.from(card.querySelectorAll('.formatCheck:checked')).map(c => c.value);
+        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats });
+        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats }, results: previewResults.results.length, source });
+        if (previewResults.results.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats } });
+        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormats.join(',')}`;
+      };
+      const scheduleSearch = (source = 'debounced') => {
+        clearTimeout(debounceHandle);
+        debounceHandle = setTimeout(() => runSearch(source), debounceDelay);
+      };
       card.innerHTML = `
         <div class="flex space-between"><h2>Búsqueda</h2><span class="small">Full-text + filtros</span></div>
         <div class="grid two">
@@ -1317,18 +1586,13 @@
       spaceSel.value = space;
       const rangeSel = card.querySelector('#range');
       rangeSel.value = range;
-      card.querySelector('#runSearch').onclick = () => {
-        const nextQ = card.querySelector('#q').value.trim();
-        const nextType = typeSel.value;
-        const nextSpace = spaceSel.value;
-        const nextTags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
-        const nextRange = rangeSel.value;
-        const nextFormats = Array.from(card.querySelectorAll('.formatCheck:checked')).map(c => c.value);
-        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats });
-        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats }, results: previewResults.results.length, source: 'search_form' });
-        if (previewResults.results.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats } });
-        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormats.join(',')}`;
-      };
+      card.querySelector('#runSearch').onclick = () => runSearch('search_form');
+      card.querySelector('#q').addEventListener('input', () => scheduleSearch('debounced_input'));
+      card.querySelector('#tags').addEventListener('input', () => scheduleSearch('debounced_tags'));
+      typeSel.onchange = () => runSearch('filter_change');
+      spaceSel.onchange = () => runSearch('filter_change');
+      rangeSel.onchange = () => runSearch('filter_change');
+      card.querySelectorAll('.formatCheck').forEach(ch => ch.onchange = () => runSearch('filter_change'));
       const activeFilters = document.createElement('div');
       activeFilters.className = 'flex';
       activeFilters.style.gap = '6px';
@@ -1415,11 +1679,12 @@
         list.appendChild(sugCard);
       }
       results.forEach(r => {
+        const docHref = q ? `#/doc/${r.id}?highlight=${encodeURIComponent(q)}` : `#/doc/${r.id}`;
         const item = document.createElement('div');
         item.className = 'card doc-card';
         item.innerHTML = `
           <div class="flex space-between">
-            <a href="#/doc/${r.id}"><h3>${r.highlightedTitle || r.title}</h3></a>
+            <a href="${docHref}"><h3>${r.highlightedTitle || r.title}</h3></a>
             <span class="status ${r.status}">${r.status}</span>
           </div>
           <p>${r.snippet || r.content.slice(0,120)}...</p>
@@ -1449,8 +1714,51 @@
       return docs.filter(d => allowed.has(normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '')));
     }
 
+    function normalizeText(str = '') {
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '');
+    }
+
+    function levenshtein(a = '', b = '') {
+      const lenA = a.length;
+      const lenB = b.length;
+      if (lenA === 0) return lenB;
+      if (lenB === 0) return lenA;
+      const dp = Array.from({ length: lenA + 1 }, () => new Array(lenB + 1).fill(0));
+      for (let i = 0; i <= lenA; i++) dp[i][0] = i;
+      for (let j = 0; j <= lenB; j++) dp[0][j] = j;
+      for (let i = 1; i <= lenA; i++) {
+        for (let j = 1; j <= lenB; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      }
+      return dp[lenA][lenB];
+    }
+
+    function bestFuzzyScore(text = '', term = '') {
+      const normalizedText = normalizeText(text);
+      const normalizedTerm = normalizeText(term);
+      if (!normalizedTerm) return 0;
+      if (normalizedText.includes(normalizedTerm)) return 1;
+      const words = normalizedText.split(/[^a-z0-9]+/).filter(Boolean);
+      let best = 0;
+      const targetLen = normalizedTerm.length;
+      const maxAllowed = Math.max(1, Math.floor(targetLen * 0.35));
+      for (const w of words) {
+        const dist = levenshtein(w, normalizedTerm);
+        if (dist <= maxAllowed) {
+          const denom = Math.max(w.length, targetLen) || 1;
+          best = Math.max(best, 1 - dist / denom);
+        }
+      }
+      return best;
+    }
+
     function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all', formats = [] }) {
-      const normalized = q.trim().toLowerCase();
+      const normalized = normalizeText(q.trim());
       const terms = normalized.split(/\s+/).filter(Boolean);
       const now = Date.now();
       const rangeDays = range === 'all' ? null : Number(range);
@@ -1473,9 +1781,12 @@
         let score = 0;
         if (terms.length === 0 && !normalized) score += Math.log1p(doc.views || 0);
         terms.forEach(t => {
-          if (doc.title.toLowerCase().includes(t)) score += 3;
-          if (doc.tags.some(tag => tag.toLowerCase().includes(t))) score += 2;
-          if (doc.content.toLowerCase().includes(t)) score += 1;
+          const titleProx = bestFuzzyScore(doc.title, t);
+          if (titleProx >= 0.35) score += 3 * titleProx;
+          const tagProx = Math.max(0, ...doc.tags.map(tag => bestFuzzyScore(tag, t)));
+          if (tagProx >= 0.35) score += 2 * tagProx;
+          const contentProx = bestFuzzyScore(doc.content, t);
+          if (contentProx >= 0.35) score += 1.5 * contentProx;
         });
         if (doc.status === 'published') score += 2; else if (doc.status === 'in_review') score += 1;
         if (doc.freshness === 'al día') score += 1; else if (doc.freshness === 'vencido') score -= 1;
@@ -1495,13 +1806,17 @@
       return { results: ordered, facets: { formatCounts: facetFormatCounts, spaceCounts: facetSpaceCounts }, suggestions, semantic };
     }
 
+    function escapeRegExp(str = '') {
+      return str.replace(/[.*+?^${}()|[\]\]/g, '\\$&');
+    }
+
     function highlightText(text, terms = []) {
       if (!terms.length) return text;
       let out = text;
       terms.forEach(t => {
         if (!t) return;
-        const re = new RegExp(`(${t})`, 'ig');
-        out = out.replace(re, '<mark>$1</mark>');
+        const re = new RegExp(`(${escapeRegExp(t)})`, 'ig');
+        out = out.replace(re, '<mark class="search-hit">$1</mark>');
       });
       return out;
     }
@@ -1514,6 +1829,20 @@
       const start = idx && idx > 40 ? idx - 40 : 0;
       const snippet = content.slice(start, start + 180);
       return highlightText(snippet, terms);
+    }
+
+    function highlightElement(el, terms = []) {
+      if (!el || !terms.length) return;
+      el.innerHTML = highlightText(el.innerHTML, terms);
+      const first = el.querySelector('mark.search-hit');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function slugify(text = '') {
+      const base = text.toString().toLowerCase()
+        .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return base || `sec-${crypto.randomUUID()}`;
     }
 
     function insertAtCursor(el, text) {
@@ -1678,7 +2007,43 @@
       return { useful, notUseful, total: items.length };
     }
 
-    function renderDoc(id) {
+    function buildDocTocElement(docId, contentEl) {
+      const tocCard = document.createElement('div');
+      tocCard.className = 'doc-toc card';
+      tocCard.innerHTML = '<h4>Contenido</h4>';
+      const list = document.createElement('div');
+      list.className = 'toc-list';
+      const headings = Array.from(contentEl.querySelectorAll('h2, h3'));
+      const usedIds = new Set();
+      if (!headings.length) {
+        const empty = document.createElement('p');
+        empty.className = 'small';
+        empty.textContent = 'No se detectaron secciones en este documento.';
+        tocCard.appendChild(empty);
+        return tocCard;
+      }
+      headings.forEach((h, idx) => {
+        const text = h.textContent?.trim() || `Sección ${idx + 1}`;
+        let id = h.id || slugify(text);
+        while (usedIds.has(id)) id = `${slugify(text)}-${idx}`;
+        h.id = id;
+        usedIds.add(id);
+        const link = document.createElement('a');
+        link.href = `#${id}`;
+        link.className = `toc-link level-${h.tagName === 'H3' ? '3' : '2'}`;
+        link.innerHTML = `<span class="dot"></span><span>${text}</span>`;
+        link.onclick = (e) => {
+          e.preventDefault();
+          document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          logEvent('doc_toc_navigate', { docId, heading: text, level: h.tagName.toLowerCase() });
+        };
+        list.appendChild(link);
+      });
+      tocCard.appendChild(list);
+      return tocCard;
+    }
+
+    function renderDoc(id, query = {}) {
       const docRef = state.docs.find(d => d.id === id);
       const container = document.createElement('div');
       container.className = 'grid';
@@ -1785,6 +2150,11 @@
 
       const docContentArea = card.querySelector('#docContent');
       docContentArea.innerHTML = markdownToHtml(doc.content || '');
+      const highlightTerms = (query.highlight || '').toString().toLowerCase().split(/\s+/).filter(Boolean);
+      if (highlightTerms.length) {
+        highlightElement(docContentArea, highlightTerms);
+        logEvent('doc_highlight_applied', { docId: doc.id, terms: highlightTerms });
+      }
 
       if (assets.length) {
         const viewer = document.createElement('div');
@@ -2109,7 +2479,6 @@
       };
       followBtn.onclick = () => { toggleFollow(doc.id); refreshStats(); };
       card.querySelector('#report').onclick = () => { logEvent('doc_outdated_reported', { docId: doc.id }); toast('Reporte enviado'); };
-      container.append(breadcrumbs, card);
 
       const commentsCard = document.createElement('div');
       commentsCard.className = 'card';
@@ -2150,7 +2519,6 @@
         });
       };
       renderComments();
-      container.appendChild(commentsCard);
 
       const versions = state.versions.filter(v => v.docId === doc.id).sort((a,b) => b.version - a.version);
       const history = document.createElement('div');
@@ -2182,8 +2550,6 @@
           };
         });
       }
-      container.appendChild(history);
-
       const reviewSection = document.createElement('div');
       reviewSection.className = 'card';
       const versionThreads = state.reviewThreads.filter(r => r.docId === doc.id && r.version === doc.version).sort((a,b) => b.at - a.at);
@@ -2244,7 +2610,15 @@
         renderThreads();
       };
       reviewSection.append(checklistWrap, threadList, addThread);
-      container.appendChild(reviewSection);
+
+      const layout = document.createElement('div');
+      layout.className = 'doc-layout';
+      const mainCol = document.createElement('div');
+      mainCol.className = 'grid';
+      mainCol.append(card, commentsCard, history, reviewSection);
+      const tocCol = buildDocTocElement(doc.id, docContentArea);
+      layout.append(mainCol, tocCol);
+      container.append(breadcrumbs, layout);
       return container;
 
     }
@@ -2335,7 +2709,7 @@
             </div>
             <div>
               <label>Owner (obligatorio)</label>
-              <select id="owner">${state.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('')}</select>
+              <select id="owner">${state.users.filter(u => u.status === 'active').map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('')}</select>
             </div>
             <div>
               <label>Clasificación</label>
