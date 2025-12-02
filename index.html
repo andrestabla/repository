@@ -340,7 +340,13 @@
       feedback: [],
       follows: [],
       versions: seedVersions,
-      config: { iaEnabled: true, versioning: true, locale: 'es', theme: 'dark' },
+      config: {
+        iaEnabled: true,
+        versioning: true,
+        locale: 'es',
+        theme: 'dark',
+        analytics: { range: '30', space: 'all', tab: 'overview', gapSort: 'zero', healthSort: 'stale' }
+      },
       currentUser: null,
       session: null,
       sidebarCollapsed: false
@@ -362,6 +368,7 @@
         try {
           const parsed = JSON.parse(raw);
           const mergedConfig = { ...seedState.config, ...(parsed.config || {}) };
+          mergedConfig.analytics = { ...seedState.config.analytics, ...(parsed.config?.analytics || {}) };
           return {
             ...structuredClone(seedState),
             ...parsed,
@@ -1206,6 +1213,150 @@
       persist();
     }
 
+    const staleThresholdDays = 20;
+    const draftStuckDays = 10;
+
+    function matchesSpace(event, space, docMap) {
+      if (!space || space === 'all') return true;
+      if (event.docId && docMap[event.docId]) return docMap[event.docId].space === space;
+      if (event.space) return event.space === space;
+      if (event.filters?.space) {
+        const f = event.filters.space;
+        return f === 'all' || f === space;
+      }
+      return false;
+    }
+
+    function filterEventsBy(range, space) {
+      const cutoff = range === 'all' ? 0 : Date.now() - Number(range) * 86400000;
+      const docMap = Object.fromEntries(state.docs.map(d => [d.id, d]));
+      return getEvents().filter(e => e.at >= cutoff && matchesSpace(e, space, docMap));
+    }
+
+    function summarizeAnalytics(range, space) {
+      const events = filterEventsBy(range, space);
+      const now = Date.now();
+      const docMap = Object.fromEntries(state.docs.map(d => [d.id, d]));
+      const dayCutoff = now - 86400000;
+      const weekCutoff = now - 7 * 86400000;
+      const dau = new Set(events.filter(e => e.at >= dayCutoff).map(e => e.userId || e.user)).size;
+      const wau = new Set(events.filter(e => e.at >= weekCutoff).map(e => e.userId || e.user)).size;
+      const searches = events.filter(e => e.type === 'search_performed');
+      const zeroResults = events.filter(e => e.type === 'search_zero_results' || e.type === 'zero_results');
+      const docViews = events.filter(e => e.type === 'doc_viewed');
+      const docViewCounts = {};
+      docViews.forEach(ev => {
+        const doc = docMap[ev.docId];
+        if (!doc) return;
+        docViewCounts[doc.id] = (docViewCounts[doc.id] || 0) + 1;
+      });
+      const topViewed = Object.entries(docViewCounts)
+        .map(([id, count]) => ({ id, count, title: docMap[id]?.title || id }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      const feedbackWindow = state.feedback.filter(f => f.at >= (range === 'all' ? 0 : now - Number(range) * 86400000));
+      const feedbackByDoc = {};
+      feedbackWindow.forEach(f => {
+        const doc = docMap[f.docId];
+        if (!doc || !matchesSpace({ docId: f.docId }, space, docMap)) return;
+        if (!feedbackByDoc[f.docId]) feedbackByDoc[f.docId] = { useful: 0, notUseful: 0, title: doc.title };
+        if (f.value === 'useful') feedbackByDoc[f.docId].useful += 1; else feedbackByDoc[f.docId].notUseful += 1;
+      });
+      const topUseful = Object.entries(feedbackByDoc)
+        .map(([id, stats]) => ({ id, score: stats.useful - stats.notUseful, ...stats }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+
+      const zeroGapMap = new Map();
+      zeroResults.forEach(ev => {
+        const key = ev.q || ev.query || 'consulta';
+        const entry = zeroGapMap.get(key) || { q: key, zero: 0, low: 0, lastAt: ev.at, space: ev.filters?.space || 'all' };
+        entry.zero += 1;
+        entry.lastAt = Math.max(entry.lastAt, ev.at);
+        zeroGapMap.set(key, entry);
+      });
+
+      state.gaps
+        .filter(g => g.createdAt >= (range === 'all' ? 0 : now - Number(range) * 86400000))
+        .filter(g => matchesSpace({ space: g.filters?.space || g.space }, space, docMap))
+        .forEach(gap => {
+          const key = gap.q || 'consulta';
+          const entry = zeroGapMap.get(key) || { q: key, zero: 0, low: 0, lastAt: gap.createdAt, space: gap.filters?.space || 'all' };
+          entry.zero += 1;
+          entry.lastAt = Math.max(entry.lastAt, gap.createdAt);
+          zeroGapMap.set(key, entry);
+        });
+
+      const lowClickMap = new Map();
+      const viewsByUser = {};
+      docViews.forEach(v => {
+        if (!v.userId) return;
+        if (!viewsByUser[v.userId]) viewsByUser[v.userId] = [];
+        viewsByUser[v.userId].push(v.at);
+      });
+      searches.forEach(s => {
+        if (!s.results || s.results === 0) return;
+        const userViews = viewsByUser[s.userId] || [];
+        const clicked = userViews.some(v => v >= s.at && v <= s.at + 120000);
+        if (!clicked) {
+          const key = s.q || 'consulta';
+          const entry = lowClickMap.get(key) || { q: key, zero: 0, low: 0, lastAt: s.at, space: s.filters?.space || 'all' };
+          entry.low += 1;
+          entry.lastAt = Math.max(entry.lastAt, s.at);
+          lowClickMap.set(key, entry);
+        }
+      });
+      lowClickMap.forEach((v, k) => {
+        const zeroEntry = zeroGapMap.get(k) || { q: k, zero: 0, low: 0, lastAt: v.lastAt, space: v.space };
+        zeroEntry.low += v.low;
+        zeroEntry.lastAt = Math.max(zeroEntry.lastAt, v.lastAt);
+        zeroGapMap.set(k, zeroEntry);
+      });
+
+      const docsBySpace = state.docs.filter(d => space === 'all' || d.space === space);
+      const health = {
+        noOwner: docsBySpace.filter(d => !d.owner),
+        stale: docsBySpace.filter(d => now - d.updatedAt > staleThresholdDays * 86400000),
+        drafts: docsBySpace.filter(d => d.status !== 'published' && now - d.updatedAt > draftStuckDays * 86400000)
+      };
+
+      return {
+        dau,
+        wau,
+        searches: searches.length,
+        zeroResults: zeroResults.length,
+        zeroRate: searches.length ? Math.round((zeroResults.length / searches.length) * 100) : 0,
+        topViewed,
+        topUseful,
+        gaps: Array.from(zeroGapMap.values()),
+        health
+      };
+    }
+
+    function drawBarChart(canvas, data, color = 'var(--accent)') {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.clientWidth || 480;
+      const height = 180;
+      canvas.width = width;
+      canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+      const max = Math.max(...data.map(d => d.value), 1);
+      const barWidth = (width - 40) / data.length;
+      data.forEach((d, i) => {
+        const h = (d.value / max) * (height - 40);
+        const x = 20 + i * barWidth;
+        const y = height - h - 20;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, barWidth * 0.7, h);
+        ctx.fillStyle = 'var(--muted)';
+        ctx.font = '12px Inter';
+        ctx.fillText(d.label.slice(0, 10), x, height - 6);
+        ctx.fillText(d.value, x, y - 4);
+      });
+    }
+
     function renderAnalytics() {
       if (!['admin','manager'].includes(state.currentUser.role)) {
         const card = document.createElement('div');
@@ -1213,71 +1364,202 @@
         card.innerHTML = '<h2>No autorizado</h2>';
         return card;
       }
-      const events = getEvents();
-      const card = document.createElement('div');
-      card.className = 'card';
-      const zeroResults = events.filter(e => e.type === 'zero_results' || e.type === 'search_zero_results').length;
-      const searches = events.filter(e => e.type === 'search_performed').length;
-      const views = events.filter(e => e.type === 'doc_viewed').length;
-      const created = events.filter(e => e.type === 'doc_created').length;
-      const published = events.filter(e => e.type === 'doc_published').length;
-      const inReview = state.docs.filter(d => d.status === 'in_review').length;
-      const expiring = state.docs.filter(d => Date.now() - d.updatedAt > 20*86400000).length;
-      card.innerHTML = `
-        <div class="flex space-between"><h2>Analítica</h2><span class="small">Overview · Search gaps · Content health</span></div>
-        <div class="grid three" style="margin-top:10px;">
-          ${metricTile('Búsquedas', searches)}
-          ${metricTile('Zero results', zeroResults, zeroResults>0 ? 'warning' : '')}
-          ${metricTile('Gaps reportados', state.gaps.length, state.gaps.length>0 ? 'warning' : '')}
-          ${metricTile('Vistas', views)}
-          ${metricTile('Creados', created)}
-          ${metricTile('Publicados', published)}
-          ${metricTile('En revisión', inReview)}
-        </div>
-        <div class="flex space-between" style="margin-top:14px; align-items:center;">
+      const filters = state.config.analytics || seedState.config.analytics;
+      const metrics = summarizeAnalytics(filters.range, filters.space);
+      const wrapper = document.createElement('div');
+      wrapper.className = 'grid';
+
+      const controls = document.createElement('div');
+      controls.className = 'card';
+      controls.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
           <div>
-            <h3 style="margin:0;">Search gaps</h3>
-            <p class="small">Consultas sin resultados. Genera artículos desde aquí.</p>
+            <h2>Analítica</h2>
+            <p class="small">Overview · Search gaps · Content health</p>
           </div>
-          <button class="btn ghost" id="exportEvents">Exportar eventos (JSON)</button>
+          <div class="flex" style="gap:8px; flex-wrap:wrap;">
+            <label class="small">Rango</label>
+            <select id="rangeSel">
+              <option value="7">7d</option>
+              <option value="30">30d</option>
+              <option value="90">90d</option>
+              <option value="all">Todo</option>
+            </select>
+            <label class="small">Espacio</label>
+            <select id="spaceSel">
+              <option value="all">Todos</option>
+              ${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}
+            </select>
+            <button class="btn ghost" id="exportEvents">Exportar eventos (JSON)</button>
+          </div>
         </div>
-        <div class="grid two" id="gaps"></div>
-        <h3 style="margin-top:14px;">Content health</h3>
-        <p class="small">Documentos antiguos o sin publicar.</p>
-        <div class="grid two" id="health"></div>`;
-      const gaps = card.querySelector('#gaps');
-      card.querySelector('#exportEvents').onclick = exportEvents;
-      const gapEntries = state.gaps.slice(-5);
-      if (gapEntries.length === 0) gaps.innerHTML = '<p class="small">Sin brechas por ahora.</p>';
-      gapEntries.forEach(ev => {
-        const box = document.createElement('div');
-        box.className = 'card';
-        box.innerHTML = `
-          <div class="flex space-between"><strong>${ev.q || 'Consulta desconocida'}</strong><span class="small">${new Date(ev.createdAt || ev.at).toLocaleString()}</span></div>
-          <p class="small">Etiquetas: ${(ev.filters?.tags || []).join(', ') || 'n/d'} · Espacio: ${ev.filters?.space || 'todos'}</p>
-          <button class="btn primary" onclick="location.hash='#/edit/new'">Crear desde gap</button>`;
-        gaps.appendChild(box);
-      });
-      const health = card.querySelector('#health');
-      const stale = state.docs.filter(d => Date.now() - d.updatedAt > 20*86400000);
-      const drafts = state.docs.filter(d => d.status === 'draft');
-      if (stale.length === 0 && drafts.length === 0) {
-        health.innerHTML = '<p class="small">Contenido sano.</p>';
-      } else {
-        const staleCard = document.createElement('div');
-        staleCard.className = 'card';
-        staleCard.innerHTML = `<h4>Por revisar</h4>${stale.map(d => `<div>${d.title}</div>`).join('') || '<p class="small">N/A</p>'}`;
-        const draftCard = document.createElement('div');
-        draftCard.className = 'card';
-        draftCard.innerHTML = `<h4>Drafts</h4>${drafts.map(d => `<div>${d.title}</div>`).join('') || '<p class="small">N/A</p>'}`;
-        health.append(staleCard, draftCard);
-      }
-      return card;
+        <div class="flex" style="gap:8px; margin-top:10px;">
+          ${['overview','gaps','health'].map(tab => `<button class="btn ${filters.tab===tab?'primary':'ghost'}" data-tab="${tab}">${tab === 'overview' ? 'Overview' : tab === 'gaps' ? 'Search gaps' : 'Content health'}</button>`).join('')}
+        </div>`;
+      const rangeSel = controls.querySelector('#rangeSel');
+      rangeSel.value = filters.range;
+      const spaceSel = controls.querySelector('#spaceSel');
+      spaceSel.value = filters.space;
+      controls.querySelector('#exportEvents').onclick = exportEvents;
+      rangeSel.onchange = () => { state.config.analytics.range = rangeSel.value; persist(); render(); };
+      spaceSel.onchange = () => { state.config.analytics.space = spaceSel.value; persist(); render(); };
+      controls.querySelectorAll('[data-tab]').forEach(btn => btn.onclick = () => { state.config.analytics.tab = btn.dataset.tab; persist(); render(); });
+
+      wrapper.appendChild(controls);
+      const content = document.createElement('div');
+      content.className = 'grid';
+      if (filters.tab === 'overview') content.appendChild(renderAnalyticsOverview(metrics));
+      if (filters.tab === 'gaps') content.appendChild(renderAnalyticsGaps(metrics, filters));
+      if (filters.tab === 'health') content.appendChild(renderAnalyticsHealth(metrics, filters));
+      wrapper.appendChild(content);
+      return wrapper;
     }
 
     function metricTile(label, value, tone) {
       const color = tone === 'warning' ? 'var(--warning)' : 'var(--accent-2)';
       return `<div class="card" style="border-color:${color};"><h3>${label}</h3><div style="font-size:28px; font-weight:800;">${value}</div></div>`;
+    }
+
+    function renderAnalyticsOverview(metrics) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="grid three">
+          ${metricTile('DAU (aprox)', metrics.dau)}
+          ${metricTile('WAU (aprox)', metrics.wau)}
+          ${metricTile('Búsquedas', metrics.searches)}
+          ${metricTile('Zero results', `${metrics.zeroResults} (${metrics.zeroRate}% )`, metrics.zeroResults>0 ? 'warning' : '')}
+          ${metricTile('Docs más vistos', metrics.topViewed.length)}
+          ${metricTile('Docs más útiles', metrics.topUseful.length)}
+        </div>
+        <div class="grid two" style="margin-top:12px;">
+          <div class="card">
+            <h4>Search vs Zero</h4>
+            <canvas id="chart-search"></canvas>
+          </div>
+          <div class="card">
+            <h4>Top vistos</h4>
+            <canvas id="chart-views"></canvas>
+          </div>
+        </div>
+        <div class="grid two" style="margin-top:12px;">
+          <div>
+            <h4>Docs más vistos</h4>
+            ${metrics.topViewed.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.count} vistas</span></div>`).join('') || '<p class="small">Sin datos aún.</p>'}
+          </div>
+          <div>
+            <h4>Docs más útiles</h4>
+            ${metrics.topUseful.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">Score ${d.score}</span></div>`).join('') || '<p class="small">Sin feedback aún.</p>'}
+          </div>
+        </div>`;
+      requestAnimationFrame(() => {
+        const searchCanvas = card.querySelector('#chart-search');
+        drawBarChart(searchCanvas, [
+          { label: 'Search', value: metrics.searches },
+          { label: 'Zero', value: metrics.zeroResults }
+        ], 'var(--accent)');
+        const viewCanvas = card.querySelector('#chart-views');
+        const data = metrics.topViewed.map(d => ({ label: d.title, value: d.count }));
+        drawBarChart(viewCanvas, data.length ? data : [{ label: 'N/A', value: 0 }], 'var(--accent-2)');
+      });
+      return card;
+    }
+
+    function renderAnalyticsGaps(metrics, filters) {
+      const card = document.createElement('div');
+      const sorted = [...metrics.gaps].sort((a, b) => {
+        if (filters.gapSort === 'recent') return b.lastAt - a.lastAt;
+        if (filters.gapSort === 'low') return (b.low || 0) - (a.low || 0);
+        const byZero = (b.zero || 0) - (a.zero || 0);
+        return byZero === 0 ? (b.low || 0) - (a.low || 0) : byZero;
+      });
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h3>Search gaps</h3>
+            <p class="small">Zero-results y low-click agrupados por consulta.</p>
+          </div>
+          <div class="flex" style="gap:8px;">
+            <label class="small">Ordenar</label>
+            <select id="gapSort">
+              <option value="zero">Zero desc</option>
+              <option value="low">Low-click desc</option>
+              <option value="recent">Reciente</option>
+            </select>
+          </div>
+        </div>
+        <div class="table" style="width:100%; overflow:auto;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr><th>Consulta</th><th>Zero</th><th>Low-click</th><th>Última vez</th><th>Espacio</th></tr>
+            </thead>
+            <tbody id="gapRows"></tbody>
+          </table>
+        </div>`;
+      card.querySelector('#gapSort').value = filters.gapSort || 'zero';
+      card.querySelector('#gapSort').onchange = (e) => { state.config.analytics.gapSort = e.target.value; persist(); render(); };
+      const tbody = card.querySelector('#gapRows');
+      if (sorted.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="small">Sin gaps registrados.</td></tr>';
+      } else {
+        sorted.forEach(g => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${g.q}</td><td>${g.zero || 0}</td><td>${g.low || 0}</td><td class="small">${new Date(g.lastAt).toLocaleString()}</td><td>${g.space || 'all'}</td>`;
+          tbody.appendChild(tr);
+        });
+      }
+      return card;
+    }
+
+    function renderAnalyticsHealth(metrics, filters) {
+      const card = document.createElement('div');
+      const healthSort = filters.healthSort || 'stale';
+      const sortDocs = (list) => [...list].sort((a, b) => {
+        if (healthSort === 'owner') return (a.owner || '').localeCompare(b.owner || '');
+        return b.updatedAt - a.updatedAt;
+      });
+      const staleList = sortDocs(metrics.health.stale);
+      const draftList = sortDocs(metrics.health.drafts);
+      const noOwnerList = sortDocs(metrics.health.noOwner);
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="flex space-between" style="align-items:center;">
+          <div>
+            <h3>Content health</h3>
+            <p class="small">Viejos, sin owner o estancados (draft/in review).</p>
+          </div>
+          <div class="flex" style="gap:8px;">
+            <label class="small">Ordenar por</label>
+            <select id="healthSort">
+              <option value="stale">Última revisión</option>
+              <option value="owner">Owner</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid three" style="margin-top:12px;">
+          ${metricTile('Sin owner', noOwnerList.length, noOwnerList.length ? 'warning' : '')}
+          ${metricTile('Viejos', staleList.length, staleList.length ? 'warning' : '')}
+          ${metricTile('Drafts estancados', draftList.length, draftList.length ? 'warning' : '')}
+        </div>
+        <div class="grid three" style="margin-top:12px;">
+          <div>
+            <h4>Sin owner</h4>
+            ${noOwnerList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.space}</span></div>`).join('') || '<p class="small">Todos tienen dueño.</p>'}
+          </div>
+          <div>
+            <h4>Viejos (&gt; ${staleThresholdDays}d)</h4>
+            ${staleList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin pendientes.</p>'}
+          </div>
+          <div>
+            <h4>Draft/In review estancados</h4>
+            ${draftList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.status}</span></div>`).join('') || '<p class="small">Sin estancados.</p>'}
+          </div>
+        </div>`;
+      const sortSel = card.querySelector('#healthSort');
+      sortSel.value = healthSort;
+      sortSel.onchange = (e) => { state.config.analytics.healthSort = e.target.value; persist(); render(); };
+      return card;
     }
 
     window.addEventListener('hashchange', render);
