@@ -284,6 +284,17 @@
     let eventBuffer = [];
     let flushTimer = null;
 
+    const FORMAT_GROUPS = {
+      pdf: ['pdf'],
+      video: ['mp4', 'webm', 'mov'],
+      audio: ['mp3', 'wav', 'm4a', 'ogg'],
+      image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+      word: ['doc', 'docx'],
+      excel: ['xls', 'xlsx', 'csv'],
+      ppt: ['ppt', 'pptx']
+    };
+    const ALL_EXTS = Object.values(FORMAT_GROUPS).flat();
+
     const seedUsers = [
       { id: 'u1', name: 'Ana Viewer', email: 'ana@demo.local', role: 'viewer', password: 'demo' },
       { id: 'u2', name: 'Bruno Editor', email: 'bruno@demo.local', role: 'editor', password: 'demo' },
@@ -307,21 +318,69 @@
       }
     };
 
-    const baseDocs = Array.from({ length: 10 }).map((_, i) => ({
-      id: `d${i+1}`,
-      title: `Documento ${i+1} - ${['SOP','FAQ','Playbook','Caso','Guía'][i%5]}`,
-      type: ['wiki','faq','procedimiento','postmortem','playbook'][i%5],
-      space: spaces[i % spaces.length],
-      owner: seedUsers[i % seedUsers.length].name,
-      status: ['draft','in_review','published'][i % 3],
-      updatedAt: Date.now() - i * 86400000,
-      tags: [tagsPool[i % tagsPool.length], tagsPool[(i+2)%tagsPool.length]],
-      content: `Contenido de ejemplo para el documento ${i+1}. Incluye contexto de ${spaces[i % spaces.length]} y etiqueta ${tagsPool[i % tagsPool.length]}.`,
-      views: Math.floor(Math.random() * 120) + 4,
-      version: 1,
-      attachments: [],
-      format: 'html'
-    }));
+    function normalizeExt(ext = '') {
+      return (ext || '').toLowerCase().replace(/^\./, '');
+    }
+
+    function mimeFromExt(ext = '') {
+      const map = {
+        pdf: 'application/pdf',
+        mp4: 'video/mp4',
+        webm: 'video/webm',
+        mov: 'video/quicktime',
+        mp3: 'audio/mpeg',
+        wav: 'audio/wav',
+        m4a: 'audio/mp4',
+        ogg: 'audio/ogg',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        gif: 'image/gif',
+        webp: 'image/webp',
+        svg: 'image/svg+xml',
+        doc: 'application/msword',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        xls: 'application/vnd.ms-excel',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        csv: 'text/csv',
+        ppt: 'application/vnd.ms-powerpoint',
+        pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        html: 'text/html'
+      };
+      return map[normalizeExt(ext)] || 'application/octet-stream';
+    }
+
+    function extFromUrl(url = '') {
+      try {
+        const clean = url.split('?')[0];
+        const parts = clean.split('.');
+        return normalizeExt(parts[parts.length - 1] || '');
+      } catch (e) {
+        return '';
+      }
+    }
+
+    const baseDocs = Array.from({ length: 10 }).map((_, i) => {
+      const ext = 'html';
+      return ({
+        id: `d${i+1}`,
+        title: `Documento ${i+1} - ${['SOP','FAQ','Playbook','Caso','Guía'][i%5]}`,
+        type: ['wiki','faq','procedimiento','postmortem','playbook'][i%5],
+        space: spaces[i % spaces.length],
+        owner: seedUsers[i % seedUsers.length].name,
+        status: ['draft','in_review','published'][i % 3],
+        updatedAt: Date.now() - i * 86400000,
+        tags: [tagsPool[i % tagsPool.length], tagsPool[(i+2)%tagsPool.length]],
+        content: `Contenido de ejemplo para el documento ${i+1}. Incluye contexto de ${spaces[i % spaces.length]} y etiqueta ${tagsPool[i % tagsPool.length]}.`,
+        views: Math.floor(Math.random() * 120) + 4,
+        version: 1,
+        attachments: [],
+        ext,
+        mime: mimeFromExt(ext),
+        sourceType: 'url',
+        url: 'https://example.com'
+      });
+    });
 
     const realResources = [
       { title: 'Delors - Los cuatro pilares', url: 'https://academicrepository.s3.us-east-1.amazonaws.com/CPP-DC-Delors-Los-cuatro-pilares.pdf', type: 'pdf' },
@@ -338,21 +397,28 @@
       { title: 'Presentación estrategia (PPT)', url: 'https://file-examples.com/storage/fe77ae3fb053845ed54f9b89/2017/08/file_example_PPT_500kB.ppt', type: 'pptx' }
     ];
 
-    const resourceDocs = realResources.map((res, idx) => ({
-      id: `r${idx+1}`,
-      title: res.title,
-      type: res.type === 'video' ? 'playbook' : 'wiki',
-      space: spaces[idx % spaces.length],
-      owner: seedUsers[(idx + 1) % seedUsers.length].name,
-      status: 'published',
-      updatedAt: Date.now() - idx * 3600 * 1000,
-      tags: ['Referencia', res.type.toUpperCase()],
-      content: `Recurso embebido disponible: ${res.title}. Usa la vista previa para consultarlo y descarga para obtener el archivo original.`,
-      views: 30 + idx * 3,
-      version: 1,
-      attachments: [res],
-      format: res.type
-    }));
+    const resourceDocs = realResources.map((res, idx) => {
+      const ext = normalizeExt(extFromUrl(res.url) || res.type);
+      const mime = mimeFromExt(ext);
+      return ({
+        id: `r${idx+1}`,
+        title: res.title,
+        type: ['mp4','webm','mov'].includes(ext) ? 'playbook' : 'wiki',
+        space: spaces[idx % spaces.length],
+        owner: seedUsers[(idx + 1) % seedUsers.length].name,
+        status: 'published',
+        updatedAt: Date.now() - idx * 3600 * 1000,
+        tags: ['Referencia', (ext || 'OTRO').toUpperCase()],
+        content: `Recurso embebido disponible: ${res.title}. Usa la vista previa para consultarlo y descarga para obtener el archivo original.`,
+        views: 30 + idx * 3,
+        version: 1,
+        attachments: [{ ...res, ext, mime, sourceType: 'url' }],
+        ext,
+        mime,
+        sourceType: 'url',
+        url: res.url
+      });
+    });
 
     const seedDocs = [...baseDocs, ...resourceDocs];
 
@@ -368,7 +434,10 @@
       type: doc.type,
       space: doc.space,
       attachments: doc.attachments,
-      format: doc.format || 'html'
+      ext: doc.ext,
+      mime: doc.mime,
+      sourceType: doc.sourceType,
+      url: doc.url
     }));
 
     const seedState = {
@@ -839,12 +908,12 @@
       const space = params.space || 'all';
       const tags = params.tags ? params.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
       const range = params.range || 'all';
-      const format = params.format || 'all';
-      const results = searchDocs({ q, type, space, tags, range, format });
-      const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all' || format !== 'all';
+      const selectedFormats = params.format ? params.format.split(',').filter(Boolean) : [];
+      const results = searchDocs({ q, type, space, tags, range, formats: selectedFormats });
+      const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all' || selectedFormats.length;
       if (attempted) {
-        logEvent('search_performed', { q, filters: { type, space, tags, range, format }, results: results.length });
-        if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range, format } });
+        logEvent('search_performed', { q, filters: { type, space, tags, range, formats: selectedFormats }, results: results.length });
+        if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range, formats: selectedFormats } });
       }
       const container = document.createElement('div');
       container.className = 'grid';
@@ -894,18 +963,15 @@
                 </select>
               </div>
               <div>
-                <label>Formato adjunto</label>
-                <select id="format">
-                  <option value="all">Cualquiera</option>
-                  <option value="pdf">PDF</option>
-                  <option value="video">Video (mp4)</option>
-                  <option value="audio">Audio (mp3)</option>
-                  <option value="image">Imagen (jpg/png)</option>
-                  <option value="doc">Word/Doc</option>
-                  <option value="xls">Excel/XLS</option>
-                  <option value="pptx">PPT/PPTX</option>
-                  <option value="other">Otros</option>
-                </select>
+                <label>Formato</label>
+                <div id="formatFilters" class="grid" style="grid-template-columns: repeat(auto-fit,minmax(120px,1fr)); gap:6px;">
+                  ${Object.keys(FORMAT_GROUPS).map(g => `
+                    <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);">
+                      <input type="checkbox" value="${g}" class="formatCheck" ${selectedFormats.includes(g) ? 'checked' : ''}/>
+                      ${g.toUpperCase()}
+                    </label>
+                  `).join('')}
+                </div>
               </div>
             </div>
           </div>
@@ -919,19 +985,17 @@
       spaceSel.value = space;
       const rangeSel = card.querySelector('#range');
       rangeSel.value = range;
-      const formatSel = card.querySelector('#format');
-      formatSel.value = format;
       card.querySelector('#runSearch').onclick = () => {
         const nextQ = card.querySelector('#q').value.trim();
         const nextType = typeSel.value;
         const nextSpace = spaceSel.value;
         const nextTags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
         const nextRange = rangeSel.value;
-        const nextFormat = formatSel.value;
-        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange, format: nextFormat });
-        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, format: nextFormat }, results: previewResults.length, source: 'search_form' });
-        if (previewResults.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, format: nextFormat } });
-        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormat}`;
+        const nextFormats = Array.from(card.querySelectorAll('.formatCheck:checked')).map(c => c.value);
+        const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats });
+        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats }, results: previewResults.length, source: 'search_form' });
+        if (previewResults.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats } });
+        location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormats.join(',')}`;
       };
       const list = document.createElement('div');
       list.className = 'grid two';
@@ -940,7 +1004,7 @@
         empty.className = 'card';
         empty.innerHTML = `<h3>Sin resultados</h3><p class="small">No encontramos coincidencias. Reporta un gap para generar contenido.</p><button class="btn primary" id="reportGap">Reportar gap</button>`;
         empty.querySelector('#reportGap').onclick = () => {
-          addGap({ q, filters: { type, space, tags, range } });
+          addGap({ q, filters: { type, space, tags, range, formats: selectedFormats } });
           toast('Gap registrado');
         };
         list.appendChild(empty);
@@ -957,7 +1021,7 @@
           <div class="flex">
             <span class="tag">${r.type}</span>
             <span class="tag">${r.space}</span>
-            ${r.format ? `<span class="tag">${r.format.toUpperCase()}</span>` : ''}
+            ${r.ext ? `<span class="tag">${r.ext.toUpperCase()}</span>` : ''}
             ${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}
           </div>`;
         list.appendChild(item);
@@ -966,21 +1030,26 @@
       return container;
     }
 
-    function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all', format = 'all' }) {
+    function filterByFormat(docs, selectedGroups = []) {
+      if (!selectedGroups.length) return docs;
+      const allowed = new Set(selectedGroups.flatMap(g => FORMAT_GROUPS[g] || []));
+      return docs.filter(d => allowed.has(normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '')));
+    }
+
+    function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all', formats = [] }) {
       const normalized = q.trim().toLowerCase();
       const now = Date.now();
       const rangeDays = range === 'all' ? null : Number(range);
-      return state.docs.filter(d => {
+      const filtered = state.docs.filter(d => {
         const haystack = `${d.title} ${d.content} ${d.tags.join(' ')}`.toLowerCase();
         const matchesQ = normalized ? haystack.includes(normalized) : true;
         const matchesType = type === 'all' || d.type === type;
         const matchesSpace = space === 'all' || d.space === space;
         const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
         const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
-        const docFormat = d.format || d.attachments?.[0]?.type || 'other';
-        const matchesFormat = format === 'all' || (format === 'other' ? !['pdf','video','audio','image','doc','xls','pptx'].includes(docFormat) : docFormat === format);
-        return matchesQ && matchesType && matchesSpace && matchesTags && matchesDate && matchesFormat;
+        return matchesQ && matchesType && matchesSpace && matchesTags && matchesDate;
       });
+      return filterByFormat(filtered, formats);
     }
 
     function addGap(payload) {
@@ -1046,6 +1115,19 @@
       doc.views += 1;
       logEvent('doc_viewed', { docId: doc.id, status: doc.status });
       persist();
+
+      const assetFrom = (item, fallbackTitle) => {
+        const ext = normalizeExt(item?.ext || item?.type || extFromUrl(item?.url));
+        return {
+          title: item?.title || fallbackTitle || doc.title,
+          url: item?.url || doc.url,
+          ext,
+          mime: item?.mime || mimeFromExt(ext),
+          sourceType: item?.sourceType || 'url'
+        };
+      };
+
+      const assets = [assetFrom(doc, doc.title), ...(doc.attachments || []).map(a => assetFrom(a, a.title))].filter(a => a.url);
       const stats = feedbackSummary(doc.id);
       const followers = () => state.follows.filter(f => f.docId === doc.id).length;
       const card = document.createElement('div');
@@ -1057,7 +1139,7 @@
             <div class="flex">
               <span class="tag">${doc.type}</span>
               <span class="tag">${doc.space}</span>
-              ${doc.format ? `<span class="tag">${doc.format.toUpperCase()}</span>` : ''}
+              ${doc.ext ? `<span class="tag">${doc.ext.toUpperCase()}</span>` : ''}
               ${doc.tags.map(t => `<span class="tag">${t}</span>`).join('')}
               <span class="tag">Owner: ${doc.owner}</span>
             </div>
@@ -1080,70 +1162,150 @@
         </div>
         <span class="small" id="statsLine">Feedback: ${stats.useful} 👍 / ${stats.notUseful} 👎 · Seguidores: ${followers()}</span>
         <span class="small">Última actualización: ${new Date(doc.updatedAt).toLocaleString()} · Vistas: ${doc.views}</span>`;
-      if (doc.attachments?.length) {
-        const attachments = document.createElement('div');
-        attachments.className = 'grid';
-        attachments.style.marginTop = '8px';
-        attachments.innerHTML = '<h4>Recursos vinculados</h4>';
-        const preview = document.createElement('div');
-        preview.className = 'card';
-        preview.style.background = 'var(--surface-2)';
-        const renderPreview = (att) => {
-          if (!att) return;
-          preview.innerHTML = `<div class="flex space-between" style="align-items:center;"><div><strong>${att.title}</strong><div class="small">${att.type.toUpperCase()}</div></div><div class="flex" style="gap:6px;"><a class="btn ghost small" href="${att.url}" target="_blank" rel="noopener">Abrir en pestaña</a><a class="btn primary small" href="${att.url}" download>Descargar</a></div></div>`;
-          const type = att.type;
-          if (type === 'video') {
+
+      if (assets.length) {
+        const viewer = document.createElement('div');
+        viewer.className = 'card';
+        viewer.style.background = 'var(--surface-2)';
+        viewer.innerHTML = '<h4>Vista previa embebida</h4>';
+        const previewArea = document.createElement('div');
+        viewer.appendChild(previewArea);
+
+        const renderEmbedded = (asset) => {
+          previewArea.innerHTML = '';
+          const ext = normalizeExt(asset.ext);
+          const url = asset.url;
+          const controls = document.createElement('div');
+          controls.className = 'flex';
+          controls.style.gap = '6px';
+          controls.style.marginBottom = '6px';
+          const open = document.createElement('a');
+          open.className = 'btn ghost small';
+          open.textContent = 'Abrir en pestaña';
+          open.href = url;
+          open.target = '_blank';
+          open.rel = 'noopener';
+          open.onclick = () => logEvent('doc_open_external', { docId: doc.id, ext });
+          const download = document.createElement('a');
+          download.className = 'btn primary small';
+          download.textContent = 'Descargar';
+          download.href = url;
+          download.download = asset.title || doc.title;
+          download.onclick = () => logEvent('doc_downloaded', { docId: doc.id, ext });
+          controls.append(open, download);
+          previewArea.appendChild(controls);
+
+          const renderFallback = (reason) => {
+            const fallback = document.createElement('div');
+            fallback.className = 'card';
+            fallback.style.background = 'var(--surface-1)';
+            fallback.innerHTML = `<strong>${asset.title || 'Archivo'}</strong><div class="small">${ext.toUpperCase()} · ${reason || 'Sin vista previa disponible'}</div>`;
+            const buttons = document.createElement('div');
+            buttons.className = 'flex';
+            buttons.style.gap = '6px';
+            const openBtn = document.createElement('a');
+            openBtn.className = 'btn ghost small';
+            openBtn.href = url;
+            openBtn.target = '_blank';
+            openBtn.rel = 'noopener';
+            openBtn.textContent = 'Abrir';
+            openBtn.onclick = () => logEvent('doc_open_external', { docId: doc.id, ext });
+            const dlBtn = document.createElement('a');
+            dlBtn.className = 'btn primary small';
+            dlBtn.href = url;
+            dlBtn.download = asset.title || doc.title;
+            dlBtn.textContent = 'Descargar';
+            dlBtn.onclick = () => logEvent('doc_downloaded', { docId: doc.id, ext });
+            buttons.append(openBtn, dlBtn);
+            fallback.appendChild(buttons);
+            previewArea.appendChild(fallback);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'fallback' });
+            logEvent('preview_fallback', { docId: doc.id, ext });
+          };
+
+          const isGroup = (group) => FORMAT_GROUPS[group]?.includes(ext);
+          if (ext === 'pdf') {
+            const iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.style.width = '100%';
+            iframe.style.height = '70vh';
+            iframe.style.border = '0';
+            iframe.loading = 'lazy';
+            previewArea.appendChild(iframe);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_pdf' });
+            return;
+          }
+          if (isGroup('video')) {
             const video = document.createElement('video');
-            video.src = att.url;
+            video.src = url;
             video.controls = true;
             video.style.width = '100%';
-            video.style.maxHeight = '320px';
-            video.style.marginTop = '8px';
-            preview.appendChild(video);
-          } else if (type === 'audio') {
+            video.style.maxHeight = '70vh';
+            video.style.borderRadius = '12px';
+            previewArea.appendChild(video);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_video' });
+            return;
+          }
+          if (isGroup('audio')) {
             const audio = document.createElement('audio');
-            audio.src = att.url;
+            audio.src = url;
             audio.controls = true;
             audio.style.width = '100%';
-            audio.style.marginTop = '8px';
-            preview.appendChild(audio);
-          } else if (type === 'image') {
-            const img = document.createElement('img');
-            img.src = att.url;
-            img.alt = att.title;
-            img.style.width = '100%';
-            img.style.marginTop = '8px';
-            img.style.borderRadius = '12px';
-            preview.appendChild(img);
-          } else {
-            const iframe = document.createElement('iframe');
-            iframe.src = att.url;
-            iframe.style.width = '100%';
-            iframe.style.height = '360px';
-            iframe.style.border = '1px solid var(--border)';
-            iframe.style.marginTop = '8px';
-            iframe.setAttribute('title', att.title);
-            iframe.onload = () => { iframe.style.background = 'white'; };
-            preview.appendChild(iframe);
-            const hint = document.createElement('div');
-            hint.className = 'small';
-            hint.style.marginTop = '6px';
-            hint.textContent = type === 'pdf' ? 'Vista previa PDF embebida.' : 'Vista previa embebida; si el navegador no soporta el formato, usa Descargar o Abrir en pestaña.';
-            preview.appendChild(hint);
+            previewArea.appendChild(audio);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_audio' });
+            return;
           }
+          if (isGroup('image')) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = asset.title || doc.title;
+            img.style.width = '100%';
+            img.style.maxHeight = '70vh';
+            img.style.objectFit = 'contain';
+            img.style.borderRadius = '12px';
+            previewArea.appendChild(img);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_image' });
+            return;
+          }
+
+          const isOffice = () => isGroup('word') || isGroup('excel') || isGroup('ppt');
+          if (isOffice() && url.startsWith('http')) {
+            const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+            const iframe = document.createElement('iframe');
+            iframe.src = officeUrl;
+            iframe.style.width = '100%';
+            iframe.style.height = '70vh';
+            iframe.style.border = '0';
+            iframe.loading = 'lazy';
+            previewArea.appendChild(iframe);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'office' });
+            return;
+          }
+
+          renderFallback('Vista previa no soportada');
         };
-        doc.attachments.forEach(att => {
+
+        const list = document.createElement('div');
+        list.className = 'grid';
+        list.style.marginTop = '10px';
+        list.innerHTML = '<div class="small">Selecciona un recurso para previsualizar</div>';
+        assets.forEach(asset => {
           const row = document.createElement('div');
-          row.className = 'grid';
-          row.style.gap = '4px';
-          row.innerHTML = `<div class="flex space-between"><div class="flex" style="gap:8px; align-items:center;"><span class="tag">${att.type.toUpperCase()}</span><span>${att.title}</span></div><div class="flex" style="gap:6px;"><button class="btn ghost small">Ver</button><a class="btn primary small" href="${att.url}" download>Descargar</a></div></div>`;
-          row.querySelector('button').onclick = () => renderPreview(att);
-          attachments.appendChild(row);
+          row.className = 'flex space-between';
+          row.style.alignItems = 'center';
+          row.innerHTML = `<div class="flex" style="gap:8px;align-items:center;"><span class="tag">${(asset.ext || 'file').toUpperCase()}</span><span>${asset.title || 'Archivo'}</span></div>`;
+          const btn = document.createElement('button');
+          btn.className = 'btn ghost small';
+          btn.textContent = 'Ver';
+          btn.onclick = () => renderEmbedded(asset);
+          row.appendChild(btn);
+          list.appendChild(row);
         });
-        renderPreview(doc.attachments[0]);
-        attachments.appendChild(preview);
-        card.appendChild(attachments);
+        viewer.append(list, previewArea);
+        card.appendChild(viewer);
+        renderEmbedded(assets[0]);
       }
+
       const commentInput = card.querySelector('#comment');
       const statsLine = card.querySelector('#statsLine');
       const followBtn = card.querySelector('#follow');
@@ -1197,7 +1359,10 @@
         content: '',
         version: 0,
         attachments: [],
-        format: 'html'
+        ext: 'html',
+        mime: mimeFromExt('html'),
+        sourceType: 'url',
+        url: 'https://example.com'
       };
       const container = document.createElement('div');
       container.className = 'grid';
@@ -1322,7 +1487,7 @@
       const space = card.querySelector('#space').value;
       const tags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
       const content = card.querySelector('#content').value;
-      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, format: base.format || 'html' };
+      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, ext: base.ext || 'html', mime: base.mime || mimeFromExt(base.ext || 'html'), sourceType: base.sourceType || 'url', url: base.url || 'https://example.com' };
     }
 
     function upsertDoc(doc) {
@@ -1348,7 +1513,10 @@
         tags: doc.tags,
         type: doc.type,
         space: doc.space,
-        format: doc.format || 'html',
+        ext: doc.ext || 'html',
+        mime: doc.mime || mimeFromExt(doc.ext || 'html'),
+        sourceType: doc.sourceType || 'url',
+        url: doc.url || '',
         attachments: doc.attachments,
         reason
       });
