@@ -272,6 +272,8 @@
 
     .tag { background: var(--surface-1); padding: 4px 8px; border-radius: 8px; font-size: 12px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div id="app"></div>
@@ -322,7 +324,35 @@
       return (ext || '').toLowerCase().replace(/^\./, '');
     }
 
-    const DATA_VERSION = '2024-embed-refresh';
+    const DATA_VERSION = '2024-review-cycle-refresh';
+
+    const TAXONOMY_CANONICAL = ['sop','procedimiento','faq','postmortem','playbook','educacion','digital','liderazgo','audio','video','excel','ppt','induccion','referencia','investigacion'];
+    const TAXONOMY_NORMALIZATION = {
+      'sops': 'sop',
+      's.o.p': 'sop',
+      'procedimientos': 'procedimiento',
+      'procedimiento': 'procedimiento',
+      'procedures': 'procedimiento',
+      'faqs': 'faq',
+      'preguntas': 'faq',
+      'post mortem': 'postmortem',
+      'post-mortem': 'postmortem',
+      'ppt': 'ppt',
+      'pptx': 'ppt',
+      'excel': 'excel',
+      'xls': 'excel',
+      'xlsx': 'excel'
+    };
+
+    function normalizeTags(rawTags = []) {
+      const normalized = rawTags.map(t => {
+        const key = t.trim().toLowerCase();
+        if (TAXONOMY_NORMALIZATION[key]) return TAXONOMY_NORMALIZATION[key];
+        if (TAXONOMY_CANONICAL.includes(key)) return key;
+        return key;
+      }).filter(Boolean);
+      return Array.from(new Set(normalized));
+    }
 
     function mimeFromExt(ext = '') {
       const map = {
@@ -362,6 +392,31 @@
       }
     }
 
+    function computeReviewFields(doc) {
+      const fallbackReviewed = doc.lastReviewedAt || doc.updatedAt || Date.now();
+      const reviewEveryDays = doc.reviewEveryDays || 45;
+      const nextReviewAt = doc.nextReviewAt || (fallbackReviewed + reviewEveryDays * 86400000);
+      const freshness = (() => {
+        const now = Date.now();
+        if (nextReviewAt < now) return 'vencido';
+        if (nextReviewAt < now + 7 * 86400000) return 'por vencer';
+        return 'al día';
+      })();
+      return {
+        ...doc,
+        owner: doc.owner || 'Sin owner',
+        ownerId: doc.ownerId || '',
+        tags: normalizeTags(doc.tags || []),
+        classification: doc.classification || 'interno',
+        retentionDays: doc.retentionDays || 365,
+        audience: doc.audience || ['viewer','editor','admin','manager'],
+        lastReviewedAt: fallbackReviewed,
+        reviewEveryDays,
+        nextReviewAt,
+        freshness
+      };
+    }
+
     const baseDocs = [
       {
         id: 'd1',
@@ -369,6 +424,12 @@
         type: 'wiki',
         space: 'Talento',
         owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['editor','admin','manager','viewer'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 25 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 1 * 86400000,
         tags: ['educacion', 'referencia'],
@@ -387,6 +448,12 @@
         type: 'wiki',
         space: 'Operaciones',
         owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['editor','admin','manager'],
+        reviewEveryDays: 60,
+        lastReviewedAt: Date.now() - 30 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 2 * 86400000,
         tags: ['investigacion', 'colombia'],
@@ -405,6 +472,12 @@
         type: 'faq',
         space: 'TI',
         owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'interno',
+        retentionDays: 730,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 120,
+        lastReviewedAt: Date.now() - 50 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 3 * 86400000,
         tags: ['ciencia', 'base'],
@@ -423,6 +496,12 @@
         type: 'postmortem',
         space: 'Comercial',
         owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'confidencial',
+        retentionDays: 180,
+        audience: ['editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now() - 20 * 86400000,
         status: 'in_review',
         updatedAt: Date.now() - 4 * 86400000,
         tags: ['digital', 'transformacion'],
@@ -441,6 +520,12 @@
         type: 'playbook',
         space: 'Operaciones',
         owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'restringido',
+        retentionDays: 365,
+        audience: ['admin','manager'],
+        reviewEveryDays: 30,
+        lastReviewedAt: Date.now() - 35 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 5 * 86400000,
         tags: ['benchmark', 'educacion'],
@@ -459,6 +544,12 @@
         type: 'playbook',
         space: 'Talento',
         owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 10 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 6 * 86400000,
         tags: ['liderazgo', 'video'],
@@ -477,6 +568,12 @@
         type: 'playbook',
         space: 'TI',
         owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 12 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 7 * 86400000,
         tags: ['liderazgo', 'comunicacion'],
@@ -495,6 +592,12 @@
         type: 'procedimiento',
         space: 'Operaciones',
         owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'interno',
+        retentionDays: 90,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 60,
+        lastReviewedAt: Date.now() - 18 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 8 * 86400000,
         tags: ['audio', 'induccion'],
@@ -513,6 +616,12 @@
         type: 'procedimiento',
         space: 'Comercial',
         owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'confidencial',
+        retentionDays: 180,
+        audience: ['admin','manager'],
+        reviewEveryDays: 30,
+        lastReviewedAt: Date.now() - 15 * 86400000,
         status: 'draft',
         updatedAt: Date.now() - 9 * 86400000,
         tags: ['finanzas', 'excel'],
@@ -531,6 +640,12 @@
         type: 'playbook',
         space: 'TI',
         owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'restringido',
+        retentionDays: 365,
+        audience: ['admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now() - 22 * 86400000,
         status: 'in_review',
         updatedAt: Date.now() - 10 * 86400000,
         tags: ['estrategia', 'ppt'],
@@ -547,7 +662,7 @@
 
     const resourceDocs = [];
 
-    const seedDocs = [...baseDocs, ...resourceDocs];
+    const seedDocs = [...baseDocs, ...resourceDocs].map(computeReviewFields);
 
     const seedVersions = seedDocs.map(doc => ({
       id: crypto.randomUUID(),
@@ -560,6 +675,15 @@
       tags: doc.tags,
       type: doc.type,
       space: doc.space,
+      owner: doc.owner,
+      ownerId: doc.ownerId,
+      classification: doc.classification,
+      retentionDays: doc.retentionDays,
+      audience: doc.audience,
+      reviewEveryDays: doc.reviewEveryDays,
+      lastReviewedAt: doc.lastReviewedAt,
+      nextReviewAt: doc.nextReviewAt,
+      freshness: doc.freshness,
       attachments: doc.attachments,
       ext: doc.ext,
       mime: doc.mime,
@@ -573,8 +697,10 @@
       docs: seedDocs,
       events: [],
       gaps: [],
+      gapTasks: [],
       feedback: [],
       follows: [],
+      savedSearches: [],
       versions: seedVersions,
       config: {
         iaEnabled: true,
@@ -613,9 +739,12 @@
         return {
           ...structuredClone(seedState),
           ...parsed,
+          docs: (parsed.docs || seedDocs).map(computeReviewFields),
           events: (parsed.events || []).slice(-eventLimit),
           config: mergedConfig,
           session: parsed.session ?? null,
+          savedSearches: parsed.savedSearches || [],
+          gapTasks: parsed.gapTasks || [],
           feedback: parsed.feedback ?? [],
           follows: parsed.follows ?? [],
           versions: parsed.versions ?? seedVersions
@@ -993,7 +1122,25 @@
         });
         tasks.appendChild(ul);
       }
-      container.append(hero, feeds, tasks);
+      const reviewCard = document.createElement('div');
+      reviewCard.className = 'card';
+      const ownDocs = state.docs.filter(d => d.ownerId === state.currentUser.id).map(computeReviewFields);
+      const dueSoon = ownDocs.filter(d => d.nextReviewAt <= Date.now() + 7 * 86400000);
+      reviewCard.innerHTML = `<div class="flex space-between"><h3>Revisiones del owner</h3><span class="small">Frescura automática</span></div>`;
+      if (!dueSoon.length) {
+        reviewCard.innerHTML += '<p class="small">Sin pendientes próximos.</p>';
+      } else {
+        const list = document.createElement('div');
+        list.className = 'grid';
+        dueSoon.sort((a, b) => a.nextReviewAt - b.nextReviewAt).forEach(d => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.innerHTML = `<span>${d.title}</span><span class="small">Revisar antes de ${new Date(d.nextReviewAt).toLocaleDateString()} (${d.freshness})</span>`;
+          list.appendChild(row);
+        });
+        reviewCard.appendChild(list);
+      }
+      container.append(hero, feeds, tasks, reviewCard);
       return container;
     }
 
@@ -1038,10 +1185,10 @@
       const tags = params.tags ? params.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
       const range = params.range || 'all';
       const selectedFormats = params.format ? params.format.split(',').filter(Boolean) : [];
-      const results = searchDocs({ q, type, space, tags, range, formats: selectedFormats });
+      const { results, facets, suggestions, semantic } = searchDocs({ q, type, space, tags, range, formats: selectedFormats });
       const attempted = q || type !== 'all' || space !== 'all' || tags.length > 0 || range !== 'all' || selectedFormats.length;
       if (attempted) {
-        logEvent('search_performed', { q, filters: { type, space, tags, range, formats: selectedFormats }, results: results.length });
+        logEvent('search_performed', { q, filters: { type, space, tags, range, formats: selectedFormats }, results: results.length, top: results[0]?.id });
         if (results.length === 0) logEvent('search_zero_results', { q, filters: { type, space, tags, range, formats: selectedFormats } });
       }
       const container = document.createElement('div');
@@ -1070,8 +1217,8 @@
               <div>
                 <label>Espacio</label>
                 <select id="space">
-                  <option value="all">Todos</option>
-                  ${spaces.map(s => `<option value="${s}">${s}</option>`).join('')}
+                  <option value="all">Todos (${facets.spaceCounts.all || state.docs.length})</option>
+                  ${spaces.map(s => `<option value="${s}">${s} (${facets.spaceCounts[s] || 0})</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -1097,7 +1244,7 @@
                   ${Object.keys(FORMAT_GROUPS).map(g => `
                     <label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--text);">
                       <input type="checkbox" value="${g}" class="formatCheck" ${selectedFormats.includes(g) ? 'checked' : ''}/>
-                      ${g.toUpperCase()}
+                      ${g.toUpperCase()} (${facets.formatCounts[g] || 0})
                     </label>
                   `).join('')}
                 </div>
@@ -1122,39 +1269,120 @@
         const nextRange = rangeSel.value;
         const nextFormats = Array.from(card.querySelectorAll('.formatCheck:checked')).map(c => c.value);
         const previewResults = searchDocs({ q: nextQ, type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats });
-        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats }, results: previewResults.length, source: 'search_form' });
-        if (previewResults.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats } });
+        logEvent('search_performed', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats }, results: previewResults.results.length, source: 'search_form' });
+        if (previewResults.results.length === 0) logEvent('search_zero_results', { q: nextQ, filters: { type: nextType, space: nextSpace, tags: nextTags, range: nextRange, formats: nextFormats } });
         location.hash = `#/search?q=${encodeURIComponent(nextQ)}&type=${nextType}&space=${nextSpace}&tags=${encodeURIComponent(nextTags.join(','))}&range=${nextRange}&format=${nextFormats.join(',')}`;
       };
+      const activeFilters = document.createElement('div');
+      activeFilters.className = 'flex';
+      activeFilters.style.gap = '6px';
+      const chips = [];
+      if (type !== 'all') chips.push({ label: `Tipo: ${type}`, action: () => location.hash = location.hash.replace(/type=[^&]*/, 'type=all') });
+      if (space !== 'all') chips.push({ label: `Espacio: ${space}`, action: () => location.hash = location.hash.replace(/space=[^&]*/, 'space=all') });
+      tags.forEach(t => chips.push({ label: `Tag: ${t}`, action: () => location.hash = `#/search?q=${encodeURIComponent(q)}&type=${type}&space=${space}&range=${range}` }));
+      if (range !== 'all') chips.push({ label: `Rango: ${range}d`, action: () => location.hash = location.hash.replace(/range=[^&]*/, 'range=all') });
+      selectedFormats.forEach(f => chips.push({ label: `Formato: ${f}`, action: () => location.hash = '#/search' }));
+      if (chips.length) {
+        chips.forEach(c => {
+          const pill = document.createElement('span');
+          pill.className = 'tag';
+          pill.style.cursor = 'pointer';
+          pill.textContent = c.label + ' ×';
+          pill.onclick = c.action;
+          activeFilters.appendChild(pill);
+        });
+        const clear = document.createElement('button');
+        clear.className = 'btn ghost small';
+        clear.textContent = 'Limpiar todo';
+        clear.onclick = () => location.hash = '#/search';
+        activeFilters.appendChild(clear);
+        card.appendChild(activeFilters);
+      }
+      const savedWrap = document.createElement('div');
+      savedWrap.className = 'grid';
+      savedWrap.style.marginTop = '8px';
+      savedWrap.innerHTML = `<label class="small">Guardar búsqueda</label><div class="flex" style="gap:6px; flex-wrap:wrap;"><input id="saveName" placeholder="Nombre" /><button class="btn ghost small" id="saveSearch">Guardar</button></div>`;
+      savedWrap.querySelector('#saveSearch').onclick = () => {
+        const name = savedWrap.querySelector('#saveName').value.trim() || `Búsqueda ${new Date().toLocaleString()}`;
+        state.savedSearches.push({ id: crypto.randomUUID(), name, q, filters: { type, space, tags, range, formats: selectedFormats }, alert: false, createdAt: Date.now() });
+        persist();
+        toast('Búsqueda guardada');
+        render();
+      };
+      if (state.savedSearches.length) {
+        const list = document.createElement('div');
+        list.className = 'grid';
+        list.innerHTML = '<label class="small">Saved searches / alertas</label>';
+        state.savedSearches.forEach(s => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.innerHTML = `<span>${s.name}</span>`;
+          const actions = document.createElement('div');
+          actions.className = 'flex';
+          const apply = document.createElement('button');
+          apply.className = 'btn ghost small';
+          apply.textContent = 'Aplicar';
+          apply.onclick = () => {
+            const f = s.filters || {};
+            location.hash = `#/search?q=${encodeURIComponent(s.q||'')}&type=${f.type||'all'}&space=${f.space||'all'}&tags=${encodeURIComponent((f.tags||[]).join(','))}&range=${f.range||'all'}&format=${(f.formats||[]).join(',')}`;
+          };
+          const alertToggle = document.createElement('button');
+          alertToggle.className = s.alert ? 'btn primary small' : 'btn ghost small';
+          alertToggle.textContent = s.alert ? 'Alerta on' : 'Crear alerta';
+          alertToggle.onclick = () => { s.alert = !s.alert; persist(); render(); };
+          actions.append(apply, alertToggle);
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+        savedWrap.appendChild(list);
+      }
+      card.appendChild(savedWrap);
       const list = document.createElement('div');
       list.className = 'grid two';
       if (results.length === 0 && attempted) {
         const empty = document.createElement('div');
         empty.className = 'card';
-        empty.innerHTML = `<h3>Sin resultados</h3><p class="small">No encontramos coincidencias. Reporta un gap para generar contenido.</p><button class="btn primary" id="reportGap">Reportar gap</button>`;
+        empty.innerHTML = `<h3>Sin resultados</h3><p class="small">No encontramos coincidencias. Reporta un gap para generar contenido.</p><div class="grid"> <label>Asignar como tarea</label><select id="gapOwner">${state.users.map(u => `<option value="${u.id}">${u.name}</option>`).join('')}</select><input id="gapSla" type="number" min="1" value="7" placeholder="SLA días" /><button class="btn primary" id="reportGap">Reportar gap</button></div>`;
         empty.querySelector('#reportGap').onclick = () => {
-          addGap({ q, filters: { type, space, tags, range, formats: selectedFormats } });
-          toast('Gap registrado');
+          const assignedTo = empty.querySelector('#gapOwner').value;
+          const sla = Number(empty.querySelector('#gapSla').value) || 7;
+          const gap = addGap({ q, filters: { type, space, tags, range, formats: selectedFormats } });
+          addGapTask({ gapId: gap.id, assignedTo, slaDays: sla, status: 'open' });
+          toast('Gap registrado y tarea asignada');
         };
         list.appendChild(empty);
+      }
+      if (suggestions.length) {
+        const sugCard = document.createElement('div');
+        sugCard.className = 'card';
+        sugCard.innerHTML = `<h4>Quizás buscabas...</h4><div class="flex" style="gap:6px;">${suggestions.map(s => `<a class="tag" href="#/search?q=${encodeURIComponent(s)}">${s}</a>`).join('')}</div>`;
+        list.appendChild(sugCard);
       }
       results.forEach(r => {
         const item = document.createElement('div');
         item.className = 'card doc-card';
         item.innerHTML = `
           <div class="flex space-between">
-            <a href="#/doc/${r.id}"><h3>${r.title}</h3></a>
+            <a href="#/doc/${r.id}"><h3>${r.highlightedTitle || r.title}</h3></a>
             <span class="status ${r.status}">${r.status}</span>
           </div>
-          <p>${r.content.slice(0,120)}...</p>
+          <p>${r.snippet || r.content.slice(0,120)}...</p>
           <div class="flex">
             <span class="tag">${r.type}</span>
             <span class="tag">${r.space}</span>
             ${r.ext ? `<span class="tag">${r.ext.toUpperCase()}</span>` : ''}
+            ${r.classification ? `<span class="tag">${r.classification}</span>` : ''}
             ${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+            <span class="small">Score ${r.score?.toFixed(2) || 0}</span>
           </div>`;
         list.appendChild(item);
       });
+      if (semantic && semantic.source) {
+        const iaCard = document.createElement('div');
+        iaCard.className = 'card';
+        iaCard.innerHTML = `<h4>Respuesta IA (demo)</h4><p>${semantic.answer}</p><div class="small">Fuente: <a href="#/doc/${semantic.source.id}">${semantic.source.title}</a></div>`;
+        list.prepend(iaCard);
+      }
       container.append(card, list);
       return container;
     }
@@ -1167,18 +1395,86 @@
 
     function searchDocs({ q = '', type = 'all', space = 'all', tags = [], range = 'all', formats = [] }) {
       const normalized = q.trim().toLowerCase();
+      const terms = normalized.split(/\s+/).filter(Boolean);
       const now = Date.now();
       const rangeDays = range === 'all' ? null : Number(range);
-      const filtered = state.docs.filter(d => {
-        const haystack = `${d.title} ${d.content} ${d.tags.join(' ')}`.toLowerCase();
-        const matchesQ = normalized ? haystack.includes(normalized) : true;
+      const baseFiltered = state.docs.filter(d => {
         const matchesType = type === 'all' || d.type === type;
         const matchesSpace = space === 'all' || d.space === space;
         const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
         const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
-        return matchesQ && matchesType && matchesSpace && matchesTags && matchesDate;
+        return matchesType && matchesSpace && matchesTags && matchesDate;
       });
-      return filterByFormat(filtered, formats);
+      const facetSpaceCounts = baseFiltered.reduce((acc, d) => { acc[d.space] = (acc[d.space] || 0) + 1; return acc; }, {});
+      facetSpaceCounts.all = baseFiltered.length;
+      const facetFormatCounts = baseFiltered.reduce((acc, d) => {
+        const ext = normalizeExt(d.ext || d.attachments?.[0]?.ext || d.attachments?.[0]?.type || '');
+        Object.entries(FORMAT_GROUPS).forEach(([g, list]) => { if (list.includes(ext)) acc[g] = (acc[g] || 0) + 1; });
+        return acc;
+      }, {});
+      const scored = baseFiltered.map(doc => {
+        let score = 0;
+        if (terms.length === 0 && !normalized) score += Math.log1p(doc.views || 0);
+        terms.forEach(t => {
+          if (doc.title.toLowerCase().includes(t)) score += 3;
+          if (doc.tags.some(tag => tag.toLowerCase().includes(t))) score += 2;
+          if (doc.content.toLowerCase().includes(t)) score += 1;
+        });
+        if (doc.status === 'published') score += 2; else if (doc.status === 'in_review') score += 1;
+        if (doc.freshness === 'al día') score += 1; else if (doc.freshness === 'vencido') score -= 1;
+        const fb = feedbackSummary(doc.id);
+        score += (fb.useful - fb.notUseful) * 0.5;
+        score += Math.log1p(doc.views || 0);
+        const recency = 1 / (1 + ((now - doc.updatedAt) / 86400000));
+        score += recency;
+        const ext = normalizeExt(doc.ext || doc.attachments?.[0]?.ext || '');
+        return { ...doc, score, snippet: buildSnippet(doc.content, terms), highlightedTitle: highlightText(doc.title, terms), ext };
+      });
+      const formatFiltered = filterByFormat(scored, formats);
+      const withQueryMatch = terms.length ? formatFiltered.filter(d => d.score > 0) : formatFiltered;
+      const ordered = withQueryMatch.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt);
+      const suggestions = !ordered.length && terms.length ? suggestAlternatives(terms) : [];
+      const semantic = semanticAnswer(ordered, terms, normalized);
+      return { results: ordered, facets: { formatCounts: facetFormatCounts, spaceCounts: facetSpaceCounts }, suggestions, semantic };
+    }
+
+    function highlightText(text, terms = []) {
+      if (!terms.length) return text;
+      let out = text;
+      terms.forEach(t => {
+        if (!t) return;
+        const re = new RegExp(`(${t})`, 'ig');
+        out = out.replace(re, '<mark>$1</mark>');
+      });
+      return out;
+    }
+
+    function buildSnippet(content, terms = []) {
+      if (!content) return '';
+      if (!terms.length) return content.slice(0, 140);
+      const lower = content.toLowerCase();
+      const idx = terms.map(t => lower.indexOf(t)).find(i => i >= 0);
+      const start = idx && idx > 40 ? idx - 40 : 0;
+      const snippet = content.slice(start, start + 180);
+      return highlightText(snippet, terms);
+    }
+
+    function suggestAlternatives(terms) {
+      const set = new Set();
+      terms.forEach(t => {
+        state.docs.forEach(d => {
+          d.tags.forEach(tag => { if (tag.toLowerCase().includes(t)) set.add(tag); });
+          if (d.title.toLowerCase().includes(t)) set.add(d.title);
+        });
+      });
+      return Array.from(set).slice(0, 5);
+    }
+
+    function semanticAnswer(results, terms, normalized) {
+      if (!normalized || !results.length) return null;
+      const top = results[0];
+      const snippet = buildSnippet(top.content, terms);
+      return { answer: `Posible respuesta: ${snippet}`, source: { id: top.id, title: top.title } };
     }
 
     function addGap(payload) {
@@ -1186,6 +1482,49 @@
       state.gaps.push(gap);
       logEvent('gap_reported', gap);
       persist();
+      return gap;
+    }
+
+    function addGapTask({ gapId, assignedTo, slaDays = 7, status = 'open' }) {
+      const task = { id: crypto.randomUUID(), gapId, assignedTo, slaDays, status, createdAt: Date.now(), dueAt: Date.now() + slaDays * 86400000 };
+      state.gapTasks.push(task);
+      logEvent('gap_task_created', task);
+      persist();
+      return task;
+    }
+
+    function createDocFromGap(gapId) {
+      const gap = state.gaps.find(g => g.id === gapId);
+      if (!gap) return null;
+      const owner = state.users.find(u => u.id === state.currentUser?.id) || state.users[0];
+      const doc = computeReviewFields({
+        id: `d${Date.now()}`,
+        title: `Borrador desde gap: ${gap.q || 'consulta'}`,
+        type: 'wiki',
+        space: gap.filters?.space && gap.filters.space !== 'all' ? gap.filters.space : spaces[0],
+        owner: owner.name,
+        ownerId: owner.id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now(),
+        status: 'draft',
+        updatedAt: Date.now(),
+        tags: normalizeTags(gap.filters?.tags || []),
+        content: `Contexto del gap: ${gap.q || ''}. Detalle: ${JSON.stringify(gap.filters || {})}`,
+        version: 0,
+        attachments: [],
+        ext: 'html',
+        mime: mimeFromExt('html'),
+        sourceType: 'url',
+        url: 'https://example.com'
+      });
+      state.docs.push(doc);
+      state.versions.push({ id: crypto.randomUUID(), docId: doc.id, version: 1, snapshotAt: doc.updatedAt, status: doc.status, title: doc.title, content: doc.content });
+      logEvent('doc_created', { docId: doc.id, fromGap: gapId });
+      persist();
+      return doc;
     }
 
     function isFollowing(docId, userId = state.currentUser?.id) {
@@ -1231,19 +1570,20 @@
     }
 
     function renderDoc(id) {
-      const doc = state.docs.find(d => d.id === id);
+      const docRef = state.docs.find(d => d.id === id);
       const container = document.createElement('div');
       container.className = 'grid';
-      if (!doc) {
+      if (!docRef) {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = '<h2>Documento no encontrado</h2>';
         container.appendChild(card);
         return container;
       }
-      doc.views += 1;
-      logEvent('doc_viewed', { docId: doc.id, status: doc.status });
+      docRef.views = (docRef.views || 0) + 1;
+      logEvent('doc_viewed', { docId: docRef.id, status: docRef.status });
       persist();
+      const doc = computeReviewFields(docRef);
 
       const assetFrom = (item, fallbackTitle) => {
         const ext = normalizeExt(item?.ext || item?.type || extFromUrl(item?.url));
@@ -1259,6 +1599,7 @@
       const assets = [assetFrom(doc, doc.title), ...(doc.attachments || []).map(a => assetFrom(a, a.title))].filter(a => a.url);
       const stats = feedbackSummary(doc.id);
       const followers = () => state.follows.filter(f => f.docId === doc.id).length;
+      const commentsForDoc = () => state.feedback.filter(f => f.docId === doc.id && f.comment?.trim());
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
@@ -1271,11 +1612,28 @@
               ${doc.ext ? `<span class="tag">${doc.ext.toUpperCase()}</span>` : ''}
               ${doc.tags.map(t => `<span class="tag">${t}</span>`).join('')}
               <span class="tag">Owner: ${doc.owner}</span>
+              <span class="tag">Clasificación: ${doc.classification || 'interno'}</span>
+              <span class="tag">Retención: ${doc.retentionDays || 365}d</span>
+              <span class="tag">Frescura: ${doc.freshness || 'al día'}</span>
             </div>
           </div>
           <div class="flex">
             <div class="status ${doc.status}">${doc.status}</div>
             ${['editor','admin'].includes(state.currentUser.role) ? `<button class="btn ghost" onclick="location.hash='#/edit/${doc.id}'">Editar</button>` : ''}
+          </div>
+        </div>
+        <div class="grid two" style="margin:10px 0;">
+          <div class="card" style="padding:10px; background:var(--surface-2);">
+            <div class="small">Owner</div>
+            <strong>${doc.owner}</strong>
+            <div class="small">Audiencia: ${(doc.audience || []).join(', ') || 'Todas'}</div>
+            <div class="small">Clasificación: ${doc.classification || 'interno'} · Retención: ${doc.retentionDays || 365} días</div>
+          </div>
+          <div class="card" style="padding:10px; background:var(--surface-2);">
+            <div class="small">Revisión</div>
+            <strong>Próxima: ${new Date(doc.nextReviewAt || Date.now()).toLocaleDateString()}</strong>
+            <div class="small">Última: ${new Date(doc.lastReviewedAt || doc.updatedAt).toLocaleDateString()} · Cada ${doc.reviewEveryDays || 45} días</div>
+            <div class="small">Estado: ${doc.freshness || 'al día'}</div>
           </div>
         </div>
         <p>${doc.content}</p>
@@ -1318,16 +1676,38 @@
           open.target = '_blank';
           open.rel = 'noopener';
           open.onclick = () => logEvent('doc_open_external', { docId: doc.id, ext });
+          const copy = document.createElement('button');
+          copy.className = 'btn ghost small';
+          copy.textContent = 'Copiar enlace';
+          copy.onclick = async () => {
+            try { await navigator.clipboard.writeText(url); toast('Enlace copiado'); }
+            catch { toast('No se pudo copiar'); }
+          };
+          const report = document.createElement('button');
+          report.className = 'btn ghost small';
+          report.textContent = 'Reportar problema';
+          report.onclick = () => {
+            const reason = prompt('Describe el problema (CORS, formato, bloqueo, etc.)');
+            logEvent('doc_preview_reported', { docId: doc.id, ext, reason: reason || 'no_reason' });
+            toast('Reporte enviado');
+          };
           const download = document.createElement('a');
           download.className = 'btn primary small';
           download.textContent = 'Descargar';
           download.href = url;
           download.download = asset.title || doc.title;
           download.onclick = () => logEvent('doc_downloaded', { docId: doc.id, ext });
-          controls.append(open, download);
+          controls.append(open, copy, download, report);
           previewArea.appendChild(controls);
 
+          const skeleton = document.createElement('div');
+          skeleton.className = 'skeleton';
+          skeleton.style.height = '32px';
+          skeleton.style.marginBottom = '8px';
+          previewArea.appendChild(skeleton);
+
           const renderFallback = (reason) => {
+            skeleton.remove();
             const fallback = document.createElement('div');
             fallback.className = 'card';
             fallback.style.background = 'var(--surface-1)';
@@ -1356,62 +1736,190 @@
           };
 
           const isGroup = (group) => FORMAT_GROUPS[group]?.includes(ext);
-          if (ext === 'pdf') {
+
+          const removeSkeleton = () => skeleton.remove();
+
+          const renderPdf = () => {
+            const tools = document.createElement('div');
+            tools.className = 'flex';
+            tools.style.gap = '8px';
+            tools.style.marginBottom = '6px';
+            const search = document.createElement('input');
+            search.placeholder = 'Buscar en PDF';
+            search.className = 'input';
+            search.onchange = () => { iframe.src = `${url}#search=${encodeURIComponent(search.value)}`; };
+            const pageJump = document.createElement('input');
+            pageJump.type = 'number';
+            pageJump.min = 1;
+            pageJump.placeholder = 'Ir a página';
+            pageJump.onchange = () => { if (!pageJump.value) return; iframe.src = `${url}#page=${pageJump.value}`; };
+            tools.append(search, pageJump);
+            previewArea.appendChild(tools);
+            const thumbs = document.createElement('div');
+            thumbs.className = 'flex';
+            thumbs.style.gap = '6px';
+            thumbs.style.flexWrap = 'wrap';
+            for (let i = 1; i <= 5; i++) {
+              const thumb = document.createElement('button');
+              thumb.className = 'btn ghost small';
+              thumb.textContent = `Pág ${i}`;
+              thumb.onclick = () => { iframe.src = `${url}#page=${i}`; };
+              thumbs.appendChild(thumb);
+            }
+            previewArea.appendChild(thumbs);
             const iframe = document.createElement('iframe');
             iframe.src = url;
             iframe.style.width = '100%';
             iframe.style.height = '70vh';
             iframe.style.border = '0';
             iframe.loading = 'lazy';
+            iframe.onload = () => removeSkeleton();
+            iframe.onerror = () => renderFallback('CORS o bloqueo al cargar PDF');
             previewArea.appendChild(iframe);
             logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_pdf' });
-            return;
-          }
-          if (isGroup('video')) {
-            const video = document.createElement('video');
-            video.src = url;
-            video.controls = true;
-            video.style.width = '100%';
-            video.style.maxHeight = '70vh';
-            video.style.borderRadius = '12px';
-            previewArea.appendChild(video);
-            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_video' });
-            return;
-          }
-          if (isGroup('audio')) {
-            const audio = document.createElement('audio');
-            audio.src = url;
-            audio.controls = true;
-            audio.style.width = '100%';
-            previewArea.appendChild(audio);
-            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_audio' });
-            return;
-          }
-          if (isGroup('image')) {
+          };
+
+          const renderVideoAudio = (isVideo) => {
+            const media = document.createElement(isVideo ? 'video' : 'audio');
+            media.src = url;
+            media.controls = true;
+            if (isVideo) {
+              media.style.width = '100%';
+              media.style.maxHeight = '70vh';
+              media.style.borderRadius = '12px';
+            } else {
+              media.style.width = '100%';
+            }
+            const speed = document.createElement('select');
+            speed.className = 'input';
+            [0.75, 1, 1.25, 1.5, 2].forEach(v => {
+              const opt = document.createElement('option');
+              opt.value = v;
+              opt.textContent = `${v}x`;
+              if (v === 1) opt.selected = true;
+              speed.appendChild(opt);
+            });
+            speed.onchange = () => media.playbackRate = Number(speed.value);
+
+            const transcript = document.createElement('textarea');
+            transcript.readOnly = true;
+            transcript.className = 'input';
+            transcript.style.height = '120px';
+            transcript.value = asset.transcript || doc.content || 'Transcripción no disponible';
+            const finder = document.createElement('input');
+            finder.placeholder = 'Buscar en transcripción';
+            finder.className = 'input';
+            finder.oninput = () => {
+              const q = finder.value.toLowerCase();
+              const idx = transcript.value.toLowerCase().indexOf(q);
+              if (idx >= 0) { transcript.focus(); transcript.setSelectionRange(idx, idx + q.length); }
+            };
+
+            const chapters = document.createElement('div');
+            chapters.className = 'flex';
+            chapters.style.gap = '6px';
+            ['00:00 Intro', '02:00 Clave', '05:00 Cierre'].forEach(mark => {
+              const btn = document.createElement('button');
+              btn.className = 'btn ghost small';
+              btn.textContent = mark;
+              btn.onclick = () => { const mins = Number(mark.split(':')[0]); media.currentTime = mins * 60; media.play(); };
+              chapters.appendChild(btn);
+            });
+
+            const tools = document.createElement('div');
+            tools.className = 'grid';
+            tools.style.gap = '6px';
+            tools.appendChild(speed);
+            tools.appendChild(chapters);
+            tools.appendChild(finder);
+            tools.appendChild(transcript);
+
+            media.onloadstart = () => skeleton.textContent = 'Cargando recurso...';
+            media.oncanplay = () => removeSkeleton();
+            media.onerror = () => renderFallback('No se pudo reproducir media (CORS/bloqueado)');
+            previewArea.append(media, tools);
+            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: isVideo ? 'embed_video' : 'embed_audio' });
+          };
+
+          const renderImage = () => {
+            const wrap = document.createElement('div');
+            wrap.style.overflow = 'auto';
+            wrap.style.maxHeight = '70vh';
+            wrap.style.borderRadius = '12px';
             const img = document.createElement('img');
             img.src = url;
             img.alt = asset.title || doc.title;
             img.style.width = '100%';
-            img.style.maxHeight = '70vh';
             img.style.objectFit = 'contain';
-            img.style.borderRadius = '12px';
-            previewArea.appendChild(img);
+            let zoom = 1;
+            const zoomCtl = document.createElement('input');
+            zoomCtl.type = 'range';
+            zoomCtl.min = '0.5';
+            zoomCtl.max = '2';
+            zoomCtl.step = '0.1';
+            zoomCtl.value = '1';
+            zoomCtl.oninput = () => { zoom = Number(zoomCtl.value); img.style.transform = `scale(${zoom})`; };
+            const meta = document.createElement('div');
+            meta.className = 'small';
+            meta.textContent = `Formato ${ext.toUpperCase()} · ${asset.mime || 'desconocido'}`;
+            img.onload = () => removeSkeleton();
+            img.onerror = () => renderFallback('No se pudo cargar la imagen');
+            wrap.appendChild(img);
+            previewArea.append(wrap, zoomCtl, meta);
             logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'embed_image' });
-            return;
-          }
+          };
+
+          const renderOfficeLocal = async () => {
+            try {
+              const res = await fetch(url);
+              const buf = await res.arrayBuffer();
+              if (FORMAT_GROUPS.word.includes(ext) && window.mammoth) {
+                const result = await window.mammoth.convertToHtml({ arrayBuffer: buf });
+                const html = document.createElement('div');
+                html.innerHTML = result.value;
+                previewArea.appendChild(html);
+                removeSkeleton();
+                logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'parsed_word' });
+                return;
+              }
+              if (FORMAT_GROUPS.excel.includes(ext) && window.XLSX) {
+                const wb = XLSX.read(buf, { type: 'array' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const table = document.createElement('div');
+                table.innerHTML = XLSX.utils.sheet_to_html(sheet);
+                previewArea.appendChild(table);
+                removeSkeleton();
+                logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'parsed_excel' });
+                return;
+              }
+              renderFallback('Vista previa no soportada para archivo local');
+            } catch (e) {
+              renderFallback('Error al leer archivo local');
+            }
+          };
+
+          if (ext === 'pdf') return renderPdf();
+          if (isGroup('video')) return renderVideoAudio(true);
+          if (isGroup('audio')) return renderVideoAudio(false);
+          if (isGroup('image')) return renderImage();
 
           const isOffice = () => isGroup('word') || isGroup('excel') || isGroup('ppt');
-          if (isOffice() && url.startsWith('http')) {
-            const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
-            const iframe = document.createElement('iframe');
-            iframe.src = officeUrl;
-            iframe.style.width = '100%';
-            iframe.style.height = '70vh';
-            iframe.style.border = '0';
-            iframe.loading = 'lazy';
-            previewArea.appendChild(iframe);
-            logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'office' });
-            return;
+          if (isOffice()) {
+            if (url.startsWith('http')) {
+              const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+              const iframe = document.createElement('iframe');
+              iframe.src = officeUrl;
+              iframe.style.width = '100%';
+              iframe.style.height = '70vh';
+              iframe.style.border = '0';
+              iframe.loading = 'lazy';
+              iframe.onload = () => removeSkeleton();
+              iframe.onerror = () => renderFallback('CORS o bloqueo en Office viewer');
+              previewArea.appendChild(iframe);
+              logEvent('doc_preview_rendered', { docId: doc.id, ext, mode: 'office' });
+              return;
+            }
+            return renderOfficeLocal();
           }
 
           renderFallback('Vista previa no soportada');
@@ -1445,6 +1953,7 @@
         const next = feedbackSummary(doc.id);
         statsLine.textContent = `Feedback: ${next.useful} 👍 / ${next.notUseful} 👎 · Seguidores: ${followers()}`;
         followBtn.textContent = isFollowing(doc.id) ? 'Siguiendo' : 'Seguir';
+        renderComments();
       };
       card.querySelector('#useful').onclick = () => {
         saveFeedback(doc.id, 'useful', commentInput.value);
@@ -1468,6 +1977,48 @@
       followBtn.onclick = () => { toggleFollow(doc.id); refreshStats(); };
       card.querySelector('#report').onclick = () => { logEvent('doc_outdated_reported', { docId: doc.id }); toast('Reporte enviado'); };
       container.appendChild(card);
+
+      const commentsCard = document.createElement('div');
+      commentsCard.className = 'card';
+      commentsCard.innerHTML = '<h3>Comentarios públicos</h3>';
+      const commentsList = document.createElement('div');
+      commentsCard.appendChild(commentsList);
+
+      const renderComments = () => {
+        commentsList.innerHTML = '';
+        const comments = commentsForDoc().sort((a, b) => b.at - a.at);
+        if (!comments.length) {
+          const empty = document.createElement('p');
+          empty.className = 'small';
+          empty.textContent = 'Aún no hay comentarios. Comparte tu feedback para ayudar a otros.';
+          commentsList.appendChild(empty);
+          return;
+        }
+        comments.forEach(c => {
+          const row = document.createElement('div');
+          row.className = 'card';
+          row.style.background = 'var(--surface-2)';
+          row.style.marginTop = '8px';
+          const user = state.users.find(u => u.id === c.userId);
+          const label = c.value === 'useful' ? '👍 Útil' : c.value === 'not_useful' ? '👎 No útil' : '💬 Comentario';
+          row.innerHTML = `
+            <div class="flex space-between" style="gap:12px; align-items:flex-start;">
+              <div class="grid" style="gap:6px;">
+                <div class="flex" style="gap:8px; align-items:center;">
+                  <strong>${user?.name || 'Usuario'}</strong>
+                  <span class="tag">${label}</span>
+                </div>
+                <div class="small">${c.comment}</div>
+              </div>
+              <span class="small" style="white-space:nowrap;">${new Date(c.at).toLocaleString()}</span>
+            </div>
+          `;
+          commentsList.appendChild(row);
+        });
+      };
+      renderComments();
+      container.appendChild(commentsCard);
+
       const versions = state.versions.filter(v => v.docId === doc.id).sort((a,b) => b.version - a.version);
       const history = document.createElement('div');
       history.className = 'card';
@@ -1492,6 +2043,12 @@
         type: 'wiki',
         space: spaces[0],
         owner: state.currentUser.name,
+        ownerId: state.currentUser.id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now(),
         status: 'draft',
         updatedAt: Date.now(),
         tags: [],
@@ -1549,7 +2106,45 @@
             </div>
             <div>
               <label>Etiquetas (coma)</label>
-              <input id="tags" value="${doc.tags.join(', ')}" />
+              <input id="tags" list="tagSuggestions" value="${doc.tags.join(', ')}" />
+              <datalist id="tagSuggestions">${TAXONOMY_CANONICAL.map(t => `<option value="${t}"></option>`).join('')}</datalist>
+              <span class="small">Taxonomía controlada: sugerimos ${TAXONOMY_CANONICAL.slice(0,6).join(', ')}...</span>
+            </div>
+            <div>
+              <label>Owner (obligatorio)</label>
+              <select id="owner">${state.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('')}</select>
+            </div>
+            <div>
+              <label>Clasificación</label>
+              <select id="classification">
+                <option value="interno">Interno</option>
+                <option value="confidencial">Confidencial</option>
+                <option value="restringido">Restringido</option>
+              </select>
+            </div>
+            <div>
+              <label>Retención (días)</label>
+              <input id="retention" type="number" min="30" value="${doc.retentionDays || 365}" />
+            </div>
+          </div>
+          <div class="grid two">
+            <div>
+              <label>Audiencia (roles)</label>
+              <div id="audienceWrap" class="grid" style="grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap:6px;"></div>
+            </div>
+            <div>
+              <label>Ciclo de revisión</label>
+              <div class="grid two">
+                <div>
+                  <label class="small">Cada (días)</label>
+                  <input id="reviewEvery" type="number" min="7" value="${doc.reviewEveryDays || 45}" />
+                </div>
+                <div>
+                  <label class="small">Última revisión</label>
+                  <input id="lastReviewed" type="date" value="${new Date(doc.lastReviewedAt || Date.now()).toISOString().slice(0,10)}" />
+                </div>
+              </div>
+              <div class="small" id="reviewPreview">Próxima revisión: --</div>
             </div>
           </div>
           <div class="grid two">
@@ -1576,6 +2171,8 @@
         <span class="small">Autosave cada ${autoSaveMs/1000}s · Versión actual: ${doc.version || 0}</span>`;
       card.querySelector('#type').value = doc.type;
       card.querySelector('#space').value = doc.space;
+      card.querySelector('#owner').value = doc.ownerId || state.currentUser.id;
+      card.querySelector('#classification').value = doc.classification || 'interno';
       const templateSelector = card.querySelector('#template');
       templateSelector.onchange = (e) => {
         const tpl = templates[e.target.value];
@@ -1585,6 +2182,30 @@
         if (tpl.title.startsWith('SOP')) card.querySelector('#type').value = 'procedimiento';
         if (tpl.title.startsWith('FAQ')) card.querySelector('#type').value = 'faq';
       };
+
+      const audienceWrap = card.querySelector('#audienceWrap');
+      const selectedAudience = new Set(doc.audience || ['viewer','editor','admin','manager']);
+      ['viewer','editor','admin','manager'].forEach(role => {
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '6px';
+        label.innerHTML = `<input type="checkbox" value="${role}" ${selectedAudience.has(role) ? 'checked' : ''}/> ${role}`;
+        audienceWrap.appendChild(label);
+      });
+
+      const reviewPreview = card.querySelector('#reviewPreview');
+      const reviewEveryInput = card.querySelector('#reviewEvery');
+      const lastReviewedInput = card.querySelector('#lastReviewed');
+      const refreshReviewPreview = () => {
+        const every = Number(reviewEveryInput.value) || 30;
+        const last = new Date(lastReviewedInput.value || new Date()).getTime();
+        const computed = computeReviewFields({ ...doc, reviewEveryDays: every, lastReviewedAt: last });
+        reviewPreview.textContent = `Próxima revisión: ${new Date(computed.nextReviewAt).toLocaleDateString()} · Frescura: ${computed.freshness}`;
+      };
+      reviewEveryInput.oninput = refreshReviewPreview;
+      lastReviewedInput.onchange = refreshReviewPreview;
+      refreshReviewPreview();
       const updateResourceMeta = () => {
         const msg = `Fuente: ${doc.sourceType === 'upload' ? 'cargado' : 'enlace'} · ${doc.ext?.toUpperCase() || 'sin ext'} · ${doc.mime || ''}`;
         card.querySelector('#resourceMeta').textContent = msg;
@@ -1659,20 +2280,30 @@
       const title = card.querySelector('#title').value.trim() || 'Sin título';
       const type = card.querySelector('#type').value;
       const space = card.querySelector('#space').value;
-      const tags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
+      const tags = normalizeTags(card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean));
+      const ownerId = card.querySelector('#owner').value;
+      if (!ownerId) { toast('Elige un owner'); throw new Error('owner requerido'); }
+      const ownerUser = state.users.find(u => u.id === ownerId);
+      const classification = card.querySelector('#classification').value;
+      const retentionDays = Number(card.querySelector('#retention').value) || 365;
+      const reviewEveryDays = Number(card.querySelector('#reviewEvery').value) || 45;
+      const lastReviewedAt = new Date(card.querySelector('#lastReviewed').value || new Date()).getTime();
+      const audience = Array.from(card.querySelectorAll('#audienceWrap input:checked')).map(i => i.value);
       const content = card.querySelector('#content').value;
-      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, ext: base.ext || 'html', mime: base.mime || mimeFromExt(base.ext || 'html'), sourceType: base.sourceType || 'url', url: base.url || 'https://example.com' };
+      const nextReviewAt = lastReviewedAt + reviewEveryDays * 86400000;
+      return { ...base, title, type, space, tags, content, owner: ownerUser?.name || base.owner || 'Sin owner', ownerId, classification, retentionDays, audience, reviewEveryDays, lastReviewedAt, nextReviewAt, freshness: computeReviewFields({ ...base, reviewEveryDays, lastReviewedAt, nextReviewAt }).freshness, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, ext: base.ext || 'html', mime: base.mime || mimeFromExt(base.ext || 'html'), sourceType: base.sourceType || 'url', url: base.url || 'https://example.com' };
     }
 
     function upsertDoc(doc) {
-      const idx = state.docs.findIndex(d => d.id === doc.id);
+      const normalizedDoc = computeReviewFields(doc);
+      const idx = state.docs.findIndex(d => d.id === normalizedDoc.id);
       if (idx >= 0) {
-        state.docs[idx] = doc;
+        state.docs[idx] = normalizedDoc;
       } else {
-        state.docs.push(doc);
+        state.docs.push(normalizedDoc);
       }
       persist();
-      return doc;
+      return normalizedDoc;
     }
 
     function createSnapshot(doc, reason) {
@@ -1801,7 +2432,8 @@
       const docsBySpace = state.docs.filter(d => space === 'all' || d.space === space);
       const health = {
         noOwner: docsBySpace.filter(d => !d.owner),
-        stale: docsBySpace.filter(d => now - d.updatedAt > staleThresholdDays * 86400000),
+        stale: docsBySpace.filter(d => computeReviewFields(d).freshness === 'vencido'),
+        dueSoon: docsBySpace.filter(d => computeReviewFields(d).freshness === 'por vencer'),
         drafts: docsBySpace.filter(d => d.status !== 'published' && now - d.updatedAt > draftStuckDays * 86400000)
       };
 
@@ -1957,6 +2589,7 @@
         const byZero = (b.zero || 0) - (a.zero || 0);
         return byZero === 0 ? (b.low || 0) - (a.low || 0) : byZero;
       });
+      const taskByGap = state.gapTasks.reduce((acc, t) => { acc[t.gapId] = t; return acc; }, {});
       card.className = 'card';
       card.innerHTML = `
         <div class="flex space-between" style="align-items:center;">
@@ -1976,7 +2609,7 @@
         <div class="table" style="width:100%; overflow:auto;">
           <table style="width:100%; border-collapse:collapse;">
             <thead>
-              <tr><th>Consulta</th><th>Zero</th><th>Low-click</th><th>Última vez</th><th>Espacio</th></tr>
+              <tr><th>Consulta</th><th>Zero</th><th>Low-click</th><th>Última vez</th><th>Tarea</th><th>Acción</th></tr>
             </thead>
             <tbody id="gapRows"></tbody>
           </table>
@@ -1985,11 +2618,25 @@
       card.querySelector('#gapSort').onchange = (e) => { state.config.analytics.gapSort = e.target.value; persist(); render(); };
       const tbody = card.querySelector('#gapRows');
       if (sorted.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="small">Sin gaps registrados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="small">Sin gaps registrados.</td></tr>';
       } else {
         sorted.forEach(g => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${g.q}</td><td>${g.zero || 0}</td><td>${g.low || 0}</td><td class="small">${new Date(g.lastAt).toLocaleString()}</td><td>${g.space || 'all'}</td>`;
+          const task = taskByGap[g.id];
+          tr.innerHTML = `<td>${g.q}</td><td>${g.zero || 0}</td><td>${g.low || 0}</td><td class="small">${new Date(g.lastAt).toLocaleString()}</td><td class="small">${task ? `Asignado a ${state.users.find(u => u.id===task.assignedTo)?.name || 'N/A'} · vence ${new Date(task.dueAt).toLocaleDateString()}` : 'No asignado'}</td>`;
+          const actionTd = document.createElement('td');
+          const btn = document.createElement('button');
+          btn.className = 'btn ghost small';
+          btn.textContent = task ? 'Crear borrador' : 'Asignar + crear';
+          btn.onclick = () => {
+            let currentTask = taskByGap[g.id];
+            if (!currentTask) currentTask = addGapTask({ gapId: g.id, assignedTo: state.currentUser.id, slaDays: 7 });
+            const draft = createDocFromGap(g.id);
+            toast('Borrador creado desde gap');
+            if (draft) location.hash = `#/edit/${draft.id}`;
+          };
+          actionTd.appendChild(btn);
+          tr.appendChild(actionTd);
           tbody.appendChild(tr);
         });
       }
@@ -2004,6 +2651,7 @@
         return b.updatedAt - a.updatedAt;
       });
       const staleList = sortDocs(metrics.health.stale);
+      const dueSoonList = sortDocs(metrics.health.dueSoon || []);
       const draftList = sortDocs(metrics.health.drafts);
       const noOwnerList = sortDocs(metrics.health.noOwner);
       card.className = 'card';
@@ -2021,9 +2669,10 @@
             </select>
           </div>
         </div>
-        <div class="grid three" style="margin-top:12px;">
+        <div class="grid two" style="margin-top:12px;">
           ${metricTile('Sin owner', noOwnerList.length, noOwnerList.length ? 'warning' : '')}
-          ${metricTile('Viejos', staleList.length, staleList.length ? 'warning' : '')}
+          ${metricTile('Revisión vencida', staleList.length, staleList.length ? 'warning' : '')}
+          ${metricTile('Por vencer', dueSoonList.length, dueSoonList.length ? 'warning' : '')}
           ${metricTile('Drafts estancados', draftList.length, draftList.length ? 'warning' : '')}
         </div>
         <div class="grid three" style="margin-top:12px;">
@@ -2032,8 +2681,12 @@
             ${noOwnerList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.space}</span></div>`).join('') || '<p class="small">Todos tienen dueño.</p>'}
           </div>
           <div>
-            <h4>Viejos (&gt; ${staleThresholdDays}d)</h4>
-            ${staleList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin pendientes.</p>'}
+            <h4>Revisión vencida</h4>
+            ${staleList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.nextReviewAt || d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin pendientes.</p>'}
+          </div>
+          <div>
+            <h4>Por vencer (&lt;7d)</h4>
+            ${dueSoonList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.nextReviewAt || d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin próximos vencimientos.</p>'}
           </div>
           <div>
             <h4>Draft/In review estancados</h4>
