@@ -1794,7 +1794,8 @@
       const baseFiltered = state.docs.filter(d => {
         const matchesType = type === 'all' || d.type === type;
         const matchesSpace = space === 'all' || d.space === space;
-        const matchesTags = tags.length === 0 || tags.every(t => d.tags.map(x => x.toLowerCase()).includes(t.toLowerCase()));
+        const normalizedTags = (d.tags || []).map(x => x.toLowerCase());
+        const matchesTags = tags.length === 0 || tags.every(t => normalizedTags.includes(t.toLowerCase()));
         const matchesDate = !rangeDays || d.updatedAt >= now - rangeDays * 86400000;
         const allowed = canViewDoc(d);
         return matchesType && matchesSpace && matchesTags && matchesDate && allowed;
@@ -1807,12 +1808,13 @@
         return acc;
       }, {});
       const scored = baseFiltered.map(doc => {
+        const docTags = doc.tags || [];
         let score = 0;
         if (terms.length === 0 && !normalized) score += Math.log1p(doc.views || 0);
         terms.forEach(t => {
           const titleProx = bestFuzzyScore(doc.title, t);
           if (titleProx >= 0.35) score += 3 * titleProx;
-          const tagProx = Math.max(0, ...doc.tags.map(tag => bestFuzzyScore(tag, t)));
+          const tagProx = Math.max(0, ...docTags.map(tag => bestFuzzyScore(tag, t)));
           if (tagProx >= 0.35) score += 2 * tagProx;
           const contentProx = bestFuzzyScore(doc.content, t);
           if (contentProx >= 0.35) score += 1.5 * contentProx;
@@ -3132,7 +3134,8 @@
       canvas.width = width;
       canvas.height = height;
       ctx.clearRect(0, 0, width, height);
-      const max = Math.max(...data.map(d => d.value), 1);
+      const values = data.map(d => d.value || 0);
+      const max = Math.max(...values, 1);
       const barWidth = (width - 40) / data.length;
       data.forEach((d, i) => {
         const h = (d.value / max) * (height - 40);
