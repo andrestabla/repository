@@ -322,7 +322,35 @@
       return (ext || '').toLowerCase().replace(/^\./, '');
     }
 
-    const DATA_VERSION = '2024-embed-refresh';
+    const DATA_VERSION = '2024-review-cycle-refresh';
+
+    const TAXONOMY_CANONICAL = ['sop','procedimiento','faq','postmortem','playbook','educacion','digital','liderazgo','audio','video','excel','ppt','induccion','referencia','investigacion'];
+    const TAXONOMY_NORMALIZATION = {
+      'sops': 'sop',
+      's.o.p': 'sop',
+      'procedimientos': 'procedimiento',
+      'procedimiento': 'procedimiento',
+      'procedures': 'procedimiento',
+      'faqs': 'faq',
+      'preguntas': 'faq',
+      'post mortem': 'postmortem',
+      'post-mortem': 'postmortem',
+      'ppt': 'ppt',
+      'pptx': 'ppt',
+      'excel': 'excel',
+      'xls': 'excel',
+      'xlsx': 'excel'
+    };
+
+    function normalizeTags(rawTags = []) {
+      const normalized = rawTags.map(t => {
+        const key = t.trim().toLowerCase();
+        if (TAXONOMY_NORMALIZATION[key]) return TAXONOMY_NORMALIZATION[key];
+        if (TAXONOMY_CANONICAL.includes(key)) return key;
+        return key;
+      }).filter(Boolean);
+      return Array.from(new Set(normalized));
+    }
 
     function mimeFromExt(ext = '') {
       const map = {
@@ -362,6 +390,31 @@
       }
     }
 
+    function computeReviewFields(doc) {
+      const fallbackReviewed = doc.lastReviewedAt || doc.updatedAt || Date.now();
+      const reviewEveryDays = doc.reviewEveryDays || 45;
+      const nextReviewAt = doc.nextReviewAt || (fallbackReviewed + reviewEveryDays * 86400000);
+      const freshness = (() => {
+        const now = Date.now();
+        if (nextReviewAt < now) return 'vencido';
+        if (nextReviewAt < now + 7 * 86400000) return 'por vencer';
+        return 'al día';
+      })();
+      return {
+        ...doc,
+        owner: doc.owner || 'Sin owner',
+        ownerId: doc.ownerId || '',
+        tags: normalizeTags(doc.tags || []),
+        classification: doc.classification || 'interno',
+        retentionDays: doc.retentionDays || 365,
+        audience: doc.audience || ['viewer','editor','admin','manager'],
+        lastReviewedAt: fallbackReviewed,
+        reviewEveryDays,
+        nextReviewAt,
+        freshness
+      };
+    }
+
     const baseDocs = [
       {
         id: 'd1',
@@ -369,6 +422,12 @@
         type: 'wiki',
         space: 'Talento',
         owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['editor','admin','manager','viewer'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 25 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 1 * 86400000,
         tags: ['educacion', 'referencia'],
@@ -387,6 +446,12 @@
         type: 'wiki',
         space: 'Operaciones',
         owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['editor','admin','manager'],
+        reviewEveryDays: 60,
+        lastReviewedAt: Date.now() - 30 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 2 * 86400000,
         tags: ['investigacion', 'colombia'],
@@ -405,6 +470,12 @@
         type: 'faq',
         space: 'TI',
         owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'interno',
+        retentionDays: 730,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 120,
+        lastReviewedAt: Date.now() - 50 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 3 * 86400000,
         tags: ['ciencia', 'base'],
@@ -423,6 +494,12 @@
         type: 'postmortem',
         space: 'Comercial',
         owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'confidencial',
+        retentionDays: 180,
+        audience: ['editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now() - 20 * 86400000,
         status: 'in_review',
         updatedAt: Date.now() - 4 * 86400000,
         tags: ['digital', 'transformacion'],
@@ -441,6 +518,12 @@
         type: 'playbook',
         space: 'Operaciones',
         owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'restringido',
+        retentionDays: 365,
+        audience: ['admin','manager'],
+        reviewEveryDays: 30,
+        lastReviewedAt: Date.now() - 35 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 5 * 86400000,
         tags: ['benchmark', 'educacion'],
@@ -459,6 +542,12 @@
         type: 'playbook',
         space: 'Talento',
         owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 10 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 6 * 86400000,
         tags: ['liderazgo', 'video'],
@@ -477,6 +566,12 @@
         type: 'playbook',
         space: 'TI',
         owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 90,
+        lastReviewedAt: Date.now() - 12 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 7 * 86400000,
         tags: ['liderazgo', 'comunicacion'],
@@ -495,6 +590,12 @@
         type: 'procedimiento',
         space: 'Operaciones',
         owner: seedUsers[0].name,
+        ownerId: seedUsers[0].id,
+        classification: 'interno',
+        retentionDays: 90,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 60,
+        lastReviewedAt: Date.now() - 18 * 86400000,
         status: 'published',
         updatedAt: Date.now() - 8 * 86400000,
         tags: ['audio', 'induccion'],
@@ -513,6 +614,12 @@
         type: 'procedimiento',
         space: 'Comercial',
         owner: seedUsers[1].name,
+        ownerId: seedUsers[1].id,
+        classification: 'confidencial',
+        retentionDays: 180,
+        audience: ['admin','manager'],
+        reviewEveryDays: 30,
+        lastReviewedAt: Date.now() - 15 * 86400000,
         status: 'draft',
         updatedAt: Date.now() - 9 * 86400000,
         tags: ['finanzas', 'excel'],
@@ -531,6 +638,12 @@
         type: 'playbook',
         space: 'TI',
         owner: seedUsers[2].name,
+        ownerId: seedUsers[2].id,
+        classification: 'restringido',
+        retentionDays: 365,
+        audience: ['admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now() - 22 * 86400000,
         status: 'in_review',
         updatedAt: Date.now() - 10 * 86400000,
         tags: ['estrategia', 'ppt'],
@@ -547,7 +660,7 @@
 
     const resourceDocs = [];
 
-    const seedDocs = [...baseDocs, ...resourceDocs];
+    const seedDocs = [...baseDocs, ...resourceDocs].map(computeReviewFields);
 
     const seedVersions = seedDocs.map(doc => ({
       id: crypto.randomUUID(),
@@ -560,6 +673,15 @@
       tags: doc.tags,
       type: doc.type,
       space: doc.space,
+      owner: doc.owner,
+      ownerId: doc.ownerId,
+      classification: doc.classification,
+      retentionDays: doc.retentionDays,
+      audience: doc.audience,
+      reviewEveryDays: doc.reviewEveryDays,
+      lastReviewedAt: doc.lastReviewedAt,
+      nextReviewAt: doc.nextReviewAt,
+      freshness: doc.freshness,
       attachments: doc.attachments,
       ext: doc.ext,
       mime: doc.mime,
@@ -613,6 +735,7 @@
         return {
           ...structuredClone(seedState),
           ...parsed,
+          docs: (parsed.docs || seedDocs).map(computeReviewFields),
           events: (parsed.events || []).slice(-eventLimit),
           config: mergedConfig,
           session: parsed.session ?? null,
@@ -993,7 +1116,25 @@
         });
         tasks.appendChild(ul);
       }
-      container.append(hero, feeds, tasks);
+      const reviewCard = document.createElement('div');
+      reviewCard.className = 'card';
+      const ownDocs = state.docs.filter(d => d.ownerId === state.currentUser.id).map(computeReviewFields);
+      const dueSoon = ownDocs.filter(d => d.nextReviewAt <= Date.now() + 7 * 86400000);
+      reviewCard.innerHTML = `<div class="flex space-between"><h3>Revisiones del owner</h3><span class="small">Frescura automática</span></div>`;
+      if (!dueSoon.length) {
+        reviewCard.innerHTML += '<p class="small">Sin pendientes próximos.</p>';
+      } else {
+        const list = document.createElement('div');
+        list.className = 'grid';
+        dueSoon.sort((a, b) => a.nextReviewAt - b.nextReviewAt).forEach(d => {
+          const row = document.createElement('div');
+          row.className = 'flex space-between';
+          row.innerHTML = `<span>${d.title}</span><span class="small">Revisar antes de ${new Date(d.nextReviewAt).toLocaleDateString()} (${d.freshness})</span>`;
+          list.appendChild(row);
+        });
+        reviewCard.appendChild(list);
+      }
+      container.append(hero, feeds, tasks, reviewCard);
       return container;
     }
 
@@ -1151,6 +1292,7 @@
             <span class="tag">${r.type}</span>
             <span class="tag">${r.space}</span>
             ${r.ext ? `<span class="tag">${r.ext.toUpperCase()}</span>` : ''}
+            ${r.classification ? `<span class="tag">${r.classification}</span>` : ''}
             ${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}
           </div>`;
         list.appendChild(item);
@@ -1231,19 +1373,20 @@
     }
 
     function renderDoc(id) {
-      const doc = state.docs.find(d => d.id === id);
+      const docRef = state.docs.find(d => d.id === id);
       const container = document.createElement('div');
       container.className = 'grid';
-      if (!doc) {
+      if (!docRef) {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = '<h2>Documento no encontrado</h2>';
         container.appendChild(card);
         return container;
       }
-      doc.views += 1;
-      logEvent('doc_viewed', { docId: doc.id, status: doc.status });
+      docRef.views = (docRef.views || 0) + 1;
+      logEvent('doc_viewed', { docId: docRef.id, status: docRef.status });
       persist();
+      const doc = computeReviewFields(docRef);
 
       const assetFrom = (item, fallbackTitle) => {
         const ext = normalizeExt(item?.ext || item?.type || extFromUrl(item?.url));
@@ -1272,11 +1415,28 @@
               ${doc.ext ? `<span class="tag">${doc.ext.toUpperCase()}</span>` : ''}
               ${doc.tags.map(t => `<span class="tag">${t}</span>`).join('')}
               <span class="tag">Owner: ${doc.owner}</span>
+              <span class="tag">Clasificación: ${doc.classification || 'interno'}</span>
+              <span class="tag">Retención: ${doc.retentionDays || 365}d</span>
+              <span class="tag">Frescura: ${doc.freshness || 'al día'}</span>
             </div>
           </div>
           <div class="flex">
             <div class="status ${doc.status}">${doc.status}</div>
             ${['editor','admin'].includes(state.currentUser.role) ? `<button class="btn ghost" onclick="location.hash='#/edit/${doc.id}'">Editar</button>` : ''}
+          </div>
+        </div>
+        <div class="grid two" style="margin:10px 0;">
+          <div class="card" style="padding:10px; background:var(--surface-2);">
+            <div class="small">Owner</div>
+            <strong>${doc.owner}</strong>
+            <div class="small">Audiencia: ${(doc.audience || []).join(', ') || 'Todas'}</div>
+            <div class="small">Clasificación: ${doc.classification || 'interno'} · Retención: ${doc.retentionDays || 365} días</div>
+          </div>
+          <div class="card" style="padding:10px; background:var(--surface-2);">
+            <div class="small">Revisión</div>
+            <strong>Próxima: ${new Date(doc.nextReviewAt || Date.now()).toLocaleDateString()}</strong>
+            <div class="small">Última: ${new Date(doc.lastReviewedAt || doc.updatedAt).toLocaleDateString()} · Cada ${doc.reviewEveryDays || 45} días</div>
+            <div class="small">Estado: ${doc.freshness || 'al día'}</div>
           </div>
         </div>
         <p>${doc.content}</p>
@@ -1536,6 +1696,12 @@
         type: 'wiki',
         space: spaces[0],
         owner: state.currentUser.name,
+        ownerId: state.currentUser.id,
+        classification: 'interno',
+        retentionDays: 365,
+        audience: ['viewer','editor','admin','manager'],
+        reviewEveryDays: 45,
+        lastReviewedAt: Date.now(),
         status: 'draft',
         updatedAt: Date.now(),
         tags: [],
@@ -1593,7 +1759,45 @@
             </div>
             <div>
               <label>Etiquetas (coma)</label>
-              <input id="tags" value="${doc.tags.join(', ')}" />
+              <input id="tags" list="tagSuggestions" value="${doc.tags.join(', ')}" />
+              <datalist id="tagSuggestions">${TAXONOMY_CANONICAL.map(t => `<option value="${t}"></option>`).join('')}</datalist>
+              <span class="small">Taxonomía controlada: sugerimos ${TAXONOMY_CANONICAL.slice(0,6).join(', ')}...</span>
+            </div>
+            <div>
+              <label>Owner (obligatorio)</label>
+              <select id="owner">${state.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('')}</select>
+            </div>
+            <div>
+              <label>Clasificación</label>
+              <select id="classification">
+                <option value="interno">Interno</option>
+                <option value="confidencial">Confidencial</option>
+                <option value="restringido">Restringido</option>
+              </select>
+            </div>
+            <div>
+              <label>Retención (días)</label>
+              <input id="retention" type="number" min="30" value="${doc.retentionDays || 365}" />
+            </div>
+          </div>
+          <div class="grid two">
+            <div>
+              <label>Audiencia (roles)</label>
+              <div id="audienceWrap" class="grid" style="grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap:6px;"></div>
+            </div>
+            <div>
+              <label>Ciclo de revisión</label>
+              <div class="grid two">
+                <div>
+                  <label class="small">Cada (días)</label>
+                  <input id="reviewEvery" type="number" min="7" value="${doc.reviewEveryDays || 45}" />
+                </div>
+                <div>
+                  <label class="small">Última revisión</label>
+                  <input id="lastReviewed" type="date" value="${new Date(doc.lastReviewedAt || Date.now()).toISOString().slice(0,10)}" />
+                </div>
+              </div>
+              <div class="small" id="reviewPreview">Próxima revisión: --</div>
             </div>
           </div>
           <div class="grid two">
@@ -1620,6 +1824,8 @@
         <span class="small">Autosave cada ${autoSaveMs/1000}s · Versión actual: ${doc.version || 0}</span>`;
       card.querySelector('#type').value = doc.type;
       card.querySelector('#space').value = doc.space;
+      card.querySelector('#owner').value = doc.ownerId || state.currentUser.id;
+      card.querySelector('#classification').value = doc.classification || 'interno';
       const templateSelector = card.querySelector('#template');
       templateSelector.onchange = (e) => {
         const tpl = templates[e.target.value];
@@ -1629,6 +1835,30 @@
         if (tpl.title.startsWith('SOP')) card.querySelector('#type').value = 'procedimiento';
         if (tpl.title.startsWith('FAQ')) card.querySelector('#type').value = 'faq';
       };
+
+      const audienceWrap = card.querySelector('#audienceWrap');
+      const selectedAudience = new Set(doc.audience || ['viewer','editor','admin','manager']);
+      ['viewer','editor','admin','manager'].forEach(role => {
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '6px';
+        label.innerHTML = `<input type="checkbox" value="${role}" ${selectedAudience.has(role) ? 'checked' : ''}/> ${role}`;
+        audienceWrap.appendChild(label);
+      });
+
+      const reviewPreview = card.querySelector('#reviewPreview');
+      const reviewEveryInput = card.querySelector('#reviewEvery');
+      const lastReviewedInput = card.querySelector('#lastReviewed');
+      const refreshReviewPreview = () => {
+        const every = Number(reviewEveryInput.value) || 30;
+        const last = new Date(lastReviewedInput.value || new Date()).getTime();
+        const computed = computeReviewFields({ ...doc, reviewEveryDays: every, lastReviewedAt: last });
+        reviewPreview.textContent = `Próxima revisión: ${new Date(computed.nextReviewAt).toLocaleDateString()} · Frescura: ${computed.freshness}`;
+      };
+      reviewEveryInput.oninput = refreshReviewPreview;
+      lastReviewedInput.onchange = refreshReviewPreview;
+      refreshReviewPreview();
       const updateResourceMeta = () => {
         const msg = `Fuente: ${doc.sourceType === 'upload' ? 'cargado' : 'enlace'} · ${doc.ext?.toUpperCase() || 'sin ext'} · ${doc.mime || ''}`;
         card.querySelector('#resourceMeta').textContent = msg;
@@ -1703,20 +1933,30 @@
       const title = card.querySelector('#title').value.trim() || 'Sin título';
       const type = card.querySelector('#type').value;
       const space = card.querySelector('#space').value;
-      const tags = card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
+      const tags = normalizeTags(card.querySelector('#tags').value.split(',').map(t => t.trim()).filter(Boolean));
+      const ownerId = card.querySelector('#owner').value;
+      if (!ownerId) { toast('Elige un owner'); throw new Error('owner requerido'); }
+      const ownerUser = state.users.find(u => u.id === ownerId);
+      const classification = card.querySelector('#classification').value;
+      const retentionDays = Number(card.querySelector('#retention').value) || 365;
+      const reviewEveryDays = Number(card.querySelector('#reviewEvery').value) || 45;
+      const lastReviewedAt = new Date(card.querySelector('#lastReviewed').value || new Date()).getTime();
+      const audience = Array.from(card.querySelectorAll('#audienceWrap input:checked')).map(i => i.value);
       const content = card.querySelector('#content').value;
-      return { ...base, title, type, space, tags, content, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, ext: base.ext || 'html', mime: base.mime || mimeFromExt(base.ext || 'html'), sourceType: base.sourceType || 'url', url: base.url || 'https://example.com' };
+      const nextReviewAt = lastReviewedAt + reviewEveryDays * 86400000;
+      return { ...base, title, type, space, tags, content, owner: ownerUser?.name || base.owner || 'Sin owner', ownerId, classification, retentionDays, audience, reviewEveryDays, lastReviewedAt, nextReviewAt, freshness: computeReviewFields({ ...base, reviewEveryDays, lastReviewedAt, nextReviewAt }).freshness, status: statusOverride || base.status, updatedAt: Date.now(), version: base.version ?? 0, ext: base.ext || 'html', mime: base.mime || mimeFromExt(base.ext || 'html'), sourceType: base.sourceType || 'url', url: base.url || 'https://example.com' };
     }
 
     function upsertDoc(doc) {
-      const idx = state.docs.findIndex(d => d.id === doc.id);
+      const normalizedDoc = computeReviewFields(doc);
+      const idx = state.docs.findIndex(d => d.id === normalizedDoc.id);
       if (idx >= 0) {
-        state.docs[idx] = doc;
+        state.docs[idx] = normalizedDoc;
       } else {
-        state.docs.push(doc);
+        state.docs.push(normalizedDoc);
       }
       persist();
-      return doc;
+      return normalizedDoc;
     }
 
     function createSnapshot(doc, reason) {
@@ -1845,7 +2085,8 @@
       const docsBySpace = state.docs.filter(d => space === 'all' || d.space === space);
       const health = {
         noOwner: docsBySpace.filter(d => !d.owner),
-        stale: docsBySpace.filter(d => now - d.updatedAt > staleThresholdDays * 86400000),
+        stale: docsBySpace.filter(d => computeReviewFields(d).freshness === 'vencido'),
+        dueSoon: docsBySpace.filter(d => computeReviewFields(d).freshness === 'por vencer'),
         drafts: docsBySpace.filter(d => d.status !== 'published' && now - d.updatedAt > draftStuckDays * 86400000)
       };
 
@@ -2048,6 +2289,7 @@
         return b.updatedAt - a.updatedAt;
       });
       const staleList = sortDocs(metrics.health.stale);
+      const dueSoonList = sortDocs(metrics.health.dueSoon || []);
       const draftList = sortDocs(metrics.health.drafts);
       const noOwnerList = sortDocs(metrics.health.noOwner);
       card.className = 'card';
@@ -2065,9 +2307,10 @@
             </select>
           </div>
         </div>
-        <div class="grid three" style="margin-top:12px;">
+        <div class="grid two" style="margin-top:12px;">
           ${metricTile('Sin owner', noOwnerList.length, noOwnerList.length ? 'warning' : '')}
-          ${metricTile('Viejos', staleList.length, staleList.length ? 'warning' : '')}
+          ${metricTile('Revisión vencida', staleList.length, staleList.length ? 'warning' : '')}
+          ${metricTile('Por vencer', dueSoonList.length, dueSoonList.length ? 'warning' : '')}
           ${metricTile('Drafts estancados', draftList.length, draftList.length ? 'warning' : '')}
         </div>
         <div class="grid three" style="margin-top:12px;">
@@ -2076,8 +2319,12 @@
             ${noOwnerList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${d.space}</span></div>`).join('') || '<p class="small">Todos tienen dueño.</p>'}
           </div>
           <div>
-            <h4>Viejos (&gt; ${staleThresholdDays}d)</h4>
-            ${staleList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin pendientes.</p>'}
+            <h4>Revisión vencida</h4>
+            ${staleList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.nextReviewAt || d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin pendientes.</p>'}
+          </div>
+          <div>
+            <h4>Por vencer (&lt;7d)</h4>
+            ${dueSoonList.map(d => `<div class="flex space-between"><span>${d.title}</span><span class="small">${new Date(d.nextReviewAt || d.updatedAt).toLocaleDateString()}</span></div>`).join('') || '<p class="small">Sin próximos vencimientos.</p>'}
           </div>
           <div>
             <h4>Draft/In review estancados</h4>
