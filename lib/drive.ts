@@ -52,7 +52,9 @@ export const listDriveFiles = async (folderId: string): Promise<DriveFile[]> => 
             q: `'${folderId}' in parents and trashed = false`,
             fields: 'files(id, name, mimeType, thumbnailLink, webViewLink)',
             pageSize: 50,
-            orderBy: 'name'
+            orderBy: 'name',
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
         })
 
         const files = res.data.files || []
