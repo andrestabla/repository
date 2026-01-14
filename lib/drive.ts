@@ -9,8 +9,7 @@ if (typeof global.DOMMatrix === 'undefined') {
 }
 
 // @ts-ignore
-const pdfParse = require('pdf-parse')
-const pdf = typeof pdfParse === 'function' ? pdfParse : (pdfParse.default || pdfParse)
+const pdf = require('pdf-parse')
 
 /**
  * Utility functions for handling Google Drive links and IDs
