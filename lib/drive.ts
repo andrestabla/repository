@@ -1,5 +1,9 @@
+
 import { google } from 'googleapis'
 import { SystemSettingsService } from './settings'
+
+// @ts-ignore
+const pdf = require('pdf-parse')
 
 /**
  * Utility functions for handling Google Drive links and IDs
@@ -69,16 +73,53 @@ export const listDriveFiles = async (folderId: string): Promise<DriveFile[]> => 
 
     } catch (error) {
         console.error("Drive API Error:", error)
-
-        // If config is missing, fallback to empty to avoid crashing UI, but log error
-        // Or rethrow if we want specific error handling in the route
         if (String(error).includes('Service Account')) {
-            // Return mock data ONLY if really needed for dev, but user requested REAL.
-            // Let's return empty with error signal in name if something critical fails?
-            // Better to return empty list so the UI shows "No files" or error toast.
             throw error
         }
-
         throw error
+    }
+}
+
+export const getFileContent = async (fileId: string): Promise<string> => {
+    const drive = await getDriveClient()
+
+    // 1. Get File Metadata to check type
+    const meta = await drive.files.get({ fileId, fields: 'mimeType, name' })
+    const mimeType = meta.data.mimeType
+
+    console.log(`[Drive] Fetching content for ${fileId} (${mimeType})`)
+
+    try {
+        if (mimeType === 'application/vnd.google-apps.document') {
+            // Google Doc -> Export as Text
+            const res = await drive.files.export({
+                fileId,
+                mimeType: 'text/plain'
+            })
+            return typeof res.data === 'string' ? res.data : ''
+        } else if (mimeType === 'application/pdf') {
+            // PDF -> Download -> Parse
+            const res = await drive.files.get({
+                fileId,
+                alt: 'media'
+            }, { responseType: 'arraybuffer' })
+
+            // @ts-ignore
+            const buffer = Buffer.from(res.data as ArrayBuffer)
+            const data = await pdf(buffer)
+            return data.text
+        } else if (mimeType?.startsWith('text/')) {
+            // Plain Text
+            const res = await drive.files.get({
+                fileId,
+                alt: 'media'
+            })
+            return typeof res.data === 'string' ? res.data : JSON.stringify(res.data)
+        }
+
+        return ''
+    } catch (e) {
+        console.error('Error getting file content:', e)
+        throw new Error('Could not read file content')
     }
 }
