@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { sendAccessRequestEmail } from '@/lib/mail'
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
@@ -29,6 +30,9 @@ export async function POST(req: Request) {
                 role: 'pending' // Pending approval
             }
         })
+
+        // Notify Admin
+        await sendAccessRequestEmail(email, name)
 
         return NextResponse.json({ success: true, role: 'pending' })
     } catch (e) {
