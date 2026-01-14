@@ -12,6 +12,7 @@ export type EmailConfig = {
 
 export type DriveConfig = {
     authorizedFolderIds: string[]
+    serviceAccountJson?: string
 }
 
 export class SystemSettingsService {

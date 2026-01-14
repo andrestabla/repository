@@ -20,6 +20,7 @@ type EmailConfig = {
 
 type DriveConfig = {
     authorizedFolderIds: string[]
+    serviceAccountJson?: string
 }
 
 export default function AdminView() {
@@ -379,6 +380,21 @@ export default function AdminView() {
                     {/* DRIVE CONFIG WIZARD */}
                     <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
                         <h3 className="text-lg font-bold text-white mb-4">📂 Carpetas Autorizadas (Google Drive)</h3>
+
+                        <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2 mt-4">
+                            🤖 Service Account (JSON de Credenciales)
+                        </h3>
+                        <div className="bg-[#0d1117] p-4 rounded-lg border border-[var(--border)] mb-6">
+                            <p className="text-xs text-[var(--text-muted)] mb-3">
+                                Pega aquí el contenido del archivo JSON de tu Service Account. Este bot debe tener permiso de <strong>"Lector" o "Editor"</strong> sobre la carpeta raíz.
+                            </p>
+                            <textarea
+                                className="w-full h-32 bg-black/50 border border-[var(--border)] rounded p-2 text-[10px] font-mono text-[var(--success)] focus:outline-none focus:border-[var(--accent)] resize-none"
+                                placeholder='{ "type": "service_account", "project_id": "...", ... }'
+                                value={driveConfig.serviceAccountJson || ''}
+                                onChange={e => setDriveConfig({ ...driveConfig, serviceAccountJson: e.target.value })}
+                            />
+                        </div>
 
                         <div className="mb-6 p-4 bg-[#0d1117] rounded border border-[var(--border)]">
                             <label className="text-xs text-[var(--text-muted)] block mb-2 font-bold">Asistente de Carpeta</label>
