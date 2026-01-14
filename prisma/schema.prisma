@@ -60,18 +60,44 @@ model ContentItem {
   driveId      String?  // 7. Operación: Drive ID
   fileUrl      String?  // 7. Operación: URL Archivo (redundant with driveId but kept for flex)
   uploadedAt   DateTime? // 7. Operación: Fecha Carga
-  version      String   // 7. Operación: Versión (v1.0)
+  version      String   // Editorial version (v1.0)
+  
+  releaseId    String?  // Relationship to formal releases
+  release      MethodologyRelease? @relation(fields: [releaseId], references: [id])
   
   observations String?  // 8. Contexto: Observaciones
   
-  // Legacy fields mapped or kept for compatibility if needed, though we should migrate 'level' to 'maturity'
-  level        String? // Deprecated in favor of maturity, kept for now to avoid break
-  ip           String? // Deprecated in favor of ipOwner/ipType
+  // Legacy fields mapped or kept for compatibility if needed
+  level        String? 
+  ip           String? 
   
-  status       String   // Editorial Status: Borrador, Revisión, Aprobado
+  status       String   // Editorial Status: Borrador, Revisión, Aprobado, Validado
   completeness Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([releaseId])
+}
+
+model MethodologyRelease {
+  id          String   @id @default(cuid())
+  tag         String   @unique // ej. v1.0
+  description String?
+  status      String   // Draft, Active, Frozen
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  contents    ContentItem[]
+}
+
+model Taxonomy {
+  id        String     @id @default(cuid())
+  name      String
+  type      String     // Pillar, Component, Subcomponent
+  active    Boolean    @default(true)
+  order     Int        @default(0)
+  parentId  String?
+  parent    Taxonomy?  @relation("TaxonomyHierarchy", fields: [parentId], references: [id])
+  children  Taxonomy[] @relation("TaxonomyHierarchy")
 }
 
 model User {
@@ -88,15 +114,6 @@ model Artifact {
   type      String
   lastGen   DateTime @updatedAt
   link      String?
-}
-
-model Taxonomy {
-  id        String     @id @default(cuid())
-  name      String
-  type      String     // Pillar, Component, Subcomponent
-  parentId  String?
-  parent    Taxonomy?  @relation("TaxonomyHierarchy", fields: [parentId], references: [id])
-  children  Taxonomy[] @relation("TaxonomyHierarchy")
 }
 
 model SystemSettings {

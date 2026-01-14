@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react'
 import { signIn, signOut } from "next-auth/react"
 import AdminView from './AdminView'
 import ContentForm, { ContentItem } from './ContentForm'
+import TaxonomyManager from './TaxonomyManager'
+import ReleasesView from './ReleasesView'
+import HeatmapView from './HeatmapView'
 
 type UserRole = 'metodologo' | 'curador' | 'auditor' | 'admin' | 'guest' | 'pending'
 
@@ -28,7 +31,11 @@ type TaxonomyItem = {
     id: string
     name: string
     type: string
+    active: boolean
+    order: number
     parentId: string | null
+    children?: TaxonomyItem[]
+    parent?: TaxonomyItem
 }
 
 export default function MethodologySPA({
@@ -41,40 +48,29 @@ export default function MethodologySPA({
     session: Session | null
 }) {
     const [user, setUser] = useState<User | null>(null)
-    const [currentView, setCurrentView] = useState('login')
+    const [currentView, setCurrentView] = useState('inventory')
     const [consoleLog, setConsoleLog] = useState<string[]>([])
+    const [inventoryData, setInventoryData] = useState<ContentItem[]>(initialData)
+    const [isRefreshing, setIsRefreshing] = useState(false)
 
     // Initialize User from Session
     useEffect(() => {
         if (session?.user) {
-            // Use Role from Session or Default to Curador
             const role = (session.user.role as UserRole) || 'curador'
-
             setUser({
                 role: role,
                 name: session.user.name || 'Usuario 4Shine',
-                label: role === 'admin' ? 'Administrador' : 'Builder (Connected)',
+                label: role === 'admin' ? 'Administrador' : role === 'metodologo' ? 'Metodólogo (Arquitecto)' : 'Constructor (Conectado)',
                 avatar: session.user.image ? <img src={session.user.image} alt="avatar" className="w-full h-full rounded-full" /> : '👤',
                 color: role === 'admin' ? '#d73a49' : '#58a6ff'
             })
-            // Default view based on role
             setCurrentView(role === 'admin' ? 'admin' : 'inventory')
         }
 
-        // Load Theme
         const stored = localStorage.getItem('theme')
-        if (stored === 'dark') {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
+        if (stored === 'dark') document.documentElement.classList.add('dark')
     }, [session])
 
-    // Real Data State
-    const [inventoryData, setInventoryData] = useState<ContentItem[]>(initialData)
-    const [isRefreshing, setIsRefreshing] = useState(false)
-
-    // Fetch Logic
     const refreshData = async () => {
         setIsRefreshing(true)
         try {
@@ -88,110 +84,44 @@ export default function MethodologySPA({
         }
     }
 
-    // Upsert Logic
-    const handleUpsert = async (item: ContentItem) => {
+    const compileArtifact = async (releaseTag: string, artifactType: string) => {
+        setConsoleLog([`> Inicializando Compilación: ${artifactType}...`])
         try {
-            const res = await fetch('/api/inventory/upsert', {
+            const res = await fetch('/api/generator', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
+                body: JSON.stringify({ releaseTag, artifactType })
             })
-            if (res.ok) {
-                // Optimistic update or refresh
-                await refreshData()
-                alert('Item guardado correctamente')
-            } else {
-                alert('Error al guardar')
-            }
-        } catch (e) {
-            console.error(e)
-            alert('Error de red')
+            const data = await res.json()
+            if (data.error) throw new Error(data.error)
+
+            setConsoleLog(prev => [...prev, `> Versión Destino: ${releaseTag}`])
+            setConsoleLog(prev => [...prev, `> Activos encontrados: ${data.metadata?.itemCount || 0}`])
+            setConsoleLog(prev => [...prev, `> Generando estructura taxonómica... OK`])
+            setConsoleLog(prev => [...prev, `> ÉXITO: ${artifactType} compilado.`])
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `4SHINE_${artifactType.replace(/\s/g, '_')}_${releaseTag}.json`
+            a.click()
+        } catch (err: any) {
+            setConsoleLog(prev => [...prev, `> ERROR: Compilación fallida: ${err.message}`])
         }
     }
 
-    // Login Logic (Now just triggers Google)
-    const handleLogin = () => {
-        signIn('google')
-    }
-
-    // Console Simulation
-    const simulateCompile = (artifact: string) => {
-        setConsoleLog([`> Initializing Compiler for: ${artifact}...`])
-
-        setTimeout(() => setConsoleLog(prev => [...prev, `> Connecting to Neon DB [v1.0]...`]), 500)
-        setTimeout(() => setConsoleLog(prev => [...prev, `> Fetching taxonomy tree... OK`]), 1000)
-        setTimeout(() => setConsoleLog(prev => [...prev, `> Retrieving approved contents... Found ${initialData.filter(i => i.status === 'Approved').length} items`]), 1500)
-        setTimeout(() => setConsoleLog(prev => [...prev, `> Validating Drive Links... OK`]), 2000)
-        setTimeout(() => setConsoleLog(prev => [...prev, `> SUCCESS: JSON Generated (14kb)`]), 2500)
-    }
-
-    if (!user || user.role === 'guest' || user.role === 'pending') {
-        const isPending = user?.role === 'pending'
-
-        const handleRequestAccess = async () => {
-            try {
-                const res = await fetch('/api/users/request', { method: 'POST' })
-                if (res.ok) {
-                    alert('Solicitud enviada. Un administrador revisará tu acceso.')
-                    window.location.reload()
-                } else {
-                    alert('Error al solicitar acceso')
-                }
-            } catch (e) {
-                alert('Connection error')
-            }
-        }
-
+    if (!user) {
         return (
-            <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center backdrop-blur-sm">
-                <div className="bg-[var(--panel)] p-10 rounded-xl border border-[var(--border)] w-[400px] text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                    <div className="text-4xl mb-2.5">🏗️</div>
-                    <h2 className="mb-1.5 text-2xl font-semibold text-[var(--text-main)]">4Shine Builder</h2>
-                    <p className="text-[var(--text-muted)] mb-8">Sistema de Gestión Metodológica v1.0</p>
-
-                    {!user ? (
-                        <button
-                            onClick={handleLogin}
-                            className="w-full bg-white text-black border border-gray-300 p-2.5 rounded-md font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
-                            Google Workspace Login
-                        </button>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg text-left">
-                                <img src={user.avatar as string} className="w-10 h-10 rounded-full" />
-                                <div>
-                                    <div className="text-[var(--text-main)] font-semibold text-sm">{user.name}</div>
-                                    <div className="text-[var(--text-muted)] text-xs">Conectado como Invitado</div>
-                                </div>
-                            </div>
-
-                            {isPending ? (
-                                <div className="bg-[rgba(210,153,34,0.15)] border border-[rgba(210,153,34,0.3)] text-[var(--warning)] p-3 rounded text-sm mb-2">
-                                    ⏳ Tu solicitud está en revisión. Te notificaremos cuando un administrador la apruebe.
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={handleRequestAccess}
-                                    className="w-full bg-[var(--accent)] text-white p-2.5 rounded-md font-semibold hover:brightness-110 transition-colors"
-                                >
-                                    Solicitar Acceso
-                                </button>
-                            )}
-
-                            <button
-                                onClick={() => signOut()}
-                                className="text-[var(--text-muted)] text-xs hover:text-[var(--text-main)] underline"
-                            >
-                                Cerrar Sesión / Cambiar Cuenta
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="mt-6 text-[10px] text-[var(--text-muted)]">
-                        Acceso restringido a personal autorizado.
-                    </div>
+            <div className="fixed inset-0 bg-[#0d1117] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="text-4xl mb-4 animate-bounce">🏗️</div>
+                    <h2 className="text-xl font-bold text-white mb-6">4Shine Methodology Builder</h2>
+                    <button onClick={() => signIn('google')} className="bg-white text-black px-6 py-3 rounded-lg font-bold hover:bg-gray-200 transition-all flex items-center gap-2">
+                        <img src="https://www.google.com/favicon.ico" className="w-4 h-4" />
+                        Acceder con Google
+                    </button>
+                    <p className="text-text-muted text-[11px] mt-8 uppercase tracking-widest">v1.1 Advanced Architecture</p>
                 </div>
             </div>
         )
@@ -199,522 +129,267 @@ export default function MethodologySPA({
 
     return (
         <div className="grid grid-cols-[260px_1fr] h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-main)] font-ui">
-            {/* Sidebar */}
             <aside className="bg-[var(--panel)] border-r border-[var(--border)] flex flex-col p-5">
                 <div className="text-lg font-bold text-[var(--text-main)] mb-8 flex items-center gap-2.5">
-                    4Shine <span className="text-[10px] bg-[var(--border)] px-1.5 py-0.5 rounded font-code">v1.0</span>
+                    4Shine <span className="text-[10px] bg-[var(--border)] px-1.5 py-0.5 rounded font-code">PRO</span>
                 </div>
 
-                <nav className="flex flex-col gap-0.5">
-                    {/* Admin Nav */}
+                <nav className="flex flex-col gap-0.5 overflow-y-auto">
                     {user?.role === 'admin' && (
                         <>
-                            <div className="text-[11px] uppercase text-[#484f58] mb-2 font-bold tracking-wider">Configuración</div>
-                            <NavBtn id="admin" label="Gestión de Usuarios" icon="🛡️" active={currentView === 'admin'} onClick={() => setCurrentView('admin')} />
-                            <div className="my-4 border-t border-[var(--border)]" />
+                            <div className="text-[10px] uppercase text-text-muted mb-2 font-bold tracking-widest opacity-50">Admin</div>
+                            <NavBtn id="admin" label="Usuarios" icon="🛡️" active={currentView === 'admin'} onClick={() => setCurrentView('admin')} />
+                            <div className="my-4 border-t border-[var(--border)] opacity-30" />
                         </>
                     )}
 
-                    <div className="text-[11px] uppercase text-[#484f58] my-2 font-bold tracking-wider">Acciones</div>
-                    <NavBtn id="inventory" label="Inventario Maestro" icon="🗃️" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
-                    <NavBtn id="gaps" label="Matriz de Brechas" icon="⚠️" active={currentView === 'gaps'} onClick={() => setCurrentView('gaps')} />
-                    <NavBtn id="generator" label="Generador (Dossier)" icon="⚡" active={currentView === 'generator'} onClick={() => setCurrentView('generator')} />
-                    <NavBtn id="qa" label="QA / Revisión" icon="🛡️" active={currentView === 'qa'} onClick={() => setCurrentView('qa')} />
+                    <div className="text-[10px] uppercase text-text-muted mb-2 font-bold tracking-widest opacity-50">Curador</div>
+                    <NavBtn id="inventory" label="Inventario" icon="🗃️" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
+                    <NavBtn id="qa" label="Revisión" icon="⚖️" active={currentView === 'qa'} onClick={() => setCurrentView('qa')} />
+
+                    <div className="text-[10px] uppercase text-text-muted my-4 font-bold tracking-widest opacity-50">Metodólogo</div>
+                    <NavBtn id="taxonomy" label="Taxonomía" icon="🌲" active={currentView === 'taxonomy'} onClick={() => setCurrentView('taxonomy')} />
+                    <NavBtn id="gaps" label="Heatmap" icon="📊" active={currentView === 'gaps'} onClick={() => setCurrentView('gaps')} />
+                    <NavBtn id="releases" label="Versiones" icon="🏷️" active={currentView === 'releases'} onClick={() => setCurrentView('releases')} />
+                    <NavBtn id="generator" label="Compilador" icon="⚡" active={currentView === 'generator'} onClick={() => setCurrentView('generator')} />
                 </nav>
 
                 <div className="mt-auto border-t border-[var(--border)] pt-5">
-                    <button
-                        onClick={() => {
-                            const html = document.documentElement
-                            if (html.classList.contains('dark')) {
-                                html.classList.remove('dark')
-                                localStorage.setItem('theme', 'light')
-                            } else {
-                                html.classList.add('dark')
-                                localStorage.setItem('theme', 'dark')
-                            }
-                        }}
-                        className="w-full mb-4 flex items-center justify-between p-2 rounded bg-[var(--bg)] border border-[var(--border)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                    >
-                        <span className="flex items-center gap-2">
-                            🌗 Tema
-                        </span>
-                        <span className="font-code text-[10px] opacity-70">Cambiar</span>
-                    </button>
-
-                    <div className="flex gap-2.5 items-center">
-                        <div
-                            className="w-8 h-8 rounded-full grid place-items-center overflow-hidden"
-                            style={{ background: typeof user.avatar === 'string' ? user.color + '33' : 'transparent', color: user.color }}
-                        >
-                            {user.avatar}
-                        </div>
+                    <div className="flex gap-2.5 items-center mb-4">
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-border">{user.avatar}</div>
                         <div className="overflow-hidden">
-                            <div className="font-semibold text-[13px] truncate w-[140px]">{user.name}</div>
-                            <div className="text-[var(--text-muted)] text-[11px]">{user.label}</div>
+                            <div className="font-semibold text-[13px] truncate">{user.name}</div>
+                            <div className="text-[11px] text-text-muted">{user.role.toUpperCase()}</div>
                         </div>
                     </div>
-                    <button
-                        onClick={() => signOut()}
-                        className="bg-transparent border-none text-[var(--danger)] text-[11px] mt-2.5 cursor-pointer p-0 hover:underline text-left w-full"
-                    >
-                        Cerrar Sesión
-                    </button>
+                    <button onClick={() => signOut()} className="w-full text-left text-danger text-[11px] hover:underline">Salir del sistema</button>
+                    <div className="mt-4 text-[9px] text-text-muted opacity-30 text-center font-mono">4SHINE-BUILDER-V1.1-RELEASE</div>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <main className="overflow-y-auto p-[0px] h-full">
-                <div className="p-[30px_40px]">
-                    {currentView === 'admin' && <AdminView />}
-                    {currentView === 'gaps' && <GapsView inventory={inventoryData} taxonomy={initialTaxonomy} />}
+            <main className="overflow-y-auto p-10 bg-[#0d1117]/10">
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    {currentView === 'taxonomy' && <TaxonomyManager initialData={initialTaxonomy as any} />}
+                    {currentView === 'releases' && <ReleasesView />}
                     {currentView === 'inventory' && (
                         <InventoryView
                             data={inventoryData}
                             role={user.role}
                             onRefresh={refreshData}
                             isRefreshing={isRefreshing}
-                            onSave={handleUpsert}
                         />
                     )}
-                    {currentView === 'generator' && <GeneratorView inventory={inventoryData} simulateCompile={simulateCompile} consoleLog={consoleLog} />}
+                    {currentView === 'gaps' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy} />}
+                    {currentView === 'generator' && <GeneratorDashboard compileArtifact={compileArtifact} consoleLog={consoleLog} />}
                     {currentView === 'qa' && <QAView data={inventoryData} />}
+                    {currentView === 'admin' && <AdminView />}
                 </div>
             </main>
         </div>
     )
 }
 
-// --- Subcomponents ---
+function HeatmapViewWrapper({ inventory, taxonomy }: { inventory: any[], taxonomy: any[] }) {
+    const subcomponents = taxonomy.filter(t => t.type !== 'Pillar')
+    const levels = ['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']
+    const heatmap: any = {}
+
+    subcomponents.forEach(sub => {
+        heatmap[sub.name] = {}
+        levels.forEach(lvl => {
+            const matches = inventory.filter(i => i.sub === sub.name && i.maturity === lvl)
+            const count = matches.length
+            const hasValidated = matches.some(m => m.status === 'Validado' || m.status === 'Approved')
+            heatmap[sub.name][lvl] = { count, status: count === 0 ? 'red' : hasValidated ? 'green' : 'yellow' }
+        })
+    })
+
+    return <HeatmapView subcomponents={subcomponents} maturityLevels={levels} heatmap={heatmap} />
+}
 
 function NavBtn({ id, label, icon, active, onClick }: { id: string, label: string, icon: string, active: boolean, onClick: () => void }) {
     return (
         <button
             onClick={onClick}
-            className={`w-full text-left p-2.5 rounded-md text-[14px] font-medium flex items-center gap-2.5 transition-all
-        ${active ? 'bg-[rgba(88,166,255,0.1)] text-[var(--accent)]' : 'text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-main)]'}
+            className={`w-full text-left p-2.5 rounded-md text-[13px] font-medium flex items-center gap-3 transition-all
+        ${active ? 'bg-accent/10 text-accent border border-accent/20' : 'text-text-muted hover:bg-white/5 hover:text-white border border-transparent'}
       `}
         >
-            <span>{icon}</span> {label}
+            <span className="text-[16px]">{icon}</span> {label}
         </button>
     )
 }
 
-function GapsView({ inventory, taxonomy }: { inventory: ContentItem[], taxonomy: TaxonomyItem[] }) {
-    // Only subcomponents (items with parentId)
-    const subcomponents = taxonomy.filter(t => t.type !== 'Pillar')
-    const levels = ['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']
-
-    return (
-        <>
-            <header className="flex justify-between items-center mb-8">
-                <div>
-                    <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Matriz de Cobertura (Gap Analysis)</h2>
-                    <div className="text-[13px] text-[var(--text-muted)] mt-1.5">
-                        Basado en <span className="text-[var(--accent)] font-bold">{inventory.length}</span> activos en inventario.
-                    </div>
-                </div>
-                <div className="flex gap-4">
-                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">🔴 Vacío</span>
-                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">🟢 Cubierto</span>
-                </div>
-            </header>
-
-            <div className="grid grid-cols-[200px_repeat(4,1fr)] gap-[2px] bg-[var(--border)] border border-[var(--border)] rounded-md overflow-hidden">
-                {['Subcomponente', ...levels].map(h => (
-                    <div key={h} className="bg-[var(--bg)] p-4 flex items-center justify-center text-sm min-h-[60px] font-semibold text-[var(--text-muted)] first:justify-start first:pl-5">
-                        {h}
-                    </div>
-                ))}
-
-                {subcomponents.map(sub => {
-                    return (
-                        <React.Fragment key={sub.id}>
-                            <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-[var(--text-main)]">{sub.name}</div>
-                            {levels.map(lvl => {
-                                const items = inventory.filter(i => i.sub === sub.name && (i.maturity === lvl || i.level === lvl))
-                                const count = items.length
-                                const hasApproved = items.some(i => i.status === 'Approved')
-
-                                return (
-                                    <div key={lvl} className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: count === 0 ? 'rgba(218, 54, 51, 0.05)' : '' }}>
-                                        {count > 0 ? (
-                                            <div className="flex flex-col items-center">
-                                                <div className={`w-2.5 h-2.5 rounded-full mb-1 ${hasApproved ? 'bg-[var(--success)] shadow-[0_0_8px_rgba(46,160,67,0.4)]' : 'bg-[var(--warning)]'}`}></div>
-                                                <span className="text-[10px] text-[var(--text-muted)]">{count} item{count > 1 ? 's' : ''}</span>
-                                            </div>
-                                        ) : (
-                                            <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_6px_rgba(218,54,51,0.2)]"></div>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </React.Fragment>
-                    )
-                })}
-            </div>
-        </>
-    )
-}
-
-
-
-function InventoryView({
-    data, role, onRefresh, isRefreshing, onSave
-}: {
-    data: ContentItem[],
-    role: UserRole,
-    onRefresh: () => void,
-    isRefreshing: boolean,
-    onSave: (item: ContentItem) => void
-}) {
+function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentItem[], role: string, onRefresh: () => void, isRefreshing: boolean }) {
     const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null)
     const [showForm, setShowForm] = useState(false)
-    const [formInitialData, setFormInitialData] = useState<ContentItem | null>(null)
-
-    const handleEdit = (item: ContentItem) => {
-        setFormInitialData(item)
-        setShowForm(true)
-    }
-
-    const handleNew = () => {
-        setFormInitialData(null)
-        setShowForm(true)
-    }
-
-    const handleFormSave = () => {
-        setShowForm(false)
-        onRefresh() // Refresh data after save
-    }
 
     return (
-        <>
-            <header className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)] flex items-center gap-3">
-                    Inventario Maestro
-                    <button
-                        onClick={onRefresh}
-                        className={`text-[12px] bg-[var(--panel)] border border-[var(--border)] p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all ${isRefreshing ? 'animate-spin' : ''}`}
-                        title="Refrescar Datos"
-                    >
-                        🔄
-                    </button>
+        <div className="space-y-6">
+            <header className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                    Inventario de Activos
+                    <button onClick={onRefresh} className={`${isRefreshing ? 'animate-spin' : ''} text-lg`}>🔄</button>
                 </h2>
-                <div className="flex gap-2">
-                    {selectedItem && (
-                        <button
-                            onClick={() => setSelectedItem(null)}
-                            className="bg-[var(--panel)] border border-[var(--border)] text-[var(--text-muted)] px-3 py-1.5 rounded-md text-[12px] hover:text-[var(--text-main)]"
-                        >
-                            Cerrar Vista
-                        </button>
-                    )}
-                    {role === 'curador' && (
-                        <button
-                            onClick={handleNew}
-                            className="bg-[var(--success)] border border-white/10 text-[var(--text-main)] px-4 py-2 rounded-md font-semibold text-[13px] hover:opacity-90 transition-transform active:scale-95"
-                        >
-                            + Nuevo Activo
-                        </button>
-                    )}
-                </div>
+                {role === 'curador' && (
+                    <button onClick={() => { setSelectedItem(null); setShowForm(true); }} className="bg-success text-white px-4 py-2 rounded-lg font-bold text-sm hover:brightness-110 tracking-tight">+ Nuevo Activo</button>
+                )}
             </header>
 
-            <div className={`grid gap-5 transition-all duration-300 ease-in-out ${selectedItem ? 'grid-cols-[40%_60%]' : 'grid-cols-1'}`}>
-
-                {/* Left Panel: List */}
-                <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden flex flex-col h-[calc(100vh-140px)]">
-                    <div className="p-3 border-b border-[var(--border)] bg-bg">
-                        <input
-                            type="text"
-                            placeholder="Buscar activos..."
-                            className="w-full bg-bg border border-[var(--border)] rounded px-3 py-1.5 text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--accent)]"
-                        />
-                    </div>
-
-                    <div className="overflow-y-auto flex-1">
-                        <table className="w-full text-[13px] border-collapse">
-                            <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-sm">
-                                <tr>
-                                    <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Título</th>
-                                    {!selectedItem && <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Estado</th>}
-                                    {!selectedItem && <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Completeness</th>}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data.map(c => (
-                                    <tr
-                                        key={c.id}
-                                        onClick={() => setSelectedItem(c)}
-                                        className={`cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 border-b border-[var(--border)] last:border-0 transition-colors
-                      ${selectedItem?.id === c.id ? 'bg-[rgba(88,166,255,0.1)] border-l-2 border-l-[var(--accent)]' : ''}
-                    `}
-                                    >
-                                        <td className="p-3">
-                                            <div className="font-semibold text-[var(--text-main)] truncate max-w-[300px]">{c.title}</div>
-                                            <div className="text-[11px] text-[var(--text-muted)] font-mono">{c.id}</div>
-                                        </td>
-                                        {!selectedItem && (
-                                            <td className="p-3">
-                                                <StatusBadge status={c.status} />
-                                            </td>
-                                        )}
-                                        {!selectedItem && (
-                                            <td className="p-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-16 bg-gray-700 rounded-full h-1">
-                                                        <div
-                                                            className={`h-1 rounded-full ${c.completeness === 100 ? 'bg-green-400' : 'bg-yellow-400'}`}
-                                                            style={{ width: `${c.completeness}%` }}
-                                                        ></div>
-                                                    </div>
-                                                    <span className="text-[10px] text-[var(--text-muted)]">{c.completeness}%</span>
-                                                </div>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+            <div className="grid grid-cols-[350px_1fr] gap-6 h-[calc(100vh-200px)]">
+                <div className="bg-panel border border-border rounded-xl overflow-y-auto">
+                    {data.map((item: any) => (
+                        <div
+                            key={item.id}
+                            onClick={() => setSelectedItem(item)}
+                            className={`p-4 border-b border-border cursor-pointer hover:bg-white/5 transition-colors ${selectedItem?.id === item.id ? 'bg-accent/5 border-l-4 border-l-accent' : ''}`}
+                        >
+                            <div className="font-bold text-sm text-white truncate">{item.title}</div>
+                            <div className="text-[10px] text-text-muted font-mono mt-1">{item.id} | {item.status}</div>
+                        </div>
+                    ))}
+                    {data.length === 0 && <div className="p-10 text-center text-text-muted italic opacity-40">No hay activos registrados</div>}
                 </div>
 
-                {/* Right Panel: Preview / Edit */}
-                {selectedItem && (
-                    <div className="flex flex-col gap-4 h-[calc(100vh-140px)] overflow-y-auto pr-1">
-
-                        {/* Metadata Card */}
-                        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 shadow-lg">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1 mr-4">
-                                    <h3 className="text-lg font-bold text-[var(--text-main)] leading-tight">{selectedItem.title}</h3>
-                                    <div className="text-sm text-[var(--accent)] font-code mt-1">{selectedItem.id}</div>
-                                </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <StatusBadge status={selectedItem.status} />
-                                    {role === 'curador' && (
-                                        <button
-                                            onClick={() => handleEdit(selectedItem)}
-                                            className="text-xs bg-[var(--accent)] text-white px-3 py-1.5 rounded hover:brightness-110 flex items-center gap-1 shadow-lg shadow-blue-900/20"
-                                        >
-                                            ✏️ Editar Metadatos
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 text-sm bg-black/20 p-4 rounded border border-white/5">
-                                <div>
-                                    <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Pilar 4S</label>
-                                    <div className="text-[var(--text-main)] font-medium">{selectedItem.pillar}</div>
-                                    <div className="text-xs text-[var(--text-muted)]">{selectedItem.sub || '-'}</div>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Drive Reference</label>
-                                    {selectedItem.driveId ? (
-                                        <div className="text-[var(--success)] font-mono text-xs flex items-center gap-1">✅ {selectedItem.driveId.substring(0, 8)}...</div>
-                                    ) : (
-                                        <div className="text-[var(--danger)] text-xs font-bold">⚠️ Missing File</div>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Maturity</label>
-                                    <div className="text-[var(--text-main)]">{selectedItem.maturity || selectedItem.level || 'N/A'}</div>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">IP Owner</label>
-                                    <div className="text-[var(--text-main)]">{selectedItem.ipOwner || selectedItem.ip || 'N/A'}</div>
-                                </div>
-                            </div>
+                {selectedItem ? (
+                    <div className="bg-panel border border-border rounded-xl p-8 overflow-y-auto">
+                        <div className="flex justify-between items-start mb-8">
+                            <h3 className="text-2xl font-bold text-white leading-tight">{selectedItem.title}</h3>
+                            <button onClick={() => setShowForm(true)} className="text-accent text-sm hover:underline font-bold">Editar Metadatos</button>
                         </div>
-
-                        {/* Drive Preview */}
-                        <div className="bg-black border border-[var(--border)] rounded-lg flex-1 min-h-[400px] relative overflow-hidden group shadow-inner">
+                        <div className="grid grid-cols-2 gap-8 mb-8 bg-black/20 p-6 rounded-xl border border-white/5">
+                            <DataPoint label="Pilar 4Shine" value={selectedItem.pillar} />
+                            <DataPoint label="Subcomponente" value={selectedItem.sub} />
+                            <DataPoint label="Nivel Madurez" value={selectedItem.maturity} />
+                            <DataPoint label="Estado Actual" value={selectedItem.status} />
+                        </div>
+                        <div className="aspect-video bg-black rounded-lg border border-border overflow-hidden shadow-2xl">
                             {selectedItem.driveId ? (
-                                <iframe
-                                    src={`https://drive.google.com/file/d/${selectedItem.driveId}/preview`}
-                                    className="w-full h-full border-none"
-                                    allow="autoplay"
-                                ></iframe>
+                                <iframe src={`https://drive.google.com/file/d/${selectedItem.driveId}/preview`} className="w-full h-full border-none" />
                             ) : (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)]">
-                                    <div className="text-4xl mb-2 opacity-30">☁️</div>
-                                    <p className="font-mono text-xs opacity-50">No Document Linked</p>
-                                </div>
-                            )}
-
-                            {selectedItem.driveId && (
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <a
-                                        href={`https://drive.google.com/file/d/${selectedItem.driveId}/view`}
-                                        target="_blank"
-                                        className="bg-black/80 hover:bg-black text-[var(--text-main)] text-xs px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md"
-                                    >
-                                        Abrir Ext. ↗
-                                    </a>
+                                <div className="flex flex-col items-center justify-center h-full text-text-muted opacity-30">
+                                    <div className="text-4xl mb-2">☁️</div>
+                                    <div className="italic">Vista previa no disponible</div>
                                 </div>
                             )}
                         </div>
-
+                    </div>
+                ) : (
+                    <div className="bg-panel border border-border rounded-xl flex items-center justify-center text-text-muted italic opacity-40">
+                        Selecciona un activo de la lista para ver el detalle y previsualización
                     </div>
                 )}
             </div>
 
-            {/* MODAL FORM */}
             {showForm && (
                 <ContentForm
-                    initialData={formInitialData}
+                    initialData={selectedItem}
                     onClose={() => setShowForm(false)}
-                    onSave={handleFormSave}
+                    onSave={() => { setShowForm(false); onRefresh(); }}
                 />
             )}
-        </>
+        </div>
     )
 }
 
-function StatusBadge({ status }: { status: string }) {
-    const styles: Record<string, string> = {
-        Approved: 'text-[var(--success)] bg-[rgba(46,160,67,0.15)] border-[rgba(46,160,67,0.3)]',
-        Review: 'text-[var(--warning)] bg-[rgba(210,153,34,0.15)] border-[rgba(210,153,34,0.3)]',
-        Draft: 'text-[var(--text-muted)] border-[var(--border)]',
-    }
-
-    const defaultStyle = styles.Draft
-
+function DataPoint({ label, value }: { label: string, value: any }) {
     return (
-        <span className={`text-[11px] px-2 py-0.5 rounded-xl font-semibold border ${styles[status] || defaultStyle}`}>
-            {status}
-        </span>
+        <div>
+            <label className="text-[10px] uppercase text-text-muted font-bold tracking-widest block mb-1">{label}</label>
+            <div className="text-[15px] text-white font-medium">{value || 'N/A'}</div>
+        </div>
     )
 }
 
-function GeneratorView({ inventory, simulateCompile, consoleLog }: { inventory: ContentItem[], simulateCompile: (a: string) => void, consoleLog: string[] }) {
-    const approvedCount = inventory.filter(i => i.status === 'Approved').length
+function GeneratorDashboard({ compileArtifact, consoleLog }: { compileArtifact: (v: string, a: string) => void, consoleLog: string[] }) {
+    const [selectedRelease, setSelectedRelease] = useState('v1.0')
+    const [releases, setReleases] = useState<any[]>([])
+
+    useEffect(() => {
+        fetch('/api/releases').then(r => r.json()).then(data => {
+            if (Array.isArray(data)) setReleases(data)
+        })
+    }, [])
 
     return (
-        <>
+        <div className="max-w-6xl">
             <header className="mb-8">
-                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Generador de Artefactos</h2>
-                <div className="text-xs text-[var(--text-muted)] mt-1">
-                    Activos aprobados listos para exportar: <span className="text-[var(--success)] font-bold">{approvedCount}</span>
-                </div>
+                <h2 className="text-[24px] font-bold text-white tracking-tight">Compilador de Metodología (HU-M-04)</h2>
+                <div className="text-[13px] text-text-muted mt-1">Exporta la arquitectura completa y contenidos validados en un solo paquete.</div>
             </header>
 
-            <div className="grid grid-cols-3 gap-5 mb-8">
-                <GeneratorCard
-                    icon="📘"
-                    title="Manual del Facilitador"
-                    desc="Compila PDF con guías paso a paso para mentores. Incluye links a herramientas."
-                    action="Generar JSON"
-                    onClick={() => simulateCompile('Manual Facilitador')}
-                    isPrimary
-                />
-                <GeneratorCard
-                    icon="📂"
-                    title="Dossier Metodológico"
-                    desc="Reporte completo de cobertura, fichas técnicas y gobernanza IP."
-                    action="Generar JSON"
-                    onClick={() => simulateCompile('Dossier Maestro')}
-                />
-                <GeneratorCard
-                    icon="📦"
-                    title="Toolkit (ZIP)"
-                    desc="Descarga masiva de archivos desde Drive organizados por carpeta."
-                    action="Preparar Descarga"
-                    onClick={() => simulateCompile('Toolkit')}
-                />
+            <div className="grid grid-cols-[1fr_2fr] gap-8">
+                <div className="space-y-6">
+                    <div className="bg-panel border border-border rounded-xl p-5 shadow-lg">
+                        <label className="block text-[11px] font-bold text-text-muted uppercase mb-2 tracking-widest">Snapshot de Versión</label>
+                        <select
+                            value={selectedRelease}
+                            onChange={(e) => setSelectedRelease(e.target.value)}
+                            className="w-full bg-[#0d1117] border border-border p-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-accent"
+                        >
+                            {releases.map(r => <option key={r.id} value={r.tag}>{r.tag} ({r.status})</option>)}
+                            {releases.length === 0 && <option value="v1.0">v1.0 (Predeterminado)</option>}
+                        </select>
+                    </div>
+                    <div className="bg-panel border border-border rounded-xl p-6 shadow-lg">
+                        <h4 className="text-[14px] font-bold mb-4 uppercase tracking-widest text-text-muted">Seleccionar Artefacto</h4>
+                        <div className="space-y-3">
+                            <CompBtn label="Dossier Maestro (JSON)" icon="💎" onClick={() => compileArtifact(selectedRelease, 'Dossier Maestro')} />
+                            <CompBtn label="Manual Facilitador (PDF)" icon="📖" onClick={() => compileArtifact(selectedRelease, 'Manual Facilitador')} />
+                            <CompBtn label="Toolkit (ZIP)" icon="📦" onClick={() => compileArtifact(selectedRelease, 'Toolkit')} />
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-black/90 border border-border rounded-xl p-6 font-mono text-[12px] h-[550px] overflow-y-auto scrollbar-thin shadow-2xl">
+                    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10 opacity-50">
+                        <div className="w-2.5 h-2.5 rounded-full bg-danger"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-warning"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-success"></div>
+                        <span className="ml-2 text-[10px]">compiler-output.log</span>
+                    </div>
+                    {consoleLog.length === 0 && <div className="text-text-muted opacity-30 italic">// El sistema está listo para la compilación de datos...</div>}
+                    {consoleLog.map((line, i) => (
+                        <div key={i} className={`mb-1 leading-relaxed ${line.includes('ÉXITO') ? 'text-success font-bold' : line.includes('ERROR') ? 'text-danger' : 'text-[#abb2bf]'}`}>
+                            <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString()}]</span> {line}
+                        </div>
+                    ))}
+                </div>
             </div>
-
-            <div className="bg-black p-4 rounded-md font-code text-xs text-[#0f0] max-h-[200px] overflow-y-auto border border-white/10">
-                {consoleLog.length === 0 ? <span className="text-[#333]">// Ready to generate...</span> : null}
-                {consoleLog.map((line, i) => (
-                    <div key={i}>{line}</div>
-                ))}
-            </div>
-        </>
+        </div>
     )
 }
 
-function GeneratorCard({ icon, title, desc, action, onClick, isPrimary }: any) {
+function CompBtn({ label, icon, onClick }: { label: string, icon: string, onClick: () => void }) {
     return (
-        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
-            <div className="text-3xl mb-2.5">{icon}</div>
-            <h3 className="text-lg font-semibold text-[var(--text-main)] mb-2">{title}</h3>
-            <p className="text-[13px] text-[var(--text-muted)] mb-5 leading-normal">{desc}</p>
-            <button
-                onClick={onClick}
-                className={`w-full py-2 rounded-md font-semibold text-[13px] border hover:opacity-90 transition-opacity
-          ${isPrimary
-                        ? 'bg-[var(--success)] border-white/10 text-[var(--text-main)]'
-                        : 'bg-[var(--border)] border-white/10 text-[var(--text-main)]'}
-        `}
-            >
-                {action}
-            </button>
-        </div>
+        <button onClick={onClick} className="w-full flex items-center gap-3 p-3 bg-[#0d1117] border border-border/60 rounded-lg hover:border-accent group transition-all active:scale-[0.98]">
+            <span className="text-xl group-hover:scale-110 transition-transform">{icon}</span>
+            <span className="text-[12px] font-bold group-hover:text-white text-text-muted">{label}</span>
+        </button>
     )
 }
 
 function QAView({ data }: { data: ContentItem[] }) {
     const reviewItems = data.filter(c => c.status === 'Review')
-    const item = reviewItems[0]
-
     return (
-        <>
-            <header className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Cola de Revisión</h2>
-                <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border text-[var(--warning)] bg-[rgba(210,153,34,0.15)] border-[rgba(210,153,34,0.3)]">
-                    {reviewItems.length} Pendiente{reviewItems.length !== 1 ? 's' : ''}
-                </span>
-            </header>
-
-            {item ? (
-                <div className="grid grid-cols-2 gap-5 h-[600px]">
-                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
-                        <h3 className="font-semibold text-[var(--text-main)] mb-5">Metadatos (Neon DB)</h3>
-                        <div className="grid gap-4">
-                            <div>
-                                <label className="text-[11px] text-[var(--text-muted)] block mb-1">TÍTULO</label>
-                                <div className="font-semibold text-[var(--text-main)]">{item.title}</div>
-                            </div>
-                            <div>
-                                <label className="text-[11px] text-[var(--text-muted)] block mb-1">TAXONOMÍA</label>
-                                <div className="text-[var(--text-main)]">{item.pillar} {'>'} {item.sub}</div>
-                            </div>
-                            <div>
-                                <label className="text-[11px] text-[var(--text-muted)] block mb-1">PROPIEDAD INTELECTUAL</label>
-                                <select className="w-full p-2 bg-[var(--bg)] text-[var(--text-main)] border border-[var(--warning)] rounded">
-                                    <option>{item.ip}</option>
-                                    <option>Propio</option>
-                                </select>
-                                <div className="text-[11px] text-[var(--warning)] mt-1.5 flex items-center gap-1">
-                                    ⚠️ Revisar licencia de tercero
-                                </div>
-                            </div>
-                            <div className="mt-10 grid gap-2.5">
-                                <button className="w-full bg-[var(--success)] border border-white/10 text-[var(--text-main)] py-2 rounded font-semibold hover:opacity-90">
-                                    ✅ Aprobar y Publicar
-                                </button>
-                                <button className="w-full bg-transparent border border-[var(--danger)] text-[var(--danger)] py-2 rounded font-semibold hover:bg-[var(--danger)] hover:text-[var(--text-main)] transition-colors">
-                                    ❌ Rechazar
-                                </button>
-                            </div>
+        <div className="max-w-4xl">
+            <h2 className="text-2xl font-bold text-white mb-8 tracking-tight">Módulo de Aseguramiento de Calidad (QA)</h2>
+            <div className="grid gap-4">
+                {reviewItems.map(item => (
+                    <div key={item.id} className="bg-panel border border-border p-6 rounded-xl flex justify-between items-center group hover:border-accent/30 transition-all shadow-sm">
+                        <div>
+                            <div className="font-bold text-lg text-white group-hover:text-accent transition-colors">{item.title}</div>
+                            <div className="text-xs text-text-muted mt-1 font-mono">{item.id} | {item.pillar} | {item.status}</div>
                         </div>
+                        <button className="bg-accent/10 border border-accent/20 text-accent px-5 py-2.5 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition-all hover:bg-accent hover:text-white">Audit Doc</button>
                     </div>
-
-                    <div className="bg-black border border-dashed border-[var(--text-muted)] rounded-lg flex items-center justify-center">
-                        <div className="text-center">
-                            <div className="text-4xl mb-2">📺</div>
-                            <p className="text-[var(--text-muted)] mb-2">Google Drive Preview</p>
-                            <code className="text-[var(--accent)] font-code text-xs">File ID: {item.driveId}</code>
-                        </div>
+                ))}
+                {reviewItems.length === 0 && (
+                    <div className="bg-panel border border-dashed border-border p-20 text-center rounded-xl">
+                        <div className="text-4xl mb-4 opacity-20">✅</div>
+                        <div className="text-text-muted italic font-medium">No hay activos pendientes de revisión técnica. El inventario está al día.</div>
                     </div>
-                </div>
-            ) : (
-                <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 text-[var(--text-muted)]">
-                    No hay items pendientes de revisión.
-                </div>
-            )}
-        </>
+                )}
+            </div>
+        </div>
     )
 }

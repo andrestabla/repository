@@ -1,43 +1,17 @@
-import prisma from '@/lib/prisma'
+'use client'
+
+import React from 'react'
 import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
+type HeatmapProps = {
+    subcomponents: any[]
+    maturityLevels: string[]
+    heatmap: Record<string, Record<string, { count: number, status: 'red' | 'yellow' | 'green' }>>
+}
 
-export default async function GapAnalysis() {
-    const subcomponents = await prisma.taxonomy.findMany({
-        where: { type: { in: ['Component', 'Subcomponent'] }, active: true },
-        include: { parent: true },
-        orderBy: { name: 'asc' }
-    })
-
-    const maturityLevels = ['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']
-
-    // Fetch all content items to calculate heatmap
-    const contents = await prisma.contentItem.findMany({
-        select: { sub: true, maturity: true, status: true, pillar: true }
-    })
-
-    // Aggregated coverage map
-    const heatmap: Record<string, Record<string, { count: number, status: 'red' | 'yellow' | 'green' }>> = {}
-
-    subcomponents.forEach(sub => {
-        heatmap[sub.name] = {}
-        maturityLevels.forEach(lvl => {
-            const matches = contents.filter(c => c.sub === sub.name && c.maturity === lvl)
-            const count = matches.length
-
-            let status: 'red' | 'yellow' | 'green' = 'red'
-            if (count > 0) {
-                const hasValidated = matches.some(m => m.status === 'Validado' || m.status === 'Approved')
-                status = hasValidated ? 'green' : 'yellow'
-            }
-
-            heatmap[sub.name][lvl] = { count, status }
-        })
-    })
-
+export default function HeatmapView({ subcomponents, maturityLevels, heatmap }: HeatmapProps) {
     return (
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto">
             <header className="mb-8">
                 <h2 className="text-[24px] font-bold text-white tracking-tight">Monitoreo de Cobertura (HU-M-02)</h2>
                 <p className="text-[13px] text-text-muted mt-1">Identifica brechas y gestiona la madurez de la competencia 4Shine.</p>
@@ -62,22 +36,22 @@ export default async function GapAnalysis() {
                                         <div className="text-[10px] text-accent mt-0.5 uppercase">{sub.parent?.name}</div>
                                     </td>
                                     {maturityLevels.map(lvl => {
-                                        const { count, status } = heatmap[sub.name][lvl]
+                                        const node = heatmap[sub.name]?.[lvl]
+                                        if (!node) return <td key={lvl} className="p-2 text-center">-</td>
+
+                                        const { count, status } = node
                                         const bgClass = status === 'green' ? 'bg-success/20 text-success border-success/30'
                                             : status === 'yellow' ? 'bg-warning/20 text-warning border-warning/30'
                                                 : 'bg-danger/20 text-danger border-danger/30'
 
                                         return (
                                             <td key={lvl} className="p-2 text-center">
-                                                <Link
-                                                    href={`/?pilar=${sub.parent?.name}&sub=${sub.name}&level=${lvl}&view=inventory`}
-                                                    className={`inline-flex flex-col items-center justify-center w-full min-h-[50px] rounded-lg border transition-transform active:scale-95 ${bgClass} group`}
-                                                >
+                                                <div className={`inline-flex flex-col items-center justify-center w-full min-h-[50px] rounded-lg border transition-transform active:scale-95 ${bgClass} cursor-pointer group`}>
                                                     <span className="text-[14px] font-bold">{count}</span>
                                                     <span className="text-[9px] opacity-70 group-hover:underline">
                                                         {status === 'red' ? 'Solicitar' : 'Ver Detalles'}
                                                     </span>
-                                                </Link>
+                                                </div>
                                             </td>
                                         )
                                     })}
