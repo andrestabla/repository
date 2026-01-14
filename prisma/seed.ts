@@ -76,6 +76,19 @@ async function main() {
             data: a
         })
     }
+
+    // 5. Seed Admin User
+    const adminEmail = 'andrestablarico@gmail.com'
+    await prisma.user.upsert({
+        where: { email: adminEmail },
+        update: { role: 'admin' },
+        create: {
+            email: adminEmail,
+            name: 'Andres Tabla (Admin)',
+            role: 'admin'
+        }
+    })
+    console.log('Admin user seeded.')
 }
 
 main()

@@ -31,6 +31,14 @@ model ContentItem {
   updatedAt    DateTime @updatedAt
 }
 
+model User {
+  email     String   @id
+  name      String?
+  role      String   @default("curador") // 'admin', 'metodologo', 'curador', 'auditor'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Artifact {
   id        String   @id @default(cuid())
   name      String

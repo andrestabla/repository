@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import prisma from "@/lib/prisma"
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -14,7 +15,32 @@ export const authOptions: NextAuthOptions = {
         logo: "https://github.com/fluidicon.png",
     },
     callbacks: {
-        async session({ session, token }) {
+        async signIn({ user }) {
+            if (!user.email) return false
+
+            // 1. Check if user exists in DB
+            const dbUser = await prisma.user.findUnique({
+                where: { email: user.email }
+            })
+
+            // 2. Allow if exists OR matches bootstrap admin
+            if (dbUser) return true
+            if (user.email === 'andrestablarico@gmail.com') return true
+
+            return false // Deny access
+        },
+        async session({ session }) {
+            if (session.user?.email) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { email: session.user.email }
+                })
+
+                if (dbUser) {
+                    (session.user as any).role = dbUser.role
+                } else if (session.user.email === 'andrestablarico@gmail.com') {
+                    (session.user as any).role = 'admin'
+                }
+            }
             return session
         },
     },

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { signIn, signOut } from "next-auth/react"
+import AdminView from './AdminView'
 
 // Types based on the schema
 type ContentItem = {
@@ -18,7 +19,7 @@ type ContentItem = {
     driveId?: string | null
 }
 
-type UserRole = 'metodologo' | 'curador' | 'auditor'
+type UserRole = 'metodologo' | 'curador' | 'auditor' | 'admin'
 
 type User = {
     role: UserRole
@@ -33,6 +34,7 @@ type Session = {
         name?: string | null
         email?: string | null
         image?: string | null
+        role?: string
     }
 }
 
@@ -44,17 +46,18 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
     // Initialize User from Session
     useEffect(() => {
         if (session?.user) {
-            // Default mapping: Everyone is a 'Current' User.
-            // In a real app, we'd check DB roles. For this demo, we can allow role switching inside, or default.
-            // Let's default to 'curador' to allow editing properties.
+            // Use Role from Session or Default to Curador
+            const role = (session.user.role as UserRole) || 'curador'
+
             setUser({
-                role: 'curador',
+                role: role,
                 name: session.user.name || 'Usuario 4Shine',
-                label: 'Builder (Connected)',
+                label: role === 'admin' ? 'Administrador' : 'Builder (Connected)',
                 avatar: session.user.image ? <img src={session.user.image} alt="avatar" className="w-full h-full rounded-full" /> : '👤',
-                color: '#58a6ff'
+                color: role === 'admin' ? '#d73a49' : '#58a6ff'
             })
-            setCurrentView('inventory')
+            // Default view based on role
+            setCurrentView(role === 'admin' ? 'admin' : 'inventory')
         }
     }, [session])
 
@@ -145,8 +148,16 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
                 </div>
 
                 <nav className="flex flex-col gap-0.5">
-                    {/* Default Navigation for Logged In User (Curator/Methodologist Mix) */}
-                    <div className="text-[11px] uppercase text-[#484f58] my-5 ml-3 font-bold tracking-wider first:mt-0">Acciones</div>
+                    {/* Admin Nav */}
+                    {user?.role === 'admin' && (
+                        <>
+                            <div className="text-[11px] uppercase text-[#484f58] mb-2 font-bold tracking-wider">Configuración</div>
+                            <NavBtn id="admin" label="Gestión de Usuarios" icon="🛡️" active={currentView === 'admin'} onClick={() => setCurrentView('admin')} />
+                            <div className="my-4 border-t border-[var(--border)]" />
+                        </>
+                    )}
+
+                    <div className="text-[11px] uppercase text-[#484f58] my-2 font-bold tracking-wider">Acciones</div>
                     <NavBtn id="inventory" label="Inventario Maestro" icon="🗃️" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
                     <NavBtn id="gaps" label="Matriz de Brechas" icon="⚠️" active={currentView === 'gaps'} onClick={() => setCurrentView('gaps')} />
                     <NavBtn id="generator" label="Generador (Dossier)" icon="⚡" active={currentView === 'generator'} onClick={() => setCurrentView('generator')} />
@@ -176,19 +187,22 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
             </aside>
 
             {/* Main Content */}
-            <main className="overflow-y-auto p-[30px_40px]">
-                {currentView === 'gaps' && <GapsView />}
-                {currentView === 'inventory' && (
-                    <InventoryView
-                        data={inventoryData}
-                        role={user.role}
-                        onRefresh={refreshData}
-                        isRefreshing={isRefreshing}
-                        onSave={handleUpsert}
-                    />
-                )}
-                {currentView === 'generator' && <GeneratorView simulateCompile={simulateCompile} consoleLog={consoleLog} />}
-                {currentView === 'qa' && <QAView data={inventoryData} />}
+            <main className="overflow-y-auto p-[0px] h-full">
+                <div className="p-[30px_40px]">
+                    {currentView === 'admin' && <AdminView />}
+                    {currentView === 'gaps' && <GapsView />}
+                    {currentView === 'inventory' && (
+                        <InventoryView
+                            data={inventoryData}
+                            role={user.role}
+                            onRefresh={refreshData}
+                            isRefreshing={isRefreshing}
+                            onSave={handleUpsert}
+                        />
+                    )}
+                    {currentView === 'generator' && <GeneratorView simulateCompile={simulateCompile} consoleLog={consoleLog} />}
+                    {currentView === 'qa' && <QAView data={inventoryData} />}
+                </div>
             </main>
         </div>
     )
