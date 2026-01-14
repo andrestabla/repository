@@ -55,6 +55,19 @@ export default function AdminView() {
         }
     }
 
+    const handleApprove = async (email: string, name: string | null) => {
+        try {
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, name, role: 'curador' }) // Default to Curador
+            })
+            if (res.ok) {
+                setRefresh(p => p + 1)
+            }
+        } catch (e) { alert('Error') }
+    }
+
     const handleDelete = async (email: string) => {
         if (!confirm('¿Eliminar acceso a ' + email + '?')) return
         try {
@@ -70,11 +83,51 @@ export default function AdminView() {
         }
     }
 
+    // Filter lists
+    const pendingUsers = users.filter(u => u.role === 'pending')
+    const activeUsers = users.filter(u => u.role !== 'pending')
+
     return (
         <div className="p-8 h-full overflow-y-auto">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                 🛡️ Gestión de Usuarios
             </h2>
+
+            {/* Pending Requests */}
+            {pendingUsers.length > 0 && (
+                <div className="mb-8 border border-[var(--warning)] bg-[rgba(210,153,34,0.05)] rounded-lg overflow-hidden">
+                    <div className="bg-[rgba(210,153,34,0.1)] p-3 border-b border-[var(--warning)] flex gap-2 items-center">
+                        <span className="text-xl">🔔</span>
+                        <h3 className="font-bold text-[var(--warning)]">Solicitudes Pendientes ({pendingUsers.length})</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                        <tbody>
+                            {pendingUsers.map(u => (
+                                <tr key={u.email} className="border-b border-[rgba(210,153,34,0.2)] last:border-0 hover:bg-[rgba(210,153,34,0.05)]">
+                                    <td className="p-4">
+                                        <div className="font-semibold text-white">{u.name || 'Sin nombre'}</div>
+                                        <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
+                                    </td>
+                                    <td className="p-4 text-right flex gap-2 justify-end">
+                                        <button
+                                            onClick={() => handleApprove(u.email, u.name)}
+                                            className="bg-[var(--success)] text-white px-3 py-1.5 rounded text-xs font-semibold hover:brightness-110"
+                                        >
+                                            ✅ Aprobar
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(u.email)}
+                                            className="bg-[var(--danger)] text-white px-3 py-1.5 rounded text-xs font-semibold hover:brightness-110"
+                                        >
+                                            ❌ Rechazar
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Add User Form */}
             <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 mb-8">
@@ -133,7 +186,7 @@ export default function AdminView() {
                     </thead>
                     <tbody>
                         {loading && <tr><td colSpan={4} className="p-5 text-center text-[var(--text-muted)]">Cargando...</td></tr>}
-                        {users.map(u => (
+                        {activeUsers.map(u => (
                             <tr key={u.email} className="border-t border-[var(--border)] hover:bg-white/5">
                                 <td className="p-3">
                                     <div className="font-semibold text-white">{u.name || 'Sin nombre'}</div>

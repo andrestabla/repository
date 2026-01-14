@@ -16,18 +16,9 @@ export const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async signIn({ user }) {
-            if (!user.email) return false
-
-            // 1. Check if user exists in DB
-            const dbUser = await prisma.user.findUnique({
-                where: { email: user.email }
-            })
-
-            // 2. Allow if exists OR matches bootstrap admin
-            if (dbUser) return true
-            if (user.email === 'andrestablarico@gmail.com') return true
-
-            return false // Deny access
+            // Allow all Google accounts to sign in.
+            // Access control happens at the session level (RBAC).
+            return true
         },
         async session({ session }) {
             if (session.user?.email) {
@@ -39,6 +30,9 @@ export const authOptions: NextAuthOptions = {
                     (session.user as any).role = dbUser.role
                 } else if (session.user.email === 'andrestablarico@gmail.com') {
                     (session.user as any).role = 'admin'
+                } else {
+                    // User authenticated with Google but not in DB -> Guest
+                    (session.user as any).role = 'guest'
                 }
             }
             return session
