@@ -44,3 +44,28 @@ export const getDriveFileMetadata = async (fileId: string) => {
         mimeType: 'application/vnd.google-apps.document'
     }
 }
+
+export type DriveFile = {
+    id: string
+    name: string
+    mimeType: string
+    thumbnailLink?: string
+    webViewLink?: string
+}
+
+export const listDriveFiles = async (folderId?: string): Promise<DriveFile[]> => {
+    // Mock implementation for the Picker
+    // In real life, use google.drive.files.list({ q: `'${folderId}' in parents` })
+
+    await new Promise(r => setTimeout(r, 800)) // Fake latency
+
+    const mockFiles: DriveFile[] = [
+        { id: '1A-mock-id-001', name: 'Manual del Facilitador M1.pdf', mimeType: 'application/pdf' },
+        { id: '1A-mock-id-002', name: 'Presentación Ejecutiva.pptx', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' },
+        { id: '1A-mock-id-003', name: 'Rubrica de Evaluación.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+        { id: '1A-mock-id-004', name: 'Video Intro 4Shine.mp4', mimeType: 'video/mp4' },
+        { id: '1A-mock-id-005', name: 'Workshop Structure.gdoc', mimeType: 'application/vnd.google-apps.document' },
+    ]
+
+    return mockFiles
+}
