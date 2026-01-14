@@ -6,6 +6,8 @@ export type EmailConfig = {
     smtpPort: number
     smtpUser: string
     smtpPass: string
+    senderName?: string
+    senderEmail?: string
 }
 
 export type DriveConfig = {

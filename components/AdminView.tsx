@@ -14,6 +14,8 @@ type EmailConfig = {
     smtpPort: number
     smtpUser: string
     smtpPass: string
+    senderName?: string
+    senderEmail?: string
 }
 
 type DriveConfig = {
@@ -279,21 +281,47 @@ export default function AdminView() {
                                 <h3 className="text-lg font-bold text-white flex items-center gap-2">📧 Configuración de Correo</h3>
                                 <p className="text-xs text-[var(--text-muted)] mt-1">Configura el servidor SMTP para enviar notificaciones.</p>
                             </div>
-                            <select
-                                onChange={(e) => {
-                                    const provider = e.target.value;
-                                    if (provider === 'gmail') {
-                                        setEmailConfig(prev => ({ ...prev, smtpHost: 'smtp.gmail.com', smtpPort: 465, smtpUser: '' }));
-                                    } else if (provider === 'outlook') {
-                                        setEmailConfig(prev => ({ ...prev, smtpHost: 'smtp.office365.com', smtpPort: 587, smtpUser: '' }));
-                                    }
-                                }}
-                                className="bg-[#0d1117] border border-[var(--border)] rounded p-1 text-xs"
-                            >
-                                <option value="custom">Personalizado</option>
-                                <option value="gmail">Gmail (Recomendado)</option>
-                                <option value="outlook">Outlook / Office 365</option>
-                            </select>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={async (e) => {
+                                        e.preventDefault();
+                                        if (!emailConfig.smtpHost) return alert('Configura primero el host SMTP');
+                                        const btn = e.target as HTMLButtonElement;
+                                        const originalText = btn.innerText;
+                                        btn.innerText = 'Enviando...';
+                                        btn.disabled = true;
+                                        try {
+                                            const res = await fetch('/api/settings/test-email', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ config: emailConfig })
+                                            });
+                                            if (res.ok) alert('✅ Correo de prueba enviado exitosamente a tu cuenta.');
+                                            else { const err = await res.json(); alert('❌ Error: ' + err.error); }
+                                        } catch (er) { alert('Error de red'); }
+                                        btn.innerText = originalText;
+                                        btn.disabled = false;
+                                    }}
+                                    className="bg-[#21262d] text-white px-3 py-1 rounded text-xs font-semibold hover:brightness-110 border border-[var(--border)]"
+                                >
+                                    📬 Probar Envío
+                                </button>
+                                <select
+                                    onChange={(e) => {
+                                        const provider = e.target.value;
+                                        if (provider === 'gmail') {
+                                            setEmailConfig(prev => ({ ...prev, smtpHost: 'smtp.gmail.com', smtpPort: 465, smtpUser: '' }));
+                                        } else if (provider === 'outlook') {
+                                            setEmailConfig(prev => ({ ...prev, smtpHost: 'smtp.office365.com', smtpPort: 587, smtpUser: '' }));
+                                        }
+                                    }}
+                                    className="bg-[#0d1117] border border-[var(--border)] rounded px-2 py-1 text-xs"
+                                >
+                                    <option value="custom">Presets: Personalizado</option>
+                                    <option value="gmail">Gmail (Recomendado)</option>
+                                    <option value="outlook">Outlook / Office 365</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -305,16 +333,31 @@ export default function AdminView() {
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Puerto</label>
                                 <input type="number" value={emailConfig.smtpPort} onChange={e => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value) })} placeholder="465" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
-                            <div className="col-span-2 p-3 bg-blue-900/20 border border-blue-900/50 rounded text-xs text-blue-200">
-                                💡 <strong>Tip para Gmail:</strong> Debes usar una <a href="https://myaccount.google.com/apppasswords" target="_blank" className="underline font-bold hover:text-white">Contraseña de Aplicación</a>, no tu contraseña habitual. Asegúrate de tener la Verificación en 2 pasos activada.
-                            </div>
+
+                            {/* SENDER CUSTOMIZATION */}
                             <div>
-                                <label className="text-xs text-[var(--text-muted)] block mb-1">Usuario (Tu correo)</label>
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Usuario (Email de envío)</label>
                                 <input value={emailConfig.smtpUser} onChange={e => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })} placeholder="tu@email.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
                             <div>
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Contraseña de Aplicación</label>
                                 <input type="password" value={emailConfig.smtpPass} onChange={e => setEmailConfig({ ...emailConfig, smtpPass: e.target.value })} placeholder="********" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            </div>
+
+                            <div className="col-span-2 pt-2 border-t border-[var(--border)] grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre del Remitente (Opcional)</label>
+                                    <input value={emailConfig.senderName || ''} onChange={e => setEmailConfig({ ...emailConfig, senderName: e.target.value })} placeholder="Ej: Soporte TI" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-[var(--text-muted)] block mb-1">Email del Remitente (Opcional)</label>
+                                    <input value={emailConfig.senderEmail || ''} onChange={e => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })} placeholder="Ej: no-reply@empresa.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                    <p className="text-[10px] text-[var(--text-muted)] mt-1">Si se deja vacío, se usa el Usuario SMTP.</p>
+                                </div>
+                            </div>
+
+                            <div className="col-span-2 p-3 bg-blue-900/20 border border-blue-900/50 rounded text-xs text-blue-200 mt-2">
+                                💡 <strong>Tip para Gmail:</strong> Debes usar una <a href="https://myaccount.google.com/apppasswords" target="_blank" className="underline font-bold hover:text-white">Contraseña de Aplicación</a>. Si ingresas tu contraseña normal, fallará.
                             </div>
                         </div>
                         <button onClick={saveEmailConfig} className="bg-[var(--accent)] text-white px-4 py-2 rounded text-sm font-bold hover:brightness-110">Guardar Configuración SMTP</button>
@@ -356,7 +399,22 @@ export default function AdminView() {
                                 <div key={id} className="flex items-center justify-between bg-[#1c2128] p-3 rounded border border-[var(--border)]">
                                     <div className="flex items-center gap-3">
                                         <span className="text-xl">📁</span>
-                                        <span className="font-mono text-xs text-white">{id}</span>
+                                        <div>
+                                            <div className="font-mono text-xs text-white flex items-center gap-2">
+                                                {id}
+                                                <button
+                                                    onClick={async () => {
+                                                        // Simple format check visually for now, could be expanded to server ping
+                                                        if (id.length > 20) alert('✅ Formato de ID válido. Asegúrate de que la carpeta sea "Pública" o compartida con la cuenta de servicio.');
+                                                        else alert('⚠️ El ID parece demasiado corto.');
+                                                    }}
+                                                    className="text-[10px] bg-[#21262d] px-1.5 py-0.5 rounded text-[var(--text-muted)] hover:text-white"
+                                                    title="Verificar Acceso"
+                                                >
+                                                    🔍 Verificar
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <button onClick={() => removeFolder(id)} className="text-[var(--danger)] text-xs hover:underline bg-[#0d1117] px-2 py-1 rounded border border-[var(--border)]">Eliminar</button>
                                 </div>
