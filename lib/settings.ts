@@ -41,12 +41,14 @@ export class SystemSettingsService {
         return (setting?.value as DriveConfig) || { authorizedFolderIds: [] }
     }
 
+    static async saveDriveConfig(config: DriveConfig) {
         return prisma.systemSettings.upsert({
-        where: { key: 'drive_config' },
-        update: { value: config },
-        create: { key: 'drive_config', value: config }
-    })
+            where: { key: 'drive_config' },
+            update: { value: config },
+            create: { key: 'drive_config', value: config }
+        })
     }
+}
 
     // --- Gemini ---
     static async getGeminiApiKey(): Promise < string | null > {
