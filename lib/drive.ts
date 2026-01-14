@@ -124,8 +124,8 @@ export const getFileContent = async (fileId: string): Promise<string> => {
         }
 
         return ''
-    } catch (e) {
+    } catch (e: any) {
         console.error('Error getting file content:', e)
-        throw new Error('Could not read file content')
+        throw new Error(`[Drive Content Error] ${e.message || e}`)
     }
 }

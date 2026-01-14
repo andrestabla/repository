@@ -35,12 +35,11 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Analysis API Error:', error)
-        const msg = String(error?.message || error)
+        const msg = error?.message || String(error)
+        console.error('[Analyze Error]', msg)
 
-        if (msg.includes('GEMINI_API_KEY')) {
-            return NextResponse.json({ error: 'Gemini API Key not configured' }, { status: 500 })
-        }
-
-        return NextResponse.json({ error: 'Failed to analyze content' }, { status: 500 })
+        return NextResponse.json({
+            error: msg.includes('GEMINI_API_KEY') ? 'Gemini API Key not configured' : msg
+        }, { status: 500 })
     }
 }
