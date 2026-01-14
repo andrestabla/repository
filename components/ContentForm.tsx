@@ -93,6 +93,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
     const [showPicker, setShowPicker] = useState(false)
     const [pickerFiles, setPickerFiles] = useState<DriveFile[]>([])
     const [loadingPicker, setLoadingPicker] = useState(false)
+    const [analyzing, setAnalyzing] = useState(false)
 
     // Derived States
     const [driveStatus, setDriveStatus] = useState<'idle' | 'validating' | 'valid'>('idle')
@@ -135,6 +136,40 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
     }
 
     // --- RENDER HELPERS ---
+    const handleAutoAnalyze = async () => {
+        if (!formData.driveId) return alert('Primero selecciona un archivo de Drive')
+        setAnalyzing(true)
+        try {
+            const res = await fetch('/api/inventory/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ driveId: formData.driveId })
+            })
+            const json = await res.json()
+            if (json.success && json.data) {
+                // Merge data
+                setFormData(prev => ({
+                    ...prev,
+                    title: json.data.title || prev.title,
+                    type: json.data.type || prev.type,
+                    pillar: json.data.pillar || prev.pillar,
+                    sub: json.data.sub || prev.sub,
+                    competence: json.data.competence || prev.competence,
+                    maturity: json.data.maturity || prev.maturity,
+                    targetRole: json.data.targetRole || prev.targetRole,
+                    observations: json.data.summary || prev.observations,
+                    duration: json.data.duration || prev.duration,
+                }))
+                alert('✨ Análisis Completo: Metadatos sugeridos aplicados.')
+            } else {
+                alert('Error: ' + (json.error || 'No se pudo analizar'))
+            }
+        } catch (e) {
+            alert('Error de conexión con IA')
+        }
+        setAnalyzing(false)
+    }
+
     const Input = ({ label, field, placeholder, width = 'full', disabled = false }: any) => (
         <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
             <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">{label}</label>
@@ -208,6 +243,15 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                             <button onClick={openPicker} className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-bold shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105">
                                                 📂 Abrir Drive Picker
                                             </button>
+                                            {formData.driveId && (
+                                                <button
+                                                    onClick={handleAutoAnalyze}
+                                                    disabled={analyzing}
+                                                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1.5 rounded font-bold shadow-lg shadow-purple-900/20 transition-all transform hover:scale-105 ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {analyzing ? '✨ Analizando...' : '✨ Analizar con Gemini'}
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="flex gap-2">
                                             <input
