@@ -9,60 +9,61 @@ export class GeminiService {
         const modelsToTry = [
             "gemini-1.5-pro-latest",
             "gemini-1.5-pro",
-            "gemini-2.0-flash", // Flash as fallback only
-            "gemini-flash-latest"
+            "gemini-2.0-flash"
         ]
 
         let apiKey = await SystemSettingsService.getGeminiApiKey()
         if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
         if (!apiKey) throw new Error("GEMINI_API_KEY no configurada.")
 
+        // Massive Context Injection
+        const methodologyReference = `
+        METODOLOGÍA 4SHINE DE CARMENZA ALARCÓN:
+        - Propósito: Fortalecer liderazgo y marca personal ("Brillar").
+        - Pilar 1: SHINE WITHIN (Dominio Interior). Subcomponentes: Autoconfianza, Inteligencia emocional, Propósito personal.
+        - Pilar 2: SHINE OUT (Presencia y Proyección). Subcomponentes: Comunicación poderosa, Influencia positiva, Networking estratégico.
+        - Pilar 3: SHINE UP (Visión y Estrategia). Subcomponentes: Visión de futuro, Toma de decisiones bajo presión, Adaptabilidad.
+        - Pilar 4: SHINE BEYOND (Trascendencia y Legado). Subcomponentes: Desarrollo de otros líderes, Impacto social y humano, Legado personal.
+        Principios: Liderazgo de adentro hacia afuera, autenticidad, bienestar y resultados estratégicos.
+        `;
+
         const prompt = `
-            Eres un AUDITOR METODOLÓGICO SENIOR y EXPERTO MASTER en la METODOLOGÍA 4SHINE de Carmenza Alarcón.
-            Tu misión es realizar un análisis de "Clase Maestra" sobre el contenido educativo adjunto. No aceptamos respuestas genéricas ni superficiales.
+            Eres la INTELIGENCIA ARTIFICIAL MAESTRA de la METODOLOGÍA 4SHINE. Tu razonamiento debe ser de NIVEL EJECUTIVO (C-Level).
+            Analiza el contenido adjunto usando la siguiente GUÍA DE REFERENCIA:
+            ${methodologyReference}
 
-            --- MARCO METODOLÓGICO 4SHINE (Contexto) ---
-            4Shine integra el liderazgo estratégico con la marca personal ejecutiva.
-            1. SHINE WITHIN: Dominio interior, inteligencia emocional, propósito.
-            2. SHINE OUT: Presencia ejecutiva, comunicación poderosa, influencia e impacto.
-            3. SHINE UP: Visión estratégica, toma de decisiones, adaptabilidad al futuro.
-            4. SHINE BEYOND: Trascendencia, mentoría, desarrollo de otros y legado.
+            --- MANDATO DE OBSERVACIONES (OBLIGATORIO) ---
+            El campo "observations" DEBE ser extenso (800 a 1500 caracteres) y seguir esta estructura interna:
+            1. [ANÁLISIS DE IMPACTO]: Explica cómo este contenido específico desactiva creencias limitantes y activa el "brillo" del líder.
+            2. [CONEXIÓN METODOLÓGICA]: Relaciona el contenido con al menos uno de los 4 pilares y explica la sinergia con las otras dimensiones.
+            3. [GUÍA DEL FACILITADOR]: Da 3 pasos tácticos para que un mentor use este material de forma transformadora.
+            4. [CONDUCTA OBSERVABLE]: Describe cómo se verá el líder una vez que haya integrado este conocimiento.
 
-            --- MANDATO DE OBSERVACIONES (CRÍTICO) ---
-            El campo "observations" debe ser la joya de la corona de este análisis. 
-            Debes escribir como si fueras la misma Carmenza Alarcón asesorando a un líder de alto nivel.
-            REQUERIMIENTOS PARA OBSERVACIONES:
-            1. Valor Estratégico: Explica EXACTAMENTE por qué este contenido es vital para el éxito del líder. No digas "es útil", di "este material rompe la barrera de X para lograr Y".
-            2. Aplicación Práctica: Da instrucciones precisas al facilitador sobre cómo "activar" este contenido en una sesión real.
-            3. Desglose de Competencias: Menciona explícitamente qué competencias del modelo 4Shine se están fortaleciendo y cómo.
-            4. Tono: Profesional, inspirador, estratégico y de alto impacto.
-            5. Extensión: Mínimo 4 párrafos densos y bien estructurados.
+            --- REGLAS DE RESPUESTA ---
+            - TODO EN ESPAÑOL.
+            - "type": PDF, Video, Audio, Toolkit, Test, Rúbrica, Workbook, Documento maestro.
+            - "maturity": Básico, En Desarrollo, Avanzado, Maestría.
+            - "observations": Mínimo 4 párrafos densos. No uses frases cortas. Se elocuente y estratégico.
 
-            --- REGLAS DE FORMATO ---
-            1. TODO EN ESPAÑOL NEUTRO Y PROFESIONAL.
-            2. El "type" debe ser: PDF, Video, Audio, Toolkit, Test, Rúbrica, Workbook, o Documento maestro.
-            3. "maturity": Básico, En Desarrollo, Avanzado, Maestría.
-            4. "targetRole": Líder, Mentor, Facilitador.
-
-            Return ONLY a valid JSON object (no markdown, no backticks).
+            Return ONLY a valid JSON object.
 
             JSON STRUCTURE:
             {
               "title": "Título oficial de alto impacto",
-              "summary": "Resumen ejecutivo estratégico (1 frase)",
+              "summary": "Resumen ejecutivo estratégico",
               "type": "CÓDIGO_TIPO",
               "pillar": "Pilar Principal",
               "sub": "Subcomponente",
               "competence": "Competencia Maestra",
-              "behavior": "Conducta Observable que transforma",
+              "behavior": "Conducta Observable específica",
               "maturity": "Nivel de Madurez",
               "targetRole": "Rol Objetivo",
               "duration": "90",
               "intervention": "Conciencia | Práctica | Herramienta | Evaluación",
               "moment": "Inicio | Refuerzo | Profundización | Cierre",
               "language": "ES",
-              "format": "PDF | MP4 | etc",
-              "observations": "ANÁLISIS METODOLÓGICO DE CLASE MAESTRA (Detalle profundo, estratégico y pedagógico. Mínimo 800 caracteres)"
+              "format": "Formato Técnico",
+              "observations": "TEXTO_DE_ANÁLISIS_PROFUNDO_MÍNIMO_800_CARACTERES"
             }
 
             CONTENT TO ANALYZE:
@@ -73,13 +74,13 @@ export class GeminiService {
 
         for (const modelName of modelsToTry) {
             try {
-                console.log(`[Gemini] Attempting High-Reasoning Model: ${modelName}...`)
+                console.log(`[Gemini] Executive Analysis attempting: ${modelName}...`)
                 const genAI = new GoogleGenerativeAI(apiKey!)
                 const model = genAI.getGenerativeModel({
                     model: modelName,
                     generationConfig: {
-                        temperature: 0.4, // Lower temperature for more consistent reasoning
-                        maxOutputTokens: 2048,
+                        temperature: 0.3, // Maximum rigor, minimum randomness
+                        maxOutputTokens: 2500,
                     }
                 })
                 const result = await model.generateContent(prompt)
@@ -87,12 +88,17 @@ export class GeminiService {
                 const textResponse = response.text()
 
                 const jsonText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim()
-                return JSON.parse(jsonText)
+                const parsed = JSON.parse(jsonText)
+
+                // Final check to prevent lazy output
+                if (parsed.observations.length < 200) {
+                    throw new Error("Respuesta de IA insuficiente bajo criterio de calidad.");
+                }
+
+                return parsed
             } catch (error: any) {
                 lastError = error
-                const msg = error.message || String(error)
-                console.error(`[Gemini] Failed ${modelName}:`, msg)
-                if (msg.includes('404') || msg.includes('not found')) continue
+                console.error(`[Gemini] Analysis failed or low quality on ${modelName}:`, error.message)
                 continue
             }
         }
