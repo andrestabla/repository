@@ -1,39 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0f1115;
+  /* Dark Theme Professional */
+  --bg: #0d1117;
   --panel: #161b22;
-  --panel-glass: rgba(22, 27, 34, 0.7);
-  --border: rgba(48, 54, 61, 0.6);
-  --text: #c9d1d9;
+  --border: #30363d;
+  --text-main: #c9d1d9;
   --text-muted: #8b949e;
 
-  /* Professional Palette */
-  --accent: #58a6ff;      /* Blue - Actions */
-  --success: #2ea043;     /* Green - Valid/Complete */
-  --warning: #d29922;     /* Orange - Draft/Warning */
-  --danger: #f85149;      /* Red - Missing/Error */
-  --purple: #bc8cff;      /* Purple - Versioning */
+  /* Semantic Colors */
+  --accent: #58a6ff;
+  /* Blue */
+  --success: #238636;
+  /* Green */
+  --warning: #d29922;
+  /* Orange */
+  --danger: #da3633;
+  /* Red */
+  --purple: #bc8cff;
+  /* Metodólogo */
 
-  --font-main: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-ui: 'Inter', sans-serif;
+  --font-code: 'JetBrains Mono', monospace;
 }
 
 @theme {
   --color-bg: var(--bg);
   --color-panel: var(--panel);
-  --color-panel-glass: var(--panel-glass);
   --color-border: var(--border);
-  --color-text: var(--text);
+  --color-text-main: var(--text-main);
   --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-purple: var(--purple);
-  
-  --font-sans: var(--font-main);
-  --font-mono: var(--font-mono);
+
+  --font-ui: var(--font-ui);
+  --font-code: var(--font-code);
 }
 
 body {
@@ -55,6 +59,16 @@ body {
 }
 
 /* Scrollbar matches prototype */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

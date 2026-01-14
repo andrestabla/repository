@@ -1,0 +1,460 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+
+// Types based on the schema
+type ContentItem = {
+    id: string
+    title: string
+    pillar: string
+    sub?: string | null
+    level?: string | null
+    type: string
+    version: string
+    status: string
+    ip: string
+    completeness: number
+    driveId?: string | null
+}
+
+type UserRole = 'metodologo' | 'curador' | 'auditor'
+
+type User = {
+    role: UserRole
+    name: string
+    label: string
+    avatar: string
+    color: string
+}
+
+const ROLES: Record<UserRole, Omit<User, 'role'>> = {
+    metodologo: { name: 'Ana Metodóloga', label: 'Arquitecto', avatar: '🎩', color: '#bc8cff' },
+    curador: { name: 'Carlos Curador', label: 'Builder', avatar: '👷', color: '#58a6ff' },
+    auditor: { name: 'Luisa Auditora', label: 'QA / IP', avatar: '🛡️', color: '#238636' }
+}
+
+export default function MethodologySPA({ initialData }: { initialData: ContentItem[] }) {
+    const [user, setUser] = useState<User | null>(null)
+    const [currentView, setCurrentView] = useState('login')
+    const [roleSelect, setRoleSelect] = useState<UserRole>('metodologo')
+    const [consoleLog, setConsoleLog] = useState<string[]>([])
+
+    // Login Logic
+    const handleLogin = () => {
+        const roleData = ROLES[roleSelect]
+        setUser({ role: roleSelect, ...roleData })
+
+        // Redirect based on role
+        if (roleSelect === 'metodologo') setCurrentView('gaps')
+        else if (roleSelect === 'curador') setCurrentView('inventory')
+        else setCurrentView('qa')
+    }
+
+    // Console Simulation
+    const simulateCompile = (artifact: string) => {
+        setConsoleLog([`> Initializing Compiler for: ${artifact}...`])
+
+        setTimeout(() => setConsoleLog(prev => [...prev, `> Connecting to Neon DB [v1.0]...`]), 500)
+        setTimeout(() => setConsoleLog(prev => [...prev, `> Fetching taxonomy tree... OK`]), 1000)
+        setTimeout(() => setConsoleLog(prev => [...prev, `> Retrieving approved contents... Found ${initialData.filter(i => i.status === 'Approved').length} items`]), 1500)
+        setTimeout(() => setConsoleLog(prev => [...prev, `> Validating Drive Links... OK`]), 2000)
+        setTimeout(() => setConsoleLog(prev => [...prev, `> SUCCESS: JSON Generated (14kb)`]), 2500)
+    }
+
+    if (!user) {
+        return (
+            <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center backdrop-blur-sm">
+                <div className="bg-[var(--panel)] p-10 rounded-xl border border-[var(--border)] w-[400px] text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                    <div className="text-4xl mb-2.5">🏗️</div>
+                    <h2 className="mb-1.5 text-2xl font-semibold text-white">4Shine Builder</h2>
+                    <p className="text-[var(--text-muted)] mb-8">Sistema de Gestión Metodológica v1.0</p>
+
+                    <div className="grid gap-2.5 text-left">
+                        <label className="text-xs text-[var(--text-muted)]">Selecciona tu Rol:</label>
+                        <select
+                            value={roleSelect}
+                            onChange={(e) => setRoleSelect(e.target.value as UserRole)}
+                            className="p-2.5 bg-[#0d1117] text-white border border-[var(--border)] rounded-md w-full"
+                        >
+                            <option value="metodologo">🎩 Metodólogo (Arquitecto)</option>
+                            <option value="curador">👷 Curador (Builder)</option>
+                            <option value="auditor">🛡️ Auditor (QA/IP)</option>
+                        </select>
+                        <button
+                            onClick={handleLogin}
+                            className="w-full mt-2.5 bg-[var(--success)] border border-white/10 text-white p-2 rounded-md font-semibold hover:opacity-90 transition-opacity"
+                        >
+                            Ingresar al Sistema
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="grid grid-cols-[260px_1fr] h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-main)] font-ui">
+            {/* Sidebar */}
+            <aside className="bg-[var(--panel)] border-r border-[var(--border)] flex flex-col p-5">
+                <div className="text-lg font-bold text-white mb-8 flex items-center gap-2.5">
+                    4Shine <span className="text-[10px] bg-[var(--border)] px-1.5 py-0.5 rounded font-code">v1.0</span>
+                </div>
+
+                <nav className="flex flex-col gap-0.5">
+                    {user.role === 'metodologo' && (
+                        <>
+                            <div className="text-[11px] uppercase text-[#484f58] my-5 ml-3 font-bold tracking-wider first:mt-0">Estrategia</div>
+                            <NavBtn id="gaps" label="Matriz de Brechas" icon="⚠️" active={currentView === 'gaps'} onClick={() => setCurrentView('gaps')} />
+                            <NavBtn id="generator" label="Generador v1.0" icon="⚡" active={currentView === 'generator'} onClick={() => setCurrentView('generator')} />
+                            <div className="text-[11px] uppercase text-[#484f58] my-5 ml-3 font-bold tracking-wider">Datos</div>
+                            <NavBtn id="inventory" label="Ver Inventario" icon="🗃️" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
+                        </>
+                    )}
+
+                    {user.role === 'curador' && (
+                        <>
+                            <div className="text-[11px] uppercase text-[#484f58] my-5 ml-3 font-bold tracking-wider first:mt-0">Operaciones</div>
+                            <NavBtn id="inventory" label="Inventario (CRUD)" icon="🗃️" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
+                            <NavBtn id="add" label="Nuevo Activo" icon="➕" active={currentView === 'add'} onClick={() => { }} />
+                        </>
+                    )}
+
+                    {user.role === 'auditor' && (
+                        <>
+                            <div className="text-[11px] uppercase text-[#484f58] my-5 ml-3 font-bold tracking-wider first:mt-0">Calidad</div>
+                            <NavBtn id="qa" label="Cola de Revisión" icon="🛡️" active={currentView === 'qa'} onClick={() => setCurrentView('qa')} />
+                            <NavBtn id="inventory" label="Histórico" icon="📜" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
+                        </>
+                    )}
+                </nav>
+
+                <div className="mt-auto border-t border-[var(--border)] pt-5">
+                    <div className="flex gap-2.5 items-center">
+                        <div
+                            className="w-8 h-8 rounded-full grid place-items-center"
+                            style={{ background: user.color + '33', color: user.color }}
+                        >
+                            {user.avatar}
+                        </div>
+                        <div>
+                            <div className="font-semibold text-[13px]">{user.name}</div>
+                            <div className="text-[var(--text-muted)] text-[11px]">{user.label}</div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setUser(null)}
+                        className="bg-transparent border-none text-[var(--danger)] text-[11px] mt-2.5 cursor-pointer p-0 hover:underline"
+                    >
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <main className="overflow-y-auto p-[30px_40px]">
+                {currentView === 'gaps' && <GapsView />}
+                {currentView === 'inventory' && <InventoryView data={initialData} role={user.role} />}
+                {currentView === 'generator' && <GeneratorView simulateCompile={simulateCompile} consoleLog={consoleLog} />}
+                {currentView === 'qa' && <QAView data={initialData} />}
+            </main>
+        </div>
+    )
+}
+
+// --- Subcomponents ---
+
+function NavBtn({ id, label, icon, active, onClick }: { id: string, label: string, icon: string, active: boolean, onClick: () => void }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`w-full text-left p-2.5 rounded-md text-[14px] font-medium flex items-center gap-2.5 transition-all
+        ${active ? 'bg-[rgba(88,166,255,0.1)] text-[var(--accent)]' : 'text-[var(--text-muted)] hover:bg-white/5 hover:text-white'}
+      `}
+        >
+            <span>{icon}</span> {label}
+        </button>
+    )
+}
+
+function GapsView() {
+    return (
+        <>
+            <header className="flex justify-between items-center mb-8">
+                <div>
+                    <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white">Matriz de Cobertura (Gap Analysis)</h2>
+                    <div className="text-[13px] text-[var(--text-muted)] mt-1.5">
+                        Versión objetivo: <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border border-[var(--purple)] text-[var(--purple)]">v1.0</span>
+                    </div>
+                </div>
+                <div className="flex gap-4">
+                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">🔴 Vacío (Crítico)</span>
+                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">🟢 Cubierto</span>
+                </div>
+            </header>
+
+            <div className="grid grid-cols-[200px_1fr_1fr_1fr] gap-[2px] bg-[var(--border)] border border-[var(--border)] rounded-md overflow-hidden">
+                {['Subcomponente', 'Básico', 'Intermedio', 'Avanzado'].map(h => (
+                    <div key={h} className="bg-[var(--bg)] p-4 flex items-center justify-center text-sm min-h-[60px] font-semibold text-[var(--text-muted)] first:justify-start first:pl-5">
+                        {h}
+                    </div>
+                ))}
+
+                {/* Row 1 */}
+                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-white">Networking</div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--success)] mr-2"></div> 1 Item
+                </div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
+                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                </div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
+                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                </div>
+
+                {/* Row 2 */}
+                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-white">Comunicación</div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
+                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                </div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--warning)] mr-2"></div> En Revisión
+                </div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
+                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                </div>
+
+                {/* Row 3 */}
+                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-white">Influencia</div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
+                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                </div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
+                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                </div>
+                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div> Borrador (20%)
+                </div>
+            </div>
+        </>
+    )
+}
+
+function InventoryView({ data, role }: { data: ContentItem[], role: UserRole }) {
+    return (
+        <>
+            <header className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white">Inventario Maestro</h2>
+                {role === 'curador' && (
+                    <button className="bg-[var(--success)] border border-white/10 text-white px-4 py-2 rounded-md font-semibold text-[13px] hover:opacity-90">
+                        + Nuevo Activo
+                    </button>
+                )}
+            </header>
+
+            <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden">
+                <table className="w-full text-[13px] border-collapse">
+                    <thead>
+                        <tr>
+                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">ID</th>
+                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Título</th>
+                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Taxonomía</th>
+                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Drive Status</th>
+                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Completitud</th>
+                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Estado</th>
+                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.map(c => (
+                            <tr key={c.id}>
+                                <td className="p-3 border-b border-[var(--border)] font-code text-[var(--accent)]">{c.id}</td>
+                                <td className="p-3 border-b border-[var(--border)]">
+                                    <div className="font-semibold text-white">{c.title}</div>
+                                    <div className="text-[11px] text-[var(--text-muted)]">{c.type} • {c.ip}</div>
+                                </td>
+                                <td className="p-3 border-b border-[var(--border)] text-[var(--text-main)]">
+                                    {c.sub} <span className="text-[var(--text-muted)] text-[11px]">({c.level})</span>
+                                </td>
+                                <td className="p-3 border-b border-[var(--border)]">
+                                    {c.driveId ? (
+                                        <span className="text-[var(--success)]">Link OK</span>
+                                    ) : (
+                                        <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border border-[rgba(248,81,73,0.3)] bg-[rgba(248,81,73,0.15)] text-[var(--danger)]">
+                                            ⚠️ Missing ID
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="p-3 border-b border-[var(--border)]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-1 bg-[var(--border)] rounded w-[60px] overflow-hidden">
+                                            <div
+                                                className={`h-full ${c.completeness < 50 ? 'bg-[var(--danger)]' : 'bg-[var(--success)]'}`}
+                                                style={{ width: `${c.completeness}%` }}
+                                            ></div>
+                                        </div>
+                                        <span className="text-[10px] text-[var(--text-muted)]">{c.completeness}%</span>
+                                    </div>
+                                </td>
+                                <td className="p-3 border-b border-[var(--border)]">
+                                    <StatusBadge status={c.status} />
+                                </td>
+                                <td className="p-3 border-b border-[var(--border)]">
+                                    <button className="bg-[var(--border)] text-white border border-white/10 px-2 py-1 rounded text-[11px] font-semibold hover:opacity-90">
+                                        {role === 'auditor' ? 'Revisar' : 'Editar'}
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </>
+    )
+}
+
+function StatusBadge({ status }: { status: string }) {
+    const styles: Record<string, string> = {
+        Approved: 'text-[var(--success)] bg-[rgba(46,160,67,0.15)] border-[rgba(46,160,67,0.3)]',
+        Review: 'text-[var(--warning)] bg-[rgba(210,153,34,0.15)] border-[rgba(210,153,34,0.3)]',
+        Draft: 'text-[var(--text-muted)] border-[var(--border)]',
+    }
+
+    const defaultStyle = styles.Draft
+
+    return (
+        <span className={`text-[11px] px-2 py-0.5 rounded-xl font-semibold border ${styles[status] || defaultStyle}`}>
+            {status}
+        </span>
+    )
+}
+
+function GeneratorView({ simulateCompile, consoleLog }: { simulateCompile: (a: string) => void, consoleLog: string[] }) {
+    return (
+        <>
+            <header className="mb-8">
+                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white">Generador de Artefactos</h2>
+            </header>
+
+            <div className="grid grid-cols-3 gap-5 mb-8">
+                <GeneratorCard
+                    icon="📘"
+                    title="Manual del Facilitador"
+                    desc="Compila PDF con guías paso a paso para mentores. Incluye links a herramientas."
+                    action="Generar JSON"
+                    onClick={() => simulateCompile('Manual Facilitador')}
+                    isPrimary
+                />
+                <GeneratorCard
+                    icon="📂"
+                    title="Dossier Metodológico"
+                    desc="Reporte completo de cobertura, fichas técnicas y gobernanza IP."
+                    action="Generar JSON"
+                    onClick={() => simulateCompile('Dossier Maestro')}
+                />
+                <GeneratorCard
+                    icon="📦"
+                    title="Toolkit (ZIP)"
+                    desc="Descarga masiva de archivos desde Drive organizados por carpeta."
+                    action="Preparar Descarga"
+                    onClick={() => simulateCompile('Toolkit')}
+                />
+            </div>
+
+            <div className="bg-black p-4 rounded-md font-code text-xs text-[#0f0] max-h-[200px] overflow-y-auto border border-white/10">
+                {consoleLog.length === 0 ? <span className="text-[#333]">// Ready to generate...</span> : null}
+                {consoleLog.map((line, i) => (
+                    <div key={i}>{line}</div>
+                ))}
+            </div>
+        </>
+    )
+}
+
+function GeneratorCard({ icon, title, desc, action, onClick, isPrimary }: any) {
+    return (
+        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
+            <div className="text-3xl mb-2.5">{icon}</div>
+            <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+            <p className="text-[13px] text-[var(--text-muted)] mb-5 leading-normal">{desc}</p>
+            <button
+                onClick={onClick}
+                className={`w-full py-2 rounded-md font-semibold text-[13px] border hover:opacity-90 transition-opacity
+          ${isPrimary
+                        ? 'bg-[var(--success)] border-white/10 text-white'
+                        : 'bg-[var(--border)] border-white/10 text-white'}
+        `}
+            >
+                {action}
+            </button>
+        </div>
+    )
+}
+
+function QAView({ data }: { data: ContentItem[] }) {
+    const item = data.find(c => c.status === 'Review')
+
+    return (
+        <>
+            <header className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white">Cola de Revisión</h2>
+                <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border text-[var(--warning)] bg-[rgba(210,153,34,0.15)] border-[rgba(210,153,34,0.3)]">
+                    1 Pendiente
+                </span>
+            </header>
+
+            {item ? (
+                <div className="grid grid-cols-2 gap-5 h-[600px]">
+                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
+                        <h3 className="font-semibold text-white mb-5">Metadatos (Neon DB)</h3>
+                        <div className="grid gap-4">
+                            <div>
+                                <label className="text-[11px] text-[var(--text-muted)] block mb-1">TÍTULO</label>
+                                <div className="font-semibold text-white">{item.title}</div>
+                            </div>
+                            <div>
+                                <label className="text-[11px] text-[var(--text-muted)] block mb-1">TAXONOMÍA</label>
+                                <div className="text-[var(--text-main)]">{item.pillar} {'>'} {item.sub}</div>
+                            </div>
+                            <div>
+                                <label className="text-[11px] text-[var(--text-muted)] block mb-1">PROPIEDAD INTELECTUAL</label>
+                                <select className="w-full p-2 bg-black text-white border border-[var(--warning)] rounded">
+                                    <option>{item.ip}</option>
+                                    <option>Propio</option>
+                                </select>
+                                <div className="text-[11px] text-[var(--warning)] mt-1.5 flex items-center gap-1">
+                                    ⚠️ Revisar licencia de tercero
+                                </div>
+                            </div>
+                            <div className="mt-10 grid gap-2.5">
+                                <button className="w-full bg-[var(--success)] border border-white/10 text-white py-2 rounded font-semibold hover:opacity-90">
+                                    ✅ Aprobar y Publicar
+                                </button>
+                                <button className="w-full bg-transparent border border-[var(--danger)] text-[var(--danger)] py-2 rounded font-semibold hover:bg-[var(--danger)] hover:text-white transition-colors">
+                                    ❌ Rechazar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-black border border-dashed border-[var(--text-muted)] rounded-lg flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="text-4xl mb-2">📺</div>
+                            <p className="text-[var(--text-muted)] mb-2">Google Drive Preview</p>
+                            <code className="text-[var(--accent)] font-code text-xs">File ID: {item.driveId}</code>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 text-[var(--text-muted)]">
+                    No hay items pendientes de revisión.
+                </div>
+            )}
+        </>
+    )
+}

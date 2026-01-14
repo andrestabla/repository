@@ -27,33 +27,44 @@ async function main() {
         })
     }
 
-    // 3. Content Items from Prototype
+    // 3. Content Items from Prototype (New Dataset)
     const contents = [
-        { id: "4S-P-001", title: "Networking Strategy Baseline", type: "PDF", pillar: "Shine Out", version: "v1.0", status: "Aprobado", ip: "Propio", completeness: 100, driveId: "XYZ_123" },
-        { id: "4S-V-015", title: "Pitching Techniques", type: "Video", pillar: "Shine In", version: "v1.0", status: "Revisión", ip: "Propio", completeness: 85, driveId: "VID_555" },
-        { id: "4S-T-102", title: "Stakeholder Matrix Template", type: "Herramienta", pillar: "Shine Up", version: "v0.9", status: "Obsoleto", ip: "Tercero", completeness: 100, driveId: "DOC_999" },
-        { id: "4S-D-055", title: "Manual de Facilitador Módulo 1", type: "Manual", pillar: "Transversal", version: "v1.0", status: "Borrador", ip: "Propio", completeness: 40, driveId: null },
-        { id: "4S-X-000", title: "NUEVO: Liderazgo Remoto", type: "PDF", pillar: "Shine On", version: "v1.0", status: "Borrador", ip: "Completar", completeness: 20, driveId: null },
+        { id: '4S-P-001', title: 'Guía Fundamental de Networking', type: 'PDF', pillar: 'Shine Out', sub: 'Networking', level: 'Básico', status: 'Approved', complete: 100, ip: 'Propio', driveId: 'VALID_ID' },
+        { id: '4S-V-020', title: 'Video: Elevator Pitch TED', type: 'Video', pillar: 'Shine In', sub: 'Comunicación', level: 'Intermedio', status: 'Review', complete: 90, ip: 'Tercero', driveId: 'VALID_ID' },
+        { id: '4S-T-099', title: 'Matriz de Influencia Política', type: 'Herramienta', pillar: 'Shine Up', sub: 'Influencia', level: 'Avanzado', status: 'Draft', complete: 20, ip: 'Completar', driveId: null },
+        { id: '4S-P-002', title: 'Checklist de LinkedIn', type: 'PDF', pillar: 'Shine Out', sub: 'Marca Personal', level: 'Básico', status: 'Approved', complete: 100, ip: 'Propio', driveId: 'VALID_ID' },
+        { id: '4S-D-105', title: 'Manual Facilitador Módulo 1', type: 'Doc', pillar: 'Transversal', sub: 'General', level: 'N/A', status: 'Draft', complete: 40, ip: 'Propio', driveId: null }
     ]
 
     for (const c of contents) {
         await prisma.contentItem.upsert({
             where: { id: c.id },
-            update: {},
+            update: {
+                title: c.title,
+                type: c.type,
+                pillar: c.pillar,
+                sub: c.sub,
+                level: c.level,
+                status: c.status,
+                ip: c.ip,
+                completeness: c.complete,
+                driveId: c.driveId
+            },
             create: {
                 id: c.id,
                 title: c.title,
                 type: c.type,
                 pillar: c.pillar,
-                version: c.version,
+                sub: c.sub,
+                level: c.level,
+                version: 'v1.0',
                 status: c.status,
                 ip: c.ip,
-                completeness: c.completeness,
+                completeness: c.complete,
                 driveId: c.driveId,
             },
         })
     }
-
     // 4. Artifacts
     const artifacts = [
         { name: "Dossier Maestro", type: "PDF", lastGen: new Date() },

@@ -20,6 +20,8 @@ model ContentItem {
   title        String
   type         String   // PDF, Video, Herramienta, Manual
   pillar       String   // Shine Out, Shine In, etc.
+  sub          String?  // New: Subcomponent
+  level        String?  // New: Básico, Intermedio, Avanzado
   version      String
   status       String   // Aprobado, Borrador, Revisión, Obsoleto
   ip           String   // Propio, Tercero, Completar
