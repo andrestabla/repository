@@ -1,5 +1,7 @@
 import prisma from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export default async function Taxonomy() {
     const pillars = await prisma.taxonomy.findMany({
         where: { type: 'Pillar' },

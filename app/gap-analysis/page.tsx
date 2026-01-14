@@ -1,6 +1,8 @@
 import prisma from '@/lib/prisma'
 import { randomInt } from 'crypto' // Just for the 'random' width in mock if needed, but we'll try to calc real data
 
+export const dynamic = 'force-dynamic'
+
 export default async function GapAnalysis() {
     // Get all pillars
     const pillars = await prisma.taxonomy.findMany({ where: { type: 'Pillar' } })
