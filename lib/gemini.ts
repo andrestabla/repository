@@ -5,12 +5,14 @@ export class GeminiService {
     static async analyzeContent(text: string) {
         if (!text || text.length < 50) return null
 
-        // Try different model variations
+        // Try different model variations found in diagnostic
         const modelsToTry = [
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite",
+            "gemini-flash-latest",
+            "gemini-pro-latest",
             "gemini-1.5-flash",
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-pro",
-            "gemini-pro",
+            "gemini-pro"
         ]
 
         let apiKey = await SystemSettingsService.getGeminiApiKey()
@@ -61,11 +63,13 @@ export class GeminiService {
                 lastError = error
                 const msg = error.message || String(error)
                 console.error(`[Gemini] Failed ${modelName}:`, msg)
+                // If it's a 404, we continue to the next model
                 if (msg.includes('404') || msg.includes('not found')) continue
-                throw error
+                // If it's another error, we might want to stop or continue
+                continue
             }
         }
 
-        throw lastError
+        throw new Error(`[Gemini All Models Failed] Último error: ${lastError?.message || lastError}`)
     }
 }
