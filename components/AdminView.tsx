@@ -160,8 +160,8 @@ export default function AdminView() {
                 <button
                     onClick={() => setActiveTab('users')}
                     className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'users'
-                            ? 'border-[var(--accent)] text-white'
-                            : 'border-transparent text-[var(--text-muted)] hover:text-white'
+                        ? 'border-[var(--accent)] text-white'
+                        : 'border-transparent text-[var(--text-muted)] hover:text-white'
                         }`}
                 >
                     Usuarios
@@ -169,8 +169,8 @@ export default function AdminView() {
                 <button
                     onClick={() => setActiveTab('settings')}
                     className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'settings'
-                            ? 'border-[var(--accent)] text-white'
-                            : 'border-transparent text-[var(--text-muted)] hover:text-white'
+                        ? 'border-[var(--accent)] text-white'
+                        : 'border-transparent text-[var(--text-muted)] hover:text-white'
                         }`}
                 >
                     Configuración
@@ -272,49 +272,97 @@ export default function AdminView() {
                 <div className="space-y-8">
                     {loadingSettings && <div className="text-[var(--text-muted)]">Cargando configuración...</div>}
 
-                    {/* EMAIL CONFIG */}
+                    {/* EMAIL CONFIG WIZARD */}
                     <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
-                        <h3 className="text-lg font-bold text-white mb-4">📧 Configuración de Correo (SMTP)</h3>
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2">📧 Configuración de Correo</h3>
+                                <p className="text-xs text-[var(--text-muted)] mt-1">Configura el servidor SMTP para enviar notificaciones.</p>
+                            </div>
+                            <select
+                                onChange={(e) => {
+                                    const provider = e.target.value;
+                                    if (provider === 'gmail') {
+                                        setEmailConfig(prev => ({ ...prev, smtpHost: 'smtp.gmail.com', smtpPort: 465, smtpUser: '' }));
+                                    } else if (provider === 'outlook') {
+                                        setEmailConfig(prev => ({ ...prev, smtpHost: 'smtp.office365.com', smtpPort: 587, smtpUser: '' }));
+                                    }
+                                }}
+                                className="bg-[#0d1117] border border-[var(--border)] rounded p-1 text-xs"
+                            >
+                                <option value="custom">Personalizado</option>
+                                <option value="gmail">Gmail (Recomendado)</option>
+                                <option value="outlook">Outlook / Office 365</option>
+                            </select>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label className="text-xs text-[var(--text-muted)] block mb-1">Host</label>
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Host SMTP</label>
                                 <input value={emailConfig.smtpHost} onChange={e => setEmailConfig({ ...emailConfig, smtpHost: e.target.value })} placeholder="smtp.gmail.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
                             <div>
-                                <label className="text-xs text-[var(--text-muted)] block mb-1">Port</label>
-                                <input type="number" value={emailConfig.smtpPort} onChange={e => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value) })} placeholder="587" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Puerto</label>
+                                <input type="number" value={emailConfig.smtpPort} onChange={e => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value) })} placeholder="465" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            </div>
+                            <div className="col-span-2 p-3 bg-blue-900/20 border border-blue-900/50 rounded text-xs text-blue-200">
+                                💡 <strong>Tip para Gmail:</strong> Debes usar una <a href="https://myaccount.google.com/apppasswords" target="_blank" className="underline font-bold hover:text-white">Contraseña de Aplicación</a>, no tu contraseña habitual. Asegúrate de tener la Verificación en 2 pasos activada.
                             </div>
                             <div>
-                                <label className="text-xs text-[var(--text-muted)] block mb-1">Usuario</label>
-                                <input value={emailConfig.smtpUser} onChange={e => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })} placeholder="email@dominio.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Usuario (Tu correo)</label>
+                                <input value={emailConfig.smtpUser} onChange={e => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })} placeholder="tu@email.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
                             <div>
-                                <label className="text-xs text-[var(--text-muted)] block mb-1">Contraseña (App Password)</label>
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Contraseña de Aplicación</label>
                                 <input type="password" value={emailConfig.smtpPass} onChange={e => setEmailConfig({ ...emailConfig, smtpPass: e.target.value })} placeholder="********" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
                         </div>
                         <button onClick={saveEmailConfig} className="bg-[var(--accent)] text-white px-4 py-2 rounded text-sm font-bold hover:brightness-110">Guardar Configuración SMTP</button>
                     </div>
 
-                    {/* DRIVE CONFIG */}
+                    {/* DRIVE CONFIG WIZARD */}
                     <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
                         <h3 className="text-lg font-bold text-white mb-4">📂 Carpetas Autorizadas (Google Drive)</h3>
-                        <p className="text-sm text-[var(--text-muted)] mb-4">Agrega los IDs de las carpetas públicas donde se pueden almacenar los documentos.</p>
 
-                        <div className="flex gap-2 mb-4">
-                            <input value={newFolderId} onChange={e => setNewFolderId(e.target.value)} placeholder="ID de la Carpeta (ej: 1A2b3C...)" className="flex-1 bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
-                            <button onClick={addFolder} className="bg-[var(--success)] text-white px-4 py-2 rounded text-sm font-bold hover:brightness-110">Agregar ID</button>
+                        <div className="mb-6 p-4 bg-[#0d1117] rounded border border-[var(--border)]">
+                            <label className="text-xs text-[var(--text-muted)] block mb-2 font-bold">Asistente de Carpeta</label>
+                            <div className="flex gap-2">
+                                <input
+                                    value={newFolderId}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        // Auto-extract ID from URL
+                                        if (val.includes('drive.google.com')) {
+                                            const match = val.match(/folders\/([-a-zA-Z0-9_]+)/);
+                                            if (match && match[1]) {
+                                                setNewFolderId(match[1]);
+                                                return;
+                                            }
+                                        }
+                                        setNewFolderId(val);
+                                    }}
+                                    placeholder="Pega aquí la URL de la carpeta o el ID..."
+                                    className="flex-1 bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm"
+                                />
+                                <button onClick={addFolder} className="bg-[var(--success)] text-white px-4 py-2 rounded text-sm font-bold hover:brightness-110">Agregar</button>
+                            </div>
+                            <p className="text-[10px] text-[var(--text-muted)] mt-2">
+                                Puedes pegar la URL completa (ej: <code>https://drive.google.com/drive/folders/1A2b3C...</code>) y nosotros extraeremos el ID automáticamente.
+                            </p>
                         </div>
 
                         <div className="space-y-2">
                             {driveConfig.authorizedFolderIds.map(id => (
-                                <div key={id} className="flex items-center justify-between bg-[#0d1117] p-3 rounded border border-[var(--border)]">
-                                    <span className="font-mono text-xs">{id}</span>
-                                    <button onClick={() => removeFolder(id)} className="text-[var(--danger)] text-xs hover:underline">Eliminar</button>
+                                <div key={id} className="flex items-center justify-between bg-[#1c2128] p-3 rounded border border-[var(--border)]">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xl">📁</span>
+                                        <span className="font-mono text-xs text-white">{id}</span>
+                                    </div>
+                                    <button onClick={() => removeFolder(id)} className="text-[var(--danger)] text-xs hover:underline bg-[#0d1117] px-2 py-1 rounded border border-[var(--border)]">Eliminar</button>
                                 </div>
                             ))}
                             {driveConfig.authorizedFolderIds.length === 0 && (
-                                <div className="text-center text-[var(--text-muted)] text-sm py-4">No hay carpetas configuradas.</div>
+                                <div className="text-center text-[var(--text-muted)] text-sm py-4 italic">No hay carpetas configuradas. Agrega una arriba.</div>
                             )}
                         </div>
                     </div>
