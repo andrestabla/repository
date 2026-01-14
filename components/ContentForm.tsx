@@ -135,14 +135,15 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
     }
 
     // --- RENDER HELPERS ---
-    const Input = ({ label, field, placeholder, width = 'full' }: any) => (
+    const Input = ({ label, field, placeholder, width = 'full', disabled = false }: any) => (
         <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
             <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">{label}</label>
             <input
                 value={(formData as any)[field] || ''}
                 onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none"
+                className={`w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100/10' : ''}`}
                 placeholder={placeholder}
+                disabled={disabled}
             />
         </div>
     )
@@ -219,7 +220,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                         </div>
                                     </div>
 
-                                    <Input label="ID Único (Inmutable)" field="id" placeholder="4S-P-001" />
+                                    <Input label="ID Único (Inmutable)" field="id" placeholder="4S-P-001" disabled={isEdit} />
                                     <Input label="Título Oficial" field="title" placeholder="Manual del Facilitador..." />
 
                                     <Select label="Tipo Contenido" field="type" options={['PDF', 'Video', 'Audio', 'Toolkit', 'Test', 'Plantilla']} />
