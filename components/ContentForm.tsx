@@ -1,50 +1,52 @@
-
 'use client'
 
 import { useState, useEffect } from 'react'
 
 // --- TYPES ---
-type ContentItem = {
+export type ContentItem = {
     id: string
     title: string
     type: string
-    format?: string
-    language?: string
-    duration?: string
-    year?: string
-    source?: string
+    format?: string | null
+    language?: string | null
+    duration?: string | null
+    year?: string | null
+    source?: string | null
 
     pillar: string
-    sub?: string
-    competence?: string
-    behavior?: string
-    maturity?: string // replacing level
+    sub?: string | null
+    competence?: string | null
+    behavior?: string | null
+    maturity?: string | null // replacing level
 
-    intervention?: string
-    moment?: string
-    prereqId?: string
-    testId?: string
-    variable?: string
-    impactScore?: boolean
-    outcomeType?: string
+    intervention?: string | null
+    moment?: string | null
+    prereqId?: string | null
+    testId?: string | null
+    variable?: string | null
+    impactScore?: boolean | null
+    outcomeType?: string | null
 
-    trigger?: string
-    recommendation?: string
-    challengeType?: string
-    evidenceRequired?: string
-    nextContentId?: string
+    trigger?: string | null
+    recommendation?: string | null
+    challengeType?: string | null
+    evidenceRequired?: string | null
+    nextContentId?: string | null
 
-    targetRole?: string
-    roleLevel?: string
-    industry?: string
-    vipUsage?: boolean
-    publicVisibility?: boolean
+    targetRole?: string | null
+    roleLevel?: string | null
+    industry?: string | null
+    vipUsage?: boolean | null
+    publicVisibility?: boolean | null
 
     ipOwner?: string | null
     ipType?: string | null
     authorizedUse?: string | null
     confidentiality?: string | null
     reuseExternal?: boolean | null
+
+    ip?: string | null // Legacy support
+    level?: string | null // Legacy support
 
     driveId?: string | null
     version: string

@@ -3,24 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { signIn, signOut } from "next-auth/react"
 import AdminView from './AdminView'
-
-// Types based on the schema
-type ContentItem = {
-    id: string
-    title: string
-    pillar: string
-    sub?: string | null
-    level?: string | null
-    type: string
-    version: string
-    status: string
-    ip: string | null
-    completeness: number
-    driveId?: string | null
-    // New metadata fields (optional for now in UI)
-    maturity?: string | null
-    ipOwner?: string | null
-}
+import ContentForm, { ContentItem } from './ContentForm'
 
 type UserRole = 'metodologo' | 'curador' | 'auditor' | 'admin' | 'guest' | 'pending'
 
@@ -344,6 +327,8 @@ function GapsView() {
     )
 }
 
+
+
 function InventoryView({
     data, role, onRefresh, isRefreshing, onSave
 }: {
@@ -354,19 +339,22 @@ function InventoryView({
     onSave: (item: ContentItem) => void
 }) {
     const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null)
+    const [showForm, setShowForm] = useState(false)
+    const [formInitialData, setFormInitialData] = useState<ContentItem | null>(null)
 
-    // Edit State
-    const [editForm, setEditForm] = useState<ContentItem | null>(null)
+    const handleEdit = (item: ContentItem) => {
+        setFormInitialData(item)
+        setShowForm(true)
+    }
 
-    // When selection changes, update edit form
-    useEffect(() => {
-        if (selectedItem) setEditForm({ ...selectedItem })
-    }, [selectedItem])
+    const handleNew = () => {
+        setFormInitialData(null)
+        setShowForm(true)
+    }
 
-    const handleSaveClick = () => {
-        if (editForm) {
-            onSave(editForm)
-        }
+    const handleFormSave = () => {
+        setShowForm(false)
+        onRefresh() // Refresh data after save
     }
 
     return (
@@ -392,7 +380,10 @@ function InventoryView({
                         </button>
                     )}
                     {role === 'curador' && (
-                        <button className="bg-[var(--success)] border border-white/10 text-white px-4 py-2 rounded-md font-semibold text-[13px] hover:opacity-90">
+                        <button
+                            onClick={handleNew}
+                            className="bg-[var(--success)] border border-white/10 text-white px-4 py-2 rounded-md font-semibold text-[13px] hover:opacity-90 transition-transform active:scale-95"
+                        >
                             + Nuevo Activo
                         </button>
                     )}
@@ -403,7 +394,7 @@ function InventoryView({
 
                 {/* Left Panel: List */}
                 <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden flex flex-col h-[calc(100vh-140px)]">
-                    <div className="p-3 border-b border-[var(--border)]">
+                    <div className="p-3 border-b border-[var(--border)] bg-[#0d1117]">
                         <input
                             type="text"
                             placeholder="Buscar activos..."
@@ -417,6 +408,7 @@ function InventoryView({
                                 <tr>
                                     <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Título</th>
                                     {!selectedItem && <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Estado</th>}
+                                    {!selectedItem && <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Completeness</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -424,17 +416,30 @@ function InventoryView({
                                     <tr
                                         key={c.id}
                                         onClick={() => setSelectedItem(c)}
-                                        className={`cursor-pointer hover:bg-white/5 border-b border-[var(--border)] last:border-0
+                                        className={`cursor-pointer hover:bg-white/5 border-b border-[var(--border)] last:border-0 transition-colors
                       ${selectedItem?.id === c.id ? 'bg-[rgba(88,166,255,0.1)] border-l-2 border-l-[var(--accent)]' : ''}
                     `}
                                     >
                                         <td className="p-3">
                                             <div className="font-semibold text-white truncate max-w-[300px]">{c.title}</div>
-                                            <div className="text-[11px] text-[var(--text-muted)]">{c.id} • {c.type}</div>
+                                            <div className="text-[11px] text-[var(--text-muted)] font-mono">{c.id}</div>
                                         </td>
                                         {!selectedItem && (
                                             <td className="p-3">
                                                 <StatusBadge status={c.status} />
+                                            </td>
+                                        )}
+                                        {!selectedItem && (
+                                            <td className="p-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-16 bg-gray-700 rounded-full h-1">
+                                                        <div
+                                                            className={`h-1 rounded-full ${c.completeness === 100 ? 'bg-green-400' : 'bg-yellow-400'}`}
+                                                            style={{ width: `${c.completeness}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-[10px] text-[var(--text-muted)]">{c.completeness}%</span>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>
@@ -445,102 +450,94 @@ function InventoryView({
                 </div>
 
                 {/* Right Panel: Preview / Edit */}
-                {selectedItem && editForm && (
+                {selectedItem && (
                     <div className="flex flex-col gap-4 h-[calc(100vh-140px)] overflow-y-auto pr-1">
 
-                        {/* Metadata Card (Editable for Curators) */}
-                        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
+                        {/* Metadata Card */}
+                        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 shadow-lg">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 mr-4">
-                                    {role === 'curador' ? (
-                                        <input
-                                            className="text-lg font-bold text-white bg-transparent border-b border-transparent focus:border-[var(--accent)] focus:outline-none w-full"
-                                            value={editForm.title}
-                                            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                                        />
-                                    ) : (
-                                        <h3 className="text-lg font-bold text-white leading-tight">{editForm.title}</h3>
-                                    )}
-                                    <div className="text-sm text-[var(--accent)] font-code mt-1">{editForm.id}</div>
+                                    <h3 className="text-lg font-bold text-white leading-tight">{selectedItem.title}</h3>
+                                    <div className="text-sm text-[var(--accent)] font-code mt-1">{selectedItem.id}</div>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
-                                    <StatusBadge status={editForm.status} />
+                                    <StatusBadge status={selectedItem.status} />
                                     {role === 'curador' && (
                                         <button
-                                            onClick={handleSaveClick}
-                                            className="text-[10px] bg-[var(--accent)] text-white px-2 py-1 rounded hover:opacity-80"
+                                            onClick={() => handleEdit(selectedItem)}
+                                            className="text-xs bg-[var(--accent)] text-white px-3 py-1.5 rounded hover:brightness-110 flex items-center gap-1 shadow-lg shadow-blue-900/20"
                                         >
-                                            Guardar Cambios
+                                            ✏️ Editar Metadatos
                                         </button>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="grid grid-cols-2 gap-4 text-sm bg-black/20 p-4 rounded border border-white/5">
                                 <div>
-                                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">TAXONOMÍA (Pilar)</label>
-                                    {role === 'curador' ? (
-                                        <select
-                                            className="w-full text-white bg-black/20 p-2 rounded border border-[var(--border)]"
-                                            value={editForm.pillar}
-                                            onChange={(e) => setEditForm({ ...editForm, pillar: e.target.value })}
-                                        >
-                                            <option value="Shine Out">Shine Out</option>
-                                            <option value="Shine In">Shine In</option>
-                                            <option value="Shine Up">Shine Up</option>
-                                            <option value="Shine On">Shine On</option>
-                                        </select>
+                                    <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Pilar 4S</label>
+                                    <div className="text-white font-medium">{selectedItem.pillar}</div>
+                                    <div className="text-xs text-[var(--text-muted)]">{selectedItem.sub || '-'}</div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Drive Reference</label>
+                                    {selectedItem.driveId ? (
+                                        <div className="text-[var(--success)] font-mono text-xs flex items-center gap-1">✅ {selectedItem.driveId.substring(0, 8)}...</div>
                                     ) : (
-                                        <div className="text-white bg-black/20 p-2 rounded border border-[var(--border)]">{editForm.pillar}</div>
+                                        <div className="text-[var(--danger)] text-xs font-bold">⚠️ Missing File</div>
                                     )}
                                 </div>
                                 <div>
-                                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">DRIVE ID</label>
-                                    {role === 'curador' ? (
-                                        <input
-                                            className="w-full text-white bg-black/20 p-2 rounded border border-[var(--border)] font-code text-xs"
-                                            value={editForm.driveId || ''}
-                                            onChange={(e) => setEditForm({ ...editForm, driveId: e.target.value })}
-                                        />
-                                    ) : (
-                                        <div className="text-white bg-black/20 p-2 rounded border border-[var(--border)] font-code text-xs">
-                                            {editForm.driveId || 'N/A'}
-                                        </div>
-                                    )}
+                                    <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Maturity</label>
+                                    <div className="text-white">{selectedItem.maturity || selectedItem.level || 'N/A'}</div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">IP Owner</label>
+                                    <div className="text-white">{selectedItem.ipOwner || selectedItem.ip || 'N/A'}</div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Drive Preview */}
-                        <div className="bg-black border border-[var(--border)] rounded-lg flex-1 min-h-[400px] relative overflow-hidden group">
-                            {editForm.driveId ? (
+                        <div className="bg-black border border-[var(--border)] rounded-lg flex-1 min-h-[400px] relative overflow-hidden group shadow-inner">
+                            {selectedItem.driveId ? (
                                 <iframe
-                                    src={`https://drive.google.com/file/d/${editForm.driveId}/preview`}
+                                    src={`https://drive.google.com/file/d/${selectedItem.driveId}/preview`}
                                     className="w-full h-full border-none"
                                     allow="autoplay"
                                 ></iframe>
                             ) : (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)]">
-                                    <div className="text-4xl mb-2">☁️</div>
-                                    <p>No Drive ID connected</p>
+                                    <div className="text-4xl mb-2 opacity-30">☁️</div>
+                                    <p className="font-mono text-xs opacity-50">No Document Linked</p>
                                 </div>
                             )}
 
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <a
-                                    href={editForm.driveId ? `https://drive.google.com/file/d/${editForm.driveId}/view` : '#'}
-                                    target="_blank"
-                                    className="bg-black/80 hover:bg-black text-white text-xs px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md"
-                                >
-                                    Abrir en Drive ↗
-                                </a>
-                            </div>
+                            {selectedItem.driveId && (
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a
+                                        href={`https://drive.google.com/file/d/${selectedItem.driveId}/view`}
+                                        target="_blank"
+                                        className="bg-black/80 hover:bg-black text-white text-xs px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md"
+                                    >
+                                        Abrir Ext. ↗
+                                    </a>
+                                </div>
+                            )}
                         </div>
 
                     </div>
                 )}
-
             </div>
+
+            {/* MODAL FORM */}
+            {showForm && (
+                <ContentForm
+                    initialData={formInitialData}
+                    onClose={() => setShowForm(false)}
+                    onSave={handleFormSave}
+                />
+            )}
         </>
     )
 }
