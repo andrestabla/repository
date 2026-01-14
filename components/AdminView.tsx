@@ -344,6 +344,19 @@ export default function AdminView() {
                                 <input type="password" value={emailConfig.smtpPass} onChange={e => setEmailConfig({ ...emailConfig, smtpPass: e.target.value })} placeholder="********" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
 
+                            {/* SENDER CUSTOMIZATION */}
+                            <div className="col-span-2 pt-2 border-t border-[var(--border)] grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre del Remitente (Opcional)</label>
+                                    <input value={emailConfig.senderName || ''} onChange={e => setEmailConfig({ ...emailConfig, senderName: e.target.value })} placeholder="Ej: Soporte TI" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-[var(--text-muted)] block mb-1">Email del Remitente (Opcional)</label>
+                                    <input value={emailConfig.senderEmail || ''} onChange={e => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })} placeholder="Ej: no-reply@empresa.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                    <p className="text-[10px] text-[var(--text-muted)] mt-1">Si se deja vacío, se usa el Usuario SMTP.</p>
+                                </div>
+                            </div>
+
                             <div className="col-span-2 pt-2 border-t border-[var(--border)] grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre del Remitente (Opcional)</label>
