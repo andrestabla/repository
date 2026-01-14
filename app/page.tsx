@@ -1,65 +1,97 @@
-import Image from "next/image";
+import prisma from '@/lib/prisma'
+import Link from 'next/link'
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+export default async function Dashboard() {
+  // Fetch Data
+  const [total, incomplete, approved, backlog, methodology] = await Promise.all([
+    prisma.contentItem.count(),
+    prisma.contentItem.count({
+      where: {
+        OR: [
+          { completeness: { lt: 100 } },
+          { ip: 'Completar' },
+          { driveId: null },
+        ],
+      },
+    }),
+    prisma.contentItem.count({ where: { status: 'Aprobado' } }),
+    prisma.contentItem.findMany({
+      where: { completeness: { lt: 100 } },
+      take: 3,
+    }),
+    prisma.methodology.findUnique({ where: { version: 'v1.0' } }), // Should ideally get active one
+  ])
+
+  const coverage = total > 0 ? Math.round((approved / total) * 100) : 0
+  const version = methodology?.version || 'v1.0'
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-[20px] font-semibold text-white flex items-center gap-3">
+          Dashboard <span className="font-mono text-[11px] bg-[rgba(188,140,255,0.15)] text-purple px-2 py-0.5 rounded-full border border-[rgba(188,140,255,0.3)]">{version}</span>
+        </h2>
+        <div>
+          <Link href="/generator" className="bg-[#238636] text-white border border-white/10 px-3.5 py-1.5 rounded-md text-[12px] font-semibold hover:bg-[#2ea043] transition-colors">
+            Exportar Documentación
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <StatBox label="Total Activos Indexados" value={total} />
+        <StatBox label="Datos Faltantes (Action Req)" value={incomplete} color="text-danger" borderColor="border-danger/40" />
+        <StatBox label="Aprobados para v1.0" value={approved} color="text-success" />
+        <StatBox label="Cobertura Metodológica" value={`${coverage}%`} color="text-accent" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-5">
+        <div className="bg-panel border border-border rounded-xl p-5">
+          <h3 className="m-0 mb-4 text-[15px] font-semibold flex justify-between">Estado del Repositorio (Drive)</h3>
+          <p className="text-[13px] text-text-muted mb-4">
+            Conectado a: <span className="font-mono">/4Shine/Methodology/v1.0/</span>
           </p>
+          <div className="bg-black/30 p-2.5 rounded-md font-mono text-[12px] text-text-muted">
+            &gt; Checking file integrity... OK<br />
+            &gt; Syncing metadata... OK<br />
+            &gt; <span className="text-danger">Warning: 2 files missing Drive ID</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="bg-panel border border-border rounded-xl p-5">
+          <h3 className="m-0 mb-4 text-[15px] font-semibold flex justify-between">Backlog de Curaduría</h3>
+          <table className="w-full text-[13px] border-collapse">
+            <tbody>
+              {backlog.map((item) => (
+                <tr key={item.id} className="border-b border-border/40 last:border-0">
+                  <td className="py-2.5">{item.title}</td>
+                  <td className="py-2.5">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full border border-danger/30 bg-danger/10 text-danger font-medium">
+                      {item.completeness}% data
+                    </span>
+                  </td>
+                  <td className="text-right py-2.5">
+                    <Link href="/inventory" className="bg-[#21262d] border border-border text-text px-3 py-1.5 rounded-md text-[12px] font-semibold hover:bg-[#30363d] transition-colors">
+                      Editar
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </main>
+      </div>
     </div>
-  );
+  )
+}
+
+function StatBox({ label, value, color = 'text-white', borderColor = 'border-border' }: { label: string, value: number | string, color?: string, borderColor?: string }) {
+  return (
+    <div className={`bg-[#0d1117] border ${borderColor} rounded-md p-4`}>
+      <div className="text-[12px] text-text-muted">{label}</div>
+      <div className={`text-[24px] font-bold mt-1 ${color}`}>{value}</div>
+    </div>
+  )
 }

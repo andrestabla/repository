@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Methodology {
+  id        String   @id @default(cuid())
+  version   String   @unique
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContentItem {
+  id           String   @id // e.g. "4S-P-001"
+  title        String
+  type         String   // PDF, Video, Herramienta, Manual
+  pillar       String   // Shine Out, Shine In, etc.
+  version      String
+  status       String   // Aprobado, Borrador, Revisión, Obsoleto
+  ip           String   // Propio, Tercero, Completar
+  completeness Int      @default(0)
+  driveId      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Artifact {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  lastGen   DateTime @updatedAt
+  link      String?
+}
+
+model Taxonomy {
+  id        String     @id @default(cuid())
+  name      String
+  type      String     // Pillar, Component, Subcomponent
+  parentId  String?
+  parent    Taxonomy?  @relation("TaxonomyHierarchy", fields: [parentId], references: [id])
+  children  Taxonomy[] @relation("TaxonomyHierarchy")
+}
