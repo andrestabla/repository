@@ -97,6 +97,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
 
     // Derived States
     const [driveStatus, setDriveStatus] = useState<'idle' | 'validating' | 'valid'>('idle')
+    const [isUploading, setIsUploading] = useState(false)
 
     useEffect(() => {
         if (formData.driveId) setDriveStatus('valid')
@@ -147,19 +148,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             })
             const json = await res.json()
             if (json.success && json.data) {
-                // Merge data
-                setFormData(prev => ({
-                    ...prev,
-                    title: json.data.title || prev.title,
-                    type: json.data.type || prev.type,
-                    pillar: json.data.pillar || prev.pillar,
-                    sub: json.data.sub || prev.sub,
-                    competence: json.data.competence || prev.competence,
-                    maturity: json.data.maturity || prev.maturity,
-                    targetRole: json.data.targetRole || prev.targetRole,
-                    observations: json.data.summary || prev.observations,
-                    duration: json.data.duration || prev.duration,
-                }))
+                applyMetadata(json.data)
                 alert('✨ Análisis Completo: Metadatos sugeridos aplicados.')
             } else {
                 alert('Error: ' + (json.error || 'No se pudo analizar'))
@@ -168,6 +157,56 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             alert('Error de conexión con IA')
         }
         setAnalyzing(false)
+    }
+
+    const applyMetadata = (data: any) => {
+        setFormData(prev => ({
+            ...prev,
+            title: data.title || prev.title,
+            type: data.type || prev.type,
+            pillar: data.pillar || prev.pillar,
+            sub: data.sub || prev.sub,
+            competence: data.competence || prev.competence,
+            maturity: data.maturity || prev.maturity,
+            targetRole: data.targetRole || prev.targetRole,
+            observations: data.summary || prev.observations,
+            duration: data.duration || prev.duration,
+        }))
+    }
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(true)
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', file)
+
+        try {
+            const res = await fetch('/api/inventory/upload', {
+                method: 'POST',
+                body: uploadFormData
+            })
+            const json = await res.json()
+
+            if (json.success) {
+                if (json.driveId) {
+                    setFormData(prev => ({ ...prev, driveId: json.driveId }))
+                    setDriveStatus('valid')
+                }
+                if (json.metadata) {
+                    applyMetadata(json.metadata)
+                    alert('✨ ¡Éxito! Archivo subido a Drive y analizado por IA.')
+                } else {
+                    alert('Archivo subido, pero no se pudo extraer metadatos automáticamente.')
+                }
+            } else {
+                alert('Error en subida/análisis: ' + (json.error || 'Desconocido'))
+            }
+        } catch (error) {
+            alert('Error al procesar el archivo')
+        }
+        setIsUploading(false)
     }
 
     const Input = ({ label, field, placeholder, width = 'full', disabled = false }: any) => (
@@ -237,30 +276,64 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                             {/* 1. IDENTIFICATION */}
                             {activeTab === 'identity' && (
                                 <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                                    <div className="col-span-2 p-4 bg-blue-900/10 border border-blue-900/30 rounded mb-2">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h3 className="text-sm font-bold text-blue-200">Archivo Original (Source)</h3>
-                                            <button onClick={openPicker} className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-bold shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105">
-                                                📂 Abrir Drive Picker
-                                            </button>
-                                            {formData.driveId && (
-                                                <button
-                                                    onClick={handleAutoAnalyze}
-                                                    disabled={analyzing}
-                                                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1.5 rounded font-bold shadow-lg shadow-purple-900/20 transition-all transform hover:scale-105 ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    {analyzing ? '✨ Analizando...' : '✨ Analizar con Gemini'}
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <input
-                                                value={formData.driveId || ''}
-                                                onChange={e => setFormData({ ...formData, driveId: e.target.value })}
-                                                placeholder="O pega el ID Manualmente..."
-                                                className="flex-1 bg-black/30 border border-blue-900/30 rounded px-2 py-1 text-xs font-mono"
-                                            />
-                                            {formData.driveId && <a href={`https://drive.google.com/open?id=${formData.driveId}`} target="_blank" className="text-blue-400 text-xs flex items-center hover:underline">Ver ↗</a>}
+                                    <div className="col-span-2 p-4 bg-sky-900/10 border border-sky-900/30 rounded mb-2">
+                                        <div className="flex flex-col gap-4">
+                                            {/* Subida Directa Area */}
+                                            <div className="bg-sky-950/20 border-2 border-dashed border-sky-800/40 rounded-lg p-6 text-center group hover:border-sky-500/50 transition-all">
+                                                <input
+                                                    type="file"
+                                                    id="ai-upload"
+                                                    className="hidden"
+                                                    onChange={handleFileUpload}
+                                                    disabled={isUploading}
+                                                />
+                                                <label htmlFor="ai-upload" className="cursor-pointer">
+                                                    <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🤖 ✨</div>
+                                                    <div className="text-sm font-bold text-sky-200">Subir y Analizar con IA</div>
+                                                    <div className="text-[10px] text-sky-400/70 mt-1">Sube a Drive y extrae metadatos automáticamente</div>
+                                                    {isUploading && (
+                                                        <div className="mt-4 flex flex-col items-center">
+                                                            <div className="w-full bg-sky-900/30 h-1.5 rounded-full overflow-hidden">
+                                                                <div className="bg-sky-500 h-full animate-progress-ind"></div>
+                                                            </div>
+                                                            <span className="text-[10px] text-sky-300 mt-2 animate-pulse">Procesando archivo...</span>
+                                                        </div>
+                                                    )}
+                                                </label>
+                                            </div>
+
+                                            <div className="flex items-center gap-4 text-[var(--text-muted)] py-2">
+                                                <div className="h-px flex-1 bg-[var(--border)]"></div>
+                                                <span className="text-[10px] uppercase font-bold tracking-widest">o selecciona uno existente</span>
+                                                <div className="h-px flex-1 bg-[var(--border)]"></div>
+                                            </div>
+
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="text-sm font-bold text-blue-200">Enlace con Google Drive</h3>
+                                                <div className="flex gap-2">
+                                                    <button onClick={openPicker} className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-bold shadow-lg shadow-blue-900/20 transition-all">
+                                                        📂 Drive Picker
+                                                    </button>
+                                                    {formData.driveId && (
+                                                        <button
+                                                            onClick={handleAutoAnalyze}
+                                                            disabled={analyzing}
+                                                            className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1.5 rounded font-bold shadow-lg shadow-purple-900/20 transition-all disabled:opacity-50"
+                                                        >
+                                                            {analyzing ? '✨ Analizando...' : '✨ Analizar ID'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    value={formData.driveId || ''}
+                                                    onChange={e => setFormData({ ...formData, driveId: e.target.value })}
+                                                    placeholder="Drive File ID..."
+                                                    className="flex-1 bg-black/30 border border-blue-900/30 rounded px-2 py-1 text-xs font-mono"
+                                                />
+                                                {formData.driveId && <a href={`https://drive.google.com/open?id=${formData.driveId}`} target="_blank" className="text-blue-400 text-xs flex items-center hover:underline">Ver ↗</a>}
+                                            </div>
                                         </div>
                                     </div>
 

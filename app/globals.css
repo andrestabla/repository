@@ -83,3 +83,17 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+@keyframes progress-ind {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-progress-ind {
+  animation: progress-ind 1.5s infinite linear;
+}

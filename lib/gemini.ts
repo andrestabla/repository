@@ -3,18 +3,23 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { SystemSettingsService } from "./settings"
 
 export class GeminiService {
+    private static async getModel() {
+        // Priority: DB Setting > Env Var
+        let apiKey = await SystemSettingsService.getGeminiApiKey()
+        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
+
+        if (!apiKey) throw new Error("GEMINI_API_KEY no configurada (ni en DB ni en Env).")
+
+        const genAI = new GoogleGenerativeAI(apiKey)
+        // Using gemini-1.5-flash which is more universally supported than just 'flash' in some SDK versions
+        return genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+    }
+
     static async analyzeContent(text: string) {
         if (!text || text.length < 50) return null
 
         try {
-            // Priority: DB Setting > Env Var
-            let apiKey = await SystemSettingsService.getGeminiApiKey()
-            if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
-
-            if (!apiKey) throw new Error("GEMINI_API_KEY no configurada (ni en DB ni en Env).")
-
-            const genAI = new GoogleGenerativeAI(apiKey)
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+            const model = await this.getModel()
 
             const prompt = `
             You are an expert Methodological Auditor. Your task is to analyze the following educational content text and extract structured metadata for our inventory system "4Shine".
@@ -39,8 +44,8 @@ export class GeminiService {
             }
 
             CONTENT TO ANALYZE:
-            ${text.substring(0, 15000)} 
-            ` // Truncate to avoid limit if huge, though Flash handles 1M.
+            ${text.substring(0, 30000)} 
+            `
 
             const result = await model.generateContent(prompt)
             const response = await result.response

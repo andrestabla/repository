@@ -139,3 +139,32 @@ export const getFileContent = async (fileId: string): Promise<string> => {
         throw new Error(`[Drive Content Error] ${e.message || e}`)
     }
 }
+
+export const uploadToDrive = async (filename: string, buffer: Buffer, mimeType: string, folderId: string): Promise<string> => {
+    try {
+        const drive = await getDriveClient()
+
+        console.log(`[Drive] Uploading file: ${filename} to folder: ${folderId}`)
+
+        const response = await drive.files.create({
+            requestBody: {
+                name: filename,
+                parents: [folderId]
+            },
+            media: {
+                mimeType: mimeType,
+                body: require('stream').Readable.from(buffer)
+            },
+            fields: 'id'
+        })
+
+        if (!response.data.id) {
+            throw new Error('Failed to get Drive ID after upload')
+        }
+
+        return response.data.id
+    } catch (error: any) {
+        console.error('Drive Upload Error:', error)
+        throw new Error(`[Drive Upload Error] ${error.message || error}`)
+    }
+}
