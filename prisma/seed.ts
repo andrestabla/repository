@@ -16,15 +16,53 @@ async function main() {
     })
     console.log('Created Methodology:', method)
 
-    // 2. Taxonomy (Pillars)
-    const pillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine On']
-    for (const p of pillars) {
-        await prisma.taxonomy.create({
-            data: {
-                name: p,
+    // 2. Taxonomy (Pillars & Subcomponents)
+    const taxonomyData = [
+        {
+            name: 'Shine In',
+            subcomponents: ['Mentalidad & Mindset', 'Gestión Emocional', 'Propósito & Valores', 'Biohacking & Energía']
+        },
+        {
+            name: 'Shine Out',
+            subcomponents: ['Estrategia de Networking', 'Marca Personal Digital', 'Pitch & Storytelling', 'Comunicación de Impacto']
+        },
+        {
+            name: 'Shine Up',
+            subcomponents: ['Política Organizacional', 'Liderazgo Estratégico', 'Negociación Avanzada', 'Gestión de Stakeholders']
+        },
+        {
+            name: 'Shine On',
+            subcomponents: ['Mentoría & Coaching', 'Innovación y Futuro', 'Sostenibilidad del Éxito', 'Transferencia de Conocimiento']
+        }
+    ]
+
+    for (const p of taxonomyData) {
+        const pillar = await prisma.taxonomy.upsert({
+            where: { id: `p-${p.name.replace(/\s/g, '').toLowerCase()}` },
+            update: { name: p.name, active: true },
+            create: {
+                id: `p-${p.name.replace(/\s/g, '').toLowerCase()}`,
+                name: p.name,
                 type: 'Pillar',
-            },
+                active: true,
+                order: 0
+            }
         })
+
+        for (const [index, s] of p.subcomponents.entries()) {
+            await prisma.taxonomy.upsert({
+                where: { id: `s-${s.replace(/\s/g, '').toLowerCase()}` },
+                update: { name: s, active: true, parentId: pillar.id, order: index },
+                create: {
+                    id: `s-${s.replace(/\s/g, '').toLowerCase()}`,
+                    name: s,
+                    type: 'Component',
+                    active: true,
+                    parentId: pillar.id,
+                    order: index
+                }
+            })
+        }
     }
 
     // 3. Content Items from Prototype (New Dataset)

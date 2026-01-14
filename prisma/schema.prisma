@@ -16,109 +16,97 @@ model Methodology {
 }
 
 model ContentItem {
-  id           String   @id // 1. Identificación: ID único (ej. 4S-P-001)
-  title        String   // 1. Identificación: Título Oficial
-  type         String   // 1. Identificación: Tipo (PDF, Video, etc.)
-  format       String?  // 1. Identificación: Formato técnico (PDF, MP4)
-  language     String?  // 1. Identificación: Idioma
-  duration     String?  // 1. Identificación: Duración min
-  year         String?  // 1. Identificación: Año
-  source       String?  // 1. Identificación: Fuente
-
-  pillar       String   // 2. Clasificación: Pilar 4Shine
-  sub          String?  // 2. Clasificación: Subcomponente
-  competence   String?  // 2. Clasificación: Competencia Clave
-  behavior     String?  // 2. Clasificación: Conducta Observable
-  maturity     String?  // 2. Clasificación: Nivel Madurez (Básico, etc.) - Replacing 'level'
-
-  intervention String?  // 3. Trayectoria: Tipo Intervención
-  moment       String?  // 3. Trayectoria: Momento
-  prereqId     String?  // 3. Trayectoria: Prerrequisito ID
-  testId       String?  // 3. Trayectoria: Test ID asociado
-  variable     String?  // 3. Trayectoria: Variable medida
-  impactScore  Boolean? // 3. Trayectoria: Impacta Score?
-  outcomeType  String?  // 3. Trayectoria: Tipo Output
-
-  trigger          String?  // 4. Activación: Disparador
-  recommendation   String?  // 4. Activación: Regla Recomendación
-  challengeType    String?  // 4. Activación: Tipo Reto
-  evidenceRequired String?  // 4. Activación: Evidencia Requerida
-  nextContentId    String?  // 4. Activación: Contenido Siguiente
-
-  targetRole       String?  // 5. Audiencia: Rol Objetivo
-  roleLevel        String?  // 5. Audiencia: Nivel Rol
-  industry         String?  // 5. Audiencia: Industria
-  vipUsage         Boolean? // 5. Audiencia: Uso VIP
-  publicVisibility Boolean? // 5. Audiencia: Visible Público
-
-  ipOwner          String?  // 6. Gobernanza: Propiedad IP
-  ipType           String?  // 6. Gobernanza: Tipo IP
-  authorizedUse    String?  // 6. Gobernanza: Uso Autorizado
-  confidentiality  String?  // 6. Gobernanza: Confidencialidad
-  reuseExternal    Boolean? // 6. Gobernanza: Reutilizable Fuera
-
-  driveId      String?  // 7. Operación: Drive ID
-  fileUrl      String?  // 7. Operación: URL Archivo (redundant with driveId but kept for flex)
-  uploadedAt   DateTime? // 7. Operación: Fecha Carga
-  version      String   // Editorial version (v1.0)
-  
-  releaseId    String?  // Relationship to formal releases
-  release      MethodologyRelease? @relation(fields: [releaseId], references: [id])
-  
-  observations String?  // 8. Contexto: Observaciones
-  
-  // Legacy fields mapped or kept for compatibility if needed
-  level        String? 
-  ip           String? 
-  
-  status       String   // Editorial Status: Borrador, Revisión, Aprobado, Validado
-  completeness Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String              @id
+  title            String
+  type             String
+  pillar           String
+  version          String
+  status           String
+  ip               String?
+  completeness     Int                 @default(0)
+  driveId          String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  level            String?
+  sub              String?
+  authorizedUse    String?
+  behavior         String?
+  challengeType    String?
+  competence       String?
+  confidentiality  String?
+  duration         String?
+  evidenceRequired String?
+  fileUrl          String?
+  format           String?
+  impactScore      Boolean?
+  industry         String?
+  intervention     String?
+  ipOwner          String?
+  ipType           String?
+  language         String?
+  maturity         String?
+  moment           String?
+  nextContentId    String?
+  observations     String?
+  outcomeType      String?
+  prereqId         String?
+  publicVisibility Boolean?
+  recommendation   String?
+  reuseExternal    Boolean?
+  roleLevel        String?
+  source           String?
+  targetRole       String?
+  testId           String?
+  trigger          String?
+  uploadedAt       DateTime?
+  variable         String?
+  vipUsage         Boolean?
+  year             String?
+  releaseId        String?
+  release          MethodologyRelease? @relation(fields: [releaseId], references: [id])
 
   @@index([releaseId])
 }
 
 model MethodologyRelease {
-  id          String   @id @default(cuid())
-  tag         String   @unique // ej. v1.0
+  id          String        @id @default(cuid())
+  tag         String        @unique
   description String?
-  status      String   // Draft, Active, Frozen
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   contents    ContentItem[]
 }
 
 model Taxonomy {
-  id        String     @id @default(cuid())
-  name      String
-  type      String     // Pillar, Component, Subcomponent
-  active    Boolean    @default(true)
-  order     Int        @default(0)
-  parentId  String?
-  parent    Taxonomy?  @relation("TaxonomyHierarchy", fields: [parentId], references: [id])
-  children  Taxonomy[] @relation("TaxonomyHierarchy")
+  id       String     @id @default(cuid())
+  name     String
+  type     String
+  parentId String?
+  active   Boolean    @default(true)
+  order    Int        @default(0)
+  parent   Taxonomy?  @relation("TaxonomyHierarchy", fields: [parentId], references: [id])
+  children Taxonomy[] @relation("TaxonomyHierarchy")
 }
 
 model User {
   email     String   @id
   name      String?
-  role      String   @default("curador") // 'admin', 'metodologo', 'curador', 'auditor'
+  role      String   @default("curador")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Artifact {
-  id        String   @id @default(cuid())
-  name      String
-  type      String
-  lastGen   DateTime @updatedAt
-  link      String?
+  id      String   @id @default(cuid())
+  name    String
+  type    String
+  lastGen DateTime @updatedAt
+  link    String?
 }
 
 model SystemSettings {
-    key       String   @id
-    value     Json     // Flexible JSON storage for configs like SMTP, Drive Folders
-    updatedAt DateTime @updatedAt
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }
-
