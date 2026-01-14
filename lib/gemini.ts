@@ -48,13 +48,19 @@ export class GeminiService {
                - Sub: Legado personal | Comp: Visión de legado.
 
             --- REGLAS DE ANÁLISIS ---
-            1. Todos los campos de texto (title, summary, sub, competence, behavior, observations) DEBEN estar en ESPAÑOL.
+            1. Todos los campos de texto DEBEN estar en ESPAÑOL.
             2. El "type" debe ser uno de los códigos técnicos: PDF, Video, Audio, Toolkit, Test, Rúbrica, Workbook, Documento maestro.
             3. "maturity" debe ser: Básico, En Desarrollo, Avanzado o Maestría.
             4. "targetRole" debe ser: Líder, Mentor, Facilitador.
             5. Extrae el "duration" estimado en minutos (solo número como string).
-            6. "behavior" es una conducta observable que este contenido ayuda a desarrollar (ej. "Hace preguntas poderosas bajo presión").
-            7. Intenta inferir "intervention" (Conciencia, Práctica, Herramienta, Evaluación) y "moment" (Inicio, Refuerzo, Profundización, Cierre).
+            
+            --- REGLA DE ORO: OBSERVACIONES DETALLADAS ---
+            El campo "observations" es el más importante. NO debe ser un resumen corto. DEBE ser un análisis profundo y descriptivo que incluya:
+            - Valor Pedagógico: ¿Qué aporta este material exactamente al viaje del líder?
+            - Sugerencias Tácticas: ¿Cómo debe el facilitador usar este material? (ej. "usar en la sesión 2 para romper el hielo sobre networking").
+            - Análisis de Contenido: Desglosa los puntos clave más relevantes.
+            - Conexión Metodológica: ¿Cómo se articula con otros componentes de 4Shine?
+            Mínimo 3 parrafos detallados.
 
             Return ONLY a valid JSON object (no markdown, no backticks).
 
@@ -74,7 +80,7 @@ export class GeminiService {
               "moment": "Momento del viaje",
               "language": "ES",
               "format": "Formato técnico inferido (ej. PDF, MP4)",
-              "observations": "Notas pedagógicas adicionales en español"
+              "observations": "ANÁLISIS ESTRATÉGICO PROFUNDO Y DETALLADO (Mínimo 300 caracteres, muy descriptivo)"
             }
 
             CONTENT TO ANALYZE:
