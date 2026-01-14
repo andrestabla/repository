@@ -40,15 +40,15 @@ type ContentItem = {
     vipUsage?: boolean
     publicVisibility?: boolean
 
-    ipOwner?: string
-    ipType?: string
-    authorizedUse?: string
-    confidentiality?: string
-    reuseExternal?: boolean
+    ipOwner?: string | null
+    ipType?: string | null
+    authorizedUse?: string | null
+    confidentiality?: string | null
+    reuseExternal?: boolean | null
 
-    driveId?: string
+    driveId?: string | null
     version: string
-    observations?: string
+    observations?: string | null
 
     status: string
     completeness: number
@@ -182,8 +182,8 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-2 border-l-2 transition-colors ${activeTab === tab.id
-                                        ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-white'
-                                        : 'border-transparent text-[var(--text-muted)] hover:bg-white/5'
+                                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-white'
+                                    : 'border-transparent text-[var(--text-muted)] hover:bg-white/5'
                                     }`}
                             >
                                 <span>{tab.icon}</span>
