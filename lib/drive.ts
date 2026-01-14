@@ -155,7 +155,8 @@ export const uploadToDrive = async (filename: string, buffer: Buffer, mimeType: 
                 mimeType: mimeType,
                 body: require('stream').Readable.from(buffer)
             },
-            fields: 'id'
+            fields: 'id',
+            supportsAllDrives: true
         })
 
         if (!response.data.id) {

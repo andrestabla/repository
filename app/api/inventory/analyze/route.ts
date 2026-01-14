@@ -31,7 +31,13 @@ export async function POST(request: NextRequest) {
         console.log(`[Analyze] Sending ${text.length} chars to Gemini...`)
         const metadata = await GeminiService.analyzeContent(text)
 
-        return NextResponse.json({ success: true, data: metadata })
+        let suggestedId = null
+        if (metadata?.type) {
+            const { IdGeneratorService } = require('@/lib/id-generator')
+            suggestedId = await IdGeneratorService.generateId(metadata.type)
+        }
+
+        return NextResponse.json({ success: true, data: metadata, suggestedId })
 
     } catch (error: any) {
         console.error('Analysis API Error:', error)

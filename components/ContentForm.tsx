@@ -149,6 +149,9 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             const json = await res.json()
             if (json.success && json.data) {
                 applyMetadata(json.data)
+                if (json.suggestedId) {
+                    setFormData(prev => ({ ...prev, id: json.suggestedId }))
+                }
                 alert('✨ Análisis Completo: Metadatos sugeridos aplicados.')
             } else {
                 alert('Error: ' + (json.error || 'No se pudo analizar'))
@@ -193,6 +196,10 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 if (json.driveId) {
                     setFormData(prev => ({ ...prev, driveId: json.driveId }))
                     setDriveStatus('valid')
+                }
+
+                if (json.suggestedId) {
+                    setFormData(prev => ({ ...prev, id: json.suggestedId }))
                 }
 
                 if (json.metadata) {

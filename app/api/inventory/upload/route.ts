@@ -43,9 +43,15 @@ export async function POST(req: NextRequest) {
         // 2. IA Analysis
         let metadata = null
         let geminiErrorDetail = null
+        let suggestedId = null
+
         if (extractedText) {
             try {
                 metadata = await GeminiService.analyzeContent(extractedText)
+                if (metadata?.type) {
+                    const { IdGeneratorService } = require('@/lib/id-generator')
+                    suggestedId = await IdGeneratorService.generateId(metadata.type)
+                }
             } catch (geminiError: any) {
                 geminiErrorDetail = geminiError.message || String(geminiError)
                 console.error('[Upload API] Gemini analysis failed:', geminiError)
@@ -74,6 +80,7 @@ export async function POST(req: NextRequest) {
             success: !!driveId || !!metadata,
             driveId,
             metadata,
+            suggestedId,
             filename,
             debug: {
                 extractionError,
