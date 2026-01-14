@@ -9,32 +9,67 @@ type User = {
     createdAt: string
 }
 
-export default function AdminView() {
-    const [users, setUsers] = useState<User[]>([])
-    const [loading, setLoading] = useState(true)
-    const [refresh, setRefresh] = useState(0)
+type EmailConfig = {
+    smtpHost: string
+    smtpPort: number
+    smtpUser: string
+    smtpPass: string
+}
 
-    // Form inputs
+type DriveConfig = {
+    authorizedFolderIds: string[]
+}
+
+export default function AdminView() {
+    const [activeTab, setActiveTab] = useState<'users' | 'settings'>('users')
+
+    // --- USERS STATE ---
+    const [users, setUsers] = useState<User[]>([])
+    const [loadingUsers, setLoadingUsers] = useState(true)
+    const [refreshUsers, setRefreshUsers] = useState(0)
+
+    // Form inputs (Users)
     const [newEmail, setNewEmail] = useState('')
     const [newName, setNewName] = useState('')
     const [newRole, setNewRole] = useState('curador')
 
-    useEffect(() => {
-        fetch('/api/users')
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setUsers(data)
-                setLoading(false)
-            })
-            .catch(err => {
-                console.error(err)
-                setLoading(false)
-            })
-    }, [refresh])
+    // --- SETTINGS STATE ---
+    const [emailConfig, setEmailConfig] = useState<EmailConfig>({ smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '' })
+    const [driveConfig, setDriveConfig] = useState<DriveConfig>({ authorizedFolderIds: [] })
+    const [loadingSettings, setLoadingSettings] = useState(false)
+    const [newFolderId, setNewFolderId] = useState('')
 
+    // Fetch Users
+    useEffect(() => {
+        if (activeTab === 'users') {
+            fetch('/api/users')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) setUsers(data)
+                    setLoadingUsers(false)
+                })
+                .catch(err => { console.error(err); setLoadingUsers(false) })
+        }
+    }, [refreshUsers, activeTab])
+
+    // Fetch Settings
+    useEffect(() => {
+        if (activeTab === 'settings') {
+            setLoadingSettings(true)
+            fetch('/api/settings')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.emailConfig) setEmailConfig(data.emailConfig)
+                    if (data.driveConfig) setDriveConfig(data.driveConfig)
+                    setLoadingSettings(false)
+                })
+                .catch(err => { console.error(err); setLoadingSettings(false) })
+        }
+    }, [activeTab])
+
+    // --- USER HANDLERS ---
     const handleAddUser = async () => {
         if (!newEmail) return alert('Email requerido')
-
         try {
             const res = await fetch('/api/users', {
                 method: 'POST',
@@ -42,17 +77,11 @@ export default function AdminView() {
                 body: JSON.stringify({ email: newEmail, name: newName, role: newRole })
             })
             if (res.ok) {
-                setNewEmail('')
-                setNewName('')
-                setRefresh(p => p + 1)
-                alert('Usuario agregado')
+                setNewEmail(''); setNewName(''); setRefreshUsers(p => p + 1); alert('Usuario agregado')
             } else {
-                const err = await res.json()
-                alert('Error: ' + err.error)
+                const err = await res.json(); alert('Error: ' + err.error)
             }
-        } catch (e) {
-            alert('Error de red')
-        }
+        } catch (e) { alert('Error de red') }
     }
 
     const handleApprove = async (email: string, name: string | null) => {
@@ -60,11 +89,9 @@ export default function AdminView() {
             const res = await fetch('/api/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name, role: 'curador' }) // Default to Curador
+                body: JSON.stringify({ email, name, role: 'curador' })
             })
-            if (res.ok) {
-                setRefresh(p => p + 1)
-            }
+            if (res.ok) setRefreshUsers(p => p + 1)
         } catch (e) { alert('Error') }
     }
 
@@ -72,15 +99,50 @@ export default function AdminView() {
         if (!confirm('¿Eliminar acceso a ' + email + '?')) return
         try {
             const res = await fetch(`/api/users?email=${email}`, { method: 'DELETE' })
+            if (res.ok) setRefreshUsers(p => p + 1)
+            else { const err = await res.json(); alert('Error: ' + err.error) }
+        } catch (e) { alert('Error de red') }
+    }
+
+    // --- SETTINGS HANDLERS ---
+    const saveEmailConfig = async () => {
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'email', data: emailConfig })
+            })
+            if (res.ok) alert('Configuración de correo guardada')
+            else alert('Error al guardar')
+        } catch (e) { alert('Error de red') }
+    }
+
+    const addFolder = async () => {
+        if (!newFolderId) return
+        const newList = [...driveConfig.authorizedFolderIds, newFolderId]
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'drive', data: { authorizedFolderIds: newList } })
+            })
             if (res.ok) {
-                setRefresh(p => p + 1)
-            } else {
-                const err = await res.json()
-                alert('Error: ' + err.error)
+                setDriveConfig({ ...driveConfig, authorizedFolderIds: newList })
+                setNewFolderId('')
             }
-        } catch (e) {
-            alert('Error de red')
-        }
+        } catch (e) { alert('Error') }
+    }
+
+    const removeFolder = async (id: string) => {
+        const newList = driveConfig.authorizedFolderIds.filter(f => f !== id)
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'drive', data: { authorizedFolderIds: newList } })
+            })
+            if (res.ok) setDriveConfig({ ...driveConfig, authorizedFolderIds: newList })
+        } catch (e) { alert('Error') }
     }
 
     // Filter lists
@@ -90,135 +152,174 @@ export default function AdminView() {
     return (
         <div className="p-8 h-full overflow-y-auto">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                🛡️ Gestión de Usuarios
+                🛡️ Panel de Administración
             </h2>
 
-            {/* Pending Requests */}
-            {pendingUsers.length > 0 && (
-                <div className="mb-8 border border-[var(--warning)] bg-[rgba(210,153,34,0.05)] rounded-lg overflow-hidden">
-                    <div className="bg-[rgba(210,153,34,0.1)] p-3 border-b border-[var(--warning)] flex gap-2 items-center">
-                        <span className="text-xl">🔔</span>
-                        <h3 className="font-bold text-[var(--warning)]">Solicitudes Pendientes ({pendingUsers.length})</h3>
+            {/* TABS */}
+            <div className="flex border-b border-[var(--border)] mb-6">
+                <button
+                    onClick={() => setActiveTab('users')}
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'users'
+                            ? 'border-[var(--accent)] text-white'
+                            : 'border-transparent text-[var(--text-muted)] hover:text-white'
+                        }`}
+                >
+                    Usuarios
+                </button>
+                <button
+                    onClick={() => setActiveTab('settings')}
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'settings'
+                            ? 'border-[var(--accent)] text-white'
+                            : 'border-transparent text-[var(--text-muted)] hover:text-white'
+                        }`}
+                >
+                    Configuración
+                </button>
+            </div>
+
+            {/* CONTENT: USERS */}
+            {activeTab === 'users' && (
+                <>
+                    {/* Pending Requests */}
+                    {pendingUsers.length > 0 && (
+                        <div className="mb-8 border border-[var(--warning)] bg-[rgba(210,153,34,0.05)] rounded-lg overflow-hidden">
+                            <div className="bg-[rgba(210,153,34,0.1)] p-3 border-b border-[var(--warning)] flex gap-2 items-center">
+                                <span className="text-xl">🔔</span>
+                                <h3 className="font-bold text-[var(--warning)]">Solicitudes Pendientes ({pendingUsers.length})</h3>
+                            </div>
+                            <table className="w-full text-sm">
+                                <tbody>
+                                    {pendingUsers.map(u => (
+                                        <tr key={u.email} className="border-b border-[rgba(210,153,34,0.2)] last:border-0 hover:bg-[rgba(210,153,34,0.05)]">
+                                            <td className="p-4">
+                                                <div className="font-semibold text-white">{u.name || 'Sin nombre'}</div>
+                                                <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
+                                            </td>
+                                            <td className="p-4 text-right flex gap-2 justify-end">
+                                                <button onClick={() => handleApprove(u.email, u.name)} className="bg-[var(--success)] text-white px-3 py-1.5 rounded text-xs font-semibold hover:brightness-110">✅ Aprobar</button>
+                                                <button onClick={() => handleDelete(u.email)} className="bg-[var(--danger)] text-white px-3 py-1.5 rounded text-xs font-semibold hover:brightness-110">❌ Rechazar</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {/* Add User Form */}
+                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 mb-8">
+                        <h3 className="text-sm uppercase text-[var(--text-muted)] font-bold mb-4">Invitar Nuevo Usuario</h3>
+                        <div className="flex gap-3 items-end">
+                            <div className="flex-1">
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Email (Gmail)</label>
+                                <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="usuario@gmail.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            </div>
+                            <div className="flex-1">
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre</label>
+                                <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre Apellido" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            </div>
+                            <div className="w-[150px]">
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Rol</label>
+                                <select value={newRole} onChange={e => setNewRole(e.target.value)} className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm">
+                                    <option value="admin">Admin</option>
+                                    <option value="metodologo">Metodólogo</option>
+                                    <option value="curador">Curador</option>
+                                    <option value="auditor">Auditor</option>
+                                </select>
+                            </div>
+                            <button onClick={handleAddUser} className="bg-[var(--success)] text-white px-4 py-2 rounded text-sm font-semibold h-[38px] hover:brightness-110">Agregar</button>
+                        </div>
                     </div>
-                    <table className="w-full text-sm">
-                        <tbody>
-                            {pendingUsers.map(u => (
-                                <tr key={u.email} className="border-b border-[rgba(210,153,34,0.2)] last:border-0 hover:bg-[rgba(210,153,34,0.05)]">
-                                    <td className="p-4">
-                                        <div className="font-semibold text-white">{u.name || 'Sin nombre'}</div>
-                                        <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
-                                    </td>
-                                    <td className="p-4 text-right flex gap-2 justify-end">
-                                        <button
-                                            onClick={() => handleApprove(u.email, u.name)}
-                                            className="bg-[var(--success)] text-white px-3 py-1.5 rounded text-xs font-semibold hover:brightness-110"
-                                        >
-                                            ✅ Aprobar
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(u.email)}
-                                            className="bg-[var(--danger)] text-white px-3 py-1.5 rounded text-xs font-semibold hover:brightness-110"
-                                        >
-                                            ❌ Rechazar
-                                        </button>
-                                    </td>
+
+                    {/* Users List */}
+                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-[#1c2128] text-[var(--text-muted)]">
+                                <tr>
+                                    <th className="p-3 text-left">Usuario</th>
+                                    <th className="p-3 text-left">Rol</th>
+                                    <th className="p-3 text-left">Fecha Registro</th>
+                                    <th className="p-3 text-right">Acciones</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {loadingUsers && <tr><td colSpan={4} className="p-5 text-center text-[var(--text-muted)]">Cargando...</td></tr>}
+                                {activeUsers.map(u => (
+                                    <tr key={u.email} className="border-t border-[var(--border)] hover:bg-white/5">
+                                        <td className="p-3">
+                                            <div className="font-semibold text-white">{u.name || 'Sin nombre'}</div>
+                                            <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
+                                        </td>
+                                        <td className="p-3">
+                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${u.role === 'admin' ? 'bg-purple-900 text-purple-200' : u.role === 'curador' ? 'bg-blue-900 text-blue-200' : u.role === 'auditor' ? 'bg-green-900 text-green-200' : 'bg-gray-800 text-gray-300'}`}>{u.role}</span>
+                                        </td>
+                                        <td className="p-3 text-[var(--text-muted)]">{new Date(u.createdAt).toLocaleDateString()}</td>
+                                        <td className="p-3 text-right">
+                                            {u.role !== 'admin' && (
+                                                <button onClick={() => handleDelete(u.email)} className="text-[var(--danger)] hover:underline text-xs">Revocar</button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
             )}
 
-            {/* Add User Form */}
-            <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 mb-8">
-                <h3 className="text-sm uppercase text-[var(--text-muted)] font-bold mb-4">Invitar Nuevo Usuario</h3>
-                <div className="flex gap-3 items-end">
-                    <div className="flex-1">
-                        <label className="text-xs text-[var(--text-muted)] block mb-1">Email (Gmail)</label>
-                        <input
-                            value={newEmail}
-                            onChange={e => setNewEmail(e.target.value)}
-                            placeholder="usuario@gmail.com"
-                            className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm"
-                        />
-                    </div>
-                    <div className="flex-1">
-                        <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre</label>
-                        <input
-                            value={newName}
-                            onChange={e => setNewName(e.target.value)}
-                            placeholder="Nombre Apellido"
-                            className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm"
-                        />
-                    </div>
-                    <div className="w-[150px]">
-                        <label className="text-xs text-[var(--text-muted)] block mb-1">Rol</label>
-                        <select
-                            value={newRole}
-                            onChange={e => setNewRole(e.target.value)}
-                            className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm"
-                        >
-                            <option value="admin">Admin</option>
-                            <option value="metodologo">Metodólogo</option>
-                            <option value="curador">Curador</option>
-                            <option value="auditor">Auditor</option>
-                        </select>
-                    </div>
-                    <button
-                        onClick={handleAddUser}
-                        className="bg-[var(--success)] text-white px-4 py-2 rounded text-sm font-semibold h-[38px] hover:brightness-110"
-                    >
-                        Agregar
-                    </button>
-                </div>
-            </div>
+            {/* CONTENT: SETTINGS */}
+            {activeTab === 'settings' && (
+                <div className="space-y-8">
+                    {loadingSettings && <div className="text-[var(--text-muted)]">Cargando configuración...</div>}
 
-            {/* Users List */}
-            <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                    <thead className="bg-[#1c2128] text-[var(--text-muted)]">
-                        <tr>
-                            <th className="p-3 text-left">Usuario</th>
-                            <th className="p-3 text-left">Rol</th>
-                            <th className="p-3 text-left">Fecha Registro</th>
-                            <th className="p-3 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading && <tr><td colSpan={4} className="p-5 text-center text-[var(--text-muted)]">Cargando...</td></tr>}
-                        {activeUsers.map(u => (
-                            <tr key={u.email} className="border-t border-[var(--border)] hover:bg-white/5">
-                                <td className="p-3">
-                                    <div className="font-semibold text-white">{u.name || 'Sin nombre'}</div>
-                                    <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
-                                </td>
-                                <td className="p-3">
-                                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide
-                                        ${u.role === 'admin' ? 'bg-purple-900 text-purple-200' :
-                                            u.role === 'curador' ? 'bg-blue-900 text-blue-200' :
-                                                u.role === 'auditor' ? 'bg-green-900 text-green-200' :
-                                                    'bg-gray-800 text-gray-300'}`}>
-                                        {u.role}
-                                    </span>
-                                </td>
-                                <td className="p-3 text-[var(--text-muted)]">
-                                    {new Date(u.createdAt).toLocaleDateString()}
-                                </td>
-                                <td className="p-3 text-right">
-                                    {u.role !== 'admin' && (
-                                        <button
-                                            onClick={() => handleDelete(u.email)}
-                                            className="text-[var(--danger)] hover:underline text-xs"
-                                        >
-                                            Revocar
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                    {/* EMAIL CONFIG */}
+                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
+                        <h3 className="text-lg font-bold text-white mb-4">📧 Configuración de Correo (SMTP)</h3>
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Host</label>
+                                <input value={emailConfig.smtpHost} onChange={e => setEmailConfig({ ...emailConfig, smtpHost: e.target.value })} placeholder="smtp.gmail.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Port</label>
+                                <input type="number" value={emailConfig.smtpPort} onChange={e => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value) })} placeholder="587" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Usuario</label>
+                                <input value={emailConfig.smtpUser} onChange={e => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })} placeholder="email@dominio.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[var(--text-muted)] block mb-1">Contraseña (App Password)</label>
+                                <input type="password" value={emailConfig.smtpPass} onChange={e => setEmailConfig({ ...emailConfig, smtpPass: e.target.value })} placeholder="********" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            </div>
+                        </div>
+                        <button onClick={saveEmailConfig} className="bg-[var(--accent)] text-white px-4 py-2 rounded text-sm font-bold hover:brightness-110">Guardar Configuración SMTP</button>
+                    </div>
+
+                    {/* DRIVE CONFIG */}
+                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
+                        <h3 className="text-lg font-bold text-white mb-4">📂 Carpetas Autorizadas (Google Drive)</h3>
+                        <p className="text-sm text-[var(--text-muted)] mb-4">Agrega los IDs de las carpetas públicas donde se pueden almacenar los documentos.</p>
+
+                        <div className="flex gap-2 mb-4">
+                            <input value={newFolderId} onChange={e => setNewFolderId(e.target.value)} placeholder="ID de la Carpeta (ej: 1A2b3C...)" className="flex-1 bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                            <button onClick={addFolder} className="bg-[var(--success)] text-white px-4 py-2 rounded text-sm font-bold hover:brightness-110">Agregar ID</button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {driveConfig.authorizedFolderIds.map(id => (
+                                <div key={id} className="flex items-center justify-between bg-[#0d1117] p-3 rounded border border-[var(--border)]">
+                                    <span className="font-mono text-xs">{id}</span>
+                                    <button onClick={() => removeFolder(id)} className="text-[var(--danger)] text-xs hover:underline">Eliminar</button>
+                                </div>
+                            ))}
+                            {driveConfig.authorizedFolderIds.length === 0 && (
+                                <div className="text-center text-[var(--text-muted)] text-sm py-4">No hay carpetas configuradas.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -55,3 +55,10 @@ model Taxonomy {
   parent    Taxonomy?  @relation("TaxonomyHierarchy", fields: [parentId], references: [id])
   children  Taxonomy[] @relation("TaxonomyHierarchy")
 }
+
+model SystemSettings {
+    key       String   @id
+    value     Json     // Flexible JSON storage for configs like SMTP, Drive Folders
+    updatedAt DateTime @updatedAt
+}
+
