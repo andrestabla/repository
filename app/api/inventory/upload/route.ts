@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({
-            success: true,
+            success: !!driveId || !!metadata,
             driveId,
             metadata,
             filename,

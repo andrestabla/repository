@@ -194,13 +194,22 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                     setFormData(prev => ({ ...prev, driveId: json.driveId }))
                     setDriveStatus('valid')
                 }
+
                 if (json.metadata) {
                     applyMetadata(json.metadata)
-                    alert('✨ ¡Éxito! Archivo subido a Drive y analizado por IA.')
+                    if (json.driveId) {
+                        alert('✨ ¡Éxito! Archivo subido a Drive y analizado por IA.')
+                    } else {
+                        alert('⚠️ Analizado por IA, pero NO se pudo guardar en Drive.')
+                    }
                 } else {
-                    let msg = 'Archivo subido, pero no se pudo extraer metadatos automáticamente.'
+                    let msg = json.driveId
+                        ? 'Archivo guardado en Drive, pero no se pudo extraer metadatos automáticamente.'
+                        : '⚠️ Error crítico: Ni se guardó en Drive ni se pudo analizar.'
+
                     if (json.debug?.extractionError) msg += `\n\n(Error Extracción: ${json.debug.extractionError})`
                     if (json.debug?.geminiError) msg += `\n\n(Error Gemini: ${json.debug.geminiError})`
+                    if (json.debug?.driveError) msg += `\n\n(Error Drive: ${json.debug.driveError})`
                     alert(msg)
                 }
             } else {
