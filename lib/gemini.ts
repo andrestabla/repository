@@ -20,27 +20,61 @@ export class GeminiService {
         if (!apiKey) throw new Error("GEMINI_API_KEY no configurada.")
 
         const prompt = `
-            You are an expert Methodological Auditor. Your task is to analyze the following educational content text and extract structured metadata for our inventory system "4Shine".
-            
-            Taxonomy Context:
-            - Pillars: "Shine Out" (Influence/Sales), "Shine In" (Personal/Inner), "Shine Up" (Leadership/Power), "Shine On" (Communication/Public).
-            - Maturity: "Básico", "En Desarrollo", "Avanzado", "Maestría".
-            - Roles: "Líder", "Mentor", "Facilitador".
-            
-            Return ONLY a valid JSON object (no markdown, no backticks) with the following fields and best-guess values based on the text. 
-            
-            IMPORTANT: All text values (title, summary, sub) MUST be in Spanish.
-            
+            Eres un Auditor Metodológico experto en la METODOLOGÍA 4SHINE de Carmenza Alarcón.
+            Tu tarea es analizar el contenido educativo adjunto y extraer metadatos exhaustivos y detallados para el sistema "4Shine Repository".
+
+            --- CONTEXTO MAESTRO 4SHINE ---
+            Propósito: Fortalecer liderazgo y marca personal ("Brillar").
+            Estructura: 4 Pilares principales, cada uno con subcomponentes y competencias específicas.
+
+            1. SHINE WITHIN (Brilla desde adentro) - Dominio interior.
+               - Sub: Autoconfianza | Comp: Seguridad interna.
+               - Sub: Inteligencia emocional | Comp: Autorregulación emocional.
+               - Sub: Propósito personal | Comp: Claridad de propósito.
+
+            2. SHINE OUT (Brilla hacia afuera) - Presencia y proyección.
+               - Sub: Comunicación poderosa | Comp: Presencia y comunicación efectiva.
+               - Sub: Influencia positiva | Comp: Persuasión e influencia ética.
+               - Sub: Networking estratégico | Comp: Relacionamiento estratégico.
+
+            3. SHINE UP (Brilla hacia arriba) - Visión y estrategia futura.
+               - Sub: Visión de futuro | Comp: Pensamiento estratégico e innovador.
+               - Sub: Toma de decisiones bajo presión | Comp: Decisión efectiva bajo presión.
+               - Sub: Adaptabilidad | Comp: Liderazgo del cambio.
+
+            4. SHINE BEYOND (Brilla más allá) - Trascendencia y legado.
+               - Sub: Desarrollo de otros líderes | Comp: Mentoría y desarrollo de talento.
+               - Sub: Impacto social y humano | Comp: Liderazgo consciente y ético.
+               - Sub: Legado personal | Comp: Visión de legado.
+
+            --- REGLAS DE ANÁLISIS ---
+            1. Todos los campos de texto (title, summary, sub, competence, behavior, observations) DEBEN estar en ESPAÑOL.
+            2. El "type" debe ser uno de los códigos técnicos: PDF, Video, Audio, Toolkit, Test, Rúbrica, Workbook, Documento maestro.
+            3. "maturity" debe ser: Básico, En Desarrollo, Avanzado o Maestría.
+            4. "targetRole" debe ser: Líder, Mentor, Facilitador.
+            5. Extrae el "duration" estimado en minutos (solo número como string).
+            6. "behavior" es una conducta observable que este contenido ayuda a desarrollar (ej. "Hace preguntas poderosas bajo presión").
+            7. Intenta inferir "intervention" (Conciencia, Práctica, Herramienta, Evaluación) y "moment" (Inicio, Refuerzo, Profundización, Cierre).
+
+            Return ONLY a valid JSON object (no markdown, no backticks).
+
+            JSON STRUCTURE TO FILL:
             {
-              "title": "Título sugerido oficial en español",
-              "summary": "Resumen corto de 1 frase en español",
-              "type": "PDF or Video or Toolkit",
-              "pillar": "One of the 4 Pillars",
-              "sub": "Sub-tema en español (ej. Comunicación, Inteligencia Emocional)",
-              "competence": "Main competence worked",
-              "maturity": "Estimated maturity level",
-              "targetRole": "Primary target audience role",
-              "duration": "Estimated duration in minutes (string, e.g. '120')"
+              "title": "Título oficial detallado en español",
+              "summary": "Resumen ejecutivo de 1 frase en español",
+              "type": "Código de tipo",
+              "pillar": "Shine Within | Shine Out | Shine Up | Shine Beyond",
+              "sub": "Subcomponente detectado",
+              "competence": "Competencia clave asociada",
+              "behavior": "Conducta observable detectada",
+              "maturity": "Nivel de madurez sugerido",
+              "targetRole": "Rol objetivo",
+              "duration": "120",
+              "intervention": "Tipo de intervención",
+              "moment": "Momento del viaje",
+              "language": "ES",
+              "format": "Formato técnico inferido (ej. PDF, MP4)",
+              "observations": "Notas pedagógicas adicionales en español"
             }
 
             CONTENT TO ANALYZE:
