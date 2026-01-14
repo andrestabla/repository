@@ -43,7 +43,16 @@ export async function POST(req: Request) {
     }
 
     try {
+
         const body = await req.json()
+
+        // Handle direct config updates (from new UI sections)
+        if (body.driveConfig) {
+            await SystemSettingsService.saveDriveConfig(body.driveConfig)
+            return NextResponse.json({ success: true })
+        }
+
+        // Handle legacy type/data format (if still used by older parts)
         const { type, data } = body
 
         if (type === 'email') {
@@ -59,14 +68,18 @@ export async function POST(req: Request) {
                 smtpHost: data.smtpHost,
                 smtpPort: Number(data.smtpPort),
                 smtpUser: data.smtpUser,
-                smtpPass: data.smtpPass
+                smtpPass: data.smtpPass,
+                senderName: data.senderName, // Ensure these are saved
+                senderEmail: data.senderEmail
             })
         } else if (type === 'drive') {
+            // Legacy drive handler
             await SystemSettingsService.saveDriveConfig({
                 authorizedFolderIds: data.authorizedFolderIds
+                // Note: legacy handler doesn't support serviceAccountJson
             })
         } else {
-            return NextResponse.json({ error: 'Invalid setting type' }, { status: 400 })
+            return NextResponse.json({ error: 'Invalid payload structure' }, { status: 400 })
         }
 
         return NextResponse.json({ success: true })
