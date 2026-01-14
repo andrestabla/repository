@@ -198,10 +198,15 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                     applyMetadata(json.metadata)
                     alert('✨ ¡Éxito! Archivo subido a Drive y analizado por IA.')
                 } else {
-                    alert('Archivo subido, pero no se pudo extraer metadatos automáticamente.')
+                    let msg = 'Archivo subido, pero no se pudo extraer metadatos automáticamente.'
+                    if (json.debug?.extractionError) msg += `\n\n(Error Extracción: ${json.debug.extractionError})`
+                    if (json.debug?.geminiError) msg += `\n\n(Error Gemini: ${json.debug.geminiError})`
+                    alert(msg)
                 }
             } else {
-                alert('Error en subida/análisis: ' + (json.error || 'Desconocido'))
+                let msg = 'Error en subida/análisis: ' + (json.error || 'Desconocido')
+                if (json.debug?.driveError) msg += `\n\n(Error Drive: ${json.debug.driveError})`
+                alert(msg)
             }
         } catch (error) {
             alert('Error al procesar el archivo')

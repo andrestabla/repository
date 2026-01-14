@@ -20,51 +20,66 @@ export async function POST(req: NextRequest) {
 
         // 1. Extract text (if possible) for Gemini analysis
         let extractedText = ""
+        let extractionError = null
         try {
             if (mimeType === 'application/pdf') {
+                // Polyfill for pdf-parse compatibility in Next.js Server Environment
+                if (typeof (global as any).DOMMatrix === 'undefined') {
+                    (global as any).DOMMatrix = class DOMMatrix { }
+                }
                 const pdf = require('pdf-parse')
                 const data = await pdf(buffer)
                 extractedText = data.text
+                console.log(`[Upload API] PDF text extracted (${extractedText.length} chars)`)
             } else if (mimeType.includes('text') || mimeType.includes('json')) {
                 extractedText = buffer.toString('utf-8')
+                console.log(`[Upload API] Text file read (${extractedText.length} chars)`)
             }
-        } catch (parseError) {
+        } catch (parseError: any) {
+            extractionError = parseError.message || String(parseError)
             console.error('[Upload API] Text extraction failed:', parseError)
-            // Continue anyway, Gemini might not get text but we can still upload to Drive
         }
 
         // 2. IA Analysis
         let metadata = null
+        let geminiErrorDetail = null
         if (extractedText) {
             try {
                 metadata = await GeminiService.analyzeContent(extractedText)
-            } catch (geminiError) {
+            } catch (geminiError: any) {
+                geminiErrorDetail = geminiError.message || String(geminiError)
                 console.error('[Upload API] Gemini analysis failed:', geminiError)
             }
         }
 
         // 3. Upload to Drive
         let driveId = null
+        let driveErrorDetail = null
         try {
             const driveConfig = await SystemSettingsService.getDriveConfig()
-            if (driveConfig.rootFolderId) {
-                driveId = await uploadToDrive(filename, buffer, mimeType, driveConfig.rootFolderId)
-            } else if (driveConfig.authorizedFolderIds?.length > 0) {
-                // Fallback to first authorized folder if root is not explicitly set
-                driveId = await uploadToDrive(filename, buffer, mimeType, driveConfig.authorizedFolderIds[0])
+            const targetFolderId = driveConfig.rootFolderId || (driveConfig.authorizedFolderIds?.length > 0 ? driveConfig.authorizedFolderIds[0] : null)
+
+            if (targetFolderId) {
+                driveId = await uploadToDrive(filename, buffer, mimeType, targetFolderId)
             } else {
+                driveErrorDetail = 'No target folder ID found in configuration'
                 console.warn('[Upload API] No folder configured in settings')
             }
-        } catch (driveError) {
+        } catch (driveError: any) {
+            driveErrorDetail = driveError.message || String(driveError)
             console.error('[Upload API] Drive upload failed:', driveError)
-            // If upload fails, we still return metadata if we have it
         }
 
         return NextResponse.json({
             success: true,
             driveId,
             metadata,
-            filename
+            filename,
+            debug: {
+                extractionError,
+                geminiError: geminiErrorDetail,
+                driveError: driveErrorDetail
+            }
         })
 
     } catch (error: any) {
