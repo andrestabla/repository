@@ -246,73 +246,133 @@ function GapsView() {
 }
 
 function InventoryView({ data, role }: { data: ContentItem[], role: UserRole }) {
+    const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null)
+
     return (
         <>
-            <header className="flex justify-between items-center mb-8">
+            <header className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white">Inventario Maestro</h2>
-                {role === 'curador' && (
-                    <button className="bg-[var(--success)] border border-white/10 text-white px-4 py-2 rounded-md font-semibold text-[13px] hover:opacity-90">
-                        + Nuevo Activo
-                    </button>
-                )}
+                <div className="flex gap-2">
+                    {selectedItem && (
+                        <button
+                            onClick={() => setSelectedItem(null)}
+                            className="bg-[var(--panel)] border border-[var(--border)] text-[var(--text-muted)] px-3 py-1.5 rounded-md text-[12px] hover:text-white"
+                        >
+                            Cerrar Vista
+                        </button>
+                    )}
+                    {role === 'curador' && (
+                        <button className="bg-[var(--success)] border border-white/10 text-white px-4 py-2 rounded-md font-semibold text-[13px] hover:opacity-90">
+                            + Nuevo Activo
+                        </button>
+                    )}
+                </div>
             </header>
 
-            <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden">
-                <table className="w-full text-[13px] border-collapse">
-                    <thead>
-                        <tr>
-                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">ID</th>
-                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Título</th>
-                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Taxonomía</th>
-                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Drive Status</th>
-                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Completitud</th>
-                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Estado</th>
-                            <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {data.map(c => (
-                            <tr key={c.id}>
-                                <td className="p-3 border-b border-[var(--border)] font-code text-[var(--accent)]">{c.id}</td>
-                                <td className="p-3 border-b border-[var(--border)]">
-                                    <div className="font-semibold text-white">{c.title}</div>
-                                    <div className="text-[11px] text-[var(--text-muted)]">{c.type} • {c.ip}</div>
-                                </td>
-                                <td className="p-3 border-b border-[var(--border)] text-[var(--text-main)]">
-                                    {c.sub} <span className="text-[var(--text-muted)] text-[11px]">({c.level})</span>
-                                </td>
-                                <td className="p-3 border-b border-[var(--border)]">
-                                    {c.driveId ? (
-                                        <span className="text-[var(--success)]">Link OK</span>
-                                    ) : (
-                                        <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border border-[rgba(248,81,73,0.3)] bg-[rgba(248,81,73,0.15)] text-[var(--danger)]">
-                                            ⚠️ Missing ID
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="p-3 border-b border-[var(--border)]">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-1 bg-[var(--border)] rounded w-[60px] overflow-hidden">
-                                            <div
-                                                className={`h-full ${c.completeness < 50 ? 'bg-[var(--danger)]' : 'bg-[var(--success)]'}`}
-                                                style={{ width: `${c.completeness}%` }}
-                                            ></div>
-                                        </div>
-                                        <span className="text-[10px] text-[var(--text-muted)]">{c.completeness}%</span>
+            <div className={`grid gap-5 transition-all duration-300 ease-in-out ${selectedItem ? 'grid-cols-[40%_60%]' : 'grid-cols-1'}`}>
+
+                {/* Left Panel: List */}
+                <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                    <div className="p-3 border-b border-[var(--border)]">
+                        <input
+                            type="text"
+                            placeholder="Buscar activos..."
+                            className="w-full bg-[#0d1117] border border-[var(--border)] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]"
+                        />
+                    </div>
+
+                    <div className="overflow-y-auto flex-1">
+                        <table className="w-full text-[13px] border-collapse">
+                            <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-sm">
+                                <tr>
+                                    <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Título</th>
+                                    {!selectedItem && <th className="text-left text-[var(--text-muted)] p-3 border-b border-[var(--border)] font-medium">Estado</th>}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.map(c => (
+                                    <tr
+                                        key={c.id}
+                                        onClick={() => setSelectedItem(c)}
+                                        className={`cursor-pointer hover:bg-white/5 border-b border-[var(--border)] last:border-0 
+                      ${selectedItem?.id === c.id ? 'bg-[rgba(88,166,255,0.1)] border-l-2 border-l-[var(--accent)]' : ''}
+                    `}
+                                    >
+                                        <td className="p-3">
+                                            <div className="font-semibold text-white truncate max-w-[300px]">{c.title}</div>
+                                            <div className="text-[11px] text-[var(--text-muted)]">{c.id} • {c.type}</div>
+                                        </td>
+                                        {!selectedItem && (
+                                            <td className="p-3">
+                                                <StatusBadge status={c.status} />
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Right Panel: Preview (Split View) */}
+                {selectedItem && (
+                    <div className="flex flex-col gap-4 h-[calc(100vh-140px)] overflow-y-auto pr-1">
+
+                        {/* Metadata Card */}
+                        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-lg font-bold text-white leading-tight">{selectedItem.title}</h3>
+                                    <div className="text-sm text-[var(--accent)] font-code mt-1">{selectedItem.id}</div>
+                                </div>
+                                <StatusBadge status={selectedItem.status} />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">TAXONOMÍA</label>
+                                    <div className="text-white bg-black/20 p-2 rounded border border-[var(--border)]">
+                                        {selectedItem.pillar} {selectedItem.sub && `> ${selectedItem.sub}`}
                                     </div>
-                                </td>
-                                <td className="p-3 border-b border-[var(--border)]">
-                                    <StatusBadge status={c.status} />
-                                </td>
-                                <td className="p-3 border-b border-[var(--border)]">
-                                    <button className="bg-[var(--border)] text-white border border-white/10 px-2 py-1 rounded text-[11px] font-semibold hover:opacity-90">
-                                        {role === 'auditor' ? 'Revisar' : 'Editar'}
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                </div>
+                                <div>
+                                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">NIVEL</label>
+                                    <div className="text-white bg-black/20 p-2 rounded border border-[var(--border)]">
+                                        {selectedItem.level || 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Drive Preview */}
+                        <div className="bg-black border border-[var(--border)] rounded-lg flex-1 min-h-[400px] relative overflow-hidden group">
+                            {selectedItem.driveId ? (
+                                <iframe
+                                    src={`https://drive.google.com/file/d/${selectedItem.driveId}/preview`}
+                                    className="w-full h-full border-none"
+                                    allow="autoplay"
+                                ></iframe>
+                            ) : (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)]">
+                                    <div className="text-4xl mb-2">☁️</div>
+                                    <p>No Drive ID connected</p>
+                                </div>
+                            )}
+
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a
+                                    href={selectedItem.driveId ? `https://drive.google.com/file/d/${selectedItem.driveId}/view` : '#'}
+                                    target="_blank"
+                                    className="bg-black/80 hover:bg-black text-white text-xs px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md"
+                                >
+                                    Abrir en Drive ↗
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                )}
+
             </div>
         </>
     )
