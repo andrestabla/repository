@@ -12,8 +12,8 @@ type ContentItem = {
     level?: string
     version: string
     status: string
-    ip: string
-    driveId?: string
+    ip: string | null
+    driveId?: string | null
     completeness: number
 }
 

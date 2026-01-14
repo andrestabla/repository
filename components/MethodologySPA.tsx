@@ -14,9 +14,12 @@ type ContentItem = {
     type: string
     version: string
     status: string
-    ip: string
+    ip: string | null
     completeness: number
     driveId?: string | null
+    // New metadata fields (optional for now in UI)
+    maturity?: string | null
+    ipOwner?: string | null
 }
 
 type UserRole = 'metodologo' | 'curador' | 'auditor' | 'admin' | 'guest' | 'pending'
