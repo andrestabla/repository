@@ -24,7 +24,22 @@ type Session = {
     }
 }
 
-export default function MethodologySPA({ initialData, session }: { initialData: ContentItem[], session: Session | null }) {
+type TaxonomyItem = {
+    id: string
+    name: string
+    type: string
+    parentId: string | null
+}
+
+export default function MethodologySPA({
+    initialData,
+    initialTaxonomy,
+    session
+}: {
+    initialData: ContentItem[],
+    initialTaxonomy: TaxonomyItem[],
+    session: Session | null
+}) {
     const [user, setUser] = useState<User | null>(null)
     const [currentView, setCurrentView] = useState('login')
     const [consoleLog, setConsoleLog] = useState<string[]>([])
@@ -252,7 +267,7 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
             <main className="overflow-y-auto p-[0px] h-full">
                 <div className="p-[30px_40px]">
                     {currentView === 'admin' && <AdminView />}
-                    {currentView === 'gaps' && <GapsView />}
+                    {currentView === 'gaps' && <GapsView inventory={inventoryData} taxonomy={initialTaxonomy} />}
                     {currentView === 'inventory' && (
                         <InventoryView
                             data={inventoryData}
@@ -262,7 +277,7 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
                             onSave={handleUpsert}
                         />
                     )}
-                    {currentView === 'generator' && <GeneratorView simulateCompile={simulateCompile} consoleLog={consoleLog} />}
+                    {currentView === 'generator' && <GeneratorView inventory={inventoryData} simulateCompile={simulateCompile} consoleLog={consoleLog} />}
                     {currentView === 'qa' && <QAView data={inventoryData} />}
                 </div>
             </main>
@@ -285,70 +300,58 @@ function NavBtn({ id, label, icon, active, onClick }: { id: string, label: strin
     )
 }
 
-function GapsView() {
+function GapsView({ inventory, taxonomy }: { inventory: ContentItem[], taxonomy: TaxonomyItem[] }) {
+    // Only subcomponents (items with parentId)
+    const subcomponents = taxonomy.filter(t => t.type !== 'Pillar')
+    const levels = ['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']
+
     return (
         <>
             <header className="flex justify-between items-center mb-8">
                 <div>
                     <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Matriz de Cobertura (Gap Analysis)</h2>
                     <div className="text-[13px] text-[var(--text-muted)] mt-1.5">
-                        Versión objetivo: <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border border-[var(--purple)] text-[var(--purple)]">v1.0</span>
+                        Basado en <span className="text-[var(--accent)] font-bold">{inventory.length}</span> activos en inventario.
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">🔴 Vacío (Crítico)</span>
+                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">🔴 Vacío</span>
                     <span className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">🟢 Cubierto</span>
                 </div>
             </header>
 
-            <div className="grid grid-cols-[200px_1fr_1fr_1fr] gap-[2px] bg-[var(--border)] border border-[var(--border)] rounded-md overflow-hidden">
-                {['Subcomponente', 'Básico', 'Intermedio', 'Avanzado'].map(h => (
+            <div className="grid grid-cols-[200px_repeat(4,1fr)] gap-[2px] bg-[var(--border)] border border-[var(--border)] rounded-md overflow-hidden">
+                {['Subcomponente', ...levels].map(h => (
                     <div key={h} className="bg-[var(--bg)] p-4 flex items-center justify-center text-sm min-h-[60px] font-semibold text-[var(--text-muted)] first:justify-start first:pl-5">
                         {h}
                     </div>
                 ))}
 
-                {/* Row 1 */}
-                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-[var(--text-main)]">Networking</div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--success)] mr-2"></div> 1 Item
-                </div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
-                </div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
-                </div>
+                {subcomponents.map(sub => {
+                    return (
+                        <React.Fragment key={sub.id}>
+                            <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-[var(--text-main)]">{sub.name}</div>
+                            {levels.map(lvl => {
+                                const items = inventory.filter(i => i.sub === sub.name && (i.maturity === lvl || i.level === lvl))
+                                const count = items.length
+                                const hasApproved = items.some(i => i.status === 'Approved')
 
-                {/* Row 2 */}
-                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-[var(--text-main)]">Comunicación</div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
-                </div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--warning)] mr-2"></div> En Revisión
-                </div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
-                </div>
-
-                {/* Row 3 */}
-                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-[var(--text-main)]">Influencia</div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
-                </div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
-                </div>
-                <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div> Borrador (20%)
-                </div>
+                                return (
+                                    <div key={lvl} className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: count === 0 ? 'rgba(218, 54, 51, 0.05)' : '' }}>
+                                        {count > 0 ? (
+                                            <div className="flex flex-col items-center">
+                                                <div className={`w-2.5 h-2.5 rounded-full mb-1 ${hasApproved ? 'bg-[var(--success)] shadow-[0_0_8px_rgba(46,160,67,0.4)]' : 'bg-[var(--warning)]'}`}></div>
+                                                <span className="text-[10px] text-[var(--text-muted)]">{count} item{count > 1 ? 's' : ''}</span>
+                                            </div>
+                                        ) : (
+                                            <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_6px_rgba(218,54,51,0.2)]"></div>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </React.Fragment>
+                    )
+                })}
             </div>
         </>
     )
@@ -585,11 +588,16 @@ function StatusBadge({ status }: { status: string }) {
     )
 }
 
-function GeneratorView({ simulateCompile, consoleLog }: { simulateCompile: (a: string) => void, consoleLog: string[] }) {
+function GeneratorView({ inventory, simulateCompile, consoleLog }: { inventory: ContentItem[], simulateCompile: (a: string) => void, consoleLog: string[] }) {
+    const approvedCount = inventory.filter(i => i.status === 'Approved').length
+
     return (
         <>
             <header className="mb-8">
                 <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Generador de Artefactos</h2>
+                <div className="text-xs text-[var(--text-muted)] mt-1">
+                    Activos aprobados listos para exportar: <span className="text-[var(--success)] font-bold">{approvedCount}</span>
+                </div>
             </header>
 
             <div className="grid grid-cols-3 gap-5 mb-8">
@@ -648,14 +656,15 @@ function GeneratorCard({ icon, title, desc, action, onClick, isPrimary }: any) {
 }
 
 function QAView({ data }: { data: ContentItem[] }) {
-    const item = data.find(c => c.status === 'Review')
+    const reviewItems = data.filter(c => c.status === 'Review')
+    const item = reviewItems[0]
 
     return (
         <>
             <header className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Cola de Revisión</h2>
                 <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border text-[var(--warning)] bg-[rgba(210,153,34,0.15)] border-[rgba(210,153,34,0.3)]">
-                    1 Pendiente
+                    {reviewItems.length} Pendiente{reviewItems.length !== 1 ? 's' : ''}
                 </span>
             </header>
 

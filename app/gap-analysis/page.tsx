@@ -1,5 +1,4 @@
 import prisma from '@/lib/prisma'
-import { randomInt } from 'crypto' // Just for the 'random' width in mock if needed, but we'll try to calc real data
 
 export const dynamic = 'force-dynamic'
 
@@ -20,12 +19,31 @@ export default async function GapAnalysis() {
         coverageMap.set(pillar.name, agg._count.id > 0 ? Math.round(agg._avg.completeness || 0) : 0)
     }
 
-    // Mock critical gaps as per prototype
-    const criticalGaps = [
-        { pillar: 'Shine In', component: 'Comunicación de Crisis', level: 'Avanzado', status: 'VACÍO', tagClass: 'missing' },
-        { pillar: 'Shine On', component: 'Liderazgo Híbrido', level: 'Intermedio', status: 'VACÍO', tagClass: 'missing' },
-        { pillar: 'Transversal', component: 'Rúbrica de Evaluación Final', level: 'N/A', status: 'Borrador', tagClass: 'warn' },
-    ]
+    // 1. Calculate real gaps
+    // A gap exists if a subcomponent (taxonomy item with type != Pillar) has no ContentItems associated.
+    const children = await prisma.taxonomy.findMany({
+        where: { NOT: { type: 'Pillar' } },
+        include: { parent: true }
+    })
+
+    const realGaps = []
+    for (const child of children) {
+        const count = await prisma.contentItem.count({
+            where: { sub: child.name }
+        })
+        if (count === 0) {
+            realGaps.push({
+                pillar: child.parent?.name || 'Varios',
+                component: child.name,
+                level: 'Requerido',
+                status: 'VACÍO',
+                tagClass: 'missing'
+            })
+        }
+    }
+
+    // If no gaps found, show empty array
+    const criticalGaps = realGaps.length > 0 ? realGaps : []
 
     return (
         <div>

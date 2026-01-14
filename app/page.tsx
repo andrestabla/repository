@@ -13,6 +13,10 @@ export default async function Page() {
     orderBy: { id: 'asc' }
   })
 
+  const taxonomy = await prisma.taxonomy.findMany({
+    orderBy: { name: 'asc' }
+  })
+
   // Pass data to the Client Component
-  return <MethodologySPA initialData={contents} session={session} />
+  return <MethodologySPA initialData={contents} initialTaxonomy={taxonomy} session={session} />
 }
