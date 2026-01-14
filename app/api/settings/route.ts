@@ -16,6 +16,7 @@ export async function GET(req: Request) {
     try {
         const emailConfig = await SystemSettingsService.getEmailConfig()
         const driveConfig = await SystemSettingsService.getDriveConfig()
+        const geminiApiKey = await SystemSettingsService.getGeminiApiKey()
 
         // Mask password for security when sending to Client
         const maskedEmailConfig = emailConfig ? {
@@ -25,7 +26,8 @@ export async function GET(req: Request) {
 
         return NextResponse.json({
             emailConfig: maskedEmailConfig,
-            driveConfig
+            driveConfig,
+            geminiApiKey: geminiApiKey ? '********' : null // Mask API Key
         })
     } catch (error) {
         console.error('Error fetching settings:', error)
@@ -49,6 +51,11 @@ export async function POST(req: Request) {
         // Handle direct config updates (from new UI sections)
         if (body.driveConfig) {
             await SystemSettingsService.saveDriveConfig(body.driveConfig)
+            return NextResponse.json({ success: true })
+        }
+
+        if (body.geminiApiKey) {
+            await SystemSettingsService.saveGeminiApiKey(body.geminiApiKey)
             return NextResponse.json({ success: true })
         }
 

@@ -1,18 +1,19 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai"
-
-const getApiKey = () => {
-    const key = process.env.GEMINI_API_KEY
-    if (!key) throw new Error("GEMINI_API_KEY is not set in environment variables.")
-    return key
-}
+import { SystemSettingsService } from "./settings"
 
 export class GeminiService {
     static async analyzeContent(text: string) {
         if (!text || text.length < 50) return null
 
         try {
-            const genAI = new GoogleGenerativeAI(getApiKey())
+            // Priority: DB Setting > Env Var
+            let apiKey = await SystemSettingsService.getGeminiApiKey()
+            if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
+
+            if (!apiKey) throw new Error("GEMINI_API_KEY no configurada (ni en DB ni en Env).")
+
+            const genAI = new GoogleGenerativeAI(apiKey)
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
             const prompt = `
