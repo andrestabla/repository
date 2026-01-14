@@ -487,59 +487,55 @@ export default function AdminView() {
                             ))}
                             {driveConfig.authorizedFolderIds.length === 0 && (
                                 <div className="text-center text-[var(--text-muted)] text-sm py-4 italic">No hay carpetas configuradas. Agrega una arriba.</div>
-                            )}
+                    </div>
+
+                        {/* AI CONFIG WIZARD */}
+                        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
+                            <h3 className="text-lg font-bold text-[var(--text-main)] mb-1 flex items-center gap-2">🧠 Inteligencia Artificial (Gemini)</h3>
+                            <p className="text-xs text-[var(--text-muted)] mb-4">Configura la API Key de Google Gemini para habilitar el auto-análisis de documentos.</p>
+
+                            <div className="flex gap-2 items-end">
+                                <div className="flex-1">
+                                    <label className="text-xs text-[var(--text-muted)] block mb-1 font-bold">Gemini API Key</label>
+                                    <input
+                                        type="password"
+                                        placeholder={geminiApiKey ? '******** (Configurado)' : 'AIza...'}
+                                        onChange={e => setGeminiApiKey(e.target.value)}
+                                        className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        if (!geminiApiKey) return alert('Ingresa una API Key válida')
+                                        try {
+                                            const res = await fetch('/api/settings', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ geminiApiKey })
+                                            })
+                                            if (res.ok) {
+                                                alert('✅ API Key de Gemini guardada.')
+                                                setGeminiApiKey('') // Clear input for security, UI shows placeholder
+                                                // Refresh settings to get the "configured" state if we had one
+                                                setRefreshSettings(p => p + 1)
+                                            } else {
+                                                alert('❌ Error al guardar.')
+                                            }
+                                        } catch (e) { alert('Error de red') }
+                                    }}
+                                    className="bg-purple-700 hover:bg-purple-600 text-white px-4 py-2 rounded text-sm font-bold h-[38px] shadow-lg shadow-purple-900/20"
+                                >
+                                    Guardar Key
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-[var(--text-muted)] mt-2">
+                                Puedes obtener una clave gratuita en <a href="https://aistudio.google.com/" target="_blank" className="underline hover:text-[var(--accent)]">Google AI Studio</a>.
+                            </p>
                         </div>
-                    </div>
-                </div>
-                    </div>
 
-                    {/* AI CONFIG WIZARD */ }
-    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
-        <h3 className="text-lg font-bold text-[var(--text-main)] mb-1 flex items-center gap-2">🧠 Inteligencia Artificial (Gemini)</h3>
-        <p className="text-xs text-[var(--text-muted)] mb-4">Configura la API Key de Google Gemini para habilitar el auto-análisis de documentos.</p>
-
-        <div className="flex gap-2 items-end">
-            <div className="flex-1">
-                <label className="text-xs text-[var(--text-muted)] block mb-1 font-bold">Gemini API Key</label>
-                <input
-                    type="password"
-                    placeholder={geminiApiKey ? '******** (Configurado)' : 'AIza...'}
-                    onChange={e => setGeminiApiKey(e.target.value)}
-                    className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none"
-                />
-            </div>
-            <button
-                onClick={async () => {
-                    if (!geminiApiKey) return alert('Ingresa una API Key válida')
-                    try {
-                        const res = await fetch('/api/settings', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ geminiApiKey })
-                        })
-                        if (res.ok) {
-                            alert('✅ API Key de Gemini guardada.')
-                            setGeminiApiKey('') // Clear input for security, UI shows placeholder
-                            // Refresh settings to get the "configured" state if we had one
-                            setRefreshSettings(p => p + 1)
-                        } else {
-                            alert('❌ Error al guardar.')
-                        }
-                    } catch (e) { alert('Error de red') }
-                }}
-                className="bg-purple-700 hover:bg-purple-600 text-white px-4 py-2 rounded text-sm font-bold h-[38px] shadow-lg shadow-purple-900/20"
-            >
-                Guardar Key
-            </button>
-        </div>
-        <p className="text-[10px] text-[var(--text-muted)] mt-2">
-            Puedes obtener una clave gratuita en <a href="https://aistudio.google.com/" target="_blank" className="underline hover:text-[var(--accent)]">Google AI Studio</a>.
-        </p>
-    </div>
-
+                    </div >
+                    )
+}
                 </div >
             )
-}
-        </div >
-    )
-}
+            }

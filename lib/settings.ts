@@ -48,21 +48,20 @@ export class SystemSettingsService {
             create: { key: 'drive_config', value: config }
         })
     }
-}
 
     // --- Gemini ---
-    static async getGeminiApiKey(): Promise < string | null > {
-    const setting = await prisma.systemSettings.findUnique({
-        where: { key: 'gemini_api_key' }
-    })
+    static async getGeminiApiKey(): Promise<string | null> {
+        const setting = await prisma.systemSettings.findUnique({
+            where: { key: 'gemini_api_key' }
+        })
         return setting?.value as string | null
-}
+    }
 
     static async saveGeminiApiKey(key: string) {
-    return prisma.systemSettings.upsert({
-        where: { key: 'gemini_api_key' },
-        update: { value: key },
-        create: { key: 'gemini_api_key', value: key }
-    })
-}
+        return prisma.systemSettings.upsert({
+            where: { key: 'gemini_api_key' },
+            update: { value: key },
+            create: { key: 'gemini_api_key', value: key }
+        })
+    }
 }
