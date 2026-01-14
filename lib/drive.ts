@@ -9,7 +9,7 @@ if (typeof global.DOMMatrix === 'undefined') {
 }
 
 // @ts-ignore
-const { PDFParse } = require('pdf-parse')
+const pdf = require('pdf-parse')
 
 /**
  * Utility functions for handling Google Drive links and IDs
@@ -117,14 +117,12 @@ export const getFileContent = async (fileId: string): Promise<string> => {
             const buffer = Buffer.from(res.data as ArrayBuffer)
             console.log(`[Drive] Parsing PDF buffer (${buffer.length} bytes)...`)
 
-            if (typeof PDFParse !== 'function') {
-                console.error('[Drive] PDFParse is not a function/constructor:', typeof PDFParse, PDFParse)
-                throw new Error('PDF parser initialization failed (v2)')
+            if (typeof pdf !== 'function') {
+                console.error('[Drive] pdf-parse is not a function:', typeof pdf, pdf)
+                throw new Error('PDF parser (v1) initialization failed')
             }
 
-            const parser = new PDFParse({ data: buffer })
-            const data = await parser.getText()
-            await parser.destroy()
+            const data = await pdf(buffer)
             return data.text
         } else if (mimeType?.startsWith('text/')) {
             // Plain Text
