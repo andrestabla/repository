@@ -394,6 +394,41 @@ export default function AdminView() {
                                 value={driveConfig.serviceAccountJson || ''}
                                 onChange={e => setDriveConfig({ ...driveConfig, serviceAccountJson: e.target.value })}
                             />
+                            <div className="flex justify-end mt-2">
+                                <button
+                                    onClick={async () => {
+                                        const jsonStr = driveConfig.serviceAccountJson || ''
+                                        if (!jsonStr) {
+                                            alert('❌ El campo JSON está vacío.')
+                                            return
+                                        }
+
+                                        try {
+                                            const parsed = JSON.parse(jsonStr)
+                                            if (parsed.type !== 'service_account') {
+                                                alert('⚠️ Advertencia: El JSON no parece ser de una Service Account (falta "type": "service_account"). Verifica que sea el archivo correcto.')
+                                                // We allow saving anyway in case google changes format, but warn user.
+                                            }
+
+                                            // Save logic
+                                            const res = await fetch('/api/settings', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ driveConfig: { ...driveConfig, serviceAccountJson: jsonStr } })
+                                            })
+
+                                            if (res.ok) alert('✅ Credenciales guardadas y JSON validado correctamente.')
+                                            else alert('❌ Error al guardar en el servidor.')
+
+                                        } catch (e) {
+                                            alert('❌ Error de Sintaxis: El texto ingresado no es un JSON válido.\nVerifica comillas y llaves.')
+                                        }
+                                    }}
+                                    className="bg-[var(--accent)] text-white px-4 py-2 rounded text-xs font-bold hover:brightness-110 flex items-center gap-2"
+                                >
+                                    💾 Guardar Credenciales
+                                </button>
+                            </div>
                         </div>
 
                         <div className="mb-6 p-4 bg-[#0d1117] rounded border border-[var(--border)]">
