@@ -674,7 +674,7 @@ function QAView({ data }: { data: ContentItem[] }) {
                             </div>
                             <div>
                                 <label className="text-[11px] text-[var(--text-muted)] block mb-1">PROPIEDAD INTELECTUAL</label>
-                                <select className="w-full p-2 bg-black text-[var(--text-main)] border border-[var(--warning)] rounded">
+                                <select className="w-full p-2 bg-[var(--bg)] text-[var(--text-main)] border border-[var(--warning)] rounded">
                                     <option>{item.ip}</option>
                                     <option>Propio</option>
                                 </select>

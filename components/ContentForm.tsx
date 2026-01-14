@@ -312,7 +312,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                         <button onClick={() => handleSaveInternal('Borrador')} className="px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] border border-transparent hover:border-[var(--border)] rounded">
                             Guardar Borrador
                         </button>
-                        <button onClick={() => handleSaveInternal()} className="bg-[#238636] text-[var(--text-main)] px-6 py-2 rounded text-sm font-bold hover:brightness-110 shadow-lg shadow-green-900/20">
+                        <button onClick={() => handleSaveInternal()} className="bg-[#238636] text-white px-6 py-2 rounded text-sm font-bold hover:brightness-110 shadow-lg shadow-green-900/20">
                             Guardar Activo
                         </button>
                     </div>
@@ -322,7 +322,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             {/* DRIVE PICKER MODAL OVERLAY */}
             {showPicker && (
                 <div className="absolute inset-0 z-[60] bg-black/50 flex items-center justify-center p-8 backdrop-blur-sm">
-                    <div className="bg-[#1c2128] border border-[var(--border)] rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[70vh]">
+                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[70vh]">
                         <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
                             <h3 className="font-bold text-[var(--text-main)]">🗂️ Seleccionar de Drive</h3>
                             <button onClick={() => setShowPicker(false)} className="text-[var(--text-muted)] hover:text-[var(--text-main)]">✕</button>
