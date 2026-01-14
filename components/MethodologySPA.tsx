@@ -19,7 +19,8 @@ import {
     Gem,
     Terminal,
     ChevronRight,
-    Search
+    Search,
+    Trash2
 } from 'lucide-react'
 import { signIn, signOut } from "next-auth/react"
 import AdminView from './AdminView'
@@ -294,10 +295,40 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
     const [showForm, setShowForm] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
 
-    const filteredData = data.filter(i =>
-        i.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.id.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    // Filters State
+    const [pillarFilter, setPillarFilter] = useState('')
+    const [maturityFilter, setMaturityFilter] = useState('')
+    const [statusFilter, setStatusFilter] = useState('')
+
+    const filteredData = data.filter(i => {
+        const matchesSearch = i.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            i.id.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesPillar = !pillarFilter || i.pillar === pillarFilter
+        const matchesMaturity = !maturityFilter || i.maturity === maturityFilter
+        const matchesStatus = !statusFilter || i.status === statusFilter
+        return matchesSearch && matchesPillar && matchesMaturity && matchesStatus
+    })
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('¿Estás seguro de eliminar este activo? Esta acción no se puede deshacer.')) return
+        try {
+            const res = await fetch(`/api/inventory?id=${id}`, { method: 'DELETE' })
+            if (res.ok) {
+                setSelectedItem(null)
+                onRefresh()
+            } else {
+                const err = await res.json()
+                alert('Error: ' + err.error)
+            }
+        } catch (e) { alert('Error de red') }
+    }
+
+    const resetFilters = () => {
+        setPillarFilter('')
+        setMaturityFilter('')
+        setStatusFilter('')
+        setSearchTerm('')
+    }
 
     return (
         <div className="space-y-8">
@@ -326,9 +357,9 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
             </header>
 
             <div className="grid grid-cols-[380px_1fr] gap-8 h-[calc(100vh-280px)] min-h-[600px]">
-                {/* List Panel */}
+                {/* Filter & List Panel */}
                 <div className="bg-panel border border-border rounded-3xl flex flex-col overflow-hidden shadow-sm">
-                    <div className="p-4 border-b border-border bg-bg/50">
+                    <div className="p-4 border-b border-border bg-bg/50 space-y-4">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                             <input
@@ -338,6 +369,45 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
+                        </div>
+
+                        {/* Metadata Filters */}
+                        <div className="grid grid-cols-1 gap-2">
+                            <div className="flex gap-2">
+                                <select
+                                    value={pillarFilter}
+                                    onChange={e => setPillarFilter(e.target.value)}
+                                    className="flex-1 bg-bg border border-border rounded-lg p-2 text-[10px] font-bold text-text-muted outline-none focus:border-accent"
+                                >
+                                    <option value="">PILLAR: TODOS</option>
+                                    {['Shine In', 'Shine Out', 'Shine Up', 'Shine On'].map(p => <option key={p} value={p}>{p.toUpperCase()}</option>)}
+                                </select>
+                                <select
+                                    value={maturityFilter}
+                                    onChange={e => setMaturityFilter(e.target.value)}
+                                    className="flex-1 bg-bg border border-border rounded-lg p-2 text-[10px] font-bold text-text-muted outline-none focus:border-accent"
+                                >
+                                    <option value="">NIVEL: TODOS</option>
+                                    {['Básico', 'En Desarrollo', 'Avanzado', 'Maestría'].map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+                                </select>
+                            </div>
+                            <div className="flex gap-2">
+                                <select
+                                    value={statusFilter}
+                                    onChange={e => setStatusFilter(e.target.value)}
+                                    className="flex-1 bg-bg border border-border rounded-lg p-2 text-[10px] font-bold text-text-muted outline-none focus:border-accent"
+                                >
+                                    <option value="">ESTADO: TODOS</option>
+                                    {['Borrador', 'Revisión', 'Validado'].map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+                                </select>
+                                <button
+                                    onClick={resetFilters}
+                                    className="px-3 bg-panel border border-border rounded-lg text-[10px] font-black hover:text-accent transition-colors"
+                                    title="Limpiar Filtros"
+                                >
+                                    LIMPIAR
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto no-scrollbar py-2">
@@ -382,12 +452,23 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                                 <div className="text-[10px] font-black text-accent uppercase tracking-[0.2em] mb-3">CONSTRUCTOR DE METODOLOGÍA</div>
                                 <h3 className="text-3xl font-black text-text-main leading-[1.1] tracking-tighter">{selectedItem.title}</h3>
                             </div>
-                            <button
-                                onClick={() => setShowForm(true)}
-                                className="px-5 py-2.5 rounded-xl border-2 border-accent text-accent hover:bg-accent hover:text-white transition-all font-bold text-xs uppercase tracking-widest"
-                            >
-                                Editar Metadatos
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setShowForm(true)}
+                                    className="px-5 py-2.5 rounded-xl border-2 border-accent text-accent hover:bg-accent hover:text-white transition-all font-bold text-xs uppercase tracking-widest"
+                                >
+                                    Editar Metadatos
+                                </button>
+                                {(role === 'admin' || role === 'metodologo') && (
+                                    <button
+                                        onClick={() => handleDelete(selectedItem.id)}
+                                        className="w-10 h-10 rounded-xl border border-danger/30 text-danger hover:bg-danger hover:text-white transition-all flex items-center justify-center shadow-lg shadow-danger/5"
+                                        title="Eliminar Activo"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
