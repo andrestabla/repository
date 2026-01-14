@@ -149,14 +149,17 @@ export const uploadToDrive = async (filename: string, buffer: Buffer, mimeType: 
         const response = await drive.files.create({
             requestBody: {
                 name: filename,
-                parents: [folderId]
+                parents: [folderId],
+                description: 'Uploaded via 4Shine Methodology Builder'
             },
             media: {
                 mimeType: mimeType,
                 body: require('stream').Readable.from(buffer)
             },
-            fields: 'id',
-            supportsAllDrives: true
+            fields: 'id, webViewLink',
+            supportsAllDrives: true,
+            // @ts-ignore - some versions of the SDK might not have this in types but it's valid
+            supportsTeamDrives: true
         })
 
         if (!response.data.id) {
