@@ -1,6 +1,34 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
+import {
+    Fingerprint,
+    Brain,
+    Rocket,
+    Zap,
+    Users,
+    Scale,
+    FileText,
+    Search,
+    X,
+    Cloud,
+    Folder,
+    Sparkles,
+    CheckCircle2,
+    ExternalLink,
+    Loader2,
+    Database,
+    Tag,
+    Clock,
+    Globe,
+    BookOpen,
+    Terminal,
+    ShieldCheck,
+    Lock as LockIcon,
+    History as HistoryIcon,
+    ChevronRight,
+    ChevronDown
+} from 'lucide-react'
 
 // --- TYPES ---
 export type ContentItem = {
@@ -69,13 +97,13 @@ type Props = {
 }
 
 const TABS = [
-    { id: 'identity', label: '1. Identificación', icon: '🆔' },
-    { id: 'classification', label: '2. Clasificación', icon: '🧠' },
-    { id: 'trajectory', label: '3. Trayectoria', icon: '🚀' },
-    { id: 'activation', label: '4. Activación', icon: '⚡' },
-    { id: 'audience', label: '5. Audiencia', icon: '👥' },
-    { id: 'governance', label: '6. Gob & IP', icon: '⚖️' },
-    { id: 'context', label: '7. Contexto', icon: '📝' },
+    { id: 'identity', label: 'Identificación', icon: <Fingerprint size={14} /> },
+    { id: 'classification', label: 'Clasificación', icon: <Brain size={14} /> },
+    { id: 'trajectory', label: 'Trayectoria', icon: <Rocket size={14} /> },
+    { id: 'activation', label: 'Activación', icon: <Zap size={14} /> },
+    { id: 'audience', label: 'Audiencia', icon: <Users size={14} /> },
+    { id: 'governance', label: 'Gob & IP', icon: <Scale size={14} /> },
+    { id: 'context', label: 'Contexto', icon: <FileText size={14} /> },
 ]
 
 export default function ContentForm({ initialData, onClose, onSave }: Props) {
@@ -136,7 +164,6 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
         setShowPicker(false)
     }
 
-    // --- RENDER HELPERS ---
     const handleAutoAnalyze = async () => {
         if (!formData.driveId) return alert('Primero selecciona un archivo de Drive')
         setAnalyzing(true)
@@ -177,270 +204,220 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
         }))
     }
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-
-        setIsUploading(true)
-        const uploadFormData = new FormData()
-        uploadFormData.append('file', file)
-
-        try {
-            const res = await fetch('/api/inventory/upload', {
-                method: 'POST',
-                body: uploadFormData
-            })
-            const json = await res.json()
-
-            if (json.success) {
-                if (json.driveId) {
-                    setFormData(prev => ({ ...prev, driveId: json.driveId }))
-                    setDriveStatus('valid')
-                }
-
-                if (json.suggestedId) {
-                    setFormData(prev => ({ ...prev, id: json.suggestedId }))
-                }
-
-                if (json.metadata) {
-                    applyMetadata(json.metadata)
-                    if (json.driveId) {
-                        alert('✨ ¡Éxito! Archivo subido a Drive y analizado por IA.')
-                    } else {
-                        alert('⚠️ Analizado por IA, pero NO se pudo guardar en Drive.')
-                    }
-                } else {
-                    let msg = json.driveId
-                        ? 'Archivo guardado en Drive, pero no se pudo extraer metadatos automáticamente.'
-                        : '⚠️ Error crítico: Ni se guardó en Drive ni se pudo analizar.'
-
-                    if (json.debug?.extractionError) msg += `\n\n(Error Extracción: ${json.debug.extractionError})`
-                    if (json.debug?.geminiError) msg += `\n\n(Error Gemini: ${json.debug.geminiError})`
-                    if (json.debug?.driveError) msg += `\n\n(Error Drive: ${json.debug.driveError})`
-                    alert(msg)
-                }
-            } else {
-                let msg = 'Error en subida/análisis: ' + (json.error || 'Desconocido')
-                if (json.debug?.driveError) msg += `\n\n(Error Drive: ${json.debug.driveError})`
-                alert(msg)
-            }
-        } catch (error) {
-            alert('Error al procesar el archivo')
-        }
-        setIsUploading(false)
-    }
-
-    const Input = ({ label, field, placeholder, width = 'full', disabled = false }: any) => (
+    const Input = ({ label, field, placeholder, icon, width = 'full', disabled = false }: any) => (
         <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
-            <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">{label}</label>
-            <input
-                value={(formData as any)[field] || ''}
-                onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                className={`w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100/10' : ''}`}
-                placeholder={placeholder}
-                disabled={disabled}
-            />
+            <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-2 pl-1 italic">{label}</label>
+            <div className="relative group">
+                {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50 group-hover:text-accent transition-colors">{icon}</div>}
+                <input
+                    value={(formData as any)[field] || ''}
+                    onChange={e => setFormData({ ...formData, [field]: e.target.value })}
+                    className={`w-full bg-bg border-2 border-border rounded-xl p-3 text-sm text-text-main focus:border-accent outline-none transition-all ${icon ? 'pl-10' : ''} ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:border-border/80'}`}
+                    placeholder={placeholder}
+                    disabled={disabled}
+                />
+            </div>
         </div>
     )
 
-    const Select = ({ label, field, options, width = 'half' }: any) => (
+    const Select = ({ label, field, options, icon, width = 'half' }: any) => (
         <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
-            <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">{label}</label>
-            <select
-                value={(formData as any)[field] || ''}
-                onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                className="w-full bg-panel border border-[var(--border)] rounded p-2 text-xs text-[var(--text-main)] outline-none"
-            >
-                <option value="">Seleccionar...</option>
-                {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
-            </select>
+            <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-2 pl-1 italic">{label}</label>
+            <div className="relative">
+                {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50 group-hover:text-accent transition-colors">{icon}</div>}
+                <select
+                    value={(formData as any)[field] || ''}
+                    onChange={e => setFormData({ ...formData, [field]: e.target.value })}
+                    className={`w-full bg-panel border-2 border-border rounded-xl p-3 text-sm text-text-main outline-none focus:border-accent transition-all appearance-none cursor-pointer ${icon ? 'pl-10' : ''}`}
+                >
+                    <option value="">Seleccionar...</option>
+                    {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40 group-hover:text-accent transition-colors">
+                    <ChevronDown size={14} />
+                </div>
+            </div>
         </div>
     )
 
     return (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-panel border border-[var(--border)] w-full max-w-4xl rounded-xl shadow-2xl flex flex-col h-[85vh]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all duration-500 animate-in fade-in">
+            <div className="bg-panel border border-border w-full max-w-5xl rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col h-[85vh] overflow-hidden group">
                 {/* Header */}
-                <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-bg rounded-t-xl">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-lg font-bold text-[var(--text-main)]">
-                            {isEdit ? `Editando: ${formData.id}` : 'Nuevo Activo Metodológico'}
-                        </h2>
-                        {formData.driveId && <span className="text-xs bg-green-900/30 text-green-400 border border-green-900/50 px-2 py-0.5 rounded-full">Drive Linked ✅</span>}
+                <div className="p-8 border-b border-border flex justify-between items-center bg-bg/80 backdrop-blur-xl">
+                    <div className="flex items-center gap-6">
+                        <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent">
+                            <Database size={28} />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-text-main tracking-tighter">
+                                {isEdit ? `Editar Activo: ${formData.id}` : 'Nuevo Activo Metodológico'}
+                            </h2>
+                            <p className="text-[11px] font-black text-text-muted uppercase tracking-widest mt-1 opacity-60">Configuración Centralizada de Metadatos</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-main)] px-3">✕</button>
+                    <div className="flex items-center gap-4">
+                        {formData.driveId && (
+                            <div className="flex items-center gap-2 px-4 py-2 bg-success/5 text-success border border-success/20 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                <Cloud size={14} /> Drive Conectado
+                            </div>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="w-10 h-10 rounded-full border border-border hover:bg-panel hover:text-danger hover:border-danger/30 transition-all flex items-center justify-center"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Main Layout: Tabs + Content */}
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar Tabs */}
-                    <div className="w-[200px] border-r border-[var(--border)] bg-bg overflow-y-auto">
+                    <div className="w-[260px] border-r border-border bg-bg/50 overflow-y-auto no-scrollbar py-6 px-3 space-y-2">
                         {TABS.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-2 border-l-2 transition-colors ${activeTab === tab.id
-                                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-main)]'
-                                    : 'border-transparent text-[var(--text-muted)] hover:bg-white/5'
+                                className={`w-full text-left px-5 py-3.5 text-[11px] font-black uppercase tracking-widest flex items-center justify-between rounded-2xl transition-all group/tab ${activeTab === tab.id
+                                    ? 'bg-accent text-white shadow-xl shadow-accent/20'
+                                    : 'text-text-muted hover:bg-accent/5 hover:text-accent'
                                     }`}
                             >
-                                <span>{tab.icon}</span>
-                                {tab.label}
+                                <div className="flex items-center gap-3">
+                                    <span className={`transition-transform duration-300 ${activeTab === tab.id ? 'scale-110' : 'group-hover/tab:scale-110 opacity-60'}`}>{tab.icon}</span>
+                                    {tab.label}
+                                </div>
+                                {activeTab === tab.id && <CheckCircle2 size={12} className="opacity-50" />}
                             </button>
                         ))}
+
+                        <div className="mt-10 mx-2 p-5 bg-panel border-2 border-dashed border-border rounded-3xl text-center group/ai">
+                            <div className="w-10 h-10 bg-bg border border-border rounded-xl flex items-center justify-center mx-auto mb-3 text-accent group-hover/ai:scale-110 group-hover/ai:border-accent transition-all">
+                                <Sparkles size={18} />
+                            </div>
+                            <div className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-relaxed mb-2">Asistente IA</div>
+                            <p className="text-[9px] text-text-muted italic opacity-60 leading-relaxed mb-4">Analiza estructuras de Drive automáticamente.</p>
+                            <button
+                                onClick={handleAutoAnalyze}
+                                disabled={analyzing || !formData.driveId}
+                                className="w-full bg-accent/10 text-accent border border-accent/20 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none"
+                            >
+                                {analyzing ? 'Procesando...' : 'Autocompletar'}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto p-6 bg-bg/50">
-                        <div className="max-w-2xl mx-auto space-y-6">
+                    <div className="flex-1 overflow-y-auto p-12 bg-bg/20 no-scrollbar">
+                        <div className="max-w-3xl mx-auto">
 
-                            {/* 1. IDENTIFICATION */}
                             {activeTab === 'identity' && (
-                                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                                    {/* Subida Directa Area - Hidden by user request due to Drive issues */}
-                                    {false && (
-                                        <div className="col-span-2 p-4 bg-sky-900/10 border border-sky-900/30 rounded mb-2">
-                                            <div className="flex flex-col gap-4">
-                                                <div className="bg-sky-950/20 border-2 border-dashed border-sky-800/40 rounded-lg p-6 text-center group hover:border-sky-500/50 transition-all">
-                                                    <input
-                                                        type="file"
-                                                        id="ai-upload"
-                                                        className="hidden"
-                                                        onChange={handleFileUpload}
-                                                        disabled={isUploading}
-                                                    />
-                                                    <label htmlFor="ai-upload" className="cursor-pointer">
-                                                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🤖 ✨</div>
-                                                        <div className="text-sm font-bold text-sky-200">Subir y Analizar con IA</div>
-                                                        <div className="text-[10px] text-sky-400/70 mt-1">Sube a Drive y extrae metadatos automáticamente</div>
-                                                        {isUploading && (
-                                                            <div className="mt-4 flex flex-col items-center">
-                                                                <div className="w-full bg-sky-900/30 h-1.5 rounded-full overflow-hidden">
-                                                                    <div className="bg-sky-500 h-full animate-progress-ind"></div>
-                                                                </div>
-                                                                <span className="text-[10px] text-sky-300 mt-2 animate-pulse">Procesando archivo...</span>
-                                                            </div>
-                                                        )}
-                                                    </label>
-                                                </div>
-
-                                                <div className="flex items-center gap-4 text-[var(--text-muted)] py-2">
-                                                    <div className="h-px flex-1 bg-[var(--border)]"></div>
-                                                    <span className="text-[10px] uppercase font-bold tracking-widest">o selecciona uno existente</span>
-                                                    <div className="h-px flex-1 bg-[var(--border)]"></div>
-                                                </div>
-                                            </div>
+                                <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-500">
+                                    <div className="p-8 bg-accent/5 border border-accent/10 rounded-[32px] space-y-6">
+                                        <div className="flex justify-between items-center px-1">
+                                            <h3 className="text-sm font-black text-accent uppercase tracking-widest flex items-center gap-2">
+                                                <Cloud size={16} /> Vinculación de Archivo
+                                            </h3>
+                                            <button
+                                                onClick={openPicker}
+                                                className="bg-bg border border-border hover:border-accent text-text-main text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2"
+                                            >
+                                                <Folder size={14} /> Explorar Drive
+                                            </button>
                                         </div>
-                                    )}
-
-                                    <div className="col-span-2 p-4 bg-sky-900/10 border border-sky-900/30 rounded mb-2">
-                                        <div className="flex flex-col gap-4">
-
-                                            <div className="flex justify-between items-center">
-                                                <h3 className="text-sm font-bold text-blue-200">Enlace con Google Drive</h3>
-                                                <div className="flex gap-2">
-                                                    <button onClick={openPicker} className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-bold shadow-lg shadow-blue-900/20 transition-all">
-                                                        📂 Drive Picker
-                                                    </button>
-                                                    {formData.driveId && (
-                                                        <button
-                                                            onClick={handleAutoAnalyze}
-                                                            disabled={analyzing}
-                                                            className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1.5 rounded font-bold shadow-lg shadow-purple-900/20 transition-all disabled:opacity-50"
-                                                        >
-                                                            {analyzing ? '✨ Analizando...' : '✨ Analizar ID'}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    value={formData.driveId || ''}
-                                                    onChange={e => setFormData({ ...formData, driveId: e.target.value })}
-                                                    placeholder="Drive File ID..."
-                                                    className="flex-1 bg-black/30 border border-blue-900/30 rounded px-2 py-1 text-xs font-mono"
-                                                />
-                                                {formData.driveId && <a href={`https://drive.google.com/open?id=${formData.driveId}`} target="_blank" className="text-blue-400 text-xs flex items-center hover:underline">Ver ↗</a>}
-                                            </div>
+                                        <div className="relative group/id">
+                                            <Cloud className="absolute left-4 top-1/2 -translate-y-1/2 text-accent/40" size={16} />
+                                            <input
+                                                value={formData.driveId || ''}
+                                                onChange={e => setFormData({ ...formData, driveId: e.target.value })}
+                                                placeholder="ID de Google Drive..."
+                                                className="w-full bg-bg border-2 border-border/60 hover:border-accent/40 rounded-2xl p-4 text-xs font-mono pl-12 focus:border-accent transition-all outline-none"
+                                            />
+                                            {formData.driveId && (
+                                                <a href={`https://drive.google.com/open?id=${formData.driveId}`} target="_blank" className="absolute right-4 top-1/2 -translate-y-1/2 text-accent hover:underline text-[10px] font-bold flex items-center gap-1">
+                                                    Ver <ExternalLink size={10} />
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <Input label="ID Único (Inmutable)" field="id" placeholder="4S-P-001" disabled={isEdit} />
-                                    <Input label="Título Oficial" field="title" placeholder="Manual del Facilitador..." />
+                                    <div className="grid grid-cols-2 gap-8">
+                                        <Input label="Identificador Único" field="id" placeholder="4S-P-001" icon={<Tag size={16} />} disabled={isEdit} />
+                                        <Input label="Título Oficial del Activo" field="title" placeholder="Manual Maestro..." icon={<BookOpen size={16} />} />
 
-                                    <Select label="Tipo Contenido" field="type" options={['PDF', 'Video', 'Audio', 'Toolkit', 'Test', 'Plantilla']} />
-                                    <Input label="Formato Técnico" field="format" placeholder="PDF, MP4, DOCCX" width="half" />
+                                        <Select label="Categoría Técnica" field="type" options={['PDF', 'Video', 'Audio', 'Toolkit', 'Test', 'Plantilla']} icon={<FileText size={16} />} />
+                                        <Input label="Extensión / Formato" field="format" placeholder="PNG, PDF..." width="half" icon={<Terminal size={16} />} />
 
-                                    <Input label="Idioma" field="language" placeholder="ES" width="half" />
-                                    <Input label="Duración (min)" field="duration" placeholder="120" width="half" />
-                                    <Input label="Año" field="year" placeholder="2025" width="half" />
-                                    <Input label="Fuente" field="source" placeholder="Propio, Adaptación" width="half" />
+                                        <Input label="Lenguaje" field="language" placeholder="Spanish (Latam)" width="half" icon={<Globe size={16} />} />
+                                        <Input label="Duración Estimada" field="duration" placeholder="90 min" width="half" icon={<Clock size={16} />} />
+
+                                        <Input label="Ciclo / Año" field="year" placeholder="2025" width="half" icon={<Tag size={16} />} />
+                                        <Input label="Origen / Autor" field="source" placeholder="Propio" width="half" icon={<Users size={16} />} />
+                                    </div>
                                 </div>
                             )}
 
-                            {/* 2. CLASSIFICATION */}
                             {activeTab === 'classification' && (
-                                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                                    <Select label="Pilar 4Shine" field="pillar" options={['Shine Out', 'Shine In', 'Shine Up', 'Shine On']} width="full" />
-                                    <Input label="Subcomponente" field="sub" placeholder="Comunicación, Liderazgo..." />
-                                    <Input label="Competencia Clave" field="competence" placeholder="Escucha Activa" />
-                                    <Input label="Conducta Observable" field="behavior" placeholder="Hace preguntas poderosas..." width="full" />
-                                    <Select label="Nivel Madurez" field="maturity" options={['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']} />
+                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                    <Select label="Pilar Metodológico" field="pillar" options={['Shine Out', 'Shine In', 'Shine Up', 'Shine On']} width="full" icon={<Fingerprint size={16} />} />
+                                    <Input label="Subcomponente" field="sub" placeholder="Liderazgo, IA..." icon={<Database size={16} />} />
+                                    <Input label="Competencia Clave" field="competence" placeholder="Negociación" icon={<Brain size={16} />} />
+                                    <Input label="Conducta Observable" field="behavior" placeholder="Aplica marcos ágiles..." width="full" icon={<Users size={16} />} />
+                                    <Select label="Escala de Madurez" field="maturity" options={['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']} icon={<Zap size={16} />} />
                                 </div>
                             )}
 
-                            {/* 3. TRAJECTORY */}
                             {activeTab === 'trajectory' && (
-                                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                                    <Select label="Tipo Intervención" field="intervention" options={['Conciencia', 'Práctica', 'Herramienta', 'Evaluación']} />
-                                    <Select label="Momento" field="moment" options={['Inicio', 'Refuerzo', 'Profundización', 'Cierre']} />
-                                    <Input label="ID Prerrequisito" field="prereqId" placeholder="4S-P-000" width="half" />
-                                    <Input label="ID Test Asociado" field="testId" placeholder="TEST-01" width="half" />
-
-                                    <Input label="Variable Medida" field="variable" placeholder="Networking Capacity" width="full" />
-                                    <Select label="Tipo Output" field="outcomeType" options={['Insight', 'Acción', 'Evidencia', 'Score']} />
+                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                    <Select label="Modalidad de Intervención" field="intervention" options={['Conciencia', 'Práctica', 'Herramienta', 'Evaluación']} icon={<Rocket size={16} />} />
+                                    <Select label="Momento del Journey" field="moment" options={['Inicio', 'Refuerzo', 'Profundización', 'Cierre']} icon={<Clock size={16} />} />
+                                    <Input label="ID Prerrequisito" field="prereqId" placeholder="4S-000" width="half" icon={<LockIcon size={16} />} />
+                                    <Input label="ID Test Predictivo" field="testId" placeholder="T-01" width="half" icon={<CheckCircle2 size={16} />} />
+                                    <Input label="Variable a Medir" field="variable" placeholder="Networking..." width="full" icon={<Zap size={16} />} />
+                                    <Select label="Tipo de Output" field="outcomeType" options={['Insight', 'Acción', 'Evidencia', 'Score']} icon={<FileText size={16} />} />
                                 </div>
                             )}
 
-                            {/* 4. ACTIVATION */}
                             {activeTab === 'activation' && (
-                                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                                    <Input label="Disparador (Trigger)" field="trigger" placeholder="Score < 60%" width="full" />
-                                    <Input label="Regla Recomendación" field="recommendation" placeholder="IF score low THEN recommend this" width="full" />
-                                    <Select label="Tipo Reto" field="challengeType" options={['Reflexivo', 'Práctico', 'Aplicado']} />
-                                    <Select label="Evidencia Req." field="evidenceRequired" options={['Texto', 'Archivo', 'Video', 'No aplica']} />
-                                    <Input label="Siguiente Contenido ID" field="nextContentId" placeholder="4S-P-005" width="full" />
+                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                    <Input label="Disparador Lógico (Trigger)" field="trigger" placeholder="Score < 60%" width="full" icon={<Zap size={16} />} />
+                                    <Input label="Regla de Recomendación" field="recommendation" placeholder="IF logic..." width="full" icon={<Brain size={16} />} />
+                                    <Select label="Naturaleza del Reto" field="challengeType" options={['Reflexivo', 'Práctico', 'Aplicado']} icon={<Rocket size={16} />} />
+                                    <Select label="Evidencia Necesaria" field="evidenceRequired" options={['Texto', 'Archivo', 'Video', 'No aplica']} icon={<FileText size={16} />} />
                                 </div>
                             )}
 
-                            {/* 5. AUDIENCE */}
                             {activeTab === 'audience' && (
-                                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                                    <Select label="Rol Objetivo" field="targetRole" options={['Líder', 'Mentor', 'Facilitador', 'Metodólogo']} width="full" />
-                                    <Select label="Nivel Rol" field="roleLevel" options={['Junior', 'Senior', 'Experto', 'C-Level']} />
-                                    <Input label="Industria" field="industry" placeholder="Transversal" width="half" />
+                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                    <Select label="Perfil Destinatario" field="targetRole" options={['Líder', 'Mentor', 'Facilitador', 'Metodólogo']} width="full" icon={<Users size={16} />} />
+                                    <Select label="Nivel Jerárquico" field="roleLevel" options={['Junior', 'Senior', 'Experto', 'C-Level']} icon={<LockIcon size={16} />} />
+                                    <Input label="Segmento Industria" field="industry" placeholder="Multisectorial" width="half" icon={<Globe size={16} />} />
                                 </div>
                             )}
 
-                            {/* 6. GOVERNANCE */}
                             {activeTab === 'governance' && (
-                                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                                    <Input label="Propietario IP" field="ipOwner" placeholder="Company Name" width="full" />
-                                    <Select label="Tipo IP" field="ipType" options={['Derecho de autor', 'Know-how', 'Licencia', 'Adaptación']} />
-                                    <Select label="Uso Autorizado" field="authorizedUse" options={['Formación interna', 'Consultoría', 'Venta']} />
-                                    <Select label="Confidencialidad" field="confidentiality" options={['Baja', 'Media', 'Alta', 'Restringida']} />
+                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                    <Input label="Titular de Propiedad Intelectual" field="ipOwner" placeholder="4Shine Global" width="full" icon={<Scale size={16} />} />
+                                    <Select label="Régimen de IP" field="ipType" options={['Derecho de autor', 'Know-how', 'Licencia', 'Adaptación']} icon={<Fingerprint size={16} />} />
+                                    <Select label="Alcance de Uso" field="authorizedUse" options={['Formación interna', 'Consultoría', 'Venta']} icon={<Globe size={16} />} />
+                                    <Select label="Nivel de Confidencialidad" field="confidentiality" options={['Baja', 'Media', 'Alta', 'Restringida']} icon={<ShieldCheck size={16} />} />
                                 </div>
                             )}
 
-                            {/* 7. CONTEXT */}
                             {activeTab === 'context' && (
-                                <div className="animate-fadeIn">
-                                    <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">Observaciones Metodológicas</label>
+                                <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
+                                            <FileText size={16} />
+                                        </div>
+                                        <h3 className="text-sm font-black text-text-main uppercase tracking-widest">Observaciones Pedagógicas</h3>
+                                    </div>
                                     <textarea
                                         value={formData.observations || ''}
                                         onChange={e => setFormData({ ...formData, observations: e.target.value })}
-                                        className="w-full h-40 bg-bg border border-[var(--border)] rounded p-3 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none resize-none"
-                                        placeholder="Descripción pedagógica, intención de uso, notas para el facilitador..."
+                                        className="w-full h-80 bg-bg border-4 border-border rounded-[32px] p-8 text-sm text-text-main focus:border-accent outline-none resize-none transition-all shadow-inner leading-relaxed italic"
+                                        placeholder="Define aquí la intención didáctica, notas de facilitación y contexto técnico para el despliegue de este activo..."
                                     ></textarea>
                                 </div>
                             )}
@@ -450,16 +427,27 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-[var(--border)] bg-bg rounded-b-xl flex justify-between items-center">
-                    <div className="text-xs text-[var(--text-muted)]">
-                        Completeness: <span className="font-bold text-[var(--text-main)]">{formData.completeness}% (Estimado)</span>
+                <div className="p-8 border-t border-border bg-bg flex justify-between items-center px-12">
+                    <div className="flex items-center gap-6">
+                        <div className="h-2 w-40 bg-border/40 rounded-full overflow-hidden">
+                            <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${formData.completeness}%` }}></div>
+                        </div>
+                        <div className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-none">
+                            Índice de Densidad de Datos: <span className="text-accent ml-1">{formData.completeness}%</span>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => handleSaveInternal('Borrador')} className="px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] border border-transparent hover:border-[var(--border)] rounded">
-                            Guardar Borrador
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => handleSaveInternal('Draft')}
+                            className="px-8 py-3.5 text-[11px] font-black uppercase tracking-widest text-text-muted hover:text-text-main border-2 border-transparent hover:border-border rounded-2xl transition-all"
+                        >
+                            Guardar Draft
                         </button>
-                        <button onClick={() => handleSaveInternal()} className="bg-[#238636] text-white px-6 py-2 rounded text-sm font-bold hover:brightness-110 shadow-lg shadow-green-900/20">
-                            Guardar Activo
+                        <button
+                            onClick={() => handleSaveInternal()}
+                            className="bg-accent text-white px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all"
+                        >
+                            Confirmar Activo
                         </button>
                     </div>
                 </div>
@@ -467,31 +455,58 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
 
             {/* DRIVE PICKER MODAL OVERLAY */}
             {showPicker && (
-                <div className="absolute inset-0 z-[60] bg-black/50 flex items-center justify-center p-8 backdrop-blur-sm">
-                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[70vh]">
-                        <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
-                            <h3 className="font-bold text-[var(--text-main)]">🗂️ Seleccionar de Drive</h3>
-                            <button onClick={() => setShowPicker(false)} className="text-[var(--text-muted)] hover:text-[var(--text-main)]">✕</button>
+                <div className="absolute inset-0 z-[60] bg-black/40 backdrop-blur-2xl flex items-center justify-center p-12 transition-all animate-in zoom-in-95 duration-300">
+                    <div className="bg-panel border border-border rounded-[40px] shadow-[0_30px_60px_rgba(0,0,0,0.5)] w-full max-w-2xl flex flex-col max-h-[80vh] overflow-hidden">
+                        <div className="p-8 border-b border-border flex justify-between items-center bg-bg/80 backdrop-blur-xl">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center">
+                                    <Cloud size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-text-main tracking-tight text-xl">Drive Resource Explorer</h3>
+                                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest opacity-40">Navega el repositorio documental 4Shine</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowPicker(false)}
+                                className="w-8 h-8 rounded-full hover:bg-panel hover:text-danger transition-all flex items-center justify-center"
+                            >
+                                <X size={18} />
+                            </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-2">
+                        <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
                             {loadingPicker ? (
-                                <div className="p-8 text-center text-[var(--text-muted)] animate-pulse">Cargando archivos desde la nube...</div>
+                                <div className="flex flex-col items-center justify-center py-20 text-text-muted opacity-30">
+                                    <Loader2 size={32} className="animate-spin mb-4" />
+                                    <div className="text-[10px] font-black uppercase tracking-widest">Sincronizando con Cloud Storage...</div>
+                                </div>
                             ) : (
-                                <div className="grid grid-cols-1 gap-1">
+                                <div className="grid grid-cols-1 gap-2">
                                     {pickerFiles.map(file => (
                                         <button
                                             key={file.id}
                                             onClick={() => selectFile(file)}
-                                            className="flex items-center gap-3 p-3 hover:bg-bg rounded text-left group transition-colors border border-transparent hover:border-[var(--border)]"
+                                            className="flex items-center justify-between p-5 hover:bg-accent/5 rounded-[24px] text-left group transition-all border border-transparent hover:border-accent/20"
                                         >
-                                            <div className="text-2xl">📄</div>
-                                            <div>
-                                                <div className="text-sm font-semibold text-[var(--text-main)] group-hover:text-blue-400">{file.name}</div>
-                                                <div className="text-[10px] font-mono text-[var(--text-muted)]">{file.id}</div>
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-12 h-12 bg-bg border border-border rounded-2xl flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent/40 shadow-inner group-hover:scale-105 transition-all">
+                                                    <FileText size={20} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-black text-text-main group-hover:text-accent tracking-tight transition-colors">{file.name}</div>
+                                                    <div className="text-[10px] font-mono text-text-muted opacity-60 mt-1">{file.id}</div>
+                                                </div>
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-accent/10 opacity-0 group-hover:opacity-100 flex items-center justify-center text-accent transition-all">
+                                                <ChevronRight size={14} />
                                             </div>
                                         </button>
                                     ))}
-                                    {pickerFiles.length === 0 && <div className="p-8 text-center text-[var(--text-muted)]">No se encontraron archivos en las carpetas autorizadas.</div>}
+                                    {pickerFiles.length === 0 && (
+                                        <div className="py-20 text-center text-text-muted italic opacity-40">
+                                            No se detectaron activos compatibles en los directorios autorizados.
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

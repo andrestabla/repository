@@ -1,6 +1,26 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import {
+    LayoutDashboard,
+    Database,
+    ShieldCheck,
+    TreePine,
+    Grid3X3,
+    Tag,
+    Zap,
+    LogOut,
+    RefreshCw,
+    Plus,
+    FileText,
+    Monitor,
+    Package,
+    BookOpen,
+    Gem,
+    Terminal,
+    ChevronRight,
+    Search
+} from 'lucide-react'
 import { signIn, signOut } from "next-auth/react"
 import AdminView from './AdminView'
 import ContentForm, { ContentItem } from './ContentForm'
@@ -61,15 +81,21 @@ export default function MethodologySPA({
                 role: role,
                 name: session.user.name || 'Usuario 4Shine',
                 label: role === 'admin' ? 'Administrador' : role === 'metodologo' ? 'Metodólogo (Arquitecto)' : 'Constructor (Conectado)',
-                avatar: session.user.image ? <img src={session.user.image} alt="avatar" className="w-full h-full rounded-full" /> : '👤',
-                color: role === 'admin' ? '#d73a49' : '#58a6ff'
+                avatar: session.user.image ? <img src={session.user.image} alt="avatar" className="w-full h-full rounded-full" /> : null,
+                color: role === 'admin' ? '#d73a49' : '#0969da'
             })
             setCurrentView(role === 'admin' ? 'admin' : 'inventory')
         }
 
-        const stored = localStorage.getItem('theme')
+        const stored = localStorage.getItem('theme') || 'light'
         if (stored === 'dark') document.documentElement.classList.add('dark')
+        else document.documentElement.classList.remove('dark')
     }, [session])
+
+    const toggleTheme = () => {
+        const isDark = document.documentElement.classList.toggle('dark')
+        localStorage.setItem('theme', isDark ? 'dark' : 'light')
+    }
 
     const refreshData = async () => {
         setIsRefreshing(true)
@@ -85,7 +111,7 @@ export default function MethodologySPA({
     }
 
     const compileArtifact = async (releaseTag: string, artifactType: string) => {
-        setConsoleLog([`> Inicializando Compilación: ${artifactType}...`])
+        setConsoleLog([`> [SYSTEM] Inicializando Compilación: ${artifactType}...`])
         try {
             const res = await fetch('/api/generator', {
                 method: 'POST',
@@ -95,10 +121,10 @@ export default function MethodologySPA({
             const data = await res.json()
             if (data.error) throw new Error(data.error)
 
-            setConsoleLog(prev => [...prev, `> Versión Destino: ${releaseTag}`])
-            setConsoleLog(prev => [...prev, `> Activos encontrados: ${data.metadata?.itemCount || 0}`])
-            setConsoleLog(prev => [...prev, `> Generando estructura taxonómica... OK`])
-            setConsoleLog(prev => [...prev, `> ÉXITO: ${artifactType} compilado.`])
+            setConsoleLog(prev => [...prev, `> [INFO] Versión Destino: ${releaseTag}`])
+            setConsoleLog(prev => [...prev, `> [INFO] Activos encontrados: ${data.metadata?.itemCount || 0}`])
+            setConsoleLog(prev => [...prev, `> [PROCESS] Generando estructura taxonómica... OK`])
+            setConsoleLog(prev => [...prev, `> [SUCCESS] ${artifactType} compilado correctamente.`])
 
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
             const url = URL.createObjectURL(blob)
@@ -107,68 +133,99 @@ export default function MethodologySPA({
             a.download = `4SHINE_${artifactType.replace(/\s/g, '_')}_${releaseTag}.json`
             a.click()
         } catch (err: any) {
-            setConsoleLog(prev => [...prev, `> ERROR: Compilación fallida: ${err.message}`])
+            setConsoleLog(prev => [...prev, `> [ERROR] Compilación fallida: ${err.message}`])
         }
     }
 
     if (!user) {
         return (
-            <div className="fixed inset-0 bg-[#0d1117] flex items-center justify-center">
-                <div className="text-center">
-                    <div className="text-4xl mb-4 animate-bounce">🏗️</div>
-                    <h2 className="text-xl font-bold text-white mb-6">4Shine Methodology Builder</h2>
-                    <button onClick={() => signIn('google')} className="bg-white text-black px-6 py-3 rounded-lg font-bold hover:bg-gray-200 transition-all flex items-center gap-2">
-                        <img src="https://www.google.com/favicon.ico" className="w-4 h-4" />
-                        Acceder con Google
+            <div className="fixed inset-0 bg-bg flex items-center justify-center transition-colors">
+                <div className="text-center p-12 bg-panel border border-border rounded-2xl shadow-2xl max-w-sm w-full mx-4">
+                    <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-accent animate-pulse">
+                        <Terminal size={32} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-text-main mb-2 tracking-tight">4Shine Builder</h2>
+                    <p className="text-sm text-text-muted mb-8 leading-relaxed">Framework de Arquitectura Metodológica e Inventario de Activos.</p>
+                    <button
+                        onClick={() => signIn('google')}
+                        className="w-full bg-accent text-white px-6 py-3.5 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-lg shadow-accent/20"
+                    >
+                        <RefreshCw size={20} className="animate-spin-slow" />
+                        Acceder con Google Workspace
                     </button>
-                    <p className="text-text-muted text-[11px] mt-8 uppercase tracking-widest">v1.1 Advanced Architecture</p>
+                    <p className="text-[10px] text-text-muted mt-8 uppercase tracking-[0.2em] font-bold opacity-40">System Release 1.2 Pro</p>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="grid grid-cols-[260px_1fr] h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-main)] font-ui">
-            <aside className="bg-[var(--panel)] border-r border-[var(--border)] flex flex-col p-5">
-                <div className="text-lg font-bold text-[var(--text-main)] mb-8 flex items-center gap-2.5">
-                    4Shine <span className="text-[10px] bg-[var(--border)] px-1.5 py-0.5 rounded font-code">PRO</span>
+        <div className="grid grid-cols-[280px_1fr] h-screen overflow-hidden bg-bg text-text-main font-ui transition-colors">
+            {/* Sidebar Moderno */}
+            <aside className="bg-panel border-r border-border flex flex-col p-6 overflow-y-auto no-scrollbar shadow-inner">
+                <div className="flex items-center justify-between mb-10">
+                    <div className="text-xl font-black text-text-main flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-white shadow-lg shadow-accent/30">
+                            <Zap size={18} fill="currentColor" />
+                        </div>
+                        <span className="tracking-tighter">4Shine</span>
+                        <span className="text-[9px] bg-accent/10 text-accent px-1.5 py-0.5 rounded-full font-bold uppercase tracking-widest border border-accent/20">Pro</span>
+                    </div>
+                    <button
+                        onClick={toggleTheme}
+                        className="w-8 h-8 rounded-lg border border-border bg-bg hover:bg-border/20 transition-colors flex items-center justify-center text-text-muted"
+                    >
+                        <Monitor size={14} />
+                    </button>
                 </div>
 
-                <nav className="flex flex-col gap-0.5 overflow-y-auto">
+                <nav className="flex flex-col gap-1.5">
                     {user?.role === 'admin' && (
                         <>
-                            <div className="text-[10px] uppercase text-text-muted mb-2 font-bold tracking-widest opacity-50">Admin</div>
-                            <NavBtn id="admin" label="Usuarios" icon="🛡️" active={currentView === 'admin'} onClick={() => setCurrentView('admin')} />
-                            <div className="my-4 border-t border-[var(--border)] opacity-30" />
+                            <NavHeader label="SISTEMA" />
+                            <NavBtn id="admin" label="Administración" icon={<ShieldCheck size={18} />} active={currentView === 'admin'} onClick={() => setCurrentView('admin')} />
+                            <div className="my-3 border-t border-border opacity-50" />
                         </>
                     )}
 
-                    <div className="text-[10px] uppercase text-text-muted mb-2 font-bold tracking-widest opacity-50">Curador</div>
-                    <NavBtn id="inventory" label="Inventario" icon="🗃️" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
-                    <NavBtn id="qa" label="Revisión" icon="⚖️" active={currentView === 'qa'} onClick={() => setCurrentView('qa')} />
+                    <NavHeader label="OPERACIÓN" />
+                    <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
+                    <NavBtn id="qa" label="Control de Calidad" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} onClick={() => setCurrentView('qa')} />
 
-                    <div className="text-[10px] uppercase text-text-muted my-4 font-bold tracking-widest opacity-50">Metodólogo</div>
-                    <NavBtn id="taxonomy" label="Taxonomía" icon="🌲" active={currentView === 'taxonomy'} onClick={() => setCurrentView('taxonomy')} />
-                    <NavBtn id="gaps" label="Heatmap" icon="📊" active={currentView === 'gaps'} onClick={() => setCurrentView('gaps')} />
-                    <NavBtn id="releases" label="Versiones" icon="🏷️" active={currentView === 'releases'} onClick={() => setCurrentView('releases')} />
-                    <NavBtn id="generator" label="Compilador" icon="⚡" active={currentView === 'generator'} onClick={() => setCurrentView('generator')} />
+                    <div className="h-4" />
+
+                    <NavHeader label="ARQUITECTURA" />
+                    <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} onClick={() => setCurrentView('taxonomy')} />
+                    <NavBtn id="gaps" label="Heatmap de Brechas" icon={<Grid3X3 size={18} />} active={currentView === 'gaps'} onClick={() => setCurrentView('gaps')} />
+                    <NavBtn id="releases" label="Gestión de Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} onClick={() => setCurrentView('releases')} />
+                    <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} onClick={() => setCurrentView('generator')} />
                 </nav>
 
-                <div className="mt-auto border-t border-[var(--border)] pt-5">
-                    <div className="flex gap-2.5 items-center mb-4">
-                        <div className="w-8 h-8 rounded-full overflow-hidden border border-border">{user.avatar}</div>
-                        <div className="overflow-hidden">
-                            <div className="font-semibold text-[13px] truncate">{user.name}</div>
-                            <div className="text-[11px] text-text-muted">{user.role.toUpperCase()}</div>
+                <div className="mt-auto pt-8 border-t border-border">
+                    <div className="bg-bg/50 border border-border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group">
+                        <div className="flex gap-3 items-center mb-3">
+                            <div className="w-10 h-10 rounded-xl overflow-hidden border border-border ring-2 ring-accent/10 group-hover:ring-accent/20 transition-all">
+                                {user.avatar ? <img src={user.avatar as string} alt="avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-accent/10 text-accent flex items-center justify-center font-bold">👤</div>}
+                            </div>
+                            <div className="overflow-hidden">
+                                <div className="font-bold text-[14px] truncate text-text-main">{user.name}</div>
+                                <div className="text-[10px] text-accent font-bold uppercase tracking-wider">{user.role}</div>
+                            </div>
                         </div>
+                        <button
+                            onClick={() => signOut()}
+                            className="w-full text-center text-danger text-[11px] font-bold py-2 bg-danger/5 hover:bg-danger/10 rounded-lg transition-all flex items-center justify-center gap-2 group-hover:text-danger"
+                        >
+                            <LogOut size={12} />
+                            Cerrar Sesión Segura
+                        </button>
                     </div>
-                    <button onClick={() => signOut()} className="w-full text-left text-danger text-[11px] hover:underline">Salir del sistema</button>
-                    <div className="mt-4 text-[9px] text-text-muted opacity-30 text-center font-mono">4SHINE-BUILDER-V1.1-RELEASE</div>
                 </div>
             </aside>
 
-            <main className="overflow-y-auto p-10 bg-[#0d1117]/10">
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {/* Main Content Area */}
+            <main className="overflow-y-auto bg-bg transition-colors">
+                <div className="p-10 animate-in fade-in duration-700">
                     {currentView === 'taxonomy' && <TaxonomyManager initialData={initialTaxonomy as any} />}
                     {currentView === 'releases' && <ReleasesView />}
                     {currentView === 'inventory' && (
@@ -186,6 +243,31 @@ export default function MethodologySPA({
                 </div>
             </main>
         </div>
+    )
+}
+
+function NavHeader({ label }: { label: string }) {
+    return <div className="text-[10px] font-black text-text-muted mb-2 tracking-[0.2em] ml-2 opacity-60">{label}</div>
+}
+
+function NavBtn({ id, label, icon, active, onClick }: { id: string, label: string, icon: React.ReactNode, active: boolean, onClick: () => void }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`w-full text-left p-3 rounded-xl text-[13px] font-bold flex items-center justify-between group transition-all
+        ${active
+                    ? 'bg-accent text-white shadow-xl shadow-accent/20 translate-x-1'
+                    : 'text-text-muted hover:bg-accent/5 hover:text-accent border border-transparent'}
+      `}
+        >
+            <div className="flex items-center gap-3">
+                <span className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110 opacity-70 group-hover:opacity-100'}`}>
+                    {icon}
+                </span>
+                {label}
+            </div>
+            {active && <ChevronRight size={14} className="opacity-50" />}
+        </button>
     )
 }
 
@@ -207,96 +289,176 @@ function HeatmapViewWrapper({ inventory, taxonomy }: { inventory: any[], taxonom
     return <HeatmapView subcomponents={subcomponents} maturityLevels={levels} heatmap={heatmap} />
 }
 
-function NavBtn({ id, label, icon, active, onClick }: { id: string, label: string, icon: string, active: boolean, onClick: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className={`w-full text-left p-2.5 rounded-md text-[13px] font-medium flex items-center gap-3 transition-all
-        ${active ? 'bg-accent/10 text-accent border border-accent/20' : 'text-text-muted hover:bg-white/5 hover:text-white border border-transparent'}
-      `}
-        >
-            <span className="text-[16px]">{icon}</span> {label}
-        </button>
-    )
-}
-
 function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentItem[], role: string, onRefresh: () => void, isRefreshing: boolean }) {
     const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null)
     const [showForm, setShowForm] = useState(false)
+    const [searchTerm, setSearchTerm] = useState('')
+
+    const filteredData = data.filter(i =>
+        i.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        i.id.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
-        <div className="space-y-6">
-            <header className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-                    Inventario de Activos
-                    <button onClick={onRefresh} className={`${isRefreshing ? 'animate-spin' : ''} text-lg`}>🔄</button>
-                </h2>
+        <div className="space-y-8">
+            <header className="flex justify-between items-end">
+                <div>
+                    <h2 className="text-3xl font-black text-text-main tracking-tighter flex items-center gap-4">
+                        Inventario de Activos
+                        <button
+                            onClick={onRefresh}
+                            className={`p-2 rounded-full hover:bg-panel border border-border group transition-all ${isRefreshing ? 'animate-spin border-accent' : ''}`}
+                        >
+                            <RefreshCw size={20} className={isRefreshing ? 'text-accent' : 'text-text-muted group-hover:text-text-main'} />
+                        </button>
+                    </h2>
+                    <p className="text-sm text-text-muted mt-2 font-medium">Gestiona y consulta el repositorio central de activos metodológicos.</p>
+                </div>
                 {role === 'curador' && (
-                    <button onClick={() => { setSelectedItem(null); setShowForm(true); }} className="bg-success text-white px-4 py-2 rounded-lg font-bold text-sm hover:brightness-110 tracking-tight">+ Nuevo Activo</button>
+                    <button
+                        onClick={() => { setSelectedItem(null); setShowForm(true); }}
+                        className="bg-accent text-white px-6 py-3 rounded-2xl font-bold text-sm hover:brightness-110 hover:shadow-xl hover:shadow-accent/20 transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-accent/10"
+                    >
+                        <Plus size={18} />
+                        Crear Nuevo Activo
+                    </button>
                 )}
             </header>
 
-            <div className="grid grid-cols-[350px_1fr] gap-6 h-[calc(100vh-200px)]">
-                <div className="bg-panel border border-border rounded-xl overflow-y-auto">
-                    {data.map((item: any) => (
-                        <div
-                            key={item.id}
-                            onClick={() => setSelectedItem(item)}
-                            className={`p-4 border-b border-border cursor-pointer hover:bg-white/5 transition-colors ${selectedItem?.id === item.id ? 'bg-accent/5 border-l-4 border-l-accent' : ''}`}
-                        >
-                            <div className="font-bold text-sm text-white truncate">{item.title}</div>
-                            <div className="text-[10px] text-text-muted font-mono mt-1">{item.id} | {item.status}</div>
+            <div className="grid grid-cols-[380px_1fr] gap-8 h-[calc(100vh-280px)] min-h-[600px]">
+                {/* List Panel */}
+                <div className="bg-panel border border-border rounded-3xl flex flex-col overflow-hidden shadow-sm">
+                    <div className="p-4 border-b border-border bg-bg/50">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                            <input
+                                type="text"
+                                placeholder="Buscar por título o ID..."
+                                className="w-full bg-bg border border-border pl-10 pr-4 py-2.5 rounded-xl text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
-                    ))}
-                    {data.length === 0 && <div className="p-10 text-center text-text-muted italic opacity-40">No hay activos registrados</div>}
+                    </div>
+                    <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+                        {filteredData.map((item: any) => (
+                            <div
+                                key={item.id}
+                                onClick={() => setSelectedItem(item)}
+                                className={`mx-3 mb-2 p-4 rounded-2xl border cursor-pointer transition-all group flex items-start gap-4 ${selectedItem?.id === item.id
+                                    ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20 scale-[1.02]'
+                                    : 'bg-bg border-border hover:border-accent/40 hover:bg-panel'
+                                    }`}
+                            >
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${selectedItem?.id === item.id ? 'bg-white/20' : 'bg-panel group-hover:bg-accent/10 group-hover:text-accent'
+                                    }`}>
+                                    <FileText size={20} />
+                                </div>
+                                <div className="overflow-hidden flex-1">
+                                    <div className={`font-bold text-sm truncate ${selectedItem?.id === item.id ? 'text-white' : 'text-text-main group-hover:text-accent'}`}>{item.title}</div>
+                                    <div className={`text-[10px] uppercase font-black tracking-widest mt-1.5 flex items-center gap-2 ${selectedItem?.id === item.id ? 'text-white/70' : 'text-text-muted'}`}>
+                                        {item.id}
+                                        <span className={`w-1 h-1 rounded-full ${selectedItem?.id === item.id ? 'bg-white/40' : 'bg-border'}`} />
+                                        {item.status}
+                                    </div>
+                                </div>
+                                <ChevronRight size={16} className={`mt-3 transition-opacity ${selectedItem?.id === item.id ? 'opacity-50' : 'opacity-0'}`} />
+                            </div>
+                        ))}
+                        {filteredData.length === 0 && (
+                            <div className="p-12 text-center text-text-muted">
+                                <Search size={32} className="mx-auto mb-4 opacity-20" />
+                                <div className="italic font-medium">No se encontraron resultados</div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
+                {/* Detail Panel */}
                 {selectedItem ? (
-                    <div className="bg-panel border border-border rounded-xl p-8 overflow-y-auto">
-                        <div className="flex justify-between items-start mb-8">
-                            <h3 className="text-2xl font-bold text-white leading-tight">{selectedItem.title}</h3>
-                            <button onClick={() => setShowForm(true)} className="text-accent text-sm hover:underline font-bold">Editar Metadatos</button>
+                    <div className="bg-panel border border-border rounded-3xl p-10 overflow-y-auto shadow-sm flex flex-col h-full ring-1 ring-border/50">
+                        <div className="flex justify-between items-start mb-10 pb-8 border-b border-border/60">
+                            <div className="max-w-[70%] text-left">
+                                <div className="text-[10px] font-black text-accent uppercase tracking-[0.2em] mb-3">CONSTRUCTOR DE METODOLOGÍA</div>
+                                <h3 className="text-3xl font-black text-text-main leading-[1.1] tracking-tighter">{selectedItem.title}</h3>
+                            </div>
+                            <button
+                                onClick={() => setShowForm(true)}
+                                className="px-5 py-2.5 rounded-xl border-2 border-accent text-accent hover:bg-accent hover:text-white transition-all font-bold text-xs uppercase tracking-widest"
+                            >
+                                Editar Metadatos
+                            </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-8 mb-8 bg-black/20 p-6 rounded-xl border border-white/5">
-                            <DataPoint label="Pilar 4Shine" value={selectedItem.pillar} />
-                            <DataPoint label="Subcomponente" value={selectedItem.sub} />
-                            <DataPoint label="Nivel Madurez" value={selectedItem.maturity} />
-                            <DataPoint label="Estado Actual" value={selectedItem.status} />
+
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                            <DataPointCard icon={<LayoutDashboard size={18} />} label="Pilar 4Shine" value={selectedItem.pillar || ''} />
+                            <DataPointCard icon={<Grid3X3 size={18} />} label="Subcomponente" value={selectedItem.sub || ''} />
+                            <DataPointCard icon={<Monitor size={18} />} label="Nivel Madurez" value={selectedItem.maturity || ''} />
+                            <DataPointCard icon={<ShieldCheck size={18} />} label="Estado de Calidad" value={selectedItem.status || ''} />
                         </div>
-                        <div className="aspect-video bg-black rounded-lg border border-border overflow-hidden shadow-2xl">
+
+                        <div className="flex-1 bg-bg border border-border rounded-3xl overflow-hidden shadow-2xl relative group min-h-[400px]">
                             {selectedItem.driveId ? (
-                                <iframe src={`https://drive.google.com/file/d/${selectedItem.driveId}/preview`} className="w-full h-full border-none" />
+                                <>
+                                    <iframe
+                                        src={`https://drive.google.com/file/d/${selectedItem.driveId}/preview`}
+                                        className="w-full h-full border-none"
+                                        allow="autoplay"
+                                    />
+                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <a
+                                            href={`https://drive.google.com/file/d/${selectedItem.driveId}/view`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-3 bg-accent text-white rounded-xl shadow-xl hover:scale-110 transition-all flex items-center gap-2 font-bold text-xs"
+                                        >
+                                            <Zap size={14} fill="currentColor" />
+                                            ABRIR EN DRIVE
+                                        </a>
+                                    </div>
+                                </>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-text-muted opacity-30">
-                                    <div className="text-4xl mb-2">☁️</div>
-                                    <div className="italic">Vista previa no disponible</div>
+                                <div className="flex flex-col items-center justify-center h-full text-text-muted bg-panel/30">
+                                    <div className="w-20 h-20 bg-panel rounded-3xl flex items-center justify-center mb-4 text-text-muted/40 border border-border/50">
+                                        <RefreshCw size={40} />
+                                    </div>
+                                    <div className="italic font-bold tracking-tight text-lg opacity-40">Sin vista previa disponible</div>
+                                    <p className="text-sm mt-1 opacity-40">Carga un ID de Drive válido para visualizar.</p>
                                 </div>
                             )}
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-panel border border-border rounded-xl flex items-center justify-center text-text-muted italic opacity-40">
-                        Selecciona un activo de la lista para ver el detalle y previsualización
+                    <div className="bg-panel/50 border-2 border-dashed border-border rounded-[40px] flex flex-col items-center justify-center text-text-muted italic h-full transition-colors group hover:border-accent/30 hover:bg-accent/5">
+                        <div className="w-24 h-24 bg-bg border border-border rounded-[32px] flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 group-hover:border-accent group-hover:text-accent transition-all text-text-muted/20">
+                            <LayoutDashboard size={40} />
+                        </div>
+                        <div className="font-black tracking-tight text-xl opacity-40 group-hover:opacity-100 transition-opacity uppercase text-center max-w-sm px-10">
+                            Selecciona un activo para visualizar su estructura
+                        </div>
                     </div>
                 )}
-            </div>
 
-            {showForm && (
-                <ContentForm
-                    initialData={selectedItem}
-                    onClose={() => setShowForm(false)}
-                    onSave={() => { setShowForm(false); onRefresh(); }}
-                />
-            )}
+                {showForm && selectedItem && (
+                    <ContentForm
+                        initialData={selectedItem}
+                        onClose={() => setShowForm(false)}
+                        onSave={() => { setShowForm(false); onRefresh(); }}
+                    />
+                )}
+            </div>
         </div>
     )
 }
 
-function DataPoint({ label, value }: { label: string, value: any }) {
+function DataPointCard({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
     return (
-        <div>
-            <label className="text-[10px] uppercase text-text-muted font-bold tracking-widest block mb-1">{label}</label>
-            <div className="text-[15px] text-white font-medium">{value || 'N/A'}</div>
+        <div className="bg-bg border border-border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all border-l-4 border-l-accent text-left">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="text-accent opacity-50">{icon}</div>
+                <label className="text-[9px] font-black text-text-muted uppercase tracking-[0.15em]">{label}</label>
+            </div>
+            <div className="text-[14px] text-text-main font-bold truncate leading-tight">{value || 'No Definido'}</div>
         </div>
     )
 }
@@ -312,81 +474,117 @@ function GeneratorDashboard({ compileArtifact, consoleLog }: { compileArtifact: 
     }, [])
 
     return (
-        <div className="max-w-6xl">
-            <header className="mb-8">
-                <h2 className="text-[24px] font-bold text-white tracking-tight">Compilador de Metodología (HU-M-04)</h2>
-                <div className="text-[13px] text-text-muted mt-1">Exporta la arquitectura completa y contenidos validados en un solo paquete.</div>
+        <div className="max-w-4xl mx-auto text-left">
+            <header className="mb-10">
+                <h2 className="text-3xl font-black text-text-main tracking-tighter">Compilador de Metodología</h2>
+                <p className="text-sm text-text-muted mt-1 font-medium">Genera entregables estructurados a partir de la arquitectura validada.</p>
             </header>
 
-            <div className="grid grid-cols-[1fr_2fr] gap-8">
-                <div className="space-y-6">
-                    <div className="bg-panel border border-border rounded-xl p-5 shadow-lg">
-                        <label className="block text-[11px] font-bold text-text-muted uppercase mb-2 tracking-widest">Snapshot de Versión</label>
-                        <select
-                            value={selectedRelease}
-                            onChange={(e) => setSelectedRelease(e.target.value)}
-                            className="w-full bg-[#0d1117] border border-border p-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-accent"
-                        >
-                            {releases.map(r => <option key={r.id} value={r.tag}>{r.tag} ({r.status})</option>)}
-                            {releases.length === 0 && <option value="v1.0">v1.0 (Predeterminado)</option>}
-                        </select>
-                    </div>
-                    <div className="bg-panel border border-border rounded-xl p-6 shadow-lg">
-                        <h4 className="text-[14px] font-bold mb-4 uppercase tracking-widest text-text-muted">Seleccionar Artefacto</h4>
-                        <div className="space-y-3">
-                            <CompBtn label="Dossier Maestro (JSON)" icon="💎" onClick={() => compileArtifact(selectedRelease, 'Dossier Maestro')} />
-                            <CompBtn label="Manual Facilitador (PDF)" icon="📖" onClick={() => compileArtifact(selectedRelease, 'Manual Facilitador')} />
-                            <CompBtn label="Toolkit (ZIP)" icon="📦" onClick={() => compileArtifact(selectedRelease, 'Toolkit')} />
+            <div className="grid gap-8">
+                <div className="bg-panel border border-border rounded-[32px] p-8 shadow-sm">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-text-muted mb-6 flex items-center gap-2">
+                        <Monitor size={14} /> Configuración de Generación
+                    </h3>
+
+                    <div className="space-y-6">
+                        <div>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-3 italic">Versión (Snapshot Snapshot)</label>
+                            <select
+                                value={selectedRelease}
+                                onChange={(e) => setSelectedRelease(e.target.value)}
+                                className="w-full bg-bg border-2 border-border p-4 rounded-2xl text-[14px] font-bold text-text-main focus:border-accent outline-none transition-all appearance-none cursor-pointer"
+                            >
+                                {releases.map(r => (
+                                    <option key={r.id} value={r.tag}>{r.tag} - {r.status}</option>
+                                ))}
+                                {releases.length === 0 && <option value="v1.0">v1.0 (Predeterminado)</option>}
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <CompBtn icon={<FileText size={18} />} label="Dossier (PDF)" onClick={() => compileArtifact(selectedRelease, 'pdf')} disabled={!selectedRelease} />
+                            <CompBtn icon={<ShieldCheck size={18} />} label="Matriz (Excel)" onClick={() => compileArtifact(selectedRelease, 'xlsx')} disabled={!selectedRelease} />
+                            <CompBtn icon={<Package size={18} />} label="Toolkit (Zip)" onClick={() => compileArtifact(selectedRelease, 'zip')} disabled={!selectedRelease} />
                         </div>
                     </div>
                 </div>
-                <div className="bg-black/90 border border-border rounded-xl p-6 font-mono text-[12px] h-[550px] overflow-y-auto scrollbar-thin shadow-2xl">
-                    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10 opacity-50">
-                        <div className="w-2.5 h-2.5 rounded-full bg-danger"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-warning"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-success"></div>
-                        <span className="ml-2 text-[10px]">compiler-output.log</span>
-                    </div>
-                    {consoleLog.length === 0 && <div className="text-text-muted opacity-30 italic">// El sistema está listo para la compilación de datos...</div>}
-                    {consoleLog.map((line, i) => (
-                        <div key={i} className={`mb-1 leading-relaxed ${line.includes('ÉXITO') ? 'text-success font-bold' : line.includes('ERROR') ? 'text-danger' : 'text-[#abb2bf]'}`}>
-                            <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString()}]</span> {line}
+
+                <div className="bg-[#000] border border-border/40 rounded-[32px] p-8 font-mono shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent/50 to-transparent" />
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                            Consola de Compilación
                         </div>
-                    ))}
+                        <div className="flex gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-border/40" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-border/40" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-border/40" />
+                        </div>
+                    </div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-4 italic">
+                        {consoleLog.map((line, i) => (
+                            <div key={i} className="text-[12px] text-text-muted animate-in slide-in-from-left-2 duration-300">
+                                <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString([], { hour12: false })}]</span> {line}
+                            </div>
+                        ))}
+                        {consoleLog.length === 0 && <div className="text-[12px] opacity-20 py-10 text-center">Esperando instrucciones de compilación...</div>}
+                    </div>
                 </div>
             </div>
         </div>
     )
 }
 
-function CompBtn({ label, icon, onClick }: { label: string, icon: string, onClick: () => void }) {
+function CompBtn({ icon, label, onClick, disabled }: { icon: React.ReactNode, label: string, onClick: () => void, disabled?: boolean }) {
     return (
-        <button onClick={onClick} className="w-full flex items-center gap-3 p-3 bg-[#0d1117] border border-border/60 rounded-lg hover:border-accent group transition-all active:scale-[0.98]">
-            <span className="text-xl group-hover:scale-110 transition-transform">{icon}</span>
-            <span className="text-[12px] font-bold group-hover:text-white text-text-muted">{label}</span>
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            className="flex flex-col items-center justify-center gap-3 p-6 bg-bg border-2 border-border rounded-[24px] hover:border-accent hover:text-accent transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:pointer-events-none group"
+        >
+            <div className="text-text-muted group-hover:text-accent transition-colors">{icon}</div>
+            <span className="text-[11px] font-black uppercase tracking-[0.1em]">{label}</span>
         </button>
     )
 }
 
 function QAView({ data }: { data: ContentItem[] }) {
-    const reviewItems = data.filter(c => c.status === 'Review')
+    const reviewItems = (data || []).filter(c => c.status === 'Review' || c.status === 'Draft')
     return (
-        <div className="max-w-4xl">
-            <h2 className="text-2xl font-bold text-white mb-8 tracking-tight">Módulo de Aseguramiento de Calidad (QA)</h2>
-            <div className="grid gap-4">
+        <div className="max-w-4xl mx-auto text-left py-8">
+            <header className="mb-12 border-b border-border pb-8">
+                <h2 className="text-4xl font-black text-text-main tracking-tighter mb-2">Aseguramiento de Calidad</h2>
+                <p className="text-sm text-text-muted font-medium">Revisión técnica y validación de contenidos metodológicos.</p>
+            </header>
+
+            <div className="grid gap-6">
                 {reviewItems.map(item => (
-                    <div key={item.id} className="bg-panel border border-border p-6 rounded-xl flex justify-between items-center group hover:border-accent/30 transition-all shadow-sm">
-                        <div>
-                            <div className="font-bold text-lg text-white group-hover:text-accent transition-colors">{item.title}</div>
-                            <div className="text-xs text-text-muted mt-1 font-mono">{item.id} | {item.pillar} | {item.status}</div>
+                    <div key={item.id} className="bg-panel border border-border p-8 rounded-3xl flex justify-between items-center group hover:border-accent hover:shadow-2xl hover:shadow-accent/5 transition-all shadow-sm border-l-8 border-l-warning">
+                        <div className="flex gap-6 items-center text-left">
+                            <div className="w-14 h-14 bg-bg border border-border rounded-2xl flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent/40 transition-all">
+                                <ShieldCheck size={28} />
+                            </div>
+                            <div>
+                                <div className="font-black text-xl text-text-main group-hover:text-accent transition-colors tracking-tight">{item.title}</div>
+                                <div className="flex gap-3 mt-2">
+                                    <span className="text-[10px] font-black bg-warning/10 text-warning px-2 py-0.5 rounded-full border border-warning/20 uppercase tracking-widest">{item.status}</span>
+                                    <span className="text-[10px] font-bold text-text-muted font-mono uppercase tracking-widest">{item.id} • {item.pillar}</span>
+                                </div>
+                            </div>
                         </div>
-                        <button className="bg-accent/10 border border-accent/20 text-accent px-5 py-2.5 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition-all hover:bg-accent hover:text-white">Audit Doc</button>
+                        <button className="bg-accent text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all shadow-xl shadow-accent/20 hover:scale-105 active:scale-95">
+                            Audit
+                        </button>
                     </div>
                 ))}
                 {reviewItems.length === 0 && (
-                    <div className="bg-panel border border-dashed border-border p-20 text-center rounded-xl">
-                        <div className="text-4xl mb-4 opacity-20">✅</div>
-                        <div className="text-text-muted italic font-medium">No hay activos pendientes de revisión técnica. El inventario está al día.</div>
+                    <div className="bg-panel border-2 border-dashed border-border p-32 text-center rounded-[50px] flex flex-col items-center">
+                        <div className="w-24 h-24 bg-success/10 text-success rounded-full flex items-center justify-center mb-8">
+                            <ShieldCheck size={48} />
+                        </div>
+                        <div className="text-2xl font-black text-text-main mb-2 tracking-tight">¡Todo en Orden!</div>
+                        <div className="text-text-muted font-medium italic opacity-60">No hay activos pendientes de revisión.</div>
                     </div>
                 )}
             </div>
