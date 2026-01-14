@@ -27,14 +27,16 @@ export class GeminiService {
             - Maturity: "Básico", "En Desarrollo", "Avanzado", "Maestría".
             - Roles: "Líder", "Mentor", "Facilitador".
             
-            Return ONLY a valid JSON object (no markdown, no backticks) with the following fields and best-guess values based on the text. If a field is not clear, use null.
+            Return ONLY a valid JSON object (no markdown, no backticks) with the following fields and best-guess values based on the text. 
+            
+            IMPORTANT: All text values (title, summary, sub) MUST be in Spanish.
             
             {
-              "title": "Suggested official title",
-              "summary": "Short 1-sentence summary (mapped to observations)",
+              "title": "Título sugerido oficial en español",
+              "summary": "Resumen corto de 1 frase en español",
               "type": "PDF or Video or Toolkit",
               "pillar": "One of the 4 Pillars",
-              "sub": "Sub-theme (e.g. Communication, Emotional Intelligence)",
+              "sub": "Sub-tema en español (ej. Comunicación, Inteligencia Emocional)",
               "competence": "Main competence worked",
               "maturity": "Estimated maturity level",
               "targetRole": "Primary target audience role",

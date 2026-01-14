@@ -297,37 +297,44 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                             {/* 1. IDENTIFICATION */}
                             {activeTab === 'identity' && (
                                 <div className="grid grid-cols-2 gap-4 animate-fadeIn">
+                                    {/* Subida Directa Area - Hidden by user request due to Drive issues */}
+                                    {false && (
+                                        <div className="col-span-2 p-4 bg-sky-900/10 border border-sky-900/30 rounded mb-2">
+                                            <div className="flex flex-col gap-4">
+                                                <div className="bg-sky-950/20 border-2 border-dashed border-sky-800/40 rounded-lg p-6 text-center group hover:border-sky-500/50 transition-all">
+                                                    <input
+                                                        type="file"
+                                                        id="ai-upload"
+                                                        className="hidden"
+                                                        onChange={handleFileUpload}
+                                                        disabled={isUploading}
+                                                    />
+                                                    <label htmlFor="ai-upload" className="cursor-pointer">
+                                                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🤖 ✨</div>
+                                                        <div className="text-sm font-bold text-sky-200">Subir y Analizar con IA</div>
+                                                        <div className="text-[10px] text-sky-400/70 mt-1">Sube a Drive y extrae metadatos automáticamente</div>
+                                                        {isUploading && (
+                                                            <div className="mt-4 flex flex-col items-center">
+                                                                <div className="w-full bg-sky-900/30 h-1.5 rounded-full overflow-hidden">
+                                                                    <div className="bg-sky-500 h-full animate-progress-ind"></div>
+                                                                </div>
+                                                                <span className="text-[10px] text-sky-300 mt-2 animate-pulse">Procesando archivo...</span>
+                                                            </div>
+                                                        )}
+                                                    </label>
+                                                </div>
+
+                                                <div className="flex items-center gap-4 text-[var(--text-muted)] py-2">
+                                                    <div className="h-px flex-1 bg-[var(--border)]"></div>
+                                                    <span className="text-[10px] uppercase font-bold tracking-widest">o selecciona uno existente</span>
+                                                    <div className="h-px flex-1 bg-[var(--border)]"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="col-span-2 p-4 bg-sky-900/10 border border-sky-900/30 rounded mb-2">
                                         <div className="flex flex-col gap-4">
-                                            {/* Subida Directa Area */}
-                                            <div className="bg-sky-950/20 border-2 border-dashed border-sky-800/40 rounded-lg p-6 text-center group hover:border-sky-500/50 transition-all">
-                                                <input
-                                                    type="file"
-                                                    id="ai-upload"
-                                                    className="hidden"
-                                                    onChange={handleFileUpload}
-                                                    disabled={isUploading}
-                                                />
-                                                <label htmlFor="ai-upload" className="cursor-pointer">
-                                                    <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🤖 ✨</div>
-                                                    <div className="text-sm font-bold text-sky-200">Subir y Analizar con IA</div>
-                                                    <div className="text-[10px] text-sky-400/70 mt-1">Sube a Drive y extrae metadatos automáticamente</div>
-                                                    {isUploading && (
-                                                        <div className="mt-4 flex flex-col items-center">
-                                                            <div className="w-full bg-sky-900/30 h-1.5 rounded-full overflow-hidden">
-                                                                <div className="bg-sky-500 h-full animate-progress-ind"></div>
-                                                            </div>
-                                                            <span className="text-[10px] text-sky-300 mt-2 animate-pulse">Procesando archivo...</span>
-                                                        </div>
-                                                    )}
-                                                </label>
-                                            </div>
-
-                                            <div className="flex items-center gap-4 text-[var(--text-muted)] py-2">
-                                                <div className="h-px flex-1 bg-[var(--border)]"></div>
-                                                <span className="text-[10px] uppercase font-bold tracking-widest">o selecciona uno existente</span>
-                                                <div className="h-px flex-1 bg-[var(--border)]"></div>
-                                            </div>
 
                                             <div className="flex justify-between items-center">
                                                 <h3 className="text-sm font-bold text-blue-200">Enlace con Google Drive</h3>
