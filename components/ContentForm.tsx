@@ -141,7 +141,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             <input
                 value={(formData as any)[field] || ''}
                 onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-white focus:border-[var(--accent)] outline-none"
+                className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none"
                 placeholder={placeholder}
             />
         </div>
@@ -153,7 +153,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             <select
                 value={(formData as any)[field] || ''}
                 onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                className="w-full bg-panel border border-[var(--border)] rounded p-2 text-xs text-white outline-none"
+                className="w-full bg-panel border border-[var(--border)] rounded p-2 text-xs text-[var(--text-main)] outline-none"
             >
                 <option value="">Seleccionar...</option>
                 {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
@@ -167,12 +167,12 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 {/* Header */}
                 <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-bg rounded-t-xl">
                     <div className="flex items-center gap-3">
-                        <h2 className="text-lg font-bold text-white">
+                        <h2 className="text-lg font-bold text-[var(--text-main)]">
                             {isEdit ? `Editando: ${formData.id}` : 'Nuevo Activo Metodológico'}
                         </h2>
                         {formData.driveId && <span className="text-xs bg-green-900/30 text-green-400 border border-green-900/50 px-2 py-0.5 rounded-full">Drive Linked ✅</span>}
                     </div>
-                    <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white px-3">✕</button>
+                    <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-main)] px-3">✕</button>
                 </div>
 
                 {/* Main Layout: Tabs + Content */}
@@ -184,7 +184,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-full text-left px-4 py-3 text-xs font-semibold flex items-center gap-2 border-l-2 transition-colors ${activeTab === tab.id
-                                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-white'
+                                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-main)]'
                                     : 'border-transparent text-[var(--text-muted)] hover:bg-white/5'
                                     }`}
                             >
@@ -293,7 +293,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                     <textarea
                                         value={formData.observations || ''}
                                         onChange={e => setFormData({ ...formData, observations: e.target.value })}
-                                        className="w-full h-40 bg-bg border border-[var(--border)] rounded p-3 text-sm text-white focus:border-[var(--accent)] outline-none resize-none"
+                                        className="w-full h-40 bg-bg border border-[var(--border)] rounded p-3 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none resize-none"
                                         placeholder="Descripción pedagógica, intención de uso, notas para el facilitador..."
                                     ></textarea>
                                 </div>
@@ -306,13 +306,13 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 {/* Footer */}
                 <div className="p-4 border-t border-[var(--border)] bg-bg rounded-b-xl flex justify-between items-center">
                     <div className="text-xs text-[var(--text-muted)]">
-                        Completeness: <span className="font-bold text-white">{formData.completeness}% (Estimado)</span>
+                        Completeness: <span className="font-bold text-[var(--text-main)]">{formData.completeness}% (Estimado)</span>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => handleSaveInternal('Borrador')} className="px-4 py-2 text-sm text-[var(--text-muted)] hover:text-white border border-transparent hover:border-[var(--border)] rounded">
+                        <button onClick={() => handleSaveInternal('Borrador')} className="px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] border border-transparent hover:border-[var(--border)] rounded">
                             Guardar Borrador
                         </button>
-                        <button onClick={() => handleSaveInternal()} className="bg-[#238636] text-white px-6 py-2 rounded text-sm font-bold hover:brightness-110 shadow-lg shadow-green-900/20">
+                        <button onClick={() => handleSaveInternal()} className="bg-[#238636] text-[var(--text-main)] px-6 py-2 rounded text-sm font-bold hover:brightness-110 shadow-lg shadow-green-900/20">
                             Guardar Activo
                         </button>
                     </div>
@@ -324,8 +324,8 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 <div className="absolute inset-0 z-[60] bg-black/50 flex items-center justify-center p-8 backdrop-blur-sm">
                     <div className="bg-[#1c2128] border border-[var(--border)] rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[70vh]">
                         <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
-                            <h3 className="font-bold text-white">🗂️ Seleccionar de Drive</h3>
-                            <button onClick={() => setShowPicker(false)} className="text-[var(--text-muted)] hover:text-white">✕</button>
+                            <h3 className="font-bold text-[var(--text-main)]">🗂️ Seleccionar de Drive</h3>
+                            <button onClick={() => setShowPicker(false)} className="text-[var(--text-muted)] hover:text-[var(--text-main)]">✕</button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-2">
                             {loadingPicker ? (
@@ -340,7 +340,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                         >
                                             <div className="text-2xl">📄</div>
                                             <div>
-                                                <div className="text-sm font-semibold text-white group-hover:text-blue-400">{file.name}</div>
+                                                <div className="text-sm font-semibold text-[var(--text-main)] group-hover:text-blue-400">{file.name}</div>
                                                 <div className="text-[10px] font-mono text-[var(--text-muted)]">{file.id}</div>
                                             </div>
                                         </button>

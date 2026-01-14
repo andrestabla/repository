@@ -21,7 +21,7 @@ export default function GeneratorCards() {
                     <div className="text-[24px] mb-1">📄</div>
                     <div className="font-semibold">{item}</div>
                     <div className="text-[11px] text-text-muted">JSON structure + Assets</div>
-                    <button className="bg-[#238636] text-white border border-white/10 px-3 py-1.5 rounded-md text-[12px] font-semibold hover:bg-[#2ea043] transition-colors w-full mt-auto">
+                    <button className="bg-[#238636] text-[var(--text-main)] border border-white/10 px-3 py-1.5 rounded-md text-[12px] font-semibold hover:bg-[#2ea043] transition-colors w-full mt-auto">
                         Generar
                     </button>
                 </div>

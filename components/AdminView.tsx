@@ -154,7 +154,7 @@ export default function AdminView() {
 
     return (
         <div className="p-8 h-full overflow-y-auto">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-[var(--text-main)] mb-6 flex items-center gap-3">
                 🛡️ Panel de Administración
             </h2>
 
@@ -163,8 +163,8 @@ export default function AdminView() {
                 <button
                     onClick={() => setActiveTab('users')}
                     className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'users'
-                        ? 'border-[var(--accent)] text-white'
-                        : 'border-transparent text-[var(--text-muted)] hover:text-white'
+                        ? 'border-[var(--accent)] text-[var(--text-main)]'
+                        : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
                         }`}
                 >
                     Usuarios
@@ -172,8 +172,8 @@ export default function AdminView() {
                 <button
                     onClick={() => setActiveTab('settings')}
                     className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'settings'
-                        ? 'border-[var(--accent)] text-white'
-                        : 'border-transparent text-[var(--text-muted)] hover:text-white'
+                        ? 'border-[var(--accent)] text-[var(--text-main)]'
+                        : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
                         }`}
                 >
                     Configuración
@@ -195,7 +195,7 @@ export default function AdminView() {
                                     {pendingUsers.map(u => (
                                         <tr key={u.email} className="border-b border-[rgba(210,153,34,0.2)] last:border-0 hover:bg-[rgba(210,153,34,0.05)]">
                                             <td className="p-4">
-                                                <div className="font-semibold text-white">{u.name || 'Sin nombre'}</div>
+                                                <div className="font-semibold text-[var(--text-main)]">{u.name || 'Sin nombre'}</div>
                                                 <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
                                             </td>
                                             <td className="p-4 text-right flex gap-2 justify-end">
@@ -250,7 +250,7 @@ export default function AdminView() {
                                 {activeUsers.map(u => (
                                     <tr key={u.email} className="border-t border-[var(--border)] hover:bg-white/5">
                                         <td className="p-3">
-                                            <div className="font-semibold text-white">{u.name || 'Sin nombre'}</div>
+                                            <div className="font-semibold text-[var(--text-main)]">{u.name || 'Sin nombre'}</div>
                                             <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
                                         </td>
                                         <td className="p-3">
@@ -279,7 +279,7 @@ export default function AdminView() {
                     <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h3 className="text-lg font-bold text-white flex items-center gap-2">📧 Configuración de Correo</h3>
+                                <h3 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">📧 Configuración de Correo</h3>
                                 <p className="text-xs text-[var(--text-muted)] mt-1">Configura el servidor SMTP para enviar notificaciones.</p>
                             </div>
                             <div className="flex gap-2">
@@ -303,7 +303,7 @@ export default function AdminView() {
                                         btn.innerText = originalText;
                                         btn.disabled = false;
                                     }}
-                                    className="bg-[#21262d] text-white px-3 py-1 rounded text-xs font-semibold hover:brightness-110 border border-[var(--border)]"
+                                    className="bg-[#21262d] text-[var(--text-main)] px-3 py-1 rounded text-xs font-semibold hover:brightness-110 border border-[var(--border)]"
                                 >
                                     📬 Probar Envío
                                 </button>
@@ -371,7 +371,7 @@ export default function AdminView() {
                             </div>
 
                             <div className="col-span-2 p-3 bg-blue-900/20 border border-blue-900/50 rounded text-xs text-blue-200 mt-2">
-                                💡 <strong>Tip para Gmail:</strong> Debes usar una <a href="https://myaccount.google.com/apppasswords" target="_blank" className="underline font-bold hover:text-white">Contraseña de Aplicación</a>. Si ingresas tu contraseña normal, fallará.
+                                💡 <strong>Tip para Gmail:</strong> Debes usar una <a href="https://myaccount.google.com/apppasswords" target="_blank" className="underline font-bold hover:text-[var(--text-main)]">Contraseña de Aplicación</a>. Si ingresas tu contraseña normal, fallará.
                             </div>
                         </div>
                         <button onClick={saveEmailConfig} className="bg-[var(--accent)] text-white px-4 py-2 rounded text-sm font-bold hover:brightness-110">Guardar Configuración SMTP</button>
@@ -379,9 +379,9 @@ export default function AdminView() {
 
                     {/* DRIVE CONFIG WIZARD */}
                     <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
-                        <h3 className="text-lg font-bold text-white mb-4">📂 Carpetas Autorizadas (Google Drive)</h3>
+                        <h3 className="text-lg font-bold text-[var(--text-main)] mb-4">📂 Carpetas Autorizadas (Google Drive)</h3>
 
-                        <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2 mt-4">
+                        <h3 className="text-sm font-bold text-[var(--text-main)] mb-2 flex items-center gap-2 mt-4">
                             🤖 Service Account (JSON de Credenciales)
                         </h3>
                         <div className="bg-bg p-4 rounded-lg border border-[var(--border)] mb-6">
@@ -464,7 +464,7 @@ export default function AdminView() {
                                     <div className="flex items-center gap-3">
                                         <span className="text-xl">📁</span>
                                         <div>
-                                            <div className="font-mono text-xs text-white flex items-center gap-2">
+                                            <div className="font-mono text-xs text-[var(--text-main)] flex items-center gap-2">
                                                 {id}
                                                 <button
                                                     onClick={async () => {
@@ -472,7 +472,7 @@ export default function AdminView() {
                                                         if (id.length > 20) alert('✅ Formato de ID válido. Asegúrate de que la carpeta sea "Pública" o compartida con la cuenta de servicio.');
                                                         else alert('⚠️ El ID parece demasiado corto.');
                                                     }}
-                                                    className="text-[10px] bg-[#21262d] px-1.5 py-0.5 rounded text-[var(--text-muted)] hover:text-white"
+                                                    className="text-[10px] bg-[#21262d] px-1.5 py-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"
                                                     title="Verificar Acceso"
                                                 >
                                                     🔍 Verificar

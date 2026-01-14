@@ -131,7 +131,7 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
             <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center backdrop-blur-sm">
                 <div className="bg-[var(--panel)] p-10 rounded-xl border border-[var(--border)] w-[400px] text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
                     <div className="text-4xl mb-2.5">🏗️</div>
-                    <h2 className="mb-1.5 text-2xl font-semibold text-white">4Shine Builder</h2>
+                    <h2 className="mb-1.5 text-2xl font-semibold text-[var(--text-main)]">4Shine Builder</h2>
                     <p className="text-[var(--text-muted)] mb-8">Sistema de Gestión Metodológica v1.0</p>
 
                     {!user ? (
@@ -147,7 +147,7 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
                             <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg text-left">
                                 <img src={user.avatar as string} className="w-10 h-10 rounded-full" />
                                 <div>
-                                    <div className="text-white font-semibold text-sm">{user.name}</div>
+                                    <div className="text-[var(--text-main)] font-semibold text-sm">{user.name}</div>
                                     <div className="text-[var(--text-muted)] text-xs">Conectado como Invitado</div>
                                 </div>
                             </div>
@@ -167,7 +167,7 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
 
                             <button
                                 onClick={() => signOut()}
-                                className="text-[var(--text-muted)] text-xs hover:text-white underline"
+                                className="text-[var(--text-muted)] text-xs hover:text-[var(--text-main)] underline"
                             >
                                 Cerrar Sesión / Cambiar Cuenta
                             </button>
@@ -186,7 +186,7 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
         <div className="grid grid-cols-[260px_1fr] h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-main)] font-ui">
             {/* Sidebar */}
             <aside className="bg-[var(--panel)] border-r border-[var(--border)] flex flex-col p-5">
-                <div className="text-lg font-bold text-white mb-8 flex items-center gap-2.5">
+                <div className="text-lg font-bold text-[var(--text-main)] mb-8 flex items-center gap-2.5">
                     4Shine <span className="text-[10px] bg-[var(--border)] px-1.5 py-0.5 rounded font-code">v1.0</span>
                 </div>
 
@@ -277,7 +277,7 @@ function NavBtn({ id, label, icon, active, onClick }: { id: string, label: strin
         <button
             onClick={onClick}
             className={`w-full text-left p-2.5 rounded-md text-[14px] font-medium flex items-center gap-2.5 transition-all
-        ${active ? 'bg-[rgba(88,166,255,0.1)] text-[var(--accent)]' : 'text-[var(--text-muted)] hover:bg-white/5 hover:text-white'}
+        ${active ? 'bg-[rgba(88,166,255,0.1)] text-[var(--accent)]' : 'text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-main)]'}
       `}
         >
             <span>{icon}</span> {label}
@@ -290,7 +290,7 @@ function GapsView() {
         <>
             <header className="flex justify-between items-center mb-8">
                 <div>
-                    <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white">Matriz de Cobertura (Gap Analysis)</h2>
+                    <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Matriz de Cobertura (Gap Analysis)</h2>
                     <div className="text-[13px] text-[var(--text-muted)] mt-1.5">
                         Versión objetivo: <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border border-[var(--purple)] text-[var(--purple)]">v1.0</span>
                     </div>
@@ -309,42 +309,42 @@ function GapsView() {
                 ))}
 
                 {/* Row 1 */}
-                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-white">Networking</div>
+                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-[var(--text-main)]">Networking</div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--success)] mr-2"></div> 1 Item
                 </div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
                 </div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
                 </div>
 
                 {/* Row 2 */}
-                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-white">Comunicación</div>
+                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-[var(--text-main)]">Comunicación</div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
                 </div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--warning)] mr-2"></div> En Revisión
                 </div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
                 </div>
 
                 {/* Row 3 */}
-                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-white">Influencia</div>
+                <div className="bg-[var(--panel)] p-4 flex items-center text-sm font-semibold text-[var(--text-main)]">Influencia</div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
                 </div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm" style={{ background: 'rgba(218, 54, 51, 0.05)' }}>
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div>
-                    <button className="bg-[var(--border)] text-white border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
+                    <button className="bg-[var(--border)] text-[var(--text-main)] border border-white/10 text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-90">Solicitar</button>
                 </div>
                 <div className="bg-[var(--panel)] p-4 flex items-center justify-center text-sm text-[var(--text-muted)]">
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--danger)] shadow-[0_0_8px_rgba(218,54,51,0.4)] mr-2"></div> Borrador (20%)
@@ -387,11 +387,11 @@ function InventoryView({
     return (
         <>
             <header className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white flex items-center gap-3">
+                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)] flex items-center gap-3">
                     Inventario Maestro
                     <button
                         onClick={onRefresh}
-                        className={`text-[12px] bg-[var(--panel)] border border-[var(--border)] p-1.5 rounded-md text-[var(--text-muted)] hover:text-white transition-all ${isRefreshing ? 'animate-spin' : ''}`}
+                        className={`text-[12px] bg-[var(--panel)] border border-[var(--border)] p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all ${isRefreshing ? 'animate-spin' : ''}`}
                         title="Refrescar Datos"
                     >
                         🔄
@@ -401,7 +401,7 @@ function InventoryView({
                     {selectedItem && (
                         <button
                             onClick={() => setSelectedItem(null)}
-                            className="bg-[var(--panel)] border border-[var(--border)] text-[var(--text-muted)] px-3 py-1.5 rounded-md text-[12px] hover:text-white"
+                            className="bg-[var(--panel)] border border-[var(--border)] text-[var(--text-muted)] px-3 py-1.5 rounded-md text-[12px] hover:text-[var(--text-main)]"
                         >
                             Cerrar Vista
                         </button>
@@ -409,7 +409,7 @@ function InventoryView({
                     {role === 'curador' && (
                         <button
                             onClick={handleNew}
-                            className="bg-[var(--success)] border border-white/10 text-white px-4 py-2 rounded-md font-semibold text-[13px] hover:opacity-90 transition-transform active:scale-95"
+                            className="bg-[var(--success)] border border-white/10 text-[var(--text-main)] px-4 py-2 rounded-md font-semibold text-[13px] hover:opacity-90 transition-transform active:scale-95"
                         >
                             + Nuevo Activo
                         </button>
@@ -425,7 +425,7 @@ function InventoryView({
                         <input
                             type="text"
                             placeholder="Buscar activos..."
-                            className="w-full bg-bg border border-[var(--border)] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]"
+                            className="w-full bg-bg border border-[var(--border)] rounded px-3 py-1.5 text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--accent)]"
                         />
                     </div>
 
@@ -443,12 +443,12 @@ function InventoryView({
                                     <tr
                                         key={c.id}
                                         onClick={() => setSelectedItem(c)}
-                                        className={`cursor-pointer hover:bg-white/5 border-b border-[var(--border)] last:border-0 transition-colors
+                                        className={`cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 border-b border-[var(--border)] last:border-0 transition-colors
                       ${selectedItem?.id === c.id ? 'bg-[rgba(88,166,255,0.1)] border-l-2 border-l-[var(--accent)]' : ''}
                     `}
                                     >
                                         <td className="p-3">
-                                            <div className="font-semibold text-white truncate max-w-[300px]">{c.title}</div>
+                                            <div className="font-semibold text-[var(--text-main)] truncate max-w-[300px]">{c.title}</div>
                                             <div className="text-[11px] text-[var(--text-muted)] font-mono">{c.id}</div>
                                         </td>
                                         {!selectedItem && (
@@ -484,7 +484,7 @@ function InventoryView({
                         <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 shadow-lg">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 mr-4">
-                                    <h3 className="text-lg font-bold text-white leading-tight">{selectedItem.title}</h3>
+                                    <h3 className="text-lg font-bold text-[var(--text-main)] leading-tight">{selectedItem.title}</h3>
                                     <div className="text-sm text-[var(--accent)] font-code mt-1">{selectedItem.id}</div>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
@@ -503,7 +503,7 @@ function InventoryView({
                             <div className="grid grid-cols-2 gap-4 text-sm bg-black/20 p-4 rounded border border-white/5">
                                 <div>
                                     <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Pilar 4S</label>
-                                    <div className="text-white font-medium">{selectedItem.pillar}</div>
+                                    <div className="text-[var(--text-main)] font-medium">{selectedItem.pillar}</div>
                                     <div className="text-xs text-[var(--text-muted)]">{selectedItem.sub || '-'}</div>
                                 </div>
                                 <div>
@@ -516,11 +516,11 @@ function InventoryView({
                                 </div>
                                 <div>
                                     <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Maturity</label>
-                                    <div className="text-white">{selectedItem.maturity || selectedItem.level || 'N/A'}</div>
+                                    <div className="text-[var(--text-main)]">{selectedItem.maturity || selectedItem.level || 'N/A'}</div>
                                 </div>
                                 <div>
                                     <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">IP Owner</label>
-                                    <div className="text-white">{selectedItem.ipOwner || selectedItem.ip || 'N/A'}</div>
+                                    <div className="text-[var(--text-main)]">{selectedItem.ipOwner || selectedItem.ip || 'N/A'}</div>
                                 </div>
                             </div>
                         </div>
@@ -545,7 +545,7 @@ function InventoryView({
                                     <a
                                         href={`https://drive.google.com/file/d/${selectedItem.driveId}/view`}
                                         target="_blank"
-                                        className="bg-black/80 hover:bg-black text-white text-xs px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md"
+                                        className="bg-black/80 hover:bg-black text-[var(--text-main)] text-xs px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md"
                                     >
                                         Abrir Ext. ↗
                                     </a>
@@ -589,7 +589,7 @@ function GeneratorView({ simulateCompile, consoleLog }: { simulateCompile: (a: s
     return (
         <>
             <header className="mb-8">
-                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white">Generador de Artefactos</h2>
+                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Generador de Artefactos</h2>
             </header>
 
             <div className="grid grid-cols-3 gap-5 mb-8">
@@ -631,14 +631,14 @@ function GeneratorCard({ icon, title, desc, action, onClick, isPrimary }: any) {
     return (
         <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
             <div className="text-3xl mb-2.5">{icon}</div>
-            <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+            <h3 className="text-lg font-semibold text-[var(--text-main)] mb-2">{title}</h3>
             <p className="text-[13px] text-[var(--text-muted)] mb-5 leading-normal">{desc}</p>
             <button
                 onClick={onClick}
                 className={`w-full py-2 rounded-md font-semibold text-[13px] border hover:opacity-90 transition-opacity
           ${isPrimary
-                        ? 'bg-[var(--success)] border-white/10 text-white'
-                        : 'bg-[var(--border)] border-white/10 text-white'}
+                        ? 'bg-[var(--success)] border-white/10 text-[var(--text-main)]'
+                        : 'bg-[var(--border)] border-white/10 text-[var(--text-main)]'}
         `}
             >
                 {action}
@@ -653,7 +653,7 @@ function QAView({ data }: { data: ContentItem[] }) {
     return (
         <>
             <header className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-white">Cola de Revisión</h2>
+                <h2 className="text-2xl font-semibold m-0 tracking-tighter text-[var(--text-main)]">Cola de Revisión</h2>
                 <span className="text-[11px] px-2 py-0.5 rounded-xl font-semibold border text-[var(--warning)] bg-[rgba(210,153,34,0.15)] border-[rgba(210,153,34,0.3)]">
                     1 Pendiente
                 </span>
@@ -662,11 +662,11 @@ function QAView({ data }: { data: ContentItem[] }) {
             {item ? (
                 <div className="grid grid-cols-2 gap-5 h-[600px]">
                     <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
-                        <h3 className="font-semibold text-white mb-5">Metadatos (Neon DB)</h3>
+                        <h3 className="font-semibold text-[var(--text-main)] mb-5">Metadatos (Neon DB)</h3>
                         <div className="grid gap-4">
                             <div>
                                 <label className="text-[11px] text-[var(--text-muted)] block mb-1">TÍTULO</label>
-                                <div className="font-semibold text-white">{item.title}</div>
+                                <div className="font-semibold text-[var(--text-main)]">{item.title}</div>
                             </div>
                             <div>
                                 <label className="text-[11px] text-[var(--text-muted)] block mb-1">TAXONOMÍA</label>
@@ -674,7 +674,7 @@ function QAView({ data }: { data: ContentItem[] }) {
                             </div>
                             <div>
                                 <label className="text-[11px] text-[var(--text-muted)] block mb-1">PROPIEDAD INTELECTUAL</label>
-                                <select className="w-full p-2 bg-black text-white border border-[var(--warning)] rounded">
+                                <select className="w-full p-2 bg-black text-[var(--text-main)] border border-[var(--warning)] rounded">
                                     <option>{item.ip}</option>
                                     <option>Propio</option>
                                 </select>
@@ -683,10 +683,10 @@ function QAView({ data }: { data: ContentItem[] }) {
                                 </div>
                             </div>
                             <div className="mt-10 grid gap-2.5">
-                                <button className="w-full bg-[var(--success)] border border-white/10 text-white py-2 rounded font-semibold hover:opacity-90">
+                                <button className="w-full bg-[var(--success)] border border-white/10 text-[var(--text-main)] py-2 rounded font-semibold hover:opacity-90">
                                     ✅ Aprobar y Publicar
                                 </button>
-                                <button className="w-full bg-transparent border border-[var(--danger)] text-[var(--danger)] py-2 rounded font-semibold hover:bg-[var(--danger)] hover:text-white transition-colors">
+                                <button className="w-full bg-transparent border border-[var(--danger)] text-[var(--danger)] py-2 rounded font-semibold hover:bg-[var(--danger)] hover:text-[var(--text-main)] transition-colors">
                                     ❌ Rechazar
                                 </button>
                             </div>
