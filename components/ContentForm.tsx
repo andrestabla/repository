@@ -141,7 +141,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             <input
                 value={(formData as any)[field] || ''}
                 onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm text-white focus:border-[var(--accent)] outline-none"
+                className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-white focus:border-[var(--accent)] outline-none"
                 placeholder={placeholder}
             />
         </div>
@@ -153,7 +153,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             <select
                 value={(formData as any)[field] || ''}
                 onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                className="w-full bg-[#161b22] border border-[var(--border)] rounded p-2 text-xs text-white outline-none"
+                className="w-full bg-panel border border-[var(--border)] rounded p-2 text-xs text-white outline-none"
             >
                 <option value="">Seleccionar...</option>
                 {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
@@ -163,9 +163,9 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
 
     return (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#161b22] border border-[var(--border)] w-full max-w-4xl rounded-xl shadow-2xl flex flex-col h-[85vh]">
+            <div className="bg-panel border border-[var(--border)] w-full max-w-4xl rounded-xl shadow-2xl flex flex-col h-[85vh]">
                 {/* Header */}
-                <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[#0d1117] rounded-t-xl">
+                <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-bg rounded-t-xl">
                     <div className="flex items-center gap-3">
                         <h2 className="text-lg font-bold text-white">
                             {isEdit ? `Editando: ${formData.id}` : 'Nuevo Activo Metodológico'}
@@ -178,7 +178,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 {/* Main Layout: Tabs + Content */}
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar Tabs */}
-                    <div className="w-[200px] border-r border-[var(--border)] bg-[#0d1117] overflow-y-auto">
+                    <div className="w-[200px] border-r border-[var(--border)] bg-bg overflow-y-auto">
                         {TABS.map(tab => (
                             <button
                                 key={tab.id}
@@ -195,7 +195,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto p-6 bg-[#0d1117]/50">
+                    <div className="flex-1 overflow-y-auto p-6 bg-bg/50">
                         <div className="max-w-2xl mx-auto space-y-6">
 
                             {/* 1. IDENTIFICATION */}
@@ -293,7 +293,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                     <textarea
                                         value={formData.observations || ''}
                                         onChange={e => setFormData({ ...formData, observations: e.target.value })}
-                                        className="w-full h-40 bg-[#0d1117] border border-[var(--border)] rounded p-3 text-sm text-white focus:border-[var(--accent)] outline-none resize-none"
+                                        className="w-full h-40 bg-bg border border-[var(--border)] rounded p-3 text-sm text-white focus:border-[var(--accent)] outline-none resize-none"
                                         placeholder="Descripción pedagógica, intención de uso, notas para el facilitador..."
                                     ></textarea>
                                 </div>
@@ -304,7 +304,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-[var(--border)] bg-[#0d1117] rounded-b-xl flex justify-between items-center">
+                <div className="p-4 border-t border-[var(--border)] bg-bg rounded-b-xl flex justify-between items-center">
                     <div className="text-xs text-[var(--text-muted)]">
                         Completeness: <span className="font-bold text-white">{formData.completeness}% (Estimado)</span>
                     </div>
@@ -336,7 +336,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                         <button
                                             key={file.id}
                                             onClick={() => selectFile(file)}
-                                            className="flex items-center gap-3 p-3 hover:bg-[#0d1117] rounded text-left group transition-colors border border-transparent hover:border-[var(--border)]"
+                                            className="flex items-center gap-3 p-3 hover:bg-bg rounded text-left group transition-colors border border-transparent hover:border-[var(--border)]"
                                         >
                                             <div className="text-2xl">📄</div>
                                             <div>

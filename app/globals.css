@@ -1,27 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  /* Dark Theme Professional */
+  /* Light Theme Default */
+  --bg: #ffffff;
+  --panel: #f6f8fa;
+  --border: #d0d7de;
+  --text-main: #24292f;
+  --text-muted: #57606a;
+
+  /* Semantic Colors (Shared/Adjusted) */
+  --accent: #0969da;
+  /* Darker blue for light mode contrast */
+  --success: #1a7f37;
+  --warning: #9a6700;
+  --danger: #cf222e;
+  --purple: #8250df;
+
+  --font-ui: 'Inter', sans-serif;
+  --font-code: 'JetBrains Mono', monospace;
+}
+
+:root[class~="dark"] {
+  /* Dark Theme Professional (Original) */
   --bg: #0d1117;
   --panel: #161b22;
   --border: #30363d;
   --text-main: #c9d1d9;
   --text-muted: #8b949e;
 
-  /* Semantic Colors */
   --accent: #58a6ff;
-  /* Blue */
   --success: #238636;
-  /* Green */
   --warning: #d29922;
-  /* Orange */
   --danger: #da3633;
-  /* Red */
   --purple: #bc8cff;
-  /* Metodólogo */
-
-  --font-ui: 'Inter', sans-serif;
-  --font-code: 'JetBrains Mono', monospace;
 }
 
 @theme {

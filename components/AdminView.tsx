@@ -215,15 +215,15 @@ export default function AdminView() {
                         <div className="flex gap-3 items-end">
                             <div className="flex-1">
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Email (Gmail)</label>
-                                <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="usuario@gmail.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="usuario@gmail.com" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
                             <div className="flex-1">
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre</label>
-                                <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre Apellido" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre Apellido" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
                             <div className="w-[150px]">
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Rol</label>
-                                <select value={newRole} onChange={e => setNewRole(e.target.value)} className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm">
+                                <select value={newRole} onChange={e => setNewRole(e.target.value)} className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm">
                                     <option value="admin">Admin</option>
                                     <option value="metodologo">Metodólogo</option>
                                     <option value="curador">Curador</option>
@@ -316,7 +316,7 @@ export default function AdminView() {
                                             setEmailConfig(prev => ({ ...prev, smtpHost: 'smtp.office365.com', smtpPort: 587, smtpUser: '' }));
                                         }
                                     }}
-                                    className="bg-[#0d1117] border border-[var(--border)] rounded px-2 py-1 text-xs"
+                                    className="bg-bg border border-[var(--border)] rounded px-2 py-1 text-xs"
                                 >
                                     <option value="custom">Presets: Personalizado</option>
                                     <option value="gmail">Gmail (Recomendado)</option>
@@ -328,32 +328,32 @@ export default function AdminView() {
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Host SMTP</label>
-                                <input value={emailConfig.smtpHost} onChange={e => setEmailConfig({ ...emailConfig, smtpHost: e.target.value })} placeholder="smtp.gmail.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                <input value={emailConfig.smtpHost} onChange={e => setEmailConfig({ ...emailConfig, smtpHost: e.target.value })} placeholder="smtp.gmail.com" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
                             <div>
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Puerto</label>
-                                <input type="number" value={emailConfig.smtpPort} onChange={e => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value) })} placeholder="465" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                <input type="number" value={emailConfig.smtpPort} onChange={e => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value) })} placeholder="465" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
 
                             {/* SENDER CUSTOMIZATION */}
                             <div>
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Usuario (Email de envío)</label>
-                                <input value={emailConfig.smtpUser} onChange={e => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })} placeholder="tu@email.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                <input value={emailConfig.smtpUser} onChange={e => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })} placeholder="tu@email.com" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
                             <div>
                                 <label className="text-xs text-[var(--text-muted)] block mb-1">Contraseña de Aplicación</label>
-                                <input type="password" value={emailConfig.smtpPass} onChange={e => setEmailConfig({ ...emailConfig, smtpPass: e.target.value })} placeholder="********" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                <input type="password" value={emailConfig.smtpPass} onChange={e => setEmailConfig({ ...emailConfig, smtpPass: e.target.value })} placeholder="********" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                             </div>
 
                             {/* SENDER CUSTOMIZATION */}
                             <div className="col-span-2 pt-2 border-t border-[var(--border)] grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre del Remitente (Opcional)</label>
-                                    <input value={emailConfig.senderName || ''} onChange={e => setEmailConfig({ ...emailConfig, senderName: e.target.value })} placeholder="Ej: Soporte TI" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                    <input value={emailConfig.senderName || ''} onChange={e => setEmailConfig({ ...emailConfig, senderName: e.target.value })} placeholder="Ej: Soporte TI" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                                 </div>
                                 <div>
                                     <label className="text-xs text-[var(--text-muted)] block mb-1">Email del Remitente (Opcional)</label>
-                                    <input value={emailConfig.senderEmail || ''} onChange={e => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })} placeholder="Ej: no-reply@empresa.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                    <input value={emailConfig.senderEmail || ''} onChange={e => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })} placeholder="Ej: no-reply@empresa.com" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                                     <p className="text-[10px] text-[var(--text-muted)] mt-1">Si se deja vacío, se usa el Usuario SMTP.</p>
                                 </div>
                             </div>
@@ -361,11 +361,11 @@ export default function AdminView() {
                             <div className="col-span-2 pt-2 border-t border-[var(--border)] grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre del Remitente (Opcional)</label>
-                                    <input value={emailConfig.senderName || ''} onChange={e => setEmailConfig({ ...emailConfig, senderName: e.target.value })} placeholder="Ej: Soporte TI" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                    <input value={emailConfig.senderName || ''} onChange={e => setEmailConfig({ ...emailConfig, senderName: e.target.value })} placeholder="Ej: Soporte TI" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                                 </div>
                                 <div>
                                     <label className="text-xs text-[var(--text-muted)] block mb-1">Email del Remitente (Opcional)</label>
-                                    <input value={emailConfig.senderEmail || ''} onChange={e => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })} placeholder="Ej: no-reply@empresa.com" className="w-full bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm" />
+                                    <input value={emailConfig.senderEmail || ''} onChange={e => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })} placeholder="Ej: no-reply@empresa.com" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
                                     <p className="text-[10px] text-[var(--text-muted)] mt-1">Si se deja vacío, se usa el Usuario SMTP.</p>
                                 </div>
                             </div>
@@ -384,7 +384,7 @@ export default function AdminView() {
                         <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2 mt-4">
                             🤖 Service Account (JSON de Credenciales)
                         </h3>
-                        <div className="bg-[#0d1117] p-4 rounded-lg border border-[var(--border)] mb-6">
+                        <div className="bg-bg p-4 rounded-lg border border-[var(--border)] mb-6">
                             <p className="text-xs text-[var(--text-muted)] mb-3">
                                 Pega aquí el contenido del archivo JSON de tu Service Account. Este bot debe tener permiso de <strong>"Lector" o "Editor"</strong> sobre la carpeta raíz.
                             </p>
@@ -431,7 +431,7 @@ export default function AdminView() {
                             </div>
                         </div>
 
-                        <div className="mb-6 p-4 bg-[#0d1117] rounded border border-[var(--border)]">
+                        <div className="mb-6 p-4 bg-bg rounded border border-[var(--border)]">
                             <label className="text-xs text-[var(--text-muted)] block mb-2 font-bold">Asistente de Carpeta</label>
                             <div className="flex gap-2">
                                 <input
@@ -449,7 +449,7 @@ export default function AdminView() {
                                         setNewFolderId(val);
                                     }}
                                     placeholder="Pega aquí la URL de la carpeta o el ID..."
-                                    className="flex-1 bg-[#0d1117] border border-[var(--border)] rounded p-2 text-sm"
+                                    className="flex-1 bg-bg border border-[var(--border)] rounded p-2 text-sm"
                                 />
                                 <button onClick={addFolder} className="bg-[var(--success)] text-white px-4 py-2 rounded text-sm font-bold hover:brightness-110">Agregar</button>
                             </div>
@@ -480,7 +480,7 @@ export default function AdminView() {
                                             </div>
                                         </div>
                                     </div>
-                                    <button onClick={() => removeFolder(id)} className="text-[var(--danger)] text-xs hover:underline bg-[#0d1117] px-2 py-1 rounded border border-[var(--border)]">Eliminar</button>
+                                    <button onClick={() => removeFolder(id)} className="text-[var(--danger)] text-xs hover:underline bg-bg px-2 py-1 rounded border border-[var(--border)]">Eliminar</button>
                                 </div>
                             ))}
                             {driveConfig.authorizedFolderIds.length === 0 && (

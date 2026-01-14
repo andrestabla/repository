@@ -45,6 +45,14 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
             // Default view based on role
             setCurrentView(role === 'admin' ? 'admin' : 'inventory')
         }
+
+        // Load Theme
+        const stored = localStorage.getItem('theme')
+        if (stored === 'dark') {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
     }, [session])
 
     // Real Data State
@@ -200,6 +208,25 @@ export default function MethodologySPA({ initialData, session }: { initialData: 
                 </nav>
 
                 <div className="mt-auto border-t border-[var(--border)] pt-5">
+                    <button
+                        onClick={() => {
+                            const html = document.documentElement
+                            if (html.classList.contains('dark')) {
+                                html.classList.remove('dark')
+                                localStorage.setItem('theme', 'light')
+                            } else {
+                                html.classList.add('dark')
+                                localStorage.setItem('theme', 'dark')
+                            }
+                        }}
+                        className="w-full mb-4 flex items-center justify-between p-2 rounded bg-[var(--bg)] border border-[var(--border)] text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                    >
+                        <span className="flex items-center gap-2">
+                            🌗 Tema
+                        </span>
+                        <span className="font-code text-[10px] opacity-70">Cambiar</span>
+                    </button>
+
                     <div className="flex gap-2.5 items-center">
                         <div
                             className="w-8 h-8 rounded-full grid place-items-center overflow-hidden"
@@ -394,11 +421,11 @@ function InventoryView({
 
                 {/* Left Panel: List */}
                 <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden flex flex-col h-[calc(100vh-140px)]">
-                    <div className="p-3 border-b border-[var(--border)] bg-[#0d1117]">
+                    <div className="p-3 border-b border-[var(--border)] bg-bg">
                         <input
                             type="text"
                             placeholder="Buscar activos..."
-                            className="w-full bg-[#0d1117] border border-[var(--border)] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]"
+                            className="w-full bg-bg border border-[var(--border)] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]"
                         />
                     </div>
 
