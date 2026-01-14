@@ -534,9 +534,7 @@ export default function AdminView() {
                             </p>
                         </div>
 
-                    </div >
-                    )
-}
-                </div >
+                    </div>
+                </div>
             )
             }
