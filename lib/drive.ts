@@ -53,9 +53,11 @@ export type DriveFile = {
     webViewLink?: string
 }
 
-export const listDriveFiles = async (folderId?: string): Promise<DriveFile[]> => {
+export const listDriveFiles = async (folderId: string): Promise<DriveFile[]> => {
     // Mock implementation for the Picker
     // In real life, use google.drive.files.list({ q: `'${folderId}' in parents` })
+
+    console.log(`[Mock Drive API] Listing files for authorized folder: ${folderId}`)
 
     await new Promise(r => setTimeout(r, 800)) // Fake latency
 
