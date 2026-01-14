@@ -487,7 +487,8 @@ export default function AdminView() {
                             ))}
                             {driveConfig.authorizedFolderIds.length === 0 && (
                                 <div className="text-center text-[var(--text-muted)] text-sm py-4 italic">No hay carpetas configuradas. Agrega una arriba.</div>
-                    </div>
+                            )}
+                        </div>
 
                         {/* AI CONFIG WIZARD */}
                         <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
