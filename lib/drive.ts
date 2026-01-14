@@ -2,6 +2,12 @@
 import { google } from 'googleapis'
 import { SystemSettingsService } from './settings'
 
+// Polyfill for pdf-parse compatibility in Next.js Server Environment
+if (typeof global.DOMMatrix === 'undefined') {
+    // @ts-ignore
+    global.DOMMatrix = class DOMMatrix { }
+}
+
 // @ts-ignore
 const pdf = require('pdf-parse')
 
