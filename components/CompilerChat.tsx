@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown } from 'lucide-react'
+import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown, Trash2 } from 'lucide-react'
+
+// ... existing code ...
+
+
 
 type Message = {
     role: 'user' | 'assistant'
@@ -65,6 +69,18 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
         if (next.has(section)) next.delete(section)
         else next.add(section)
         setOpenSections(next)
+    }
+
+    const handleDeleteHistory = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (!confirm('¿Estás seguro de que quieres eliminar este historial?')) return
+
+        try {
+            await fetch(`/api/generator/history?id=${id}`, { method: 'DELETE' })
+            setHistory(prev => prev.filter(h => h.id !== id))
+        } catch (error) {
+            console.error('Failed to delete history', error)
+        }
     }
 
     useEffect(() => {
@@ -298,7 +314,7 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                         {history.map((h: any) => (
                             <div
                                 key={h.id}
-                                className="p-4 border-b border-border hover:bg-black/5 cursor-pointer group transition-all hover:pl-5"
+                                className="p-4 border-b border-border hover:bg-black/5 cursor-pointer group transition-all hover:pl-5 relative"
                                 onClick={() => {
                                     setMessages((prev) => [
                                         ...prev,
@@ -309,7 +325,16 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                             >
                                 <div className="flex items-center justify-between mb-1">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/10 px-1.5 rounded">{h.type}</span>
-                                    <span className="text-[9px] text-text-muted">{new Date(h.createdAt).toLocaleDateString()}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[9px] text-text-muted">{new Date(h.createdAt).toLocaleDateString()}</span>
+                                        <button
+                                            onClick={(e) => handleDeleteHistory(h.id, e)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded text-text-muted hover:text-red-500 transition-all"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="text-xs font-medium text-text-main line-clamp-2 leading-snug group-hover:text-accent transition-colors">
                                     {h.prompt}
