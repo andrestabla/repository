@@ -423,8 +423,8 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                             </div>
                         ))}
                         {loading && (
-                            <div className="ml-8 flex items-center gap-3 animate-pulse opacity-50">
-                                <Loader2 size={16} className="animate-spin text-blue-500" />
+                            <div className="ml-8 flex items-center gap-3 animate-pulse opacity-80">
+                                <img src="https://imageneseiconos.s3.us-east-1.amazonaws.com/iconos/loading.gif" alt="Loading..." className="w-6 h-6 object-contain" />
                                 <span className="text-xs font-semibold text-blue-500 uppercase tracking-widest">Generando...</span>
                             </div>
                         )}
@@ -453,7 +453,7 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                         </button>
                     </div>
                     <div className="text-center mt-2 text-[10px] text-gray-400 font-medium pb-2">
-                        Notebook 4Shine Studio • Model gemini-2.0-flash
+                        Notebook 4Shine Studio • Model GPT-4o
                     </div>
                 </div>
             </div>
