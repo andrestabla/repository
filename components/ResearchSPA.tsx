@@ -23,7 +23,7 @@ export default function ResearchSPA({ initialItems, session }: any) {
         <div className="min-h-screen bg-bg text-text-main font-sans selection:bg-accent/30 selection:text-accent pb-20">
 
             {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 h-20 bg-bg/80 backdrop-blur-md border-b-4 border-border z-40 px-8 flex items-center justify-between">
+            <nav className="sticky top-0 z-40 bg-bg/80 backdrop-blur-md border-b-4 border-border px-8 h-20 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/20 text-white">
                         <BookOpen size={20} />
@@ -62,7 +62,7 @@ export default function ResearchSPA({ initialItems, session }: any) {
             </nav>
 
             {/* Main Grid */}
-            <main className="pt-32 px-8 max-w-[1600px] mx-auto">
+            <main className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredItems.map((item: any) => (
                         <div
