@@ -81,12 +81,12 @@ export async function POST(request: NextRequest) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey)
-        // Use Gemini 1.5 Pro (Stable)
+        // Switch to Gemini 1.5 Flash (Reliable & Fast) with Deep Prompt
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-pro",
+            model: "gemini-1.5-flash",
             generationConfig: {
-                temperature: 0.4, // Balanced for creativity and adherence
-                maxOutputTokens: 8192, // Allow extensive output
+                temperature: 0.3, // Lower temperature for more analytical/precise results
+                maxOutputTokens: 8192,
                 topK: 40,
                 topP: 0.95,
             }
