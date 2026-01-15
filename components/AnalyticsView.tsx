@@ -18,7 +18,7 @@ export default function AnalyticsView() {
     return (
         <div className="min-h-screen bg-bg text-text-main font-sans selection:bg-accent/30 selection:text-accent pb-20">
             {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 h-20 bg-bg/80 backdrop-blur-md border-b-4 border-border z-40 px-8 flex items-center justify-between">
+            <nav className="sticky top-0 z-40 bg-bg/80 backdrop-blur-md border-b-4 border-border px-8 h-20 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white">
                         <LayoutDashboard size={20} />
@@ -30,13 +30,13 @@ export default function AnalyticsView() {
                 </div>
             </nav>
 
-            <main className="pt-32 px-8 max-w-[1600px] mx-auto">
+            <main className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
                 <div className="flex gap-4 mb-8">
                     <button
                         onClick={() => setActiveTab('inventory')}
                         className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${activeTab === 'inventory'
-                                ? 'bg-text-main border-text-main text-bg'
-                                : 'bg-card-bg border-border text-text-muted hover:border-text-main/20'
+                            ? 'bg-text-main border-text-main text-bg'
+                            : 'bg-card-bg border-border text-text-muted hover:border-text-main/20'
                             }`}
                     >
                         <LayoutDashboard size={14} /> Inventario de Activos
@@ -44,8 +44,8 @@ export default function AnalyticsView() {
                     <button
                         onClick={() => setActiveTab('research')}
                         className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${activeTab === 'research'
-                                ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
-                                : 'bg-card-bg border-border text-text-muted hover:border-accent/30 hover:text-accent'
+                            ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
+                            : 'bg-card-bg border-border text-text-muted hover:border-accent/30 hover:text-accent'
                             }`}
                     >
                         <BookOpen size={14} /> Investigación
