@@ -1,58 +1,121 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { GeminiService } from '@/lib/gemini'
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
-export async function POST(req: Request) {
+export const maxDuration = 60 // Allow longer timeout for generation
+
+type CompilationType = 'dossier' | 'matrix' | 'toolkit'
+
+export async function POST(request: NextRequest) {
     try {
-        const { releaseTag, artifactType } = await req.json()
+        const { type, version } = await request.json() as { type: CompilationType, version?: string }
 
-        if (!releaseTag) {
-            return NextResponse.json({ error: 'Release version is required' }, { status: 400 })
-        }
+        // 1. Fetch Validated Assets
+        const whereClause: any = { status: 'Validado' }
+        if (version) whereClause.version = version
 
-        // 1. Fetch the release
-        const release = await prisma.methodologyRelease.findUnique({
-            where: { tag: releaseTag },
-            include: {
-                contents: {
-                    where: { status: 'Validado' }, // Only validated items go into official artifacts
-                    orderBy: { id: 'asc' }
-                }
+        const items = await prisma.contentItem.findMany({
+            where: whereClause,
+            select: {
+                title: true,
+                primaryPillar: true,
+                secondaryPillars: true,
+                type: true,
+                sub: true,
+                competence: true,
+                behavior: true,
+                observations: true,
+                id: true
             }
         })
 
-        if (!release) {
-            return NextResponse.json({ error: 'Release not found' }, { status: 404 })
+        if (items.length === 0) {
+            return NextResponse.json({ error: 'No hay activos validados disponibles para compilar.' }, { status: 400 })
         }
 
-        // 2. Fetch taxonomy for structure
-        const taxonomy = await prisma.taxonomy.findMany({
-            where: { active: true },
-            orderBy: { order: 'asc' }
+        // 2. Prepare Context
+        const assetsContext = items.map((item, index) => `
+        [ASSET ${index + 1}]
+        ID: ${item.id}
+        TÍTULO: ${item.title}
+        PILAR: ${item.primaryPillar} (${(item.secondaryPillars as string[])?.join(', ')})
+        TIPO: ${item.type} | COMPETENCIA: ${item.competence}
+        RESUMEN ESTRATÉGICO: ${item.observations || 'Sin descripción detallada.'}
+        `).join('\n')
+
+        // 3. Define Prompt based on Type
+        let prompt = ''
+        const apiKey = process.env.GEMINI_API_KEY as string
+        const genAI = new GoogleGenerativeAI(apiKey)
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" }) // Use 1.5 Pro to handle large context
+
+        if (type === 'dossier') {
+            prompt = `
+            Actúa como un CONSULTOR ESTRATÉGICO SENIOR especializado en Diseño Instruccional y Desarrollo Organizacional.
+            Tu tarea es generar el contenido para un **DOSSIER EJECUTIVO** de la Metodología 4Shine basado en los activos validados adjuntos.
+
+            OBJETIVO:
+            Crear un documento narrativo que venda y explique el valor de la metodología a un cliente corporativo (B2B).
+
+            INSTRUCCIONES:
+            1. Escribe una "Introducción Ejecutiva" que sintetice el alcance de estos ${items.length} activos.
+            2. Para cada Pilar (Shine In, Out, Up, Beyond), crea un resumen narrativo de qué herramientas tenemos disponibles, citando los títulos de los activos más relevantes.
+            3. Redacta una sección de "Impacto Esperado" basada en las conductas observables descritas en los activos.
+            4. Utiliza un tono profesional, inspirador y de alto nivel.
+            5. Formato de salida: MARKDOWN limpio.
+            
+            CONTEXTO DE ACTIVOS:
+            ${assetsContext}
+            `
+        } else if (type === 'matrix') {
+            prompt = `
+            Actúa como un ANALISTA DE DATOS experto.
+            Tu tarea es generar una **MATRIZ DE TRAZABILIDAD** en formato JSON estructurado.
+
+            INSTRUCCIONES:
+            1. Analiza cada activo y mapea su contribución al modelo.
+            2. Genera un ARRAY JSON donde cada objeto represente un activo.
+            3. Campos requeridos: "id", "titulo", "pilar", "nivel_impacto" (Calculado por ti: Alto/Medio), "ruta_aprendizaje" (Sugiere: Liderazgo, Comunicación, etc. basado en el contenido).
+            4. NO incluyas texto explicativo, SOLO el JSON puro.
+            
+            CONTEXTO DE ACTIVOS:
+            ${assetsContext}
+            `
+        } else if (type === 'toolkit') {
+            prompt = `
+            Actúa como un ARQUITECTO DE INFORMACIÓN.
+            Tu tarea es diseñar la **ESTRUCTURA DE CARPETAS (Toolkit)** ideal para entregar estos activos al cliente final.
+
+            INSTRUCCIONES:
+            1. Agrupa los activos lógicamente (Por Pilar, Por Nivel, o Por Competencia).
+            2. Genera una estructura de árbol en texto plano (estilo comando 'tree').
+            3. Añade breves notas (entre paréntesis) de por qué agrupaste así.
+            4. Sugiere 3 recursos adicionales ("Gaps") que faltarían para completar el toolkit ideal.
+            5. Formato de salida: Texto plano formateado.
+
+            CONTEXTO DE ACTIVOS:
+            ${assetsContext}
+            `
+        }
+
+        // 4. Generate Content
+        const result = await model.generateContent(prompt)
+        const response = await result.response
+        let output = response.text()
+
+        // Clean JSON output if needed
+        if (type === 'matrix') {
+            output = output.replace(/```json/g, '').replace(/```/g, '').trim()
+        }
+
+        return NextResponse.json({
+            result: output,
+            count: items.length
         })
 
-        // 3. Simple JSON Compilation Logic
-        const dossier = {
-            metadata: {
-                release: release.tag,
-                generatedAt: new Date().toISOString(),
-                artifact: artifactType || 'Dossier Maestro v1.0',
-                itemCount: release.contents.length
-            },
-            structure: taxonomy.filter(t => t.type === 'Pillar').map(p => ({
-                pillar: p.name,
-                components: taxonomy.filter(c => c.parentId === p.id).map(c => ({
-                    name: c.name,
-                    items: release.contents.filter(item => item.sub === c.name)
-                }))
-            }))
-        }
-
-        // In a real scenario, here we could generate a PDF or ZIP using libraries like jszip or pdfkit
-        // For now, we return the master structure ready for the frontend to "download"
-
-        return NextResponse.json(dossier)
-    } catch (error: any) {
-        console.error('[Generator Error]', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    } catch (error) {
+        console.error('Generator API Error:', error)
+        return NextResponse.json({ error: String(error) }, { status: 500 })
     }
 }
