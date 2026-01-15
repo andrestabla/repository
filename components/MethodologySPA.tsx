@@ -146,102 +146,39 @@ export default function MethodologySPA({
         )
     }
 
+    // Shell handles Login now, but we can keep a fallback or allow duplication for safety if Shell isn't used everywhere
+    // effectively. However, since we wrapped RootLayout, Shell IS used everywhere.
+    // We just need to render the content part.
+
+    // Removing Sidebar markup and wrapping the main content area
+    // The previous structure was grid-cols-[280px_1fr]. Now Shell handles the grid/flex.
+    // We just render the content column.
+
     return (
-        <div className="grid grid-cols-[280px_1fr] h-screen overflow-hidden bg-bg text-text-main font-ui transition-colors">
-            {/* Sidebar Moderno */}
-            <aside className="bg-panel border-r border-border flex flex-col p-6 overflow-y-auto no-scrollbar shadow-inner">
-                <div className="flex items-center justify-between mb-10">
-                    <div className="text-xl font-black text-text-main flex items-center gap-2.5">
-                        <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-white shadow-lg shadow-accent/30">
-                            <Zap size={18} fill="currentColor" />
-                        </div>
-                        <span className="tracking-tighter">4Shine</span>
-                        <span className="text-[9px] bg-accent/10 text-accent px-1.5 py-0.5 rounded-full font-bold uppercase tracking-widest border border-accent/20">Pro</span>
-                    </div>
-                    <button
-                        onClick={toggleTheme}
-                        className="w-8 h-8 rounded-lg border border-border bg-bg hover:bg-border/20 transition-colors flex items-center justify-center text-text-muted"
-                    >
-                        <Monitor size={14} />
-                    </button>
-                </div>
-
-                <nav className="flex flex-col gap-1.5">
-                    {user?.role === 'admin' && (
-                        <>
-                            <NavHeader label="SISTEMA" />
-                            <NavBtn id="admin" label="Administración" icon={<ShieldCheck size={18} />} active={currentView === 'admin'} href="/admin" />
-                            <div className="my-3 border-t border-border opacity-50" />
-                        </>
-                    )}
-
-                    <NavHeader label="OPERACIÓN" />
-                    <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={currentView === 'analitica'} href="/analitica" />
-                    <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={currentView === 'inventory' || currentView === ''} href="/inventario" />
-                    <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={currentView === 'research'} href="/research" />
-                    {(user?.role === 'admin' || user?.role === 'auditor') && (
-                        <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} href="/qa" />
-                    )}
-
-                    <div className="h-4" />
-
-                    <NavHeader label="ARQUITECTURA" />
-                    <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} href="/taxonomy" />
-                    <NavBtn id="gaps" label="Heatmap de Brechas" icon={<Grid3X3 size={18} />} active={currentView === 'gaps'} href="/gap-analysis" />
-                    <NavBtn id="releases" label="Gestión de Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} href="/releases" />
-                    <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} href="/generator" />
-                </nav>
-
-                <div className="mt-auto pt-8 border-t border-border">
-                    <div className="bg-bg/50 border border-border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group">
-                        <div className="flex gap-3 items-center mb-3">
-                            <div className="w-10 h-10 rounded-xl overflow-hidden border border-border ring-2 ring-accent/10 group-hover:ring-accent/20 transition-all">
-                                {user.avatar ? <img src={user.avatar as string} alt="avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-accent/10 text-accent flex items-center justify-center font-bold">👤</div>}
-                            </div>
-                            <div className="overflow-hidden">
-                                <div className="font-bold text-[14px] truncate text-text-main">{user.name}</div>
-                                <div className="text-[10px] text-accent font-bold uppercase tracking-wider">{user.role}</div>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => signOut()}
-                            className="w-full text-center text-danger text-[11px] font-bold py-2 bg-danger/5 hover:bg-danger/10 rounded-lg transition-all flex items-center justify-center gap-2 group-hover:text-danger"
-                        >
-                            <LogOut size={12} />
-                            Cerrar Sesión Segura
-                        </button>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
-            <main className="overflow-y-auto bg-bg transition-colors">
-                <div className="p-10 animate-in fade-in duration-700">
-                    {currentView === 'taxonomy' && <TaxonomyManager initialData={initialTaxonomy as any} />}
-                    {currentView === 'releases' && <ReleasesView />}
-                    {currentView === 'analitica' && <AnalyticsView />}
-                    {currentView === 'inventory' && (
-                        <InventoryView
-                            data={inventoryData}
-                            role={user.role}
-                            onRefresh={refreshData}
-                            isRefreshing={isRefreshing}
-                        />
-                    )}
-                    {currentView === '' && (
-                        <InventoryView
-                            data={inventoryData}
-                            role={user.role}
-                            onRefresh={refreshData}
-                            isRefreshing={isRefreshing}
-                        />
-                    )}
-                    {currentView === 'gap-analysis' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy || []} />}
-                    {currentView === 'generator' && <CompilerChat assets={inventoryData} />}
-                    {currentView === 'qa' && (user?.role === 'admin' || user?.role === 'auditor') && <QAView role={user.role} onRefresh={refreshData} />}
-                    {currentView === 'admin' && <AdminView />}
-                </div>
-            </main>
+        <div className="h-full w-full overflow-y-auto bg-bg transition-colors p-6 sm:p-10 animate-in fade-in duration-500">
+            {currentView === 'taxonomy' && <TaxonomyManager initialData={initialTaxonomy as any} />}
+            {currentView === 'releases' && <ReleasesView />}
+            {currentView === 'analitica' && <AnalyticsView />}
+            {currentView === 'inventory' && (
+                <InventoryView
+                    data={inventoryData}
+                    role={user.role}
+                    onRefresh={refreshData}
+                    isRefreshing={isRefreshing}
+                />
+            )}
+            {currentView === '' && (
+                <InventoryView
+                    data={inventoryData}
+                    role={user.role}
+                    onRefresh={refreshData}
+                    isRefreshing={isRefreshing}
+                />
+            )}
+            {currentView === 'gap-analysis' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy || []} />}
+            {currentView === 'generator' && <CompilerChat assets={inventoryData} />}
+            {currentView === 'qa' && (user?.role === 'admin' || user?.role === 'auditor') && <QAView role={user.role} onRefresh={refreshData} />}
+            {currentView === 'admin' && <AdminView />}
         </div>
     )
 }
