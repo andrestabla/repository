@@ -71,29 +71,13 @@ export async function POST(request: NextRequest) {
         ${researchContext || 'Ninguna seleccionada.'}
         `
 
-        // 4. API Key Strategy
-        const { SystemSettingsService } = await import('@/lib/settings')
-        let apiKey = await SystemSettingsService.getGeminiApiKey()
-        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || ''
+        // 4. API Key Strategy (OpenAI)
+        const { OpenAIService } = await import('@/lib/openai')
 
-        if (!apiKey) {
-            return NextResponse.json({ error: 'Gemini API Key not configured' }, { status: 500 })
-        }
-
-        const genAI = new GoogleGenerativeAI(apiKey)
-        // Switch to Gemini 1.5 Flash (Reliable & Fast) with Deep Prompt
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            generationConfig: {
-                temperature: 0.3, // Lower temperature for more analytical/precise results
-                maxOutputTokens: 8192,
-                topK: 40,
-                topP: 0.95,
-            }
-        })
-
-        // 5. Construct Prompt
+        // 5. Construct Prompt (Done before calling service to pass it)
         let prompt = ""
+        // ... prompt construction continues below ...
+
 
         if (message) {
             prompt = `
@@ -239,16 +223,22 @@ export async function POST(request: NextRequest) {
             `
         }
 
-        // 6. Generate
-        const result = await model.generateContent(prompt)
-        const response = await result.response
-        let output = response.text()
+        // 6. Generate (OpenAI)
+        console.log("[Generator] Starting OpenAI generation...")
+        let output = ""
+        try {
+            output = await OpenAIService.generateContent(prompt) || "No response generated."
+        } catch (err: any) {
+            console.error("[Generator] OpenAI Failed:", err)
+            return NextResponse.json({ error: `OpenAI Error: ${err.message}` }, { status: 500 })
+        }
 
         // 7. Persist History
         try {
             await prisma.generationHistory.create({
                 data: {
-                    user: 'anonymous', // TODO: Add real user session
+                    user: 'anonymous', // session is not available here, using anonymous default
+
                     prompt: message || `Generate ${type}`,
                     response: output,
                     type: type || 'chat',

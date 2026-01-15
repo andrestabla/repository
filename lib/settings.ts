@@ -65,4 +65,20 @@ export class SystemSettingsService {
             create: { key: 'gemini_api_key', value: key }
         })
     }
+
+    // --- OpenAI ---
+    static async getOpenAIApiKey(): Promise<string | null> {
+        const setting = await prisma.systemSettings.findUnique({
+            where: { key: 'openai_api_key' }
+        })
+        return setting?.value as string | null
+    }
+
+    static async saveOpenAIApiKey(key: string) {
+        return prisma.systemSettings.upsert({
+            where: { key: 'openai_api_key' },
+            update: { value: key },
+            create: { key: 'openai_api_key', value: key }
+        })
+    }
 }
