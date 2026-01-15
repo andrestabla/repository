@@ -355,6 +355,39 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
                                 />
                             </div>
 
+                            <div className="col-span-2 grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Competencia Clave</label>
+                                    <input
+                                        value={formData.competence || ''}
+                                        onChange={e => setFormData({ ...formData, competence: e.target.value })}
+                                        className="w-full h-10 bg-bg border-2 border-border rounded-lg px-4 text-xs text-text-main focus:border-accent outline-none"
+                                        placeholder="Ej: Liderazgo Adaptativo"
+                                        disabled={readOnly}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Cobertura Geográfica</label>
+                                    <input
+                                        value={formData.geographicCoverage || ''}
+                                        onChange={e => setFormData({ ...formData, geographicCoverage: e.target.value })}
+                                        className="w-full h-10 bg-bg border-2 border-border rounded-lg px-4 text-xs text-text-main focus:border-accent outline-none"
+                                        placeholder="Ej: LATAM, Global"
+                                        disabled={readOnly}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Población / Muestra</label>
+                                    <input
+                                        value={formData.populationParams || ''}
+                                        onChange={e => setFormData({ ...formData, populationParams: e.target.value })}
+                                        className="w-full h-10 bg-bg border-2 border-border rounded-lg px-4 text-xs text-text-main focus:border-accent outline-none"
+                                        placeholder="Ej: 50 CEOs"
+                                        disabled={readOnly}
+                                    />
+                                </div>
+                            </div>
+
                             <div className="col-span-2">
                                 <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Diferencial Metodológico</label>
                                 <input
