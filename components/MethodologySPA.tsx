@@ -28,6 +28,7 @@ import ContentForm, { ContentItem } from './ContentForm'
 import TaxonomyManager from './TaxonomyManager'
 import ReleasesView from './ReleasesView'
 import HeatmapView from './HeatmapView'
+import QAView from './QAView'
 
 type UserRole = 'metodologo' | 'curador' | 'auditor' | 'admin' | 'guest' | 'pending'
 
@@ -191,7 +192,9 @@ export default function MethodologySPA({
 
                     <NavHeader label="OPERACIÓN" />
                     <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
-                    <NavBtn id="qa" label="Control de Calidad" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} onClick={() => setCurrentView('qa')} />
+                    {(user?.role === 'admin' || user?.role === 'auditor') && (
+                        <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} onClick={() => setCurrentView('qa')} />
+                    )}
 
                     <div className="h-4" />
 
@@ -239,7 +242,7 @@ export default function MethodologySPA({
                     )}
                     {currentView === 'gaps' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy} />}
                     {currentView === 'generator' && <GeneratorDashboard compileArtifact={compileArtifact} consoleLog={consoleLog} />}
-                    {currentView === 'qa' && <QAView data={inventoryData} />}
+                    {currentView === 'qa' && (user?.role === 'admin' || user?.role === 'auditor') && <QAView role={user.role} onRefresh={refreshData} />}
                     {currentView === 'admin' && <AdminView />}
                 </div>
             </main>
@@ -679,45 +682,3 @@ function CompBtn({ icon, label, onClick, disabled }: { icon: React.ReactNode, la
     )
 }
 
-function QAView({ data }: { data: ContentItem[] }) {
-    const reviewItems = (data || []).filter(c => c.status === 'Review' || c.status === 'Draft')
-    return (
-        <div className="max-w-4xl mx-auto text-left py-8">
-            <header className="mb-12 border-b border-border pb-8">
-                <h2 className="text-4xl font-black text-text-main tracking-tighter mb-2">Aseguramiento de Calidad</h2>
-                <p className="text-sm text-text-muted font-medium">Revisión técnica y validación de contenidos metodológicos.</p>
-            </header>
-
-            <div className="grid gap-6">
-                {reviewItems.map(item => (
-                    <div key={item.id} className="bg-panel border border-border p-8 rounded-3xl flex justify-between items-center group hover:border-accent hover:shadow-2xl hover:shadow-accent/5 transition-all shadow-sm border-l-8 border-l-warning">
-                        <div className="flex gap-6 items-center text-left">
-                            <div className="w-14 h-14 bg-bg border border-border rounded-2xl flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent/40 transition-all">
-                                <ShieldCheck size={28} />
-                            </div>
-                            <div>
-                                <div className="font-black text-xl text-text-main group-hover:text-accent transition-colors tracking-tight">{item.title}</div>
-                                <div className="flex gap-3 mt-2">
-                                    <span className="text-[10px] font-black bg-warning/10 text-warning px-2 py-0.5 rounded-full border border-warning/20 uppercase tracking-widest">{item.status}</span>
-                                    <span className="text-[10px] font-bold text-text-muted font-mono uppercase tracking-widest">{item.id} • {item.pillar}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button className="bg-accent text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all shadow-xl shadow-accent/20 hover:scale-105 active:scale-95">
-                            Audit
-                        </button>
-                    </div>
-                ))}
-                {reviewItems.length === 0 && (
-                    <div className="bg-panel border-2 border-dashed border-border p-32 text-center rounded-[50px] flex flex-col items-center">
-                        <div className="w-24 h-24 bg-success/10 text-success rounded-full flex items-center justify-center mb-8">
-                            <ShieldCheck size={48} />
-                        </div>
-                        <div className="text-2xl font-black text-text-main mb-2 tracking-tight">¡Todo en Orden!</div>
-                        <div className="text-text-muted font-medium italic opacity-60">No hay activos pendientes de revisión.</div>
-                    </div>
-                )}
-            </div>
-        </div>
-    )
-}

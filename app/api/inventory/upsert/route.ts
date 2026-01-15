@@ -34,18 +34,24 @@ export async function POST(request: NextRequest) {
         const finalPrimaryPillar = primaryPillar || pillar || 'Transversal'
         const finalSecondaryPillars = Array.isArray(secondaryPillars) ? secondaryPillars : []
 
-        // 1. Authorization check for existing items
+        // 1. Authorization and State Machine check
         const existingItem = await prisma.contentItem.findUnique({ where: { id } })
 
-        if (existingItem && existingItem.status === 'Validado' && role !== 'admin') {
-            return NextResponse.json({ error: 'Item is validated and locked. Only Admin can modify it.' }, { status: 403 })
+        // RBAC: Only Auditor or Admin can set status to 'Validado'
+        if (status === 'Validado' && role !== 'ADMIN' && role !== 'AUDITOR') {
+            return NextResponse.json({ error: 'Permisos insuficientes: Solo un Auditor puede validar activos.' }, { status: 403 })
         }
 
-        if (existingItem && existingItem.status === 'Validado' && role === 'admin') {
-            if (!forceReason) {
-                return NextResponse.json({ error: 'Admin must provide a reason for force-editing a validated item.' }, { status: 400 })
-            }
-            await createLog('FORCE_EDIT', userEmail!, `Reason: ${forceReason}`, id)
+        // Lock check for Validated items
+        if (existingItem && existingItem.status === 'Validado' && role !== 'ADMIN') {
+            return NextResponse.json({ error: 'Activo Validado: Solo administradores pueden modificarlo.' }, { status: 403 })
+        }
+
+        // Admin/Auditor Bypass Logging (HU-A-04 Reject/Approve reasons)
+        if (forceReason) {
+            await createLog('AUDIT_ACTION', userEmail || 'system', `Action: ${status} | Motivo: ${forceReason}`, id)
+        } else if (existingItem && existingItem.status === 'Validado' && role === 'ADMIN') {
+            return NextResponse.json({ error: 'Admin debe proveer un motivo para editar un activo validado.' }, { status: 400 })
         }
 
         // 2. Clean and Validate Drive ID
@@ -75,7 +81,8 @@ export async function POST(request: NextRequest) {
             status: status || 'Borrador',
             completeness,
             level: maturity || level,
-            ip: ipOwner || ip
+            ip: ipOwner || ip,
+            pillar: finalPrimaryPillar
         }
 
         const item = await prisma.contentItem.upsert({
@@ -84,9 +91,9 @@ export async function POST(request: NextRequest) {
             create: { id, ...dataPayload },
         })
 
-        // Log general update if not handled by force-edit
-        if (!existingItem || existingItem.status !== 'Validado') {
-            await createLog(existingItem ? 'UPDATE_CONTENT' : 'CREATE_CONTENT', userEmail || 'system', `Title: ${title}`, id)
+        // Log general update
+        if (!forceReason) {
+            await createLog(existingItem ? 'UPDATE_CONTENT' : 'CREATE_CONTENT', userEmail || 'system', `${item.title} [State: ${item.status}]`, id)
         }
 
         return NextResponse.json(item)
