@@ -76,12 +76,22 @@ export async function POST(request: NextRequest) {
         // For clean architecture, we should support 'url' in body.
 
         if (url) {
-            console.log(`[Analyze] Analyzing URL: ${url}`)
-            // Simple fetch for now. For complex pages, we'd need Puppeteer (browser tool) but backend typically uses fetch/cheerio.
-            // Or assume user pastes content. 
-            // Better: Use Gemini 2.0 Web Search capabilities if available or just fetch HTML text.
+            let targetUrl = url.trim()
+            if (!/^https?:\/\//i.test(targetUrl)) {
+                targetUrl = 'https://' + targetUrl
+            }
+
+            console.log(`[Analyze] Analyzing URL: ${targetUrl}`)
             try {
-                const res = await fetch(url)
+                const res = await fetch(targetUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'
+                    }
+                })
+
+                if (!res.ok) throw new Error(`Status: ${res.status}`)
+
                 const html = await res.text()
                 // Simple stripping using regex (Cheerio would be better but keeping deps low)
                 text = html.replace(/<[^>]*>/g, ' ').substring(0, 30000)
