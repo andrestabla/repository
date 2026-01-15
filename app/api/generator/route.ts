@@ -81,51 +81,69 @@ export async function POST(request: NextRequest) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey)
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+        // Use Gemini 1.5 Pro for maximum reasoning capability and context window
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-pro-latest",
+            generationConfig: {
+                temperature: 0.4, // Balanced for creativity and adherence
+                maxOutputTokens: 8192, // Allow extensive output
+                topK: 40,
+                topP: 0.95,
+            }
+        })
 
         // 5. Construct Prompt
         let prompt = ""
 
         if (message) {
             prompt = `
-             Actúa como un ASISTENTE DE INVESTIGACIÓN INTELIGENTE (estilo NotebookLM).
-             Tienes acceso al siguiente inventario de activos seleccionados (${assets.length + research.length} fuentes).
-             
-             TU TAREA:
-             Responde a la solicitud del usuario basándote EXCLUSIVAMENTE en los activos validados proporcionados.
-             
-             SOLICITUD DEL USUARIO:
-        "${message}"
-             
-             PAUTAS ESTRICTAS:
-        1. ** GROUNDING:** No inventes.Si no está en los activos, dilo.
-             2. ** CITAS:** Cita las fuentes entre corchetes, ej: "[Fuente: Shine In Masterclass]".
-             3. ** PREGUNTAS SUGERIDAS:** Al final, sugiere 3 preguntas de profundización.
+             ACTÚA COMO UN ESTRATEGA SÉNIOR Y EXPERTO EN LIDERAZGO (NIVEL C-SUITE / NOTEBOOKLM).
+             Tu objetivo es generar un análisis PROFUNDO, EXHAUSTIVO Y ESTRATÉGICO basado ÚNICAMENTE en las fuentes proporcionadas.
 
-             CONTEXTO DE FUENTES(Source of Truth):
+             TIENES ACCESO A:
+             - ${assets.length} Activos de Inventario (Conocimiento Validado 4Shine).
+             - ${research.length} Investigaciones Externas (Papers/Tendencias).
+
+             FUENTES DISPONIBLES:
              ${combinedContext}
-        `
+
+             INSTRUCCIÓN DE PROFUNDIDAD (DEEP DIVE):
+             1. **IDIOMA:** EL RESULTADO DEBE ESTAR AL 100% EN ESPAÑOL. NO uses inglés.
+             2. NO hagas resúmenes superficiales. Tu valor está en la SÍNTESIS DE ALTO NIVEL.
+             3. Cruza información: ¿Cómo se complementa el activo X con el hallazgo Y de la investigación?
+             4. Busca "Insights Ocultos": No te quedes en lo obvio. Deduce implicaciones estratégicas.
+             5. EXHAUSTIVIDAD: Si el usuario pide un plan, detalla cada paso. Si pide un dossier, cubre todas las aristas.
+             6. TONO: Profesional, inspirador, ejecutivo, riguroso.
+
+             SOLICITUD DEL USUARIO:
+             "${message}"
+
+             REGLAS FORMATO:
+             - Usa Markdown avanzado (negritas, tablas, citas en bloque).
+             - Si citas una fuente, usa [Título Fuente] para referenciarla explícitamente.
+             - Estructura tu respuesta con encabezados claros.
+            `
         } else if (type === 'dossier') {
             prompt = `
             Actúa como CONSULTOR ESTRATÉGICO.Genera un ** DOSSIER EJECUTIVO **.
 
-            ESTRUCTURA:
-        1. ** Intro Ejecutiva **: Valor de la metodología(basado en lo seleccionado).
+                ESTRUCTURA:
+            1. ** Intro Ejecutiva **: Valor de la metodología(basado en lo seleccionado).
             2. ** Análisis de Activos **: Resumen narrativo citando las fuentes.
             3. ** Impacto **: Conductas esperadas.
             4. ** Cierre **: Next Steps.
 
-            CONTEXTO:
+                CONTEXTO:
             ${combinedContext}
-        `
+            `
         } else if (type === 'matrix') {
             prompt = `
             Actúa como ANALISTA DE DATOS.Genera una ** MATRIZ DE TRAZABILIDAD ** en Markdown Table.
-            Columnas: ID | Título | Tipo(Asset / Research) | Concepto Clave
+                Columnas: ID | Título | Tipo(Asset / Research) | Concepto Clave
 
-        CONTEXTO:
+            CONTEXTO:
             ${combinedContext}
-        `
+            `
         } else if (type === 'toolkit') {
             prompt = `Actúa como ARQUITECTO.Diseña una ** ESTRUCTURA DE TOOLKIT ** en formato árbol.`
         } else if (type === 'podcast') {
@@ -134,13 +152,13 @@ export async function POST(request: NextRequest) {
             Genera un GUION DE AUDIO(Host vs Experto) de 5 min discutiendo los activos seleccionados.
             Usa un tono, casual, sorprendente y analítico.
 
-            FORMATO:
+                FORMATO:
             ** HOST:** ...
             ** EXPERTO:** ...
 
-        CONTEXTO:
+            CONTEXTO:
             ${combinedContext}
-        `
+            `
         } else if (type === 'video') {
             prompt = `
             Actúa como DIRECTOR CREATIVO.Genera un ** GUION VISUAL PARA VIDEO(StoryBoard Script) **.
@@ -150,10 +168,10 @@ export async function POST(request: NextRequest) {
             | --------| -----------------| --------------------|
             | 0:00 | ...             | ...                |
 
-            OBJETIVO: Video resumen de alto impacto sobre los activos seleccionados.
-                CONTEXTO:
+                OBJETIVO: Video resumen de alto impacto sobre los activos seleccionados.
+                    CONTEXTO:
             ${combinedContext}
-        `
+            `
         } else if (type === 'mindmap') {
             prompt = `
             Actúa como EXPERTO EN VISUALIZACIÓN DE DATOS.
@@ -161,7 +179,7 @@ export async function POST(request: NextRequest) {
             
             Usa sintaxis ** MERMAID ** (graph TD).
 
-        IMPORTANTE:
+            IMPORTANTE:
             Tu respuesta debe contener EXCLUSIVAMENTE el bloque de código markdown.
             Empieza con \`\`\`mermaid y termina con \`\`\`.
             NO incluyas explicaciones, ni títulos, ni texto adicional. SOLO el código.

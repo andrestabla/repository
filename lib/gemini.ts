@@ -65,6 +65,7 @@ export class GeminiService {
             ${context ? `--- INSTRUCCIONES ESPECÍFICAS DE CONTEXTO ---\n${context}\n-------------------------------------------` : ''}
 
             --- REGLAS DE ORO DE ANÁLISIS ---
+            0. **IDIOMA OBLIGATORIO**: TODO el contenido generado (summary, observations, relation4Shine, findings, etc.) DEBE estar en ESPAÑOL, incluso si el texto original está en inglés u otro idioma. TRADUCE Y ADAPTA si es necesario.
             1. SELECCIÓN DE PILAR OBLIGATORIA: DEBES elegir uno de los 4 pilares (Shine In, Shine Out, Shine Up, Shine Beyond) como "primaryPillar". Solo usa "Transversal" si el contenido es 100% administrativo, pero siempre prioriza la vinculación metodológica.
             2. RESEÑA FIEL: El campo "summary" NO debe ser genérico. Debe ser una reseña/resumen fiel y detallado de lo que realmente dice el archivo. Si es un video, describe la narrativa. Si es un toolkit, describe las herramientas.
             3. CRITERIO DE EXPERTO: Tus sugerencias de "sub", "competence" y "behavior" deben ser ultra-específicas al contenido analizado.
