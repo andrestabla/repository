@@ -57,6 +57,7 @@ export default function AdminView() {
     const [emailConfig, setEmailConfig] = useState<EmailConfig>({ smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '' })
     const [driveConfig, setDriveConfig] = useState<DriveConfig>({ authorizedFolderIds: [] })
     const [geminiApiKey, setGeminiApiKey] = useState('')
+    const [openaiApiKey, setOpenaiApiKey] = useState('')
     const [loadingSettings, setLoadingSettings] = useState(false)
     const [refreshSettings, setRefreshSettings] = useState(0)
     const [newFolderId, setNewFolderId] = useState('')
@@ -91,6 +92,8 @@ export default function AdminView() {
                 .then(data => {
                     if (data.emailConfig) setEmailConfig(data.emailConfig)
                     if (data.driveConfig) setDriveConfig(data.driveConfig)
+                    if (data.geminiApiKey) setGeminiApiKey(data.geminiApiKey)
+                    if (data.openaiApiKey) setOpenaiApiKey(data.openaiApiKey)
                     setLoadingSettings(false)
                 })
                 .catch(err => { console.error(err); setLoadingSettings(false) })
@@ -629,6 +632,49 @@ export default function AdminView() {
                             </div>
                             <p className="text-[10px] text-[var(--text-muted)] mt-2">
                                 Puedes obtener una clave gratuita en <a href="https://aistudio.google.com/" target="_blank" className="underline hover:text-[var(--accent)]">Google AI Studio</a>.
+                            </p>
+                        </div>
+
+                        {/* OPENAI CONFIG WIZARD */}
+                        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 mt-5">
+                            <h3 className="text-lg font-bold text-[var(--text-main)] mb-1 flex items-center gap-2">🧠 Inteligencia Artificial (OpenAI)</h3>
+                            <p className="text-xs text-[var(--text-muted)] mb-4">Configura la API Key de OpenAI para habilitar el compilador avanzado (GPT-4o).</p>
+
+                            <div className="flex gap-2 items-end">
+                                <div className="flex-1">
+                                    <label className="text-xs text-[var(--text-muted)] block mb-1 font-bold">OpenAI API Key</label>
+                                    <input
+                                        type="password"
+                                        placeholder={openaiApiKey && openaiApiKey.includes('*') ? '******** (Configurado)' : 'sk-...'}
+                                        onChange={e => setOpenaiApiKey(e.target.value)}
+                                        className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        if (!openaiApiKey) return alert('Ingresa una API Key válida')
+                                        try {
+                                            const res = await fetch('/api/settings', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ openaiApiKey })
+                                            })
+                                            if (res.ok) {
+                                                alert('✅ API Key de OpenAI guardada.')
+                                                setOpenaiApiKey('') // Clear input for security
+                                                setRefreshSettings(p => p + 1)
+                                            } else {
+                                                alert('❌ Error al guardar.')
+                                            }
+                                        } catch (e) { alert('Error de red') }
+                                    }}
+                                    className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-bold h-[38px] shadow-lg shadow-green-900/20"
+                                >
+                                    Guardar Key
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-[var(--text-muted)] mt-2">
+                                Se requiere créditos o una cuenta activada en <a href="https://platform.openai.com/" target="_blank" className="underline hover:text-[var(--accent)]">OpenAI Platform</a>.
                             </p>
                         </div>
 
