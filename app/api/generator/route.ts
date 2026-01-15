@@ -25,34 +25,33 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. Prepare Context
-        const assetsContext = items.map((item, index) => `
-        [ASSET ${index + 1}]
-        ID: ${item.id}
-        TÍTULO: ${item.title}
-        PILAR: ${item.primaryPillar} (${(item.secondaryPillars as string[])?.join(', ')})
-        TIPO: ${item.type} | COMPETENCIA: ${item.competence}
-        RESUMEN ESTRATÉGICO: ${item.observations || 'Sin descripción detallada.'}
-        `).join('\n')
+        return NextResponse.json({ result: "⚠️ No hay activos validados seleccionados para generar contexto." })
+    }
 
-        // 3. Define Prompt based on Type
-        let prompt = ''
+        // 3. Prepare Context
+        const assetsContext = items.map(i =>
+        `[ID: ${i.id}] TÍTULO: "${i.title}" (Pilar: ${i.primaryPillar})\nRESUMEN: ${JSON.stringify(i.observations)}`
+    ).join('\n\n')
 
-        // Auth: Use System Settings first, then env var
-        const { SystemSettingsService } = await import('@/lib/settings')
-        let apiKey = await SystemSettingsService.getGeminiApiKey()
-        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || ''
+    // 3. Define Prompt based on Type
+    let prompt = ''
 
-        if (!apiKey) {
-            return NextResponse.json({ error: 'Gemini API Key not configured in Settings or Environment' }, { status: 500 })
-        }
+    // Auth: Use System Settings first, then env var
+    const { SystemSettingsService } = await import('@/lib/settings')
+    let apiKey = await SystemSettingsService.getGeminiApiKey()
+    if (!apiKey) apiKey = process.env.GEMINI_API_KEY || ''
 
-        const genAI = new GoogleGenerativeAI(apiKey)
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }) // Upgrading to 2.0 Flash (confirmed available)
+    if (!apiKey) {
+        return NextResponse.json({ error: 'Gemini API Key not configured in Settings or Environment' }, { status: 500 })
+    }
 
-        if (message) {
-            prompt = `
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }) // Upgrading to 2.0 Flash (confirmed available)
+
+    if (message) {
+        prompt = `
              Actúa como un ASISTENTE DE INVESTIGACIÓN INTELIGENTE (estilo NotebookLM).
-             Tienes acceso total al inventario de activos de la organización (Contexto abajo).
+             Tienes acceso al siguiente inventario de activos seleccionados (${items.length} fuentes).
              
              TU TAREA:
              Responde a la solicitud del usuario basándote EXCLUSIVAMENTE en los activos validados proporcionados.
@@ -61,87 +60,141 @@ export async function POST(request: NextRequest) {
              "${message}"
              
              PAUTAS ESTRICTAS:
-             1. **GROUNDING (Rigor):** No inventes información. Si no está en los activos, dilo.
-             2. **CITAS:** Cada afirmación clave debe tener una cita entre corchetes, ej: "El liderazgo comienza dentro [Fuente: Shine Within MasterClass]".
-             3. **ESTILO:** Profesional pero conversacional, directo y sintético.
-             4. **FORMATO:** Markdown limpio. Negritas para conceptos clave.
-             5. **PREGUNTAS SUGERIDAS:** Al final, obligatoriamente sugiere 3 preguntas de profundización que el usuario podría hacer a continuación.
+             1. **GROUNDING:** No inventes. Si no está en los activos, dilo.
+             2. **CITAS:** Cita las fuentes entre corchetes, ej: "[Fuente: Shine In Masterclass]".
+             3. **PREGUNTAS SUGERIDAS:** Al final, sugiere 3 preguntas de profundización.
 
              CONTEXTO DE ACTIVOS (Source of Truth):
              ${assetsContext}
              `
-        } else if (type === 'dossier') {
-            prompt = `
-            Actúa como un CONSULTOR ESTRATÉGICO SENIOR. Genera un **DOSSIER EJECUTIVO** para B2B.
-
-            INSTRUCCIONES:
-            1. **Intro Ejecutiva**: Sintetiza el valor de la metodología.
-            2. **Desglose por Pilar**: Resumen narrativo de Shine In, Out, Up, Beyond, CITANDO los activos.
-            3. **Impacto**: Conductas observables esperadas.
-            4. **Cierre**: Llamado a la acción.
+    } else if (type === 'dossier') {
+        prompt = `
+            Actúa como CONSULTOR ESTRATÉGICO. Genera un **DOSSIER EJECUTIVO**.
+            
+            ESTRUCTURA:
+            1. **Intro Ejecutiva**: Valor de la metodología (basado en lo seleccionado).
+            2. **Análisis de Activos**: Resumen narrativo citando las fuentes.
+            3. **Impacto**: Conductas esperadas.
+            4. **Cierre**: Next Steps.
             
             CONTEXTO:
             ${assetsContext}
             `
-        } else if (type === 'matrix') {
-            prompt = `
-            Actúa como ANALISTA DE DATOS. Genera una **MATRIZ DE TRAZABILIDAD** en JSON.
-            
-            JSON ESTRUCTURA: Array de objetos { "id", "titulo", "pilar", "nivel_impacto", "ruta_aprendizaje" }.
-            SIN MARKDOWN TEXTUAL, SOLO JSON.
+    } else if (type === 'matrix') {
+        prompt = `
+            Actúa como ANALISTA DE DATOS. Genera una **MATRIZ DE TRAZABILIDAD** en Markdown Table.
+            Columnas: ID | Título | Pilar | Nivel | Concepto Clave
             
             CONTEXTO:
             ${assetsContext}
             `
-        } else if (type === 'toolkit') {
-            prompt = `
-            Actúa como ARQUITECTO DE INFORMACIÓN. Diseña la **ESTRUCTURA DE CARPETAS (Toolkit)**.
-            Agrupa lógicamente. Formato árbol (tree). Añade notas breves. Sugiere 3 Gaps.
-            
-            CONTEXTO:
-            ${assetsContext}
-            `
-        } else if (type === 'podcast') {
-            prompt = `
-            Actúa como un GUIONISTA DE PODCAST DE ALTO NIVEL (Estilo "Deep Dive" de NotebookLM).
-            Genera un GUION DE AUDIO para dos anfitriones (Host y Experto) que discuten esta metodología.
-
-            PERSONAJES:
-            - **HOST (Curioso, entusiasta):** Hace las preguntas que todos tienen, usa analogías simples, se sorprende.
-            - **EXPERTO (Analítico, profundo):** Conecta los puntos, explica el "porqué", cita los conceptos de los activos.
-
-            INSTRUCCIONES:
-            1. Crea un diálogo fluido, dinámico y entretenido de unos 5-8 minutos de lectura.
-            2. **NO** sea robótico. Usa interjecciones ("¡Wow!", "¿En serio?", "Exacto").
-            3. Discuten los pilares principales (Shine In/Out/Up/Beyond) basándose REALMENTE en los activos provistos.
-            4. Terminan con una reflexión poderosa sobre el "Legado".
+    } else if (type === 'toolkit') {
+        prompt = `Actúa como ARQUITECTO. Diseña una **ESTRUCTURA DE TOOLKIT** en formato árbol.`
+    } else if (type === 'podcast') {
+        prompt = `
+            Actúa como GUIONISTA DE PODCAST "Deep Dive".
+            Genera un GUION DE AUDIO (Host vs Experto) de 5 min discutiendo los activos seleccionados.
+            Usa un tono, casual, sorprendente y analítico.
             
             FORMATO:
             **HOST:** ...
             **EXPERTO:** ...
 
-            CONTEXTO DE ACTIVOS:
+            CONTEXTO:
             ${assetsContext}
             `
-        }
+    } else if (type === 'video') {
+        prompt = `
+            Actúa como DIRECTOR CREATIVO. Genera un **GUION VISUAL PARA VIDEO (StoryBoard Script)**.
+            
+            FORMATO TABLA:
+            | TIEMPO | VISUAL (Escena) | AUDIO (Voz en off) |
+            |--------|-----------------|--------------------|
+            | 0:00   | ...             | ...                |
 
-        // 4. Generate Content
-        const result = await model.generateContent(prompt)
-        const response = await result.response
-        let output = response.text()
+            OBJETIVO: Video resumen de alto impacto sobre los activos seleccionados.
+            CONTEXTO:
+            ${assetsContext}
+            `
+    } else if (type === 'mindmap') {
+        prompt = `
+            Actúa como EXPERTO EN VISUALIZACIÓN. Genera un **MAPA MENTAL** usando sintaxis MERMAID (graph TD).
+            El nodo central es "Metodología 4Shine".
+            
+            REGLA: Devuelve SOLO el bloque de código Mermaid.
+            
+            CONTEXTO:
+            ${assetsContext}
+            `
+    } else if (type === 'flashcards') {
+        prompt = `
+            Actúa como PEDAGOGO. Genera 5 **TARJETAS DE ESTUDIO (Flashcards)** clave.
+            
+            FORMATO:
+            ---
+            **PREGUNTA:** ...
+            **RESPUESTA:** ...
+            **FUENTE:** [ID]
+            ---
 
-        // Clean JSON output if needed
-        if (type === 'matrix') {
-            output = output.replace(/```json/g, '').replace(/```/g, '').trim()
-        }
-
-        return NextResponse.json({
-            result: output,
-            count: items.length
-        })
-
-    } catch (error) {
-        console.error('Generator API Error:', error)
-        return NextResponse.json({ error: String(error) }, { status: 500 })
+            CONTEXTO:
+            ${assetsContext}
+            `
+    } else if (type === 'quiz') {
+        prompt = `
+            Actúa como EVALUADOR. Genera un **QUIZ DE 5 PREGUNTAS** opción múltiple.
+            
+            FORMATO:
+            1. [Pregunta]
+               a) ... b) ... c) ...
+               *Respuesta Correcta: X (Explicación breve)*
+            
+            CONTEXTO:
+            ${assetsContext}
+            `
+    } else if (type === 'infographic') {
+        prompt = `
+            Actúa como DISEÑADOR GRÁFICO.
+            Describe la **ESTRUCTURA VISUAL PARA UNA INFOGRAFÍA** paso a paso.
+            Sección 1: Título e Intro.
+            Sección 2: Visualización de Datos.
+            Sección 3: Conclusiones.
+            
+            CONTEXTO:
+            ${assetsContext}
+            `
+    } else if (type === 'presentation') {
+        prompt = `
+            Actúa como EXPERTO EN COMUNICACIÓN.
+            Genera la estructura para una **PRESENTACIÓN (Slide Deck)** de 7 diapositivas.
+            
+            FORMATO POR SLIDE:
+            **SLIDE X: [Título]**
+            - Bullet points del contenido.
+            - Sugerencia visual (Imagen/Gráfico).
+            
+            CONTEXTO:
+            ${assetsContext}
+            `
     }
+
+    // 4. Generate Content
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    let output = response.text()
+
+    // Clean JSON output if needed
+    if (type === 'matrix') {
+        output = output.replace(/```json/g, '').replace(/```/g, '').trim()
+    }
+
+    return NextResponse.json({
+        result: output,
+        count: items.length
+    })
+
+} catch (error) {
+    console.error('Generator API Error:', error)
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+}
 }

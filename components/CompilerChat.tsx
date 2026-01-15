@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database } from 'lucide-react'
+import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check } from 'lucide-react'
 
 type Message = {
     role: 'user' | 'assistant'
@@ -9,11 +9,28 @@ type Message = {
     timestamp: Date
 }
 
-export default function CompilerChat() {
+export default function CompilerChat({ assets = [] }: { assets?: any[] }) {
+    // 1. Initial State: Select ALL validated assets by default
+    const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set())
+
+    useEffect(() => {
+        if (assets.length > 0) {
+            const validated = assets.filter(a => a.status === 'Validado').map(a => a.id)
+            setSelectedAssetIds(new Set(validated))
+        }
+    }, [assets])
+
+    const toggleAsset = (id: string) => {
+        const next = new Set(selectedAssetIds)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        setSelectedAssetIds(next)
+    }
+
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'assistant',
-            content: 'Hola. Soy el Motor de Compilación 4Shine. Tengo acceso a todos los activos validados del inventario. ¿Qué entregable o análisis necesitas generar hoy?',
+            content: 'Hola. Soy el Motor de Compilación 4Shine. Selecciona tus fuentes y elige un producto para generar.',
             timestamp: new Date()
         }
     ])
@@ -29,21 +46,29 @@ export default function CompilerChat() {
         scrollToBottom()
     }, [messages])
 
-    const handleSend = async () => {
-        if (!input.trim() || loading) return
+    const handleSend = async (overrideInput?: string, overrideType?: string) => {
+        const textToSend = overrideInput || input
+        if (!textToSend.trim() || loading) return
 
-        const userMsg: Message = { role: 'user', content: input, timestamp: new Date() }
+        const userMsg: Message = { role: 'user', content: textToSend, timestamp: new Date() }
         setMessages(prev => [...prev, userMsg])
-        setInput('')
+        if (!overrideInput) setInput('')
         setLoading(true)
 
-        // Detect Intent for Quick Actions
-        let type = undefined
-        const cleanInput = userMsg.content.toLowerCase()
-        if (cleanInput.includes('dossier')) type = 'dossier'
-        else if (cleanInput.includes('Overview') || cleanInput.includes('podcast')) type = 'podcast'
-        else if (cleanInput.includes('matriz') || cleanInput.includes('trazabilidad')) type = 'matrix'
-        else if (cleanInput.includes('toolkit') || cleanInput.includes('estructura')) type = 'toolkit'
+        // Detect Intent
+        let type = overrideType
+        if (!type) {
+            const clean = textToSend.toLowerCase()
+            if (clean.includes('dossier')) type = 'dossier'
+            else if (clean.includes('overview') || clean.includes('podcast')) type = 'podcast'
+            else if (clean.includes('video')) type = 'video'
+            else if (clean.includes('mapa') || clean.includes('mind')) type = 'mindmap'
+            else if (clean.includes('flashcard')) type = 'flashcards'
+            else if (clean.includes('quiz') || clean.includes('examen')) type = 'quiz'
+            else if (clean.includes('infograf')) type = 'infographic'
+            else if (clean.includes('presenta')) type = 'presentation'
+            else if (clean.includes('matriz') || clean.includes('tabla')) type = 'matrix'
+        }
 
         try {
             const res = await fetch('/api/generator', {
@@ -51,7 +76,8 @@ export default function CompilerChat() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: userMsg.content,
-                    type: type
+                    type: type,
+                    selectedAssetIds: Array.from(selectedAssetIds)
                 })
             })
 
@@ -83,182 +109,172 @@ export default function CompilerChat() {
         }
     }
 
-    // Quick Actions
-    const quickActions = [
-        "Generar Dossier Ejecutivo",
-        "Generar Podcast (Audio Overview)",
-        "Crear Matriz de Trazabilidad JSON",
-        "Analizar Gaps Metodológicos"
+    const studioOptions = [
+        { label: 'Resumen de Audio', icon: <Headphones size={20} />, type: 'podcast', desc: 'Conversación tipo podcast' },
+        { label: 'Video Briefing', icon: <Video className="text-green-500" size={20} />, type: 'video', desc: 'Guion visual para video' },
+        { label: 'Mapa Mental', icon: <Network className="text-purple-500" size={20} />, type: 'mindmap', desc: 'Estructura jerárquica' },
+        { label: 'Dossier Ejecutivo', icon: <FileText className="text-orange-500" size={20} />, type: 'dossier', desc: 'Informe estratégico' },
+        { label: 'Tarjetas (Flashcards)', icon: <Layers className="text-red-400" size={20} />, type: 'flashcards', desc: 'Ayudas de estudio' },
+        { label: 'Cuestionario (Quiz)', icon: <HelpCircle className="text-blue-400" size={20} />, type: 'quiz', desc: 'Evaluación de conocimientos' },
+        { label: 'Infografía', icon: <Image className="text-pink-500" size={20} />, type: 'infographic', desc: 'Plan visual estructurado' },
+        { label: 'Presentación', icon: <Monitor className="text-yellow-500" size={20} />, type: 'presentation', desc: 'Estructura de diapositivas' },
+        { label: 'Tabla de Datos', icon: <Table className="text-blue-600" size={20} />, type: 'matrix', desc: 'Matriz de trazabilidad' },
     ]
-
-    // --- NotebookLM UI Components ---
 
     return (
         <div className="flex h-[calc(100vh-140px)] bg-[#F8F9FA] dark:bg-[#1E1F20] text-gray-900 dark:text-gray-100 font-sans transition-colors rounded-3xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-2xl relative">
 
-            {/* LEFT PANEL: SOURCES (NotebookLM Style) */}
+            {/* LEFT PANEL: SOURCE SELECTION */}
             <div className="w-[300px] border-r border-gray-200 dark:border-gray-800 flex flex-col bg-white dark:bg-[#131314] hidden md:flex">
-                <div className="p-5 border-b border-gray-100 dark:border-gray-800">
-                    <h3 className="text-sm font-semibold tracking-tight text-gray-500 uppercase flex items-center gap-2">
-                        <Database size={14} />
-                        Fuentes ({new Set(messages.flatMap(m => m.content.match(/\[Fuente:.*?\]/g) || [])).size} citadas)
+                <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                        <Database size={12} />
+                        Fuentes ({selectedAssetIds.size})
                     </h3>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#1E1F20] hover:shadow-md transition-all cursor-pointer group relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
-                        <div className="flex items-start gap-3">
-                            <div className="mt-1 text-blue-500"><Terminal size={18} /></div>
-                            <div>
-                                <div className="text-xs font-bold text-gray-700 dark:text-gray-300">Inventario Validado</div>
-                                <div className="text-[10px] text-gray-500 mt-1">Fuente de Verdad (4Shine)</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Placeholder for dynamic source list if we had it passed down */}
-                    <div className="text-xs text-center text-gray-400 mt-8 italic px-4">
-                        El Asistente utiliza automáticamente todos los activos marcados como "Validado" en el inventario.
-                    </div>
-                </div>
-
-                {/* Audio Overview Teaser */}
-                <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center">
-                            <Headphones size={14} fill="currentColor" />
-                        </div>
-                        <div className="text-xs font-bold">Audio Overview</div>
-                    </div>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-3 leading-tight">Genera una conversación profunda tipo podcast sobre tu inventario.</p>
                     <button
-                        onClick={() => setInput("Generar Podcast (Audio Overview)")}
-                        className="w-full py-1.5 bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] font-bold shadow-sm hover:scale-[1.02] transition-transform"
+                        onClick={() => {
+                            if (selectedAssetIds.size === assets.filter(a => a.status === 'Validado').length) setSelectedAssetIds(new Set())
+                            else setSelectedAssetIds(new Set(assets.filter(a => a.status === 'Validado').map(a => a.id)))
+                        }}
+                        className="text-[10px] text-blue-500 font-bold hover:underline"
                     >
-                        Generar Guion
+                        {selectedAssetIds.size === assets.filter(a => a.status === 'Validado').length ? 'Ninguna' : 'Todas'}
                     </button>
                 </div>
-            </div>
-
-            {/* MAIN CHAT AREA */}
-            <div className="flex-1 flex flex-col relative bg-white dark:bg-[#131314]">
-
-                {/* Header */}
-                <header className="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-white/80 dark:bg-[#131314]/80 backdrop-blur-md sticky top-0 z-10">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xl">✨</span>
-                        <h1 className="font-medium text-lg tracking-tight">Notebook 4Shine</h1>
-                        <span className="bg-gray-100 dark:bg-gray-800 text-[10px] px-2 py-0.5 rounded-full font-bold text-gray-500 ml-2">EXPERIMENTAL</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="text-xs text-gray-400">Gemini 2.0 Flash</div>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500" />
-                    </div>
-                </header>
-
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-[10%] py-8 space-y-8 scroll-smooth">
-                    {messages.map((msg, idx) => (
-                        <div key={idx} className={`animate-in fade-in slide-in-from-bottom-2 duration-500 ${msg.role === 'user' ? 'opacity-100' : ''}`}>
-
-                            {/* Role Label */}
-                            <div className="flex items-center gap-3 mb-2">
-                                {msg.role === 'assistant' ? (
-                                    <div className="flex items-center gap-2">
-                                        <Sparkles size={16} className="text-blue-500" />
-                                        <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">Respuesta</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                            <User size={12} />
-                                        </div>
-                                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tú</span>
-                                    </div>
-                                )}
+                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                    {assets.filter(a => a.status === 'Validado').map(asset => (
+                        <div
+                            key={asset.id}
+                            onClick={() => toggleAsset(asset.id)}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedAssetIds.has(asset.id)
+                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                                : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                                }`}
+                        >
+                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAssetIds.has(asset.id) ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                                }`}>
+                                {selectedAssetIds.has(asset.id) && <Check size={10} className="text-white" />}
                             </div>
-
-                            {/* Content Bubble (NotebookLM Style: No Bubble, Just Text) */}
-                            <div className={`text-[15px] leading-7 text-gray-800 dark:text-gray-200 font-medium max-w-3xl ${msg.role === 'user' ? 'text-xl font-normal text-gray-500 dark:text-gray-400 ml-8' : 'ml-8'}`}>
-                                {msg.content.includes('**HOST:**') ? (
-                                    <div className="bg-gray-50 dark:bg-[#1E1F20] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-4 shadow-sm relative overflow-hidden">
-                                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-50" />
-                                        <div className="flex justify-between items-center mb-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="p-2 bg-white dark:bg-black rounded-full shadow-sm"><Headphones size={16} /></div>
-                                                <span className="font-bold text-sm">Audio Overview Script</span>
-                                            </div>
-                                            <div className="text-[10px] font-mono opacity-50">GENERADO POR AI</div>
-                                        </div>
-                                        <div className="font-mono text-xs leading-relaxed whitespace-pre-wrap opacity-80 pl-4 border-l-2 border-gray-300 dark:border-gray-600">
-                                            {msg.content}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    msg.content.split('\n').map((line, i) => (
-                                        <p key={i} className="mb-4">{line}</p>
-                                    ))
-                                )}
+                            <div className="flex-1">
+                                <div className={`text-xs font-semibold leading-tight ${selectedAssetIds.has(asset.id) ? 'text-blue-700 dark:text-blue-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                                    {asset.title}
+                                </div>
+                                <div className="text-[9px] text-gray-400 mt-1">{asset.id} • {asset.primaryPillar || 'General'}</div>
                             </div>
                         </div>
                     ))}
-
-                    {loading && (
-                        <div className="ml-8 flex items-center gap-3 animate-pulse opacity-50">
-                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" />
-                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce delay-100" />
-                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce delay-200" />
-                            <span className="text-xs font-semibold text-blue-500 uppercase tracking-widest">Analizando...</span>
+                    {assets.filter(a => a.status === 'Validado').length === 0 && (
+                        <div className="text-center p-8 text-xs text-gray-400 italic">
+                            No hay activos validados disponibles.
                         </div>
                     )}
-                    <div ref={messagesEndRef} className="h-20" />
                 </div>
+            </div>
 
-                {/* Input Area (Floating) */}
-                <div className="absolute bottom-6 left-0 right-0 px-[10%] pointer-events-none">
-                    <div className="pointer-events-auto max-w-3xl mx-auto bg-white dark:bg-[#1E1F20] rounded-[2rem] shadow-2xl border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-2 transition-all focus-within:ring-2 focus-within:ring-blue-500/20">
+            {/* MAIN AREA */}
+            <div className="flex-1 flex flex-col relative bg-white dark:bg-[#131314]">
 
-                        {/* Selected Files / Context Indicators would go here */}
+                {/* Header */}
+                <header className="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-white/80 dark:bg-[#131314]/80 backdrop-blur-md sticky top-0 z-10">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xl">✨</span>
+                        <h1 className="font-medium text-sm tracking-tight text-gray-600 dark:text-gray-300">Notebook 4Shine Studio</h1>
+                    </div>
+                </header>
 
-                        <div className="relative flex items-end gap-2 p-2">
-                            <textarea
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Haz una pregunta sobre tus fuentes..."
-                                className="w-full bg-transparent border-none text-base p-3 focus:ring-0 resize-none max-h-32 min-h-[56px] placeholder:text-gray-400"
-                                rows={1}
-                                disabled={loading}
-                            />
-                            <button
-                                onClick={handleSend}
-                                disabled={!input.trim() || loading}
-                                className="p-3 bg-gray-900 dark:bg-white text-white dark:text-black rounded-full hover:scale-105 active:scale-95 disabled:opacity-50 transition-all shadow-lg"
-                            >
-                                {loading ? <StopCircle size={20} /> : <Send size={20} />}
-                            </button>
-                        </div>
+                <div className="flex-1 overflow-y-auto px-[5%] py-8 scroll-smooth">
 
-                        {/* Quick Chips Inside Input */}
-                        {messages.length === 1 && (
-                            <div className="flex gap-2 overflow-x-auto px-4 pb-3 no-scrollbar">
-                                {quickActions.map(action => (
+                    {/* STUDIO GRID (Only show if no messages or just welcome message) */}
+                    {messages.length <= 1 && (
+                        <div className="max-w-4xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <h2 className="text-2xl font-normal text-gray-800 dark:text-white mb-6">Crear nuevo</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {studioOptions.map((opt) => (
                                     <button
-                                        key={action}
-                                        onClick={() => setInput(action)}
-                                        className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+                                        key={opt.label}
+                                        onClick={() => handleSend(`Generar ${opt.label}`, opt.type)}
+                                        className="flex flex-col gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-[#1E1F20] border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-left group"
                                     >
-                                        {action}
+                                        <div className="w-10 h-10 rounded-full bg-white dark:bg-black border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm group-hover:bg-blue-50 dark:group-hover:bg-blue-900/10 transition-colors">
+                                            {opt.icon}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-sm text-gray-700 dark:text-gray-200">{opt.label}</div>
+                                            <div className="text-[11px] text-gray-400 mt-0.5">{opt.desc}</div>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {/* MESSAGES */}
+                    <div className="space-y-8 max-w-3xl mx-auto">
+                        {messages.slice(1).map((msg, idx) => (
+                            <div key={idx} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                {/* Role Label */}
+                                <div className="flex items-center gap-3 mb-2">
+                                    {msg.role === 'assistant' ? (
+                                        <div className="flex items-center gap-2">
+                                            <Sparkles size={14} className="text-blue-500" />
+                                            <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">AI Studio</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                <User size={12} />
+                                            </div>
+                                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Solicitud</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Content */}
+                                <div className={`text-[15px] leading-relaxed text-gray-800 dark:text-gray-200 ${msg.role === 'user' ? 'font-medium text-lg ml-8' : 'ml-8'}`}>
+                                    {msg.content.includes('**HOST:**') || msg.content.includes('graph TD') || msg.content.includes('|') ? (
+                                        <div className="bg-gray-50 dark:bg-[#1E1F20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-x-auto shadow-sm">
+                                            <pre className="whitespace-pre-wrap font-mono text-xs">{msg.content}</pre>
+                                        </div>
+                                    ) : (
+                                        msg.content.split('\n').map((line, i) => <p key={i} className="mb-2">{line}</p>)
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        {loading && (
+                            <div className="ml-8 flex items-center gap-3 animate-pulse opacity-50">
+                                <Loader2 size={16} className="animate-spin text-blue-500" />
+                                <span className="text-xs font-semibold text-blue-500 uppercase tracking-widest">Generando...</span>
+                            </div>
                         )}
-                    </div>
-                    <div className="text-center mt-3 text-[10px] text-gray-400 font-medium">
-                        Notebook 4Shine puede mostrar info inexacta, por favor verifica sus fuentes.
+                        <div ref={messagesEndRef} className="h-20" />
                     </div>
                 </div>
 
+                {/* Input Area */}
+                <div className="p-4 px-[15%] pointer-events-none sticky bottom-0">
+                    <div className="pointer-events-auto relative shadow-2xl rounded-3xl bg-white dark:bg-[#1E1F20] border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                        <textarea
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Haz una pregunta o describe lo que quieres generar..."
+                            className="w-full bg-transparent border-none text-base p-4 pr-12 focus:ring-0 resize-none max-h-32 min-h-[56px] placeholder:text-gray-400 rounded-3xl"
+                            rows={1}
+                            disabled={loading}
+                        />
+                        <button
+                            onClick={() => handleSend()}
+                            disabled={!input.trim() || loading}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black dark:bg-white text-white dark:text-black rounded-full hover:scale-105 active:scale-95 disabled:opacity-50 transition-all"
+                        >
+                            {loading ? <StopCircle size={18} /> : <Send size={18} />}
+                        </button>
+                    </div>
+                    <div className="text-center mt-2 text-[10px] text-gray-400 font-medium pb-2">
+                        Notebook 4Shine Studio • Model gemini-2.0-flash
+                    </div>
+                </div>
             </div>
         </div>
     )

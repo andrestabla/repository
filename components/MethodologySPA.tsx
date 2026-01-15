@@ -236,7 +236,7 @@ export default function MethodologySPA({
                         />
                     )}
                     {currentView === 'gap-analysis' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy || []} />}
-                    {currentView === 'generator' && <CompilerChat />}
+                    {currentView === 'generator' && <CompilerChat assets={inventoryData} />}
                     {currentView === 'qa' && (user?.role === 'admin' || user?.role === 'auditor') && <QAView role={user.role} onRefresh={refreshData} />}
                     {currentView === 'admin' && <AdminView />}
                 </div>
