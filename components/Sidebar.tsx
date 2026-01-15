@@ -133,9 +133,9 @@ export function Sidebar({ session, collapsed, setCollapsed }: SidebarProps) {
                 )}
 
                 <NavHeader label="OPERACIÓN" collapsed={collapsed} />
-                <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={pathname.includes('/analitica')} href="/analitica" collapsed={collapsed} />
+                <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={pathname.startsWith('/analitica')} href="/analitica" collapsed={collapsed} />
                 <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={pathname === '/inventario' || pathname === '/'} href="/inventario" collapsed={collapsed} />
-                <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={pathname.includes('/research')} href="/research" collapsed={collapsed} />
+                <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={pathname.startsWith('/research')} href="/research" collapsed={collapsed} />
                 {/* Note: Research is now tab inside AnalyticsView, or check routing. 
                     Wait, previous code had `href="/research"` but I made AnalyticsView main for research. 
                     I'll point to "/analitica" for now or keep "/research" if that route exists? 

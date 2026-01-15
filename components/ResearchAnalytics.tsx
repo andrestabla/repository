@@ -28,7 +28,7 @@ export default function ResearchAnalytics() {
             const p1 = fetch('/api/admin/reanalyze-research', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ force: false })
+                body: JSON.stringify({ force: forceRefetch })
             })
 
             // Wait for re-analysis? It might be slow.

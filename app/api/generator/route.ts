@@ -21,38 +21,55 @@ type CompilationType =
 
 export async function POST(request: NextRequest) {
     try {
-        const { type, version, message, selectedAssetIds } = await request.json() as {
+        const { type, message, selectedAssetIds, selectedResearchIds } = await request.json() as {
             type: CompilationType,
-            version?: string,
             message?: string,
-            selectedAssetIds?: string[]
+            selectedAssetIds?: string[],
+            selectedResearchIds?: string[]
         }
 
-        // 1. Fetch ALL Validated Assets first
-        let items = await prisma.contentItem.findMany({
+        // 1. Fetch Assets (Inventory)
+        let assets = await prisma.contentItem.findMany({
             where: { status: 'Validado' },
-            select: { id: true, title: true, primaryPillar: true, sub: true, observations: true }
+            select: { id: true, title: true, primaryPillar: true, observations: true }
         })
 
-        // 2. Filter by User Selection (if provided)
-        // If selectedAssetIds is provided and not empty, filter items.
-        // If it's empty but provided, it means user deselected everything -> Error.
-        // If undefined, we might default to ALL (legacy behavior), but the UI sends the selection.
-        if (selectedAssetIds) {
-            if (selectedAssetIds.length === 0) {
-                return NextResponse.json({ result: "⚠️ No hay activos validados seleccionados. Por favor selecciona al menos una fuente." })
-            }
-            items = items.filter(i => selectedAssetIds.includes(i.id))
+        if (selectedAssetIds && selectedAssetIds.length > 0) {
+            assets = assets.filter(i => selectedAssetIds.includes(i.id))
+        } else {
+            assets = [] // If explicit selection is sent as empty, default to empty.
         }
 
-        if (items.length === 0) {
-            return NextResponse.json({ result: "⚠️ No hay activos validados disponibles para ver." })
+        // 2. Fetch Research (External)
+        let research: any[] = []
+        if (selectedResearchIds && selectedResearchIds.length > 0) {
+            research = await prisma.researchSource.findMany({
+                where: { id: { in: selectedResearchIds } },
+                select: { id: true, title: true, findings: true, summary: true, url: true }
+            })
         }
 
-        // 3. Prepare Context
-        const assetsContext = items.map(i =>
-            `[ID: ${i.id}] TÍTULO: "${i.title}" (Pilar: ${i.primaryPillar})\nRESUMEN: ${JSON.stringify(i.observations)}`
+        // 3. Validation: Must have at least one source (Asset OR Research)
+        if (assets.length === 0 && research.length === 0) {
+            return NextResponse.json({ result: "⚠️ No hay activos validos ni investigaciones seleccionadas. Por favor selecciona al menos una fuente." })
+        }
+
+        // 4. Prepare Context
+        const inventoryContext = assets.map(i =>
+            `[ASSET: ${i.id}] TÍTULO: "${i.title}" (Pilar: ${i.primaryPillar})\nRESUMEN: ${JSON.stringify(i.observations)}`
         ).join('\n\n')
+
+        const researchContext = research.map(r =>
+            `[RESEARCH: ${r.id}] TÍTULO: "${r.title}" (URL: ${r.url})\nHALLAZGOS: ${r.findings || r.summary || 'Sin resumen'}`
+        ).join('\n\n')
+
+        const combinedContext = `
+        === INVENTARIO INTERNO (4SHINE) ===
+        ${inventoryContext || 'Ninguno seleccionado.'}
+
+        === INVESTIGACIÓN EXTERNA ===
+        ${researchContext || 'Ninguna seleccionada.'}
+        `
 
         // 4. API Key Strategy
         const { SystemSettingsService } = await import('@/lib/settings')
@@ -72,85 +89,85 @@ export async function POST(request: NextRequest) {
         if (message) {
             prompt = `
              Actúa como un ASISTENTE DE INVESTIGACIÓN INTELIGENTE (estilo NotebookLM).
-             Tienes acceso al siguiente inventario de activos seleccionados (${items.length} fuentes).
+             Tienes acceso al siguiente inventario de activos seleccionados (${assets.length + research.length} fuentes).
              
              TU TAREA:
              Responde a la solicitud del usuario basándote EXCLUSIVAMENTE en los activos validados proporcionados.
              
              SOLICITUD DEL USUARIO:
-             "${message}"
+        "${message}"
              
              PAUTAS ESTRICTAS:
-             1. **GROUNDING:** No inventes. Si no está en los activos, dilo.
-             2. **CITAS:** Cita las fuentes entre corchetes, ej: "[Fuente: Shine In Masterclass]".
-             3. **PREGUNTAS SUGERIDAS:** Al final, sugiere 3 preguntas de profundización.
+        1. ** GROUNDING:** No inventes.Si no está en los activos, dilo.
+             2. ** CITAS:** Cita las fuentes entre corchetes, ej: "[Fuente: Shine In Masterclass]".
+             3. ** PREGUNTAS SUGERIDAS:** Al final, sugiere 3 preguntas de profundización.
 
-             CONTEXTO DE ACTIVOS (Source of Truth):
-             ${assetsContext}
-             `
+             CONTEXTO DE FUENTES(Source of Truth):
+             ${combinedContext}
+        `
         } else if (type === 'dossier') {
             prompt = `
-            Actúa como CONSULTOR ESTRATÉGICO. Genera un **DOSSIER EJECUTIVO**.
-            
+            Actúa como CONSULTOR ESTRATÉGICO.Genera un ** DOSSIER EJECUTIVO **.
+
             ESTRUCTURA:
-            1. **Intro Ejecutiva**: Valor de la metodología (basado en lo seleccionado).
-            2. **Análisis de Activos**: Resumen narrativo citando las fuentes.
-            3. **Impacto**: Conductas esperadas.
-            4. **Cierre**: Next Steps.
-            
+        1. ** Intro Ejecutiva **: Valor de la metodología(basado en lo seleccionado).
+            2. ** Análisis de Activos **: Resumen narrativo citando las fuentes.
+            3. ** Impacto **: Conductas esperadas.
+            4. ** Cierre **: Next Steps.
+
             CONTEXTO:
-            ${assetsContext}
-            `
+            ${combinedContext}
+        `
         } else if (type === 'matrix') {
             prompt = `
-            Actúa como ANALISTA DE DATOS. Genera una **MATRIZ DE TRAZABILIDAD** en Markdown Table.
-            Columnas: ID | Título | Pilar | Nivel | Concepto Clave
-            
-            CONTEXTO:
-            ${assetsContext}
-            `
+            Actúa como ANALISTA DE DATOS.Genera una ** MATRIZ DE TRAZABILIDAD ** en Markdown Table.
+            Columnas: ID | Título | Tipo(Asset / Research) | Concepto Clave
+
+        CONTEXTO:
+            ${combinedContext}
+        `
         } else if (type === 'toolkit') {
-            prompt = `Actúa como ARQUITECTO. Diseña una **ESTRUCTURA DE TOOLKIT** en formato árbol.`
+            prompt = `Actúa como ARQUITECTO.Diseña una ** ESTRUCTURA DE TOOLKIT ** en formato árbol.`
         } else if (type === 'podcast') {
             prompt = `
             Actúa como GUIONISTA DE PODCAST "Deep Dive".
-            Genera un GUION DE AUDIO (Host vs Experto) de 5 min discutiendo los activos seleccionados.
+            Genera un GUION DE AUDIO(Host vs Experto) de 5 min discutiendo los activos seleccionados.
             Usa un tono, casual, sorprendente y analítico.
-            
-            FORMATO:
-            **HOST:** ...
-            **EXPERTO:** ...
 
-            CONTEXTO:
-            ${assetsContext}
-            `
+            FORMATO:
+            ** HOST:** ...
+            ** EXPERTO:** ...
+
+        CONTEXTO:
+            ${combinedContext}
+        `
         } else if (type === 'video') {
             prompt = `
-            Actúa como DIRECTOR CREATIVO. Genera un **GUION VISUAL PARA VIDEO (StoryBoard Script)**.
+            Actúa como DIRECTOR CREATIVO.Genera un ** GUION VISUAL PARA VIDEO(StoryBoard Script) **.
             
             FORMATO TABLA:
-            | TIEMPO | VISUAL (Escena) | AUDIO (Voz en off) |
-            |--------|-----------------|--------------------|
-            | 0:00   | ...             | ...                |
+            | TIEMPO | VISUAL(Escena) | AUDIO(Voz en off) |
+            | --------| -----------------| --------------------|
+            | 0:00 | ...             | ...                |
 
             OBJETIVO: Video resumen de alto impacto sobre los activos seleccionados.
-            CONTEXTO:
-            ${assetsContext}
-            `
+                CONTEXTO:
+            ${combinedContext}
+        `
         } else if (type === 'mindmap') {
             prompt = `
             Actúa como EXPERTO EN VISUALIZACIÓN DE DATOS.
-            Genera un **MAPA MENTAL** complejo sobre la metodología, basado en los activos.
+            Genera un ** MAPA MENTAL ** complejo sobre la metodología, basado en los activos.
             
-            Usa sintaxis **MERMAID** (graph TD).
-            
-            IMPORTANTE:
+            Usa sintaxis ** MERMAID ** (graph TD).
+
+        IMPORTANTE:
             Tu respuesta debe contener EXCLUSIVAMENTE el bloque de código markdown.
             Empieza con \`\`\`mermaid y termina con \`\`\`.
             NO incluyas explicaciones, ni títulos, ni texto adicional. SOLO el código.
             
             CONTEXTO:
-            ${assetsContext}
+            ${combinedContext}
             `
         } else if (type === 'flashcards') {
             prompt = `
@@ -164,7 +181,7 @@ export async function POST(request: NextRequest) {
             ---
 
             CONTEXTO:
-            ${assetsContext}
+            ${combinedContext}
             `
         } else if (type === 'quiz') {
             prompt = `
@@ -176,7 +193,7 @@ export async function POST(request: NextRequest) {
                *Respuesta Correcta: X (Explicación breve)*
             
             CONTEXTO:
-            ${assetsContext}
+            ${combinedContext}
             `
         } else if (type === 'infographic') {
             prompt = `
@@ -187,7 +204,7 @@ export async function POST(request: NextRequest) {
             Sección 3: Conclusiones.
             
             CONTEXTO:
-            ${assetsContext}
+            ${combinedContext}
             `
         } else if (type === 'presentation') {
             prompt = `
@@ -200,7 +217,7 @@ export async function POST(request: NextRequest) {
             - Sugerencia visual (Imagen/Gráfico).
             
             CONTEXTO:
-            ${assetsContext}
+            ${combinedContext}
             `
         }
 
@@ -226,7 +243,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             result: output,
-            count: items.length
+            count: assets.length + research.length
         })
 
     } catch (error) {
