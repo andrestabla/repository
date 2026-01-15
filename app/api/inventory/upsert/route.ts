@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     const userEmail = session?.user?.email
-    const role = (session?.user as any)?.role
+    const role = (session?.user as any)?.role?.toUpperCase()
 
     try {
         const body = await request.json()

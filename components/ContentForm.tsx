@@ -96,6 +96,7 @@ type Props = {
     initialData?: ContentItem | null
     onClose: () => void
     onSave: () => void
+    readOnly?: boolean
 }
 
 const TABS = [
@@ -108,7 +109,7 @@ const TABS = [
     { id: 'context', label: 'Contexto', icon: <FileText size={14} /> },
 ]
 
-export default function ContentForm({ initialData, onClose, onSave }: Props) {
+export default function ContentForm({ initialData, onClose, onSave, readOnly = false }: Props) {
     const [activeTab, setActiveTab] = useState('identity')
 
     const [formData, setFormData] = useState<Partial<ContentItem>>({
@@ -151,6 +152,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
     }
 
     const openPicker = async () => {
+        if (readOnly) return
         setShowPicker(true)
         setLoadingPicker(true)
         try {
@@ -167,6 +169,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
     }
 
     const handleAutoAnalyze = async () => {
+        if (readOnly) return
         if (!formData.driveId) return alert('Primero selecciona un archivo de Drive')
         setAnalyzing(true)
         try {
@@ -216,9 +219,9 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 <input
                     value={(formData as any)[field] || ''}
                     onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                    className={`w-full bg-bg border-2 border-border rounded-xl p-3 text-sm text-text-main focus:border-accent outline-none transition-all ${icon ? 'pl-10' : ''} ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:border-border/80'}`}
-                    placeholder={placeholder}
-                    disabled={disabled}
+                    className={`w-full bg-bg border-2 border-border rounded-xl p-3 text-sm text-text-main focus:border-accent outline-none transition-all ${icon ? 'pl-10' : ''} ${(disabled || readOnly) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:border-border/80'}`}
+                    placeholder={!readOnly ? placeholder : ''}
+                    disabled={disabled || readOnly}
                 />
             </div>
         </div>
@@ -227,6 +230,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
     const MultiSelect = ({ label, field, options, icon }: any) => {
         const values = (formData as any)[field] || []
         const toggleOption = (opt: string) => {
+            if (readOnly) return
             const newValues = values.includes(opt)
                 ? values.filter((v: string) => v !== opt)
                 : [...values, opt]
@@ -241,10 +245,11 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                         <button
                             key={opt}
                             onClick={() => toggleOption(opt)}
+                            disabled={readOnly}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${values.includes(opt)
                                 ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
                                 : 'bg-bg border-border text-text-muted hover:border-accent/40'
-                                }`}
+                                } ${readOnly ? 'cursor-default opacity-80' : ''}`}
                         >
                             {opt}
                         </button>
@@ -262,14 +267,17 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 <select
                     value={(formData as any)[field] || ''}
                     onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                    className={`w-full bg-panel border-2 border-border rounded-xl p-3 text-sm text-text-main outline-none focus:border-accent transition-all appearance-none cursor-pointer ${icon ? 'pl-10' : ''}`}
+                    disabled={readOnly}
+                    className={`w-full bg-panel border-2 border-border rounded-xl p-3 text-sm text-text-main outline-none focus:border-accent transition-all appearance-none ${!readOnly ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${icon ? 'pl-10' : ''}`}
                 >
-                    <option value="">Seleccionar...</option>
+                    <option value="">{readOnly ? '' : 'Seleccionar...'}</option>
                     {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
                 </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40 group-hover:text-accent transition-colors">
-                    <ChevronDown size={14} />
-                </div>
+                {!readOnly && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40 group-hover:text-accent transition-colors">
+                        <ChevronDown size={14} />
+                    </div>
+                )}
             </div>
         </div>
     )
@@ -285,7 +293,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                         </div>
                         <div>
                             <h2 className="text-2xl font-black text-text-main tracking-tighter">
-                                {isEdit ? `Editar Activo: ${formData.id}` : 'Nuevo Activo Metodológico'}
+                                {readOnly ? `Consultar Detalles: ${formData.id}` : (isEdit ? `Editar Activo: ${formData.id}` : 'Nuevo Activo Metodológico')}
                             </h2>
                             <p className="text-[11px] font-black text-text-muted uppercase tracking-widest mt-1 opacity-60">Configuración Centralizada de Metadatos</p>
                         </div>
@@ -326,20 +334,22 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                             </button>
                         ))}
 
-                        <div className="mt-10 mx-2 p-5 bg-panel border-2 border-dashed border-border rounded-3xl text-center group/ai">
-                            <div className="w-10 h-10 bg-bg border border-border rounded-xl flex items-center justify-center mx-auto mb-3 text-accent group-hover/ai:scale-110 group-hover/ai:border-accent transition-all">
-                                <Sparkles size={18} />
+                        {!readOnly && (
+                            <div className="mt-10 mx-2 p-5 bg-panel border-2 border-dashed border-border rounded-3xl text-center group/ai">
+                                <div className="w-10 h-10 bg-bg border border-border rounded-xl flex items-center justify-center mx-auto mb-3 text-accent group-hover/ai:scale-110 group-hover/ai:border-accent transition-all">
+                                    <Sparkles size={18} />
+                                </div>
+                                <div className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-relaxed mb-2">Asistente IA</div>
+                                <p className="text-[9px] text-text-muted italic opacity-60 leading-relaxed mb-4">Analiza estructuras de Drive automáticamente.</p>
+                                <button
+                                    onClick={handleAutoAnalyze}
+                                    disabled={analyzing || !formData.driveId}
+                                    className="w-full bg-accent/10 text-accent border border-accent/20 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none"
+                                >
+                                    {analyzing ? 'Procesando...' : 'Autocompletar'}
+                                </button>
                             </div>
-                            <div className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-relaxed mb-2">Asistente IA</div>
-                            <p className="text-[9px] text-text-muted italic opacity-60 leading-relaxed mb-4">Analiza estructuras de Drive automáticamente.</p>
-                            <button
-                                onClick={handleAutoAnalyze}
-                                disabled={analyzing || !formData.driveId}
-                                className="w-full bg-accent/10 text-accent border border-accent/20 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none"
-                            >
-                                {analyzing ? 'Procesando...' : 'Autocompletar'}
-                            </button>
-                        </div>
+                        )}
                     </div>
 
                     {/* Content Area */}
@@ -353,12 +363,14 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                             <h3 className="text-sm font-black text-accent uppercase tracking-widest flex items-center gap-2">
                                                 <Cloud size={16} /> Vinculación de Archivo
                                             </h3>
-                                            <button
-                                                onClick={openPicker}
-                                                className="bg-bg border border-border hover:border-accent text-text-main text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2"
-                                            >
-                                                <Folder size={14} /> Explorar Drive
-                                            </button>
+                                            {!readOnly && (
+                                                <button
+                                                    onClick={openPicker}
+                                                    className="bg-bg border border-border hover:border-accent text-text-main text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2"
+                                                >
+                                                    <Folder size={14} /> Explorar Drive
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="relative group/id">
                                             <Cloud className="absolute left-4 top-1/2 -translate-y-1/2 text-accent/40" size={16} />
@@ -366,7 +378,8 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                                 value={formData.driveId || ''}
                                                 onChange={e => setFormData({ ...formData, driveId: e.target.value })}
                                                 placeholder="ID de Google Drive..."
-                                                className="w-full bg-bg border-2 border-border/60 hover:border-accent/40 rounded-2xl p-4 text-xs font-mono pl-12 focus:border-accent transition-all outline-none"
+                                                disabled={readOnly}
+                                                className={`w-full bg-bg border-2 border-border/60 rounded-2xl p-4 text-xs font-mono pl-12 focus:border-accent transition-all outline-none ${readOnly ? 'opacity-60' : 'hover:border-accent/40'}`}
                                             />
                                             {formData.driveId && (
                                                 <a href={`https://drive.google.com/open?id=${formData.driveId}`} target="_blank" className="absolute right-4 top-1/2 -translate-y-1/2 text-accent hover:underline text-[10px] font-bold flex items-center gap-1">
@@ -451,8 +464,9 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                                     <textarea
                                         value={formData.observations || ''}
                                         onChange={e => setFormData({ ...formData, observations: e.target.value })}
-                                        className="w-full h-80 bg-bg border-4 border-border rounded-[32px] p-8 text-sm text-text-main focus:border-accent outline-none resize-none transition-all shadow-inner leading-relaxed italic"
+                                        className={`w-full h-80 bg-bg border-4 border-border rounded-[32px] p-8 text-sm text-text-main focus:border-accent outline-none resize-none transition-all shadow-inner leading-relaxed italic ${readOnly ? 'opacity-80' : ''}`}
                                         placeholder="Define aquí la intención didáctica, notas de facilitación y contexto técnico para el despliegue de este activo..."
+                                        disabled={readOnly}
                                     ></textarea>
                                 </div>
                             )}
@@ -462,39 +476,50 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-8 border-t border-border bg-bg flex justify-between items-center px-12">
-                    <div className="flex items-center gap-6">
-                        <div className="h-2 w-40 bg-border/40 rounded-full overflow-hidden">
-                            <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${formData.completeness}%` }}></div>
-                        </div>
-                        <div className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-none">
-                            Índice de Densidad de Datos: <span className="text-accent ml-1">{formData.completeness}%</span>
-                        </div>
-                    </div>
-                    <div className="flex gap-4">
+                {readOnly ? (
+                    <div className="p-8 border-t border-border bg-bg flex justify-end px-12">
                         <button
-                            onClick={() => handleSaveInternal('Borrador')}
-                            className="px-8 py-3.5 text-[11px] font-black uppercase tracking-widest text-text-muted hover:text-text-main border-2 border-transparent hover:border-border rounded-2xl transition-all"
+                            onClick={onClose}
+                            className="bg-accent text-white px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all"
                         >
-                            Guardar Borrador
+                            Cerrar Visualización
                         </button>
-                        {formData.status === 'Borrador' && (
+                    </div>
+                ) : (
+                    <div className="p-8 border-t border-border bg-bg flex justify-between items-center px-12">
+                        <div className="flex items-center gap-6">
+                            <div className="h-2 w-40 bg-border/40 rounded-full overflow-hidden">
+                                <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${formData.completeness}%` }}></div>
+                            </div>
+                            <div className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-none">
+                                Índice de Densidad de Datos: <span className="text-accent ml-1">{formData.completeness}%</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
                             <button
-                                onClick={() => handleSaveInternal('Revisión')}
-                                className="bg-purple-600 text-white px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-purple-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
+                                onClick={() => handleSaveInternal('Borrador')}
+                                className="px-8 py-3.5 text-[11px] font-black uppercase tracking-widest text-text-muted hover:text-text-main border-2 border-transparent hover:border-border rounded-2xl transition-all"
                             >
-                                <ShieldCheck size={14} />
-                                Solicitar Revisión
+                                Guardar Borrador
                             </button>
-                        )}
-                        <button
-                            onClick={() => handleSaveInternal()}
-                            className="bg-accent text-white px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all"
-                        >
-                            {isEdit ? 'Guardar Cambios' : 'Confirmar Activo'}
-                        </button>
+                            {formData.status === 'Borrador' && (
+                                <button
+                                    onClick={() => handleSaveInternal('Revisión')}
+                                    className="bg-purple-600 text-white px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-purple-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
+                                >
+                                    <ShieldCheck size={14} />
+                                    Solicitar Revisión
+                                </button>
+                            )}
+                            <button
+                                onClick={() => handleSaveInternal()}
+                                className="bg-accent text-white px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                                {isEdit ? 'Guardar Cambios' : 'Confirmar Activo'}
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* DRIVE PICKER MODAL OVERLAY */}

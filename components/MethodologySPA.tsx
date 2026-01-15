@@ -85,7 +85,7 @@ export default function MethodologySPA({
     // Initialize User from Session
     useEffect(() => {
         if (session?.user) {
-            const role = (session.user.role as UserRole) || 'curador'
+            const role = (session.user.role?.toLowerCase() as UserRole) || 'curador'
             setUser({
                 role: role,
                 name: session.user.name || 'Usuario 4Shine',
@@ -320,6 +320,14 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
     const [showForm, setShowForm] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
 
+    // Auto-sync selectedItem when data refreshes (Fixes "Not saving" visual bug)
+    useEffect(() => {
+        if (selectedItem) {
+            const upToDateItem = data.find(i => i.id === selectedItem.id)
+            if (upToDateItem) setSelectedItem(upToDateItem)
+        }
+    }, [data])
+
     // Filters State
     const [pillarFilter, setPillarFilter] = useState('')
     const [maturityFilter, setMaturityFilter] = useState('')
@@ -483,14 +491,15 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                                 <h3 className="text-3xl font-black text-text-main leading-[1.1] tracking-tighter">{selectedItem.title}</h3>
                             </div>
                             <div className="flex items-center gap-3">
-                                {!(selectedItem.status === 'Validado' && role !== 'admin') && (
-                                    <button
-                                        onClick={() => setShowForm(true)}
-                                        className="px-5 py-2.5 rounded-xl border-2 border-accent text-accent hover:bg-accent hover:text-white transition-all font-bold text-xs uppercase tracking-widest"
-                                    >
-                                        Editar Metadatos
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => setShowForm(true)}
+                                    className={`px-5 py-2.5 rounded-xl border-2 font-bold text-xs uppercase tracking-widest transition-all ${selectedItem.status === 'Validado' && role !== 'admin'
+                                        ? 'border-border text-text-muted hover:border-text-main hover:text-text-main'
+                                        : 'border-accent text-accent hover:bg-accent hover:text-white'
+                                        }`}
+                                >
+                                    {selectedItem.status === 'Validado' && role !== 'admin' ? 'Consultar Detalles' : 'Editar Metadatos'}
+                                </button>
                                 {role === 'admin' && selectedItem.status === 'Validado' && (
                                     <button
                                         onClick={async () => {
@@ -597,6 +606,7 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                         initialData={selectedItem}
                         onClose={() => setShowForm(false)}
                         onSave={() => { setShowForm(false); onRefresh(); }}
+                        readOnly={selectedItem?.status === 'Validado' && role !== 'admin'}
                     />
                 )}
             </div>
