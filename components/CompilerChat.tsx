@@ -37,11 +37,21 @@ export default function CompilerChat() {
         setInput('')
         setLoading(true)
 
+        // Detect Intent for Quick Actions
+        let type = undefined
+        const cleanInput = userMsg.content.toLowerCase()
+        if (cleanInput.includes('dossier')) type = 'dossier'
+        else if (cleanInput.includes('matriz') || cleanInput.includes('trazabilidad')) type = 'matrix'
+        else if (cleanInput.includes('toolkit') || cleanInput.includes('estructura')) type = 'toolkit'
+
         try {
             const res = await fetch('/api/generator', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userMsg.content })
+                body: JSON.stringify({
+                    message: userMsg.content,
+                    type: type
+                })
             })
 
             const data = await res.json()
@@ -114,8 +124,8 @@ export default function CompilerChat() {
                         )}
 
                         <div className={`max-w-[80%] rounded-2xl p-5 shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user'
-                                ? 'bg-white text-gray-900 rounded-tr-none font-medium'
-                                : 'bg-panel border border-border text-text-main rounded-tl-none font-sans'
+                            ? 'bg-white text-gray-900 rounded-tr-none font-medium'
+                            : 'bg-panel border border-border text-text-main rounded-tl-none font-sans'
                             }`}>
                             {msg.content}
                         </div>

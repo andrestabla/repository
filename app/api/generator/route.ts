@@ -36,7 +36,16 @@ export async function POST(request: NextRequest) {
 
         // 3. Define Prompt based on Type
         let prompt = ''
-        const apiKey = process.env.GEMINI_API_KEY as string
+
+        // Auth: Use System Settings first, then env var
+        const { SystemSettingsService } = await import('@/lib/settings')
+        let apiKey = await SystemSettingsService.getGeminiApiKey()
+        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || ''
+
+        if (!apiKey) {
+            return NextResponse.json({ error: 'Gemini API Key not configured in Settings or Environment' }, { status: 500 })
+        }
+
         const genAI = new GoogleGenerativeAI(apiKey)
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" }) // Use 1.5 Pro to handle large context
 
