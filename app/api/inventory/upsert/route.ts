@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
 
         // 4. Data Payload
         const dataPayload = {
-            title, type, format, language, duration, year, source,
+            title,
+            type: type || 'Documento', // Default to 'Documento' as per requirement
+            format, language, duration, year, source,
             primaryPillar: finalPrimaryPillar,
             secondaryPillars: finalSecondaryPillars,
             sub, competence, behavior, maturity: maturity || level,
@@ -77,12 +79,13 @@ export async function POST(request: NextRequest) {
             targetRole, roleLevel, industry, vipUsage, publicVisibility,
             ipOwner: ipOwner || ip,
             ipType, authorizedUse, confidentiality, reuseExternal,
-            driveId: cleanDriveId, version: version || 'v1.0', observations,
+            driveId: cleanDriveId,
+            version: version || 'v1.0',
+            observations,
             status: status || 'Borrador',
             completeness,
             level: maturity || level,
-            ip: ipOwner || ip,
-            pillar: finalPrimaryPillar
+            ip: ipOwner || ip
         }
 
         const item = await prisma.contentItem.upsert({
