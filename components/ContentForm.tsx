@@ -31,6 +31,19 @@ import {
 } from 'lucide-react'
 
 // --- TYPES ---
+export type ResearchSource = {
+    id: string
+    title: string
+    url?: string | null
+    summary?: string | null
+    keyConcepts?: string | null
+    competence?: string | null
+    geographicCoverage?: string | null
+    populationParams?: string | null
+    driveId?: string | null
+    findings?: string | null
+}
+
 export type ContentItem = {
     id: string
     title: string

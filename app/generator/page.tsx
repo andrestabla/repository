@@ -16,5 +16,10 @@ export default async function Page() {
         orderBy: { name: 'asc' }
     })
 
-    return <MethodologySPA initialData={contents as any} initialTaxonomy={taxonomy as any} session={session as any} />
+    const research = await prisma.researchSource.findMany({
+        orderBy: { createdAt: 'desc' }
+    })
+
+    // Map Prisma result to match the expected type if needed, or cast as any for now to speed up
+    return <MethodologySPA initialData={contents as any} initialResearch={research as any} initialTaxonomy={taxonomy as any} session={session as any} />
 }

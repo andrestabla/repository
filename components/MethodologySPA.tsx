@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import { signIn, signOut } from "next-auth/react"
 import AdminView from './AdminView'
-import ContentForm, { ContentItem } from './ContentForm'
+import ContentForm, { ContentItem, ResearchSource } from './ContentForm'
 import TaxonomyManager from './TaxonomyManager'
 import ReleasesView from './ReleasesView'
 import HeatmapView from './HeatmapView'
@@ -67,10 +67,12 @@ type TaxonomyItem = {
 
 export default function MethodologySPA({
     initialData,
+    initialResearch,
     initialTaxonomy,
     session
 }: {
     initialData?: ContentItem[],
+    initialResearch?: ResearchSource[],
     initialTaxonomy?: TaxonomyItem[],
     session: Session | null
 }) {
@@ -80,6 +82,7 @@ export default function MethodologySPA({
 
     const [user, setUser] = useState<User | null>(null)
     const [inventoryData, setInventoryData] = useState<ContentItem[]>(initialData || [])
+    const [researchData, setResearchData] = useState<ResearchSource[]>(initialResearch || [])
     const [isRefreshing, setIsRefreshing] = useState(false)
 
     // Initialize User from Session
@@ -122,8 +125,6 @@ export default function MethodologySPA({
         }
     }
 
-
-
     if (!user) {
         return (
             <div className="fixed inset-0 bg-bg flex items-center justify-center transition-colors">
@@ -145,14 +146,6 @@ export default function MethodologySPA({
             </div>
         )
     }
-
-    // Shell handles Login now, but we can keep a fallback or allow duplication for safety if Shell isn't used everywhere
-    // effectively. However, since we wrapped RootLayout, Shell IS used everywhere.
-    // We just need to render the content part.
-
-    // Removing Sidebar markup and wrapping the main content area
-    // The previous structure was grid-cols-[280px_1fr]. Now Shell handles the grid/flex.
-    // We just render the content column.
 
     return (
         <div className="h-full w-full overflow-y-auto bg-bg transition-colors p-6 sm:p-10 animate-in fade-in duration-500">
@@ -176,7 +169,7 @@ export default function MethodologySPA({
                 />
             )}
             {currentView === 'gap-analysis' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy || []} />}
-            {currentView === 'generator' && <CompilerChat assets={inventoryData} />}
+            {currentView === 'generator' && <CompilerChat assets={inventoryData} research={researchData} />}
             {currentView === 'qa' && (user?.role === 'admin' || user?.role === 'auditor') && <QAView role={user.role} onRefresh={refreshData} />}
             {currentView === 'admin' && <AdminView />}
         </div>

@@ -1,7 +1,5 @@
-'use client'
-
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check } from 'lucide-react'
+import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe } from 'lucide-react'
 
 type Message = {
     role: 'user' | 'assistant'
@@ -30,15 +28,21 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
         </div>
     )
 }
-export default function CompilerChat({ assets = [] }: { assets?: any[] }) {
+
+export default function CompilerChat({ assets = [], research = [] }: { assets?: any[], research?: any[] }) {
     // 1. Initial State: Select ALL validated assets by default
     const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set())
+    const [selectedResearchIds, setSelectedResearchIds] = useState<Set<string>>(new Set())
 
     useEffect(() => {
         if (assets.length > 0) {
             const validated = assets.filter(a => a.status === 'Validado').map(a => a.id)
             setSelectedAssetIds(new Set(validated))
         }
+        // Auto-select top 5 recent research items or all? 
+        // User might have many. Let's select none by default? Or all?
+        // User said "possibility to select/deselect".
+        // Let's default to selecting none to rely on Inventory, unless user picks one.
     }, [assets])
 
     const toggleAsset = (id: string) => {
@@ -46,6 +50,13 @@ export default function CompilerChat({ assets = [] }: { assets?: any[] }) {
         if (next.has(id)) next.delete(id)
         else next.add(id)
         setSelectedAssetIds(next)
+    }
+
+    const toggleResearch = (id: string) => {
+        const next = new Set(selectedResearchIds)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        setSelectedResearchIds(next)
     }
 
     const [messages, setMessages] = useState<Message[]>([
@@ -98,10 +109,10 @@ export default function CompilerChat({ assets = [] }: { assets?: any[] }) {
                 body: JSON.stringify({
                     message: userMsg.content,
                     type: type,
-                    selectedAssetIds: Array.from(selectedAssetIds)
+                    selectedAssetIds: Array.from(selectedAssetIds),
+                    selectedResearchIds: Array.from(selectedResearchIds)
                 })
             })
-
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Error en compilación')
 
@@ -146,47 +157,93 @@ export default function CompilerChat({ assets = [] }: { assets?: any[] }) {
         <div className="flex h-[calc(100vh-140px)] bg-[#F8F9FA] dark:bg-[#1E1F20] text-gray-900 dark:text-gray-100 font-sans transition-colors rounded-3xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-2xl relative">
 
             {/* LEFT PANEL: SOURCE SELECTION */}
-            <div className="w-[300px] border-r border-gray-200 dark:border-gray-800 flex flex-col bg-white dark:bg-[#131314] hidden md:flex">
-                <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-2">
+            <div className="w-[300px] border-r border-border flex flex-col bg-bg hidden md:flex shrink-0">
+                {/* 1. Inventory Sources */}
+                <div className="p-5 border-b border-border flex justify-between items-center bg-panel/50">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted flex items-center gap-2">
                         <Database size={12} />
-                        Fuentes ({selectedAssetIds.size})
+                        Inventario ({selectedAssetIds.size})
                     </h3>
                     <button
                         onClick={() => {
-                            if (selectedAssetIds.size === assets.filter(a => a.status === 'Validado').length) setSelectedAssetIds(new Set())
+                            if (selectedAssetIds.size > 0) setSelectedAssetIds(new Set())
                             else setSelectedAssetIds(new Set(assets.filter(a => a.status === 'Validado').map(a => a.id)))
                         }}
-                        className="text-[10px] text-blue-500 font-bold hover:underline"
+                        className="text-[10px] text-accent font-bold hover:underline"
                     >
-                        {selectedAssetIds.size === assets.filter(a => a.status === 'Validado').length ? 'Ninguna' : 'Todas'}
+                        {selectedAssetIds.size > 0 ? 'Ninguna' : 'Todas'}
                     </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                <div className="flex-1 overflow-y-auto p-2 space-y-1 border-b border-border max-h-[50%]">
                     {assets.filter(a => a.status === 'Validado').map(asset => (
                         <div
                             key={asset.id}
                             onClick={() => toggleAsset(asset.id)}
                             className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedAssetIds.has(asset.id)
-                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                                : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                                ? 'bg-accent/5 border-accent/20'
+                                : 'bg-transparent border-transparent hover:bg-panel'
                                 }`}
                         >
-                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAssetIds.has(asset.id) ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAssetIds.has(asset.id) ? 'bg-accent border-accent' : 'border-border'
                                 }`}>
                                 {selectedAssetIds.has(asset.id) && <Check size={10} className="text-white" />}
                             </div>
                             <div className="flex-1">
-                                <div className={`text-xs font-semibold leading-tight ${selectedAssetIds.has(asset.id) ? 'text-blue-700 dark:text-blue-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                                <div className={`text-xs font-semibold leading-tight ${selectedAssetIds.has(asset.id) ? 'text-accent' : 'text-text-main opacity-80'}`}>
                                     {asset.title}
                                 </div>
-                                <div className="text-[9px] text-gray-400 mt-1">{asset.id} • {asset.primaryPillar || 'General'}</div>
+                                <div className="text-[9px] text-text-muted mt-1 opacity-60">{asset.id}</div>
                             </div>
                         </div>
                     ))}
                     {assets.filter(a => a.status === 'Validado').length === 0 && (
-                        <div className="text-center p-8 text-xs text-gray-400 italic">
-                            No hay activos validados disponibles.
+                        <div className="text-center p-8 text-xs text-text-muted italic">
+                            No hay activos validados.
+                        </div>
+                    )}
+                </div>
+
+                {/* 2. Research Sources (New Section) */}
+                <div className="p-5 border-b border-border flex justify-between items-center bg-panel/50">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted flex items-center gap-2">
+                        <Globe size={12} />
+                        Investigación ({selectedResearchIds.size})
+                    </h3>
+                    <button
+                        onClick={() => {
+                            if (selectedResearchIds.size > 0) setSelectedResearchIds(new Set())
+                            else setSelectedResearchIds(new Set(research.map(r => r.id)))
+                        }}
+                        className="text-[10px] text-accent font-bold hover:underline"
+                    >
+                        {selectedResearchIds.size > 0 ? 'Ninguna' : 'Todas'}
+                    </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-gray-50/50 dark:bg-black/20">
+                    {research.map(item => (
+                        <div
+                            key={item.id}
+                            onClick={() => toggleResearch(item.id)}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedResearchIds.has(item.id)
+                                ? 'bg-purple-500/10 border-purple-500/30'
+                                : 'bg-transparent border-transparent hover:bg-panel'
+                                }`}
+                        >
+                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedResearchIds.has(item.id) ? 'bg-purple-500 border-purple-500' : 'border-border'
+                                }`}>
+                                {selectedResearchIds.has(item.id) && <Check size={10} className="text-white" />}
+                            </div>
+                            <div className="flex-1">
+                                <div className={`text-xs font-semibold leading-tight ${selectedResearchIds.has(item.id) ? 'text-purple-600 dark:text-purple-400' : 'text-text-main opacity-80'}`}>
+                                    {item.title}
+                                </div>
+                                <div className="text-[9px] text-text-muted mt-1 opacity-60 line-clamp-1">{item.url || 'Documento Drive'}</div>
+                            </div>
+                        </div>
+                    ))}
+                    {research.length === 0 && (
+                        <div className="text-center p-8 text-xs text-text-muted italic">
+                            Sin fuentes disponibles.
                         </div>
                     )}
                 </div>
@@ -303,6 +360,6 @@ export default function CompilerChat({ assets = [] }: { assets?: any[] }) {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }
