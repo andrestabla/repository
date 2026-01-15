@@ -13,11 +13,13 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
-        const { driveId, url } = await request.json()
+        const { driveId, url, type } = await request.json()
 
         if (!driveId && !url) {
             return NextResponse.json({ error: 'Drive ID or URL required' }, { status: 400 })
         }
+
+        // ... (Content fetching logic remains the same) ...
 
         // 1. Get Text or Transcribe Content
         console.log(`[Analyze] Fetching content for ${driveId}...`)
@@ -25,57 +27,40 @@ export async function POST(request: NextRequest) {
         let text = ''
         let transcription = null
 
-        // Check if file is video or audio
+        // ... (Drive file handling) ...
         const { google } = require('googleapis')
         const { SystemSettingsService } = require('@/lib/settings')
         const config = await SystemSettingsService.getDriveConfig()
         const credentials = JSON.parse(config.serviceAccountJson)
         const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/drive'] })
+
         if (driveId) {
-            // 1. Get Text or Transcribe Content from Drive
-            console.log(`[Analyze] Fetching content for ${driveId}...`)
-
-            // Check if file is video or audio
-            const { google } = require('googleapis')
-            const { SystemSettingsService } = require('@/lib/settings')
-            const config = await SystemSettingsService.getDriveConfig()
-            const credentials = JSON.parse(config.serviceAccountJson)
-            const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/drive'] })
             const drive = google.drive({ version: 'v3', auth })
-
             const meta = await drive.files.get({ fileId: driveId, fields: 'mimeType, name' })
             const mimeType = meta.data.mimeType
 
             if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {
                 console.log(`[Analyze] Detected Media: ${mimeType}. Starting Transcription Pipeline...`)
-
                 const { downloadDriveFile } = require('@/lib/drive')
                 const { GeminiService } = require('@/lib/gemini')
                 const fs = require('fs')
 
                 // A. Download
                 const localFile = await downloadDriveFile(driveId)
-
-                // B. Transcribe
                 try {
                     transcription = await GeminiService.transcribeMedia(localFile.path, localFile.mimeType)
                     text = `[TRANSCRIPTION OF VIDEO/AUDIO: ${localFile.originalName}]\n\n${transcription}`
                 } finally {
-                    // Cleanup temp file
                     if (fs.existsSync(localFile.path)) fs.unlinkSync(localFile.path)
                 }
             } else {
-                // Text/Doc file
                 text = await getFileContent(driveId)
             }
         }
 
-        // --- NEW: URL HANDLING ---
-        // If driveId looks like a URL, treat it as such (or add 'url' param to request body, 
-        // but let's see if we can just reuse the field or add a check).
-        // For clean architecture, we should support 'url' in body.
-
+        // ... (URL handling) ...
         if (url) {
+            // ... existing URL fallback logic ...
             let targetUrl = url.trim()
             if (!/^https?:\/\//i.test(targetUrl)) {
                 targetUrl = 'https://' + targetUrl
@@ -86,19 +71,17 @@ export async function POST(request: NextRequest) {
                 const res = await fetch(targetUrl, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q0.9,image/avif,image/webp,*/*;q=0.8'
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'
                     }
                 })
 
                 if (!res.ok) throw new Error(`Status: ${res.status}`)
 
                 const html = await res.text()
-                // Simple stripping using regex (Cheerio would be better but keeping deps low)
                 text = html.replace(/<[^>]*>/g, ' ').substring(0, 30000)
                 text = `[CONTENT FROM URL: ${targetUrl}]\n\n` + text
             } catch (e) {
                 console.warn('URL Fetch failed, attempting Knowledge Fallback:', e)
-                // Fallback: Ask Gemini to hallucinate (retrieve) based on the URL
                 text = `
                 [SYSTEM ERROR: ACCESS TO URL "${targetUrl}" WAS BLOCKED]
                 
@@ -112,18 +95,31 @@ export async function POST(request: NextRequest) {
                 URL TO ANALYZE: ${targetUrl}
                 `
             }
-        } else if (!driveId) {
-            return NextResponse.json({ error: 'Drive ID or URL required' }, { status: 400 })
         }
-        // --- END NEW ---
 
-        if (!text) {
-            return NextResponse.json({ error: 'No text content found in file' }, { status: 404 })
+        // --- CONTEXT SENSITIVITY ---
+        let promptContext = ''
+        if (type === 'Investigación') {
+            promptContext = `
+            MODO: ANÁLISIS DE FUENTE ACADÉMICA / INVESTIGACIÓN
+            
+            NECESITO QUE TUS RESULTADOS ALIMENTEN UNA FICHA DE INVESTIGACIÓN.
+            POR FAVOR, ASEGURA LLENAR LOS SIGUIENTES CAMPOS EN EL JSON:
+            
+            - "apa": La cita bibliográfica completa en formato APA 7.
+            - "findings": Una sección detallada de hallazgos empíricos o teóricos del documento.
+            - "methodology": Describe brevemente la metodología (Cualitativa, Cuantitativa, Revisión, etc.).
+            - "keyConcepts": Lista de conceptos clave separados por comas.
+            - "pillars": Array de Strings sugiriendo qué pilares 4Shine toca (Shine In, Shine Out, Shine Up, Shine On).
+            - "relation4Shine": UN PÁRRAFO CRÍTICO explicando cómo este paper sustenta o valida científicamente los pilares seleccionados.
+            
+            (Mantén también el summary y el title en el JSON).
+            `
         }
 
         // 2. Analyze with Gemini
-        console.log(`[Analyze] Sending ${text.length} chars to Gemini...`)
-        const metadata = await GeminiService.analyzeContent(text)
+        console.log(`[Analyze] Sending ${text.length} chars to Gemini with context: ${type}...`)
+        const metadata = await GeminiService.analyzeContent(text, promptContext)
 
         // Inject transcription into metadata if exists
         if (transcription) {

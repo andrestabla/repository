@@ -3,10 +3,9 @@ import { SystemSettingsService } from "./settings"
 import prisma from "./prisma"
 
 export class GeminiService {
-    static async analyzeContent(text: string) {
+    static async analyzeContent(text: string, context?: string) {
         if (!text || text.length < 50) return null
 
-        // Upgrading to Pro models for higher reasoning and better observations
         // Upgrading to Pro models for higher reasoning and better observations
         const modelsToTry = [
             "gemini-2.0-flash", // Preferred for speed/reasoning balance
@@ -63,6 +62,8 @@ export class GeminiService {
 
             ${dynamicContext}
 
+            ${context ? `--- INSTRUCCIONES ESPECÍFICAS DE CONTEXTO ---\n${context}\n-------------------------------------------` : ''}
+
             --- REGLAS DE ORO DE ANÁLISIS ---
             1. SELECCIÓN DE PILAR OBLIGATORIA: DEBES elegir uno de los 4 pilares (Shine In, Shine Out, Shine Up, Shine Beyond) como "primaryPillar". Solo usa "Transversal" si el contenido es 100% administrativo, pero siempre prioriza la vinculación metodológica.
             2. RESEÑA FIEL: El campo "summary" NO debe ser genérico. Debe ser una reseña/resumen fiel y detallado de lo que realmente dice el archivo. Si es un video, describe la narrativa. Si es un toolkit, describe las herramientas.
@@ -103,7 +104,12 @@ export class GeminiService {
               "language": "ES",
               "format": "Formato Técnico",
               "completeness": 100,
-              "observations": "TEXTO_DE_ANÁLISIS_PROFUNDO_DENSE_Y_ESTRATÉGICO"
+              "observations": "TEXTO_DE_ANÁLISIS_PROFUNDO_DENSE_Y_ESTRATÉGICO",
+              "apa": "Si se solicita en contexto o es relevante paper: Cita APA 7",
+              "findings": "Si se solicita en contexto: Hallazgos clave",
+              "methodology": "Si se solicita en contexto: Metodología usada",
+              "relation4Shine": "Si se solicita en contexto: Explicación específica de relación con 4Shine",
+              "pillars": ["Shine In", "Shine Out"] // Si se solicita sugerencia de pilares multiples
             }
 
             CONTENT TO ANALYZE:
