@@ -82,7 +82,7 @@ export default function MethodologySPA({
                 role: role,
                 name: session.user.name || 'Usuario 4Shine',
                 label: role === 'admin' ? 'Administrador' : role === 'metodologo' ? 'Metodólogo (Arquitecto)' : 'Constructor (Conectado)',
-                avatar: session.user.image ? <img src={session.user.image} alt="avatar" className="w-full h-full rounded-full" /> : null,
+                avatar: session.user.image || null,
                 color: role === 'admin' ? '#d73a49' : '#0969da'
             })
             setCurrentView(role === 'admin' ? 'admin' : 'inventory')
