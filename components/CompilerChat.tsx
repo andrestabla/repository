@@ -8,7 +8,28 @@ type Message = {
     content: string
     timestamp: Date
 }
+import mermaid from 'mermaid'
 
+// Helper Component for Mermaid
+const MermaidDiagram = ({ chart }: { chart: string }) => {
+    const ref = useRef<HTMLDivElement>(null)
+    const [svg, setSvg] = useState('')
+
+    useEffect(() => {
+        if (ref.current) {
+            mermaid.initialize({ startOnLoad: false, theme: 'default' })
+            mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, chart)
+                .then(({ svg }) => setSvg(svg))
+                .catch((e) => console.error("Mermaid error:", e))
+        }
+    }, [chart])
+
+    return (
+        <div className="my-4 p-4 bg-white rounded-xl border border-gray-200 overflow-x-auto flex justify-center" ref={ref}>
+            <div dangerouslySetInnerHTML={{ __html: svg }} />
+        </div>
+    )
+}
 export default function CompilerChat({ assets = [] }: { assets?: any[] }) {
     // 1. Initial State: Select ALL validated assets by default
     const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set())
@@ -231,7 +252,13 @@ export default function CompilerChat({ assets = [] }: { assets?: any[] }) {
 
                                 {/* Content */}
                                 <div className={`text-[15px] leading-relaxed text-gray-800 dark:text-gray-200 ${msg.role === 'user' ? 'font-medium text-lg ml-8' : 'ml-8'}`}>
-                                    {msg.content.includes('**HOST:**') || msg.content.includes('graph TD') || msg.content.includes('|') ? (
+                                    {msg.content.includes('```mermaid') ? (
+                                        <div className="w-full">
+                                            {msg.content.split('```mermaid')[0]}
+                                            <MermaidDiagram chart={msg.content.split('```mermaid')[1].split('```')[0].trim()} />
+                                            {msg.content.split('```').slice(2).join('')}
+                                        </div>
+                                    ) : msg.content.includes('**HOST:**') || msg.content.includes('graph TD') || msg.content.includes('|') ? (
                                         <div className="bg-gray-50 dark:bg-[#1E1F20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-x-auto shadow-sm">
                                             <pre className="whitespace-pre-wrap font-mono text-xs">{msg.content}</pre>
                                         </div>

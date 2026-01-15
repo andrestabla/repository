@@ -139,10 +139,15 @@ export async function POST(request: NextRequest) {
             `
         } else if (type === 'mindmap') {
             prompt = `
-            Actúa como EXPERTO EN VISUALIZACIÓN. Genera un **MAPA MENTAL** usando sintaxis MERMAID (graph TD).
-            El nodo central es "Metodología 4Shine".
+            Actúa como EXPERTO EN VISUALIZACIÓN DE DATOS.
+            Genera un **MAPA MENTAL** complejo sobre la metodología, basado en los activos.
             
-            REGLA: Devuelve SOLO el bloque de código Mermaid.
+            Usa sintaxis **MERMAID** (graph TD).
+            
+            IMPORTANTE:
+            Tu respuesta debe contener EXCLUSIVAMENTE el bloque de código markdown.
+            Empieza con \`\`\`mermaid y termina con \`\`\`.
+            No añadidas explicaciones ni texto adicional antes o después.
             
             CONTEXTO:
             ${assetsContext}
