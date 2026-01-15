@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
                 const res = await fetch(targetUrl, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q0.9,image/avif,image/webp,*/*;q=0.8'
                     }
                 })
 
@@ -95,10 +95,22 @@ export async function POST(request: NextRequest) {
                 const html = await res.text()
                 // Simple stripping using regex (Cheerio would be better but keeping deps low)
                 text = html.replace(/<[^>]*>/g, ' ').substring(0, 30000)
-                text = `[CONTENT FROM URL: ${url}]\n\n` + text
+                text = `[CONTENT FROM URL: ${targetUrl}]\n\n` + text
             } catch (e) {
-                console.error('URL Fetch failed', e)
-                return NextResponse.json({ error: 'Could not fetch URL content' }, { status: 400 })
+                console.warn('URL Fetch failed, attempting Knowledge Fallback:', e)
+                // Fallback: Ask Gemini to hallucinate (retrieve) based on the URL
+                text = `
+                [SYSTEM ERROR: ACCESS TO URL "${targetUrl}" WAS BLOCKED]
+                
+                INSTRUCTION FOR AI:
+                The system could not scrape this URL directly (likely due to academic paywall or bot protection).
+                HOWEVER, you are a sophisticated model with vast training data.
+                1. Identify this resource solely from the URL (e.g., if it's an SSRN, DOI, or famous paper link).
+                2. If you recognize it, perform the analysis based on your INTERNAL KNOWLEDGE of this paper.
+                3. If you do not recognize it at all, return the JSON with "summary": "No se pudo acceder al contenido externo ni identificarlo en la base de conocimientos."
+                
+                URL TO ANALYZE: ${targetUrl}
+                `
             }
         } else if (!driveId) {
             return NextResponse.json({ error: 'Drive ID or URL required' }, { status: 400 })
