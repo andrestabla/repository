@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Treemap, Legend } from 'recharts'
-import { Loader2, Globe, Users, Brain, BookOpen } from 'lucide-react'
+import { Loader2, Globe, Users, Brain, BookOpen, RefreshCw } from 'lucide-react'
 
 // Colors for Pillars
 import WorldMap from './WorldMap'
@@ -13,15 +13,25 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 export default function ResearchAnalytics() {
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
 
-    useEffect(() => {
+    const fetchData = () => {
+        setRefreshing(true)
         fetch('/api/analytics/research')
             .then(res => res.json())
             .then(json => {
                 setData(json.stats)
                 setLoading(false)
+                setRefreshing(false)
             })
-            .catch(err => setLoading(false))
+            .catch(err => {
+                setLoading(false)
+                setRefreshing(false)
+            })
+    }
+
+    useEffect(() => {
+        fetchData()
     }, [])
 
     if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="animate-spin text-accent" size={48} /></div>
@@ -29,35 +39,48 @@ export default function ResearchAnalytics() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[24px] p-6 text-white shadow-xl">
-                    <div className="flex items-center gap-3 mb-2 opacity-80">
-                        <BookOpen size={20} />
-                        <span className="text-xs font-black uppercase tracking-widest">Total Fuentes</span>
+            {/* KPI Cards & Controls */}
+            <div className="flex flex-col md:flex-row gap-6 items-stretch">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[24px] p-6 text-white shadow-xl relative overflow-hidden group">
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-2 opacity-80">
+                                <BookOpen size={20} />
+                                <span className="text-xs font-black uppercase tracking-widest">Total Fuentes</span>
+                            </div>
+                            <div className="text-5xl font-black tracking-tighter">{data.total}</div>
+                        </div>
+                        {/* Refresh Action Overlay */}
+                        <button
+                            onClick={fetchData}
+                            disabled={refreshing}
+                            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all disabled:opacity-50"
+                            title="Actualizar datos"
+                        >
+                            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                        </button>
                     </div>
-                    <div className="text-5xl font-black tracking-tighter">{data.total}</div>
-                </div>
-                <div className="bg-card-bg border border-border rounded-[24px] p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2 text-text-muted">
-                        <Brain size={20} />
-                        <span className="text-xs font-black uppercase tracking-widest">Conceptos Clave</span>
+                    <div className="bg-card-bg border border-border rounded-[24px] p-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-2 text-text-muted">
+                            <Brain size={20} />
+                            <span className="text-xs font-black uppercase tracking-widest">Conceptos Clave</span>
+                        </div>
+                        <div className="text-3xl font-black text-text-main">{data.conceptDensity?.length || 0}</div>
                     </div>
-                    <div className="text-3xl font-black text-text-main">{data.conceptDensity?.length || 0}</div>
-                </div>
-                <div className="bg-card-bg border border-border rounded-[24px] p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2 text-text-muted">
-                        <Globe size={20} />
-                        <span className="text-xs font-black uppercase tracking-widest">Regiones</span>
+                    <div className="bg-card-bg border border-border rounded-[24px] p-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-2 text-text-muted">
+                            <Globe size={20} />
+                            <span className="text-xs font-black uppercase tracking-widest">Regiones</span>
+                        </div>
+                        <div className="text-3xl font-black text-text-main">{data.geoDist?.length || 0}</div>
                     </div>
-                    <div className="text-3xl font-black text-text-main">{data.geoDist?.length || 0}</div>
-                </div>
-                <div className="bg-card-bg border border-border rounded-[24px] p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2 text-text-muted">
-                        <Users size={20} />
-                        <span className="text-xs font-black uppercase tracking-widest">Perfiles</span>
+                    <div className="bg-card-bg border border-border rounded-[24px] p-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-2 text-text-muted">
+                            <Users size={20} />
+                            <span className="text-xs font-black uppercase tracking-widest">Perfiles</span>
+                        </div>
+                        <div className="text-3xl font-black text-text-main">{data.popDist?.length || 0}</div>
                     </div>
-                    <div className="text-3xl font-black text-text-main">{data.popDist?.length || 0}</div>
                 </div>
             </div>
 
