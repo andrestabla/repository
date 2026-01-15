@@ -16,6 +16,10 @@ interface ResearchSource {
     relation4Shine?: string
     pillars?: string[]
     driveId?: string
+    transcription?: string
+    competence?: string
+    geographicCoverage?: string
+    populationParams?: string
 }
 
 type DriveFile = {
