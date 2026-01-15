@@ -13,10 +13,36 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 export default function ResearchAnalytics() {
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+    const [analyzing, setAnalyzing] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
 
-    const fetchData = () => {
+    const fetchData = async (forceRefetch = false) => {
         setRefreshing(true)
+        setAnalyzing(true)
+
+        try {
+            // 1. Trigger Re-analysis to find/process new data
+            // We use force: false to only process items that are missing metadata (new items)
+            // Unless the user explicitly requested a deep force refresh (future feature?)
+            // For now, this meets "buscar nuevos datos" by processing anything pending.
+            const p1 = fetch('/api/admin/reanalyze-research', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ force: false })
+            })
+
+            // Wait for re-analysis? It might be slow.
+            // Better UX: Start it, and then fetch. Or wait?
+            // User said "When actioned, must search... analyze... update". 
+            // So we MUST wait.
+            await p1
+        } catch (e) {
+            console.error("Analysis trigger failed", e)
+        } finally {
+            setAnalyzing(false)
+        }
+
+        // 2. Fetch fresh stats
         fetch('/api/analytics/research')
             .then(res => res.json())
             .then(json => {
@@ -31,7 +57,13 @@ export default function ResearchAnalytics() {
     }
 
     useEffect(() => {
-        fetchData()
+        // Initial load just grabs stats, doesn't re-analyze automatically to save costs/time
+        fetch('/api/analytics/research')
+            .then(res => res.json())
+            .then(json => {
+                setData(json.stats)
+                setLoading(false)
+            })
     }, [])
 
     if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="animate-spin text-accent" size={48} /></div>
@@ -49,15 +81,16 @@ export default function ResearchAnalytics() {
                                 <span className="text-xs font-black uppercase tracking-widest">Total Fuentes</span>
                             </div>
                             <div className="text-5xl font-black tracking-tighter">{data.total}</div>
+                            {analyzing && <div className="text-[10px] opacity-80 mt-2 animate-pulse">Analizando fuentes (IA)...</div>}
                         </div>
                         {/* Refresh Action Overlay */}
                         <button
-                            onClick={fetchData}
-                            disabled={refreshing}
+                            onClick={() => fetchData(true)}
+                            disabled={refreshing || analyzing}
                             className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all disabled:opacity-50"
-                            title="Actualizar datos"
+                            title="Actualizar y Re-analizar"
                         >
-                            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                            <RefreshCw size={16} className={(refreshing || analyzing) ? "animate-spin" : ""} />
                         </button>
                     </div>
                     <div className="bg-card-bg border border-border rounded-[24px] p-6 shadow-sm">

@@ -8,34 +8,31 @@ import { getFileContent } from '@/lib/drive'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 minutes
 
-export async function GET(request: NextRequest) {
+// Change to POST to accept body params and be semantic
+export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Only allow admin or specific user if needed, for safety
-    // if (session.user.role !== 'admin') ...
-
     try {
+        const body = await request.json().catch(() => ({}))
+        const forceUpdate = body.force === true
+
         const researchItems = await prisma.researchSource.findMany()
         const results = []
 
         for (const item of researchItems) {
-            // Optimization: Skip if already has one of the critical new fields
-            // Actually, re-analyze if ANY is missing to be safe, or just force re-analyze all?
-            // Let's check if competence is present.
-            if (item.competence && item.geographicCoverage && item.populationParams) {
+            // Updated Logic: Only skip if NOT forced AND has all fields
+            if (!forceUpdate && item.competence && item.geographicCoverage && item.populationParams) {
                 results.push({ id: item.id, status: 'skipped', title: item.title })
                 continue
             }
 
-            console.log(`[ReAnalyze] Processing: ${item.title} (${item.id})`)
+            console.log(`[ReAnalyze] Processing: ${item.title} (${item.id}) [Force: ${forceUpdate}]`)
             let text = ''
 
             // 1. Fetch Content
             if (item.driveId) {
                 try {
-                    // Basic text extraction for now, skipping media transcription complexity for this bulk script unless necessary
-                    // Assuming drive files are docs/pdfs
                     text = await getFileContent(item.driveId)
                 } catch (e) {
                     console.error(`Error fetching drive ${item.driveId}`, e)
@@ -44,7 +41,6 @@ export async function GET(request: NextRequest) {
 
             if (!text && item.url) {
                 try {
-                    // Reuse URL fetching logic
                     let targetUrl = item.url.trim()
                     if (!/^https?:\/\//i.test(targetUrl)) targetUrl = 'https://' + targetUrl
 
@@ -64,7 +60,6 @@ export async function GET(request: NextRequest) {
             }
 
             if (!text && item.summary) {
-                // Fallback: Use existing summary/findings as context if no source access
                 text = `[EXISTING SUMMARY]\n${item.summary}\n\n[EXISTING KEY CONCEPTS]\n${item.keyConcepts}\n\n[EXISTING FINDINGS]\n${item.findings}`
             }
 
@@ -79,7 +74,7 @@ export async function GET(request: NextRequest) {
             
             OBJETIVO: Extraer metadatos faltantes para analítica.
             POR FAVOR, ASEGURA COMPLETAR CRÍTICAMENTE ESTOS CAMPOS:
-            - "competence": Competencia técnica o de liderazgo principal (e.g. Liderazgo Ágil, Gestión del Cambio).
+            - "competence": Competencias técnicas o de liderazgo (separadas por coma).
             - "geographicCoverage": Región geográfica del estudio (e.g. Global, LATAM, Europa, USA, Colombia).
             - "populationParams": Descripción de la muestra (e.g. 500 CEOs, Estudiantes de MBA, 20 Empresas Tech).
             
@@ -96,11 +91,6 @@ export async function GET(request: NextRequest) {
                             competence: metadata.competence,
                             geographicCoverage: metadata.geographicCoverage,
                             populationParams: metadata.populationParams,
-                            // Optionally update others if better? Let's just update these specific ones to avoid overwriting manual edits 
-                            // actually, let's trust the AI if fields were likely empty.
-                            // But to be safe, only update if the DB value is missing or if we want to overwrite.
-                            // User "Completen todas las gráficas" imply we need data.
-                            // I'll overwrite these 3 fields.
                         }
                     })
                     results.push({ id: item.id, status: 'updated', updates: { competence: metadata.competence, geo: metadata.geographicCoverage, pop: metadata.populationParams } })
