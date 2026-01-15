@@ -1,88 +1,88 @@
-import React from 'react';
+import React, { memo } from 'react';
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
+import { scaleLinear } from "d3-scale";
 
-// Simplified World Map SVG Paths (Low res for performance but recognizable)
-// Using a dot-matrix style or simple paths for a "modern/tech" look as requested by the 4Shine aesthetic.
-// Actually, let's use a nice SVG path set for continents.
+const geoUrl = "https://unpkg.com/world-atlas@2.0.2/countries-110m.json";
 
-const REGIONS = {
-    na: "M100,50 L120,50 L130,80 L110,100 L50,80 Z", // Rough North America placeholder shape if we were drawing manually... 
-    // Better approach: Use a pre-defined SVG path for the world.
+// Manual mapping of region keywords to ISO-3 numeric codes (simplified subset)
+// Standard codes: USA=840, CAN=124, BRA=076, COL=170, etc.
+// Since we don't want to maintain a massive map, we'll check against continents if possible, 
+// or just mapping key major countries for the "Region" visual.
+
+const MAPPING: Record<string, string[]> = {
+    "na": ["840", "124", "484"], // USA, Canada, Mexico
+    "sa": ["076", "170", "032", "152", "604", "862", "858", "068"], // Brazil, Colombia, Argentina, Chile, Peru, Venezuela, Uruguay, Bolivia
+    "eu": ["250", "276", "380", "724", "826", "620", "528", "056", "372", "752", "246"], // France, DE, IT, ES, UK, PT, NL, BE, IE, SE, FI
+    "as": ["156", "392", "356", "360", "410", "702", "764", "608"], // CN, JP, IN, ID, KR, SG, TH, PH
+    "oc": ["036", "554"], // AU, NZ
+    "af": ["710", "818", "566", "231"] // ZA, EG, NG, ET
 };
 
-// Since we don't have a topojson library, we'll use a standard SVG path representation of the world.
-// I will use a simplified "Dot Map" or "Stylized Map" concept which is easier to implement without 500kb of path data.
-// Or I can use a standard open-source SVG path string for the world.
-
 const WorldMap = ({ data }: { data: { name: string, value: number }[] }) => {
-    // 1. normalize data to find active regions
-    const activeRegions = new Set<string>();
+
+    // Identify active zones
+    const activeZones = new Set<string>();
+
     data.forEach(d => {
         const name = d.name.toLowerCase();
-        if (name.includes('global') || name.includes('world')) {
-            ['na', 'sa', 'eu', 'af', 'as', 'oc'].forEach(r => activeRegions.add(r));
+        // Global = All
+        if (name.includes('global') || name.includes('world') || name.includes('mundial')) {
+            ['na', 'sa', 'eu', 'as', 'oc', 'af'].forEach(k => activeZones.add(k));
         }
-        if (name.includes('north america') || name.includes('usa') || name.includes('canada') || name.includes('mexico')) activeRegions.add('na');
-        if (name.includes('south america') || name.includes('latam') || name.includes('brazil') || name.includes('colombia') || name.includes('argentina') || name.includes('peru') || name.includes('chile')) activeRegions.add('sa');
-        if (name.includes('europe') || name.includes('eu') || name.includes('uk') || name.includes('germany') || name.includes('france') || name.includes('spain')) activeRegions.add('eu');
-        if (name.includes('africa')) activeRegions.add('af');
-        if (name.includes('asia') || name.includes('china') || name.includes('japan') || name.includes('india')) activeRegions.add('as');
-        if (name.includes('oceania') || name.includes('australia')) activeRegions.add('oc');
+
+        // Regions
+        if (name.includes('north america') || name.includes('usa') || name.includes('canada')) activeZones.add('na');
+        if (name.includes('latam') || name.includes('south america')) activeZones.add('sa');
+        if (name.includes('europe')) activeZones.add('eu');
+        if (name.includes('asia')) activeZones.add('as');
+        if (name.includes('africa')) activeZones.add('af');
+
+        // Specific Countries override (basic check)
+        if (name.includes('colombia')) activeZones.add('170');
+        if (name.includes('canada')) activeZones.add('124');
     });
 
-    const getColor = (region: string) => activeRegions.has(region) ? '#00C49F' : '#E5E7EB'; // Accent vs Gray
-    const getOpacity = (region: string) => activeRegions.has(region) ? 1 : 0.3;
+    // Helper to check if a country ISO is active
+    const isActive = (geoId: string) => {
+        // Direct ID match?
+        if (activeZones.has(geoId)) return true;
+
+        // In an active region?
+        for (const zone of Array.from(activeZones)) {
+            if (MAPPING[zone]?.includes(geoId)) return true;
+        }
+        return false;
+    };
 
     return (
-        <svg viewBox="0 0 1000 500" className="w-full h-full">
-            {/* North America */}
-            <path
-                d="M150,60 L280,60 L320,150 L250,220 L120,120 Z"
-                fill={getColor('na')} opacity={getOpacity('na')}
-                className="transition-all duration-500 hover:opacity-80"
-                style={{ filter: activeRegions.has('na') ? 'drop-shadow(0 0 8px rgba(0, 196, 159, 0.4))' : 'none' }}
-            />
-            {/* South America */}
-            <path
-                d="M260,230 L340,230 L320,400 L280,450 L240,350 Z"
-                fill={getColor('sa')} opacity={getOpacity('sa')}
-                className="transition-all duration-500 hover:opacity-80"
-                style={{ filter: activeRegions.has('sa') ? 'drop-shadow(0 0 8px rgba(0, 196, 159, 0.4))' : 'none' }}
-            />
-            {/* Europe */}
-            <path
-                d="M450,70 L550,70 L530,140 L440,130 Z"
-                fill={getColor('eu')} opacity={getOpacity('eu')}
-                className="transition-all duration-500 hover:opacity-80"
-                style={{ filter: activeRegions.has('eu') ? 'drop-shadow(0 0 8px rgba(0, 196, 159, 0.4))' : 'none' }}
-            />
-            {/* Africa */}
-            <path
-                d="M440,150 L560,150 L580,250 L500,350 L420,250 Z"
-                fill={getColor('af')} opacity={getOpacity('af')}
-                className="transition-all duration-500 hover:opacity-80"
-                style={{ filter: activeRegions.has('af') ? 'drop-shadow(0 0 8px rgba(0, 196, 159, 0.4))' : 'none' }}
-            />
-            {/* Asia */}
-            <path
-                d="M570,70 L850,70 L900,250 L750,300 L600,200 L570,140 Z"
-                fill={getColor('as')} opacity={getOpacity('as')}
-                className="transition-all duration-500 hover:opacity-80"
-                style={{ filter: activeRegions.has('as') ? 'drop-shadow(0 0 8px rgba(0, 196, 159, 0.4))' : 'none' }}
-            />
-            {/* Oceania */}
-            <path
-                d="M750,320 L900,320 L880,450 L780,450 Z"
-                fill={getColor('oc')} opacity={getOpacity('oc')}
-                className="transition-all duration-500 hover:opacity-80"
-                style={{ filter: activeRegions.has('oc') ? 'drop-shadow(0 0 8px rgba(0, 196, 159, 0.4))' : 'none' }}
-            />
-
-            {/* Labels overlay or Legend if needed, but the visual highlighting explains it */}
-            <text x="50" y="450" fontSize="12" fill="#999" fontFamily="sans-serif">
-                * Mapa esquemático de impacto
-            </text>
-        </svg>
+        <div className="w-full h-full" data-tip="">
+            <ComposableMap projectionConfig={{ scale: 200, center: [0, 0] }} style={{ width: "100%", height: "100%" }}>
+                <ZoomableGroup>
+                    <Geographies geography={geoUrl}>
+                        {({ geographies }) =>
+                            geographies.map((geo) => {
+                                const isHighlighted = isActive(geo.id);
+                                return (
+                                    <Geography
+                                        key={geo.rsmKey}
+                                        geography={geo}
+                                        fill={isHighlighted ? "#00C49F" : "#E5E7EB"}
+                                        stroke="#D1D5DB"
+                                        strokeWidth={0.5}
+                                        style={{
+                                            default: { outline: "none", transition: "all 250ms" },
+                                            hover: { fill: isHighlighted ? "#00A885" : "#D1D5DB", outline: "none" },
+                                            pressed: { outline: "none" },
+                                        }}
+                                    />
+                                );
+                            })
+                        }
+                    </Geographies>
+                </ZoomableGroup>
+            </ComposableMap>
+        </div>
     );
 };
 
-export default WorldMap;
+export default memo(WorldMap);

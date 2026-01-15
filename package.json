@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@types/d3-scale": "^4.0.9",
+    "@types/react-simple-maps": "^3.0.6",
+    "d3-scale": "^4.0.2",
     "googleapis": "^170.0.0",
     "lucide-react": "^0.562.0",
     "mermaid": "^11.12.2",
@@ -19,6 +22,7 @@
     "pdf-parse": "^1.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-simple-maps": "^3.0.0",
     "recharts": "^3.6.0"
   },
   "devDependencies": {
