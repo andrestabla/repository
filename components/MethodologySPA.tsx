@@ -551,7 +551,7 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                     </div>
                 )}
 
-                {showForm && selectedItem && (
+                {showForm && (
                     <ContentForm
                         initialData={selectedItem}
                         onClose={() => setShowForm(false)}
