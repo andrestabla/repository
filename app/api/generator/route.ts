@@ -234,7 +234,8 @@ export async function POST(request: NextRequest) {
                     prompt: message || `Generate ${type}`,
                     response: output,
                     type: type || 'chat',
-                    assets: selectedAssetIds || []
+                    assets: selectedAssetIds || [],
+                    research: selectedResearchIds || []
                 }
             })
         } catch (dbError) {

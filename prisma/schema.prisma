@@ -167,5 +167,6 @@ model GenerationHistory {
   response  String   @db.Text
   type      String
   assets    String[]
+  research  String[] @default([])
   createdAt DateTime @default(now())
 }

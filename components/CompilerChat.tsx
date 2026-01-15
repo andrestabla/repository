@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe } from 'lucide-react'
+import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown } from 'lucide-react'
 
 type Message = {
     role: 'user' | 'assistant'
@@ -39,10 +39,6 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
             const validated = assets.filter(a => a.status === 'Validado').map(a => a.id)
             setSelectedAssetIds(new Set(validated))
         }
-        // Auto-select top 5 recent research items or all? 
-        // User might have many. Let's select none by default? Or all?
-        // User said "possibility to select/deselect".
-        // Let's default to selecting none to rely on Inventory, unless user picks one.
     }, [assets])
 
     const toggleAsset = (id: string) => {
@@ -59,15 +55,40 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
         setSelectedResearchIds(next)
     }
 
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            role: 'assistant',
-            content: 'Hola. Soy el Motor de Compilación 4Shine. Selecciona tus fuentes y elige un producto para generar.',
-            timestamp: new Date()
-        }
-    ])
-    const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
+    const [messages, setMessages] = useState<Message[]>([])
+    const [history, setHistory] = useState<any[]>([])
+    const [openSections, setOpenSections] = useState<Set<string>>(new Set(['inventory', 'research', 'history']))
+
+    const toggleSection = (section: string) => {
+        const next = new Set(openSections)
+        if (next.has(section)) next.delete(section)
+        else next.add(section)
+        setOpenSections(next)
+    }
+
+    useEffect(() => {
+        // Fetch History
+        fetch('/api/generator/history')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) setHistory(data)
+            })
+            .catch(err => console.error(err))
+    }, [])
+
+    useEffect(() => {
+        if (messages.length === 0) {
+            setMessages([
+                {
+                    role: 'assistant',
+                    content: 'Hola. Soy el Motor de Compilación 4Shine. Selecciona tus fuentes y elige un producto para generar.',
+                    timestamp: new Date()
+                }
+            ])
+        }
+    }, [])
+    const [input, setInput] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const scrollToBottom = () => {
@@ -159,94 +180,144 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
             {/* LEFT PANEL: SOURCE SELECTION */}
             <div className="w-[300px] border-r border-border flex flex-col bg-bg hidden md:flex shrink-0">
                 {/* 1. Inventory Sources */}
-                <div className="p-5 border-b border-border flex justify-between items-center bg-panel/50">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted flex items-center gap-2">
-                        <Database size={12} />
+                <div
+                    className="p-4 border-b border-border flex justify-between items-center bg-panel/50 cursor-pointer hover:bg-panel transition-colors"
+                    onClick={() => toggleSection('inventory')}
+                >
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted flex items-center gap-2 select-none">
+                        <ChevronDown size={14} className={`transition-transform duration-200 ${openSections.has('inventory') ? '' : '-rotate-90'}`} />
                         Inventario ({selectedAssetIds.size})
                     </h3>
-                    <button
-                        onClick={() => {
-                            if (selectedAssetIds.size > 0) setSelectedAssetIds(new Set())
-                            else setSelectedAssetIds(new Set(assets.filter(a => a.status === 'Validado').map(a => a.id)))
-                        }}
-                        className="text-[10px] text-accent font-bold hover:underline"
-                    >
-                        {selectedAssetIds.size > 0 ? 'Ninguna' : 'Todas'}
-                    </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1 border-b border-border max-h-[50%]">
-                    {assets.filter(a => a.status === 'Validado').map(asset => (
-                        <div
-                            key={asset.id}
-                            onClick={() => toggleAsset(asset.id)}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedAssetIds.has(asset.id)
-                                ? 'bg-accent/5 border-accent/20'
-                                : 'bg-transparent border-transparent hover:bg-panel'
-                                }`}
+                    <div onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => {
+                                if (selectedAssetIds.size > 0) setSelectedAssetIds(new Set())
+                                else setSelectedAssetIds(new Set(assets.filter(a => a.status === 'Validado').map(a => a.id)))
+                            }}
+                            className="text-[10px] text-accent font-bold hover:underline"
                         >
-                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAssetIds.has(asset.id) ? 'bg-accent border-accent' : 'border-border'
-                                }`}>
-                                {selectedAssetIds.has(asset.id) && <Check size={10} className="text-white" />}
-                            </div>
-                            <div className="flex-1">
-                                <div className={`text-xs font-semibold leading-tight ${selectedAssetIds.has(asset.id) ? 'text-accent' : 'text-text-main opacity-80'}`}>
-                                    {asset.title}
-                                </div>
-                                <div className="text-[9px] text-text-muted mt-1 opacity-60">{asset.id}</div>
-                            </div>
-                        </div>
-                    ))}
-                    {assets.filter(a => a.status === 'Validado').length === 0 && (
-                        <div className="text-center p-8 text-xs text-text-muted italic">
-                            No hay activos validados.
-                        </div>
-                    )}
+                            {selectedAssetIds.size > 0 ? 'Ninguna' : 'Todas'}
+                        </button>
+                    </div>
                 </div>
+                {openSections.has('inventory') && (
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1 border-b border-border min-h-[100px] max-h-[30vh]">
+                        {assets.filter(a => a.status === 'Validado').map(asset => (
+                            <div
+                                key={asset.id}
+                                onClick={() => toggleAsset(asset.id)}
+                                className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedAssetIds.has(asset.id)
+                                    ? 'bg-accent/5 border-accent/20'
+                                    : 'bg-transparent border-transparent hover:bg-panel'
+                                    }`}
+                            >
+                                <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAssetIds.has(asset.id) ? 'bg-accent border-accent' : 'border-border'
+                                    }`}>
+                                    {selectedAssetIds.has(asset.id) && <Check size={10} className="text-white" />}
+                                </div>
+                                <div className="flex-1">
+                                    <div className={`text-xs font-semibold leading-tight ${selectedAssetIds.has(asset.id) ? 'text-accent' : 'text-text-main opacity-80'}`}>
+                                        {asset.title}
+                                    </div>
+                                    <div className="text-[9px] text-text-muted mt-1 opacity-60">{asset.id}</div>
+                                </div>
+                            </div>
+                        ))}
+                        {assets.filter(a => a.status === 'Validado').length === 0 && (
+                            <div className="text-center p-8 text-xs text-text-muted italic">
+                                No hay activos validados.
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                {/* 2. Research Sources (New Section) */}
-                <div className="p-5 border-b border-border flex justify-between items-center bg-panel/50">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted flex items-center gap-2">
-                        <Globe size={12} />
+                {/* 2. Research Sources */}
+                <div
+                    className="p-4 border-b border-border flex justify-between items-center bg-panel/50 cursor-pointer hover:bg-panel transition-colors"
+                    onClick={() => toggleSection('research')}
+                >
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted flex items-center gap-2 select-none">
+                        <ChevronDown size={14} className={`transition-transform duration-200 ${openSections.has('research') ? '' : '-rotate-90'}`} />
                         Investigación ({selectedResearchIds.size})
                     </h3>
-                    <button
-                        onClick={() => {
-                            if (selectedResearchIds.size > 0) setSelectedResearchIds(new Set())
-                            else setSelectedResearchIds(new Set(research.map(r => r.id)))
-                        }}
-                        className="text-[10px] text-accent font-bold hover:underline"
-                    >
-                        {selectedResearchIds.size > 0 ? 'Ninguna' : 'Todas'}
-                    </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-gray-50/50 dark:bg-black/20">
-                    {research.map(item => (
-                        <div
-                            key={item.id}
-                            onClick={() => toggleResearch(item.id)}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedResearchIds.has(item.id)
-                                ? 'bg-purple-500/10 border-purple-500/30'
-                                : 'bg-transparent border-transparent hover:bg-panel'
-                                }`}
+                    <div onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => {
+                                if (selectedResearchIds.size > 0) setSelectedResearchIds(new Set())
+                                else setSelectedResearchIds(new Set(research.map(r => r.id)))
+                            }}
+                            className="text-[10px] text-accent font-bold hover:underline"
                         >
-                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedResearchIds.has(item.id) ? 'bg-purple-500 border-purple-500' : 'border-border'
-                                }`}>
-                                {selectedResearchIds.has(item.id) && <Check size={10} className="text-white" />}
-                            </div>
-                            <div className="flex-1">
-                                <div className={`text-xs font-semibold leading-tight ${selectedResearchIds.has(item.id) ? 'text-purple-600 dark:text-purple-400' : 'text-text-main opacity-80'}`}>
-                                    {item.title}
-                                </div>
-                                <div className="text-[9px] text-text-muted mt-1 opacity-60 line-clamp-1">{item.url || 'Documento Drive'}</div>
-                            </div>
-                        </div>
-                    ))}
-                    {research.length === 0 && (
-                        <div className="text-center p-8 text-xs text-text-muted italic">
-                            Sin fuentes disponibles.
-                        </div>
-                    )}
+                            {selectedResearchIds.size > 0 ? 'Ninguna' : 'Todas'}
+                        </button>
+                    </div>
                 </div>
+                {openSections.has('research') && (
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-gray-50/50 dark:bg-black/20 min-h-[100px] max-h-[30vh]">
+                        {research.map(item => (
+                            <div
+                                key={item.id}
+                                onClick={() => toggleResearch(item.id)}
+                                className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedResearchIds.has(item.id)
+                                    ? 'bg-purple-500/10 border-purple-500/30'
+                                    : 'bg-transparent border-transparent hover:bg-panel'
+                                    }`}
+                            >
+                                <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedResearchIds.has(item.id) ? 'bg-purple-500 border-purple-500' : 'border-border'
+                                    }`}>
+                                    {selectedResearchIds.has(item.id) && <Check size={10} className="text-white" />}
+                                </div>
+                                <div className="flex-1">
+                                    <div className={`text-xs font-semibold leading-tight ${selectedResearchIds.has(item.id) ? 'text-purple-600 dark:text-purple-400' : 'text-text-main opacity-80'}`}>
+                                        {item.title}
+                                    </div>
+                                    <div className="text-[9px] text-text-muted mt-1 opacity-60 line-clamp-1">{item.url || 'Documento Drive'}</div>
+                                </div>
+                            </div>
+                        ))}
+                        {research.length === 0 && (
+                            <div className="text-center p-8 text-xs text-text-muted italic">
+                                Sin fuentes disponibles.
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* 3. History (New Section) */}
+                <div
+                    className="p-4 border-b border-border flex justify-between items-center bg-panel/50 cursor-pointer hover:bg-panel transition-colors"
+                    onClick={() => toggleSection('history')}
+                >
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted flex items-center gap-2 select-none">
+                        <ChevronDown size={14} className={`transition-transform duration-200 ${openSections.has('history') ? '' : '-rotate-90'}`} />
+                        Historial Reciente
+                    </h3>
+                </div>
+                {openSections.has('history') && (
+                    <div className="flex-1 overflow-y-auto p-0 border-t border-border min-h-[100px]">
+                        {history.map((h: any) => (
+                            <div
+                                key={h.id}
+                                className="p-4 border-b border-border hover:bg-black/5 cursor-pointer group transition-colors"
+                                onClick={() => {
+                                    setMessages((prev) => [
+                                        ...prev,
+                                        { role: 'user', content: `(Historial) ${h.prompt}`, timestamp: new Date() },
+                                        { role: 'assistant', content: h.response, timestamp: new Date() }
+                                    ])
+                                }}
+                            >
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/10 px-1.5 rounded">{h.type}</span>
+                                    <span className="text-[9px] text-text-muted">{new Date(h.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <div className="text-xs font-medium text-text-main line-clamp-2 leading-snug group-hover:text-accent transition-colors">
+                                    {h.prompt}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* MAIN AREA */}
