@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
     try {
         const { driveId, url } = await request.json()
 
-        if (!driveId) {
-            return NextResponse.json({ error: 'Drive ID required' }, { status: 400 })
+        if (!driveId && !url) {
+            return NextResponse.json({ error: 'Drive ID or URL required' }, { status: 400 })
         }
 
         // 1. Get Text or Transcribe Content
