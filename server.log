@@ -1,0 +1,47 @@
+
+> methodology-builder@0.1.0 start
+> next start
+
+▲ Next.js 16.1.1
+- Local:         http://localhost:3000
+- Network:       http://192.168.39.161:3000
+
+✓ Starting...
+✓ Ready in 349ms
+[ReAnalyze] Processing: Revisión Sistemática sobre Personal Branding (Gorbatov, Khapova & Lysova, 2018) (RS-004)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Liderazgo Inclusivo y Éxito de Proyectos (Javed et al., 2025) (RS-011)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Entrelazamiento Carácter-Competencia (Sturm, Vera & Crossan, 2017) (RS-002)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Branding Personal del Dueño y Reputación (Situmorang & Salamah, 2018) (RS-006)
+Error fetching url http://repository.atmajaya.ac.id/id/eprint/3001 TypeError: fetch failed
+    at async C (.next/server/chunks/[root-of-the-server]__f2e635a1._.js:1:3807)
+    at async u (.next/server/chunks/[root-of-the-server]__f2e635a1._.js:20:3699)
+    at async l (.next/server/chunks/[root-of-the-server]__f2e635a1._.js:20:4740)
+    at async Module.k (.next/server/chunks/[root-of-the-server]__f2e635a1._.js:20:5818) {
+  [cause]: Error: getaddrinfo ENOTFOUND repository.atmajaya.ac.id
+      at ignore-listed frames {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'repository.atmajaya.ac.id'
+  }
+}
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Modelo de Desarrollo del Carácter (Crossan et al., 2021) (RS-007)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Presencia Ejecutiva y Employee Engagement (Chukwuma & Okonkwo, 2023) (RS-008)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Liderazgo Virtuoso para Inclusión (Grimani & Gotsis, 2020) (RS-009)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Carácter del Líder y Resultados en Colaboradores (Monzani et al., 2021) (RS-003)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Soft Skills e Innovación (Ballester-Miquel et al., 2026) (RS-010)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Beneficios del Executive Coaching (Longenecker & McCartney, 2020) (RS-012)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Marca Personal de Líderes en Redes (Venciūtė, Yue & Thelen, 2023) (RS-005)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
+[ReAnalyze] Processing: Liderazgo y Carácter del Líder (Crossan et al., 2017) (RS-001)
+[Gemini] Executive Analysis attempting: gemini-2.0-flash...
