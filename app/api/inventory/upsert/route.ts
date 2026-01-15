@@ -56,7 +56,10 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. Clean and Validate Drive ID
-        const cleanDriveId = extractDriveId(driveId || '')
+        let cleanDriveId: string | null | undefined = undefined
+        if (driveId !== undefined) {
+            cleanDriveId = extractDriveId(driveId)
+        }
 
         // 3. Calculate Completeness
         const criticalFields = [
@@ -68,7 +71,7 @@ export async function POST(request: NextRequest) {
         const completeness = Math.round((filledFields / totalFields) * 100)
 
         // 4. Data Payload
-        const dataPayload = {
+        const dataPayload: any = {
             title,
             type: type || 'Documento', // Default to 'Documento' as per requirement
             format, language, duration, year, source,
@@ -80,13 +83,16 @@ export async function POST(request: NextRequest) {
             targetRole, roleLevel, industry, vipUsage, publicVisibility,
             ipOwner: ipOwner || ip,
             ipType, authorizedUse, confidentiality, reuseExternal,
-            driveId: cleanDriveId,
             version: version || 'v1.0',
             observations,
             status: status || 'Borrador',
             completeness,
             level: maturity || level,
             ip: ipOwner || ip
+        }
+
+        if (cleanDriveId !== undefined) {
+            dataPayload.driveId = cleanDriveId
         }
 
         const item = await prisma.contentItem.upsert({
