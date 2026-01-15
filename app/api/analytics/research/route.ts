@@ -40,13 +40,18 @@ export async function GET(request: NextRequest) {
         const competenceCounts: Record<string, number> = {}
         research.forEach(item => {
             if (item.competence) {
-                const key = item.competence.trim()
-                if (key) competenceCounts[key] = (competenceCounts[key] || 0) + 1
+                // Split by comma to aggregate individual competencies
+                item.competence.split(',').forEach(c => {
+                    const key = c.trim()
+                    // Capitalize first letter for consistency
+                    const formattedKey = key.charAt(0).toUpperCase() + key.slice(1)
+                    if (formattedKey) competenceCounts[formattedKey] = (competenceCounts[formattedKey] || 0) + 1
+                })
             }
         })
         const competenceDist = Object.entries(competenceCounts)
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 10)
+            .slice(0, 15) // Increased limit to show more variety
             .map(([name, value]) => ({ name, value }))
 
         // 4. Geographic Coverage

@@ -174,6 +174,36 @@ export default function ResearchAnalytics() {
                         </div>
                     </div>
                 </div>
+
+                {/* Profiles Distribution - New Pie Chart */}
+                <div className="bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
+                    <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                        Distribución de Perfiles
+                    </h3>
+                    <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data.popDist}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    paddingAngle={2}
+                                    dataKey="value"
+                                    nameKey="name" // Ensure nameKey is set for tooltips
+                                >
+                                    {data.popDist.map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
             </div>
         </div>
     )
