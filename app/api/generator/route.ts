@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
             IMPORTANTE:
             Tu respuesta debe contener EXCLUSIVAMENTE el bloque de código markdown.
             Empieza con \`\`\`mermaid y termina con \`\`\`.
-            No añadidas explicaciones ni texto adicional antes o después.
+            NO incluyas explicaciones, ni títulos, ni texto adicional. SOLO el código.
             
             CONTEXTO:
             ${assetsContext}
@@ -208,6 +208,21 @@ export async function POST(request: NextRequest) {
         const result = await model.generateContent(prompt)
         const response = await result.response
         let output = response.text()
+
+        // 7. Persist History
+        try {
+            await prisma.generationHistory.create({
+                data: {
+                    user: 'anonymous', // TODO: Add real user session
+                    prompt: message || `Generate ${type}`,
+                    response: output,
+                    type: type || 'chat',
+                    assets: selectedAssetIds || []
+                }
+            })
+        } catch (dbError) {
+            console.error("Failed to save history:", dbError)
+        }
 
         return NextResponse.json({
             result: output,

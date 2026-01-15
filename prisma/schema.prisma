@@ -133,3 +133,13 @@ model SystemSettings {
   value     Json
   updatedAt DateTime @updatedAt
 }
+
+model GenerationHistory {
+  id        String   @id @default(cuid())
+  user      String?
+  prompt    String
+  response  String   @db.Text
+  type      String
+  assets    String[]
+  createdAt DateTime @default(now())
+}
