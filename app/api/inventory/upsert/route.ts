@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
             trigger, recommendation, challengeType, evidenceRequired, nextContentId,
             targetRole, roleLevel, industry, vipUsage, publicVisibility,
             ipOwner, ipType, authorizedUse, confidentiality, reuseExternal,
-            driveId, version, observations,
+            driveId, version, observations, transcription,
             status, ip, level,
             forceReason // Special field for Admin bypass
         } = body
@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
             ipType, authorizedUse, confidentiality, reuseExternal,
             version: version || 'v1.0',
             observations,
+            transcription,
             status: status || 'Borrador',
             completeness,
             level: maturity || level,
