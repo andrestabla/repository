@@ -14,7 +14,7 @@ export default async function GapAnalysis() {
 
     // Fetch all content items to calculate heatmap
     const contents = await prisma.contentItem.findMany({
-        select: { sub: true, maturity: true, status: true, pillar: true }
+        select: { sub: true, maturity: true, status: true, primaryPillar: true }
     })
 
     // Aggregated coverage map
@@ -23,7 +23,9 @@ export default async function GapAnalysis() {
     subcomponents.forEach(sub => {
         heatmap[sub.name] = {}
         maturityLevels.forEach(lvl => {
-            const matches = contents.filter(c => c.sub === sub.name && c.maturity === lvl)
+            const matches = contents.filter(c =>
+                (c.sub === sub.name || (c as any).primaryPillar === sub.name) && c.maturity === lvl
+            )
             const count = matches.length
 
             let status: 'red' | 'yellow' | 'green' = 'red'

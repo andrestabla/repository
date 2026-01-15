@@ -7,7 +7,8 @@ type ContentItem = {
     id: string
     title: string
     type: string
-    pillar: string
+    primaryPillar: string
+    secondaryPillars: string[]
     sub?: string
     level?: string
     version: string
@@ -41,7 +42,7 @@ export default function Inventory() {
 
     // Derive displayed items
     const filteredItems = items.filter(item => {
-        if (filterPillar !== 'Todos' && item.pillar !== filterPillar) return false
+        if (filterPillar !== 'Todos' && item.primaryPillar !== filterPillar) return false
         if (filterStatus !== 'Todos') {
             if (filterStatus === 'Incompletos' && item.completeness === 100) return false;
             if (filterStatus === 'Borradores' && item.status !== 'Borrador') return false;
@@ -130,7 +131,7 @@ export default function Inventory() {
                                         <td className="py-2.5 px-3 font-mono text-[var(--accent)]">{item.id}</td>
                                         <td className="py-2.5 px-3">
                                             <div className="font-semibold text-white">{item.title}</div>
-                                            <div className="text-[11px] text-[var(--text-muted)]">{item.pillar} • {item.type}</div>
+                                            <div className="text-[11px] text-[var(--text-muted)]">{item.primaryPillar} • {item.type}</div>
                                         </td>
                                         <td className="py-2.5 px-3">
                                             <span className="font-mono text-[11px] bg-purple-900/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-900/30">{item.version}</span>
