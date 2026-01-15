@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getFileContent } from '@/lib/drive'
-import { GeminiService } from '@/lib/gemini'
+// import { GeminiService } from '@/lib/gemini' // Deprecated for analysis
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
@@ -120,9 +120,10 @@ export async function POST(request: NextRequest) {
             `
         }
 
-        // 2. Analyze with Gemini
-        console.log(`[Analyze] Sending ${text.length} chars to Gemini with context: ${type}...`)
-        const metadata = await GeminiService.analyzeContent(text, promptContext)
+        // 2. Analyze with OpenAI
+        console.log(`[Analyze] Sending ${text.length} chars to OpenAI with context: ${type}...`)
+        const { OpenAIService } = await import('@/lib/openai')
+        const metadata = await OpenAIService.analyzeContent(text, promptContext)
 
         // Inject transcription into metadata if exists
         if (transcription) {

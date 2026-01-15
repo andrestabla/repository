@@ -3,14 +3,15 @@ import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphon
 
 // ... existing code ...
 
-
+import mermaid from 'mermaid'
+import InfographicRenderer from './InfographicRenderer'
 
 type Message = {
     role: 'user' | 'assistant'
     content: string
     timestamp: Date
 }
-import mermaid from 'mermaid'
+
 
 // Helper Component for Mermaid
 const MermaidDiagram = ({ chart }: { chart: string }) => {
@@ -411,6 +412,10 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                                             {msg.content.split('```mermaid')[0]}
                                             <MermaidDiagram chart={msg.content.split('```mermaid')[1].split('```')[0].trim()} />
                                             {msg.content.split('```').slice(2).join('')}
+                                        </div>
+                                    ) : msg.content.trim().startsWith('{') && msg.content.includes('"sections"') ? (
+                                        <div className="w-full">
+                                            <InfographicRenderer data={JSON.parse(msg.content)} />
                                         </div>
                                     ) : msg.content.includes('**HOST:**') || msg.content.includes('graph TD') || msg.content.includes('|') ? (
                                         <div className="bg-gray-50 dark:bg-[#1E1F20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-x-auto shadow-sm">

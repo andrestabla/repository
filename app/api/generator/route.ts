@@ -199,12 +199,30 @@ export async function POST(request: NextRequest) {
             `
         } else if (type === 'infographic') {
             prompt = `
-            Actúa como DISEÑADOR GRÁFICO.
-            Describe la **ESTRUCTURA VISUAL PARA UNA INFOGRAFÍA** paso a paso.
-            Sección 1: Título e Intro.
-            Sección 2: Visualización de Datos.
-            Sección 3: Conclusiones.
-            
+            Actúa como VISUAL DATA DESIGNER.
+            Genera un JSON ESTRUCTURADO para una INFOGRAFÍA de alto impacto.
+
+            FORMATO JSON REQUERIDO:
+            {
+              "title": "Título llamativo",
+              "intro": "Breve introducción visual",
+              "sections": [
+                 {
+                    "title": "Encabezado Sección",
+                    "content": " Texto explicativo conciso",
+                    "icon": "zap | chart | trend | users | target",
+                    "stats": [ { "label": "Dato", "value": "50%" } ],
+                    "chart": { "type": "bar", "data": [ { "name": "A", "value": 80 }, { "name": "B", "value": 40 } ] }
+                 }
+              ],
+              "conclusion": "Cierre impactante"
+            }
+
+            IMPORTANTE:
+            - RESPUESTA DEBE SER ÚNICAMENTE EL JSON.
+            - NO Markdown code blocks. Solo el JSON raw string.
+            - Crea al menos 4 secciones.
+
             CONTEXTO:
             ${combinedContext}
             `
