@@ -22,19 +22,20 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: 'User already exists', role: existing.role })
         }
 
-        // Create as pending
+        // Create as pending (inactive)
         await prisma.user.create({
             data: {
                 email,
                 name,
-                role: 'pending' // Pending approval
+                role: 'CURADOR',
+                isActive: false
             }
         })
 
         // Notify Admin
         await sendAccessRequestEmail(email, name)
 
-        return NextResponse.json({ success: true, role: 'pending' })
+        return NextResponse.json({ success: true, message: 'Solicitud enviada. Esperando aprobación del administrador.' })
     } catch (e) {
         console.error(e)
         return NextResponse.json({ error: 'Error requesting access' }, { status: 500 })
