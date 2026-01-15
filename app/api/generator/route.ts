@@ -51,69 +51,74 @@ export async function POST(request: NextRequest) {
 
         if (message) {
             prompt = `
-             Actúa como un ARQUITECTO DE SOLUCIONES Y EXPERTO METODOLÓGICO (4Shine AI).
+             Actúa como un ASISTENTE DE INVESTIGACIÓN INTELIGENTE (estilo NotebookLM).
              Tienes acceso total al inventario de activos de la organización (Contexto abajo).
              
              TU TAREA:
-             Responde a la solicitud del usuario generando el entregable o respuesta requerida basándote EXCLUSIVAMENTE en los activos validados proporcionados.
+             Responde a la solicitud del usuario basándote EXCLUSIVAMENTE en los activos validados proporcionados.
              
              SOLICITUD DEL USUARIO:
              "${message}"
              
-             PAUTAS:
-             1. Si te piden un "Dossier", genera un documento narrativo ejecutivo.
-             2. Si te piden una "Matriz", estructura la respuesta (puede ser en Markdown tables o JSON si lo piden).
-             3. Si te piden un "Toolkit", organiza los items lógicamente.
-             4. Sé proactivo: Si notas gaps en la metodología, menciónalos constructivamente.
-             5. Mantén un tono profesional, "curado" y de alto nivel.
-             6. Usa formato Markdown rico (Negritas, Listas, Tablas) para estructurar tu respuesta.
+             PAUTAS ESTRICTAS:
+             1. **GROUNDING (Rigor):** No inventes información. Si no está en los activos, dilo.
+             2. **CITAS:** Cada afirmación clave debe tener una cita entre corchetes, ej: "El liderazgo comienza dentro [Fuente: Shine Within MasterClass]".
+             3. **ESTILO:** Profesional pero conversacional, directo y sintético.
+             4. **FORMATO:** Markdown limpio. Negritas para conceptos clave.
+             5. **PREGUNTAS SUGERIDAS:** Al final, obligatoriamente sugiere 3 preguntas de profundización que el usuario podría hacer a continuación.
 
-             CONTEXTO DE ACTIVOS (Use this as the source of truth):
+             CONTEXTO DE ACTIVOS (Source of Truth):
              ${assetsContext}
              `
         } else if (type === 'dossier') {
             prompt = `
-            Actúa como un CONSULTOR ESTRATÉGICO SENIOR especializado en Diseño Instruccional y Desarrollo Organizacional.
-            Tu tarea es generar el contenido para un **DOSSIER EJECUTIVO** de la Metodología 4Shine basado en los activos validados adjuntos.
-
-            OBJETIVO:
-            Crear un documento narrativo que venda y explique el valor de la metodología a un cliente corporativo (B2B).
+            Actúa como un CONSULTOR ESTRATÉGICO SENIOR. Genera un **DOSSIER EJECUTIVO** para B2B.
 
             INSTRUCCIONES:
-            1. Escribe una "Introducción Ejecutiva" que sintetice el alcance de estos ${items.length} activos.
-            2. Para cada Pilar (Shine In, Out, Up, Beyond), crea un resumen narrativo de qué herramientas tenemos disponibles, citando los títulos de los activos más relevantes.
-            3. Redacta una sección de "Impacto Esperado" basada en las conductas observables descritas en los activos.
-            4. Utiliza un tono profesional, inspirador y de alto nivel.
-            5. Formato de salida: MARKDOWN limpio.
+            1. **Intro Ejecutiva**: Sintetiza el valor de la metodología.
+            2. **Desglose por Pilar**: Resumen narrativo de Shine In, Out, Up, Beyond, CITANDO los activos.
+            3. **Impacto**: Conductas observables esperadas.
+            4. **Cierre**: Llamado a la acción.
             
-            CONTEXTO DE ACTIVOS:
+            CONTEXTO:
             ${assetsContext}
             `
         } else if (type === 'matrix') {
             prompt = `
-            Actúa como un ANALISTA DE DATOS experto.
-            Tu tarea es generar una **MATRIZ DE TRAZABILIDAD** en formato JSON estructurado.
-
-            INSTRUCCIONES:
-            1. Analiza cada activo y mapea su contribución al modelo.
-            2. Genera un ARRAY JSON donde cada objeto represente un activo.
-            3. Campos requeridos: "id", "titulo", "pilar", "nivel_impacto" (Calculado por ti: Alto/Medio), "ruta_aprendizaje" (Sugiere: Liderazgo, Comunicación, etc. basado en el contenido).
-            4. NO incluyas texto explicativo, SOLO el JSON puro.
+            Actúa como ANALISTA DE DATOS. Genera una **MATRIZ DE TRAZABILIDAD** en JSON.
             
-            CONTEXTO DE ACTIVOS:
+            JSON ESTRUCTURA: Array de objetos { "id", "titulo", "pilar", "nivel_impacto", "ruta_aprendizaje" }.
+            SIN MARKDOWN TEXTUAL, SOLO JSON.
+            
+            CONTEXTO:
             ${assetsContext}
             `
         } else if (type === 'toolkit') {
             prompt = `
-            Actúa como un ARQUITECTO DE INFORMACIÓN.
-            Tu tarea es diseñar la **ESTRUCTURA DE CARPETAS (Toolkit)** ideal para entregar estos activos al cliente final.
+            Actúa como ARQUITECTO DE INFORMACIÓN. Diseña la **ESTRUCTURA DE CARPETAS (Toolkit)**.
+            Agrupa lógicamente. Formato árbol (tree). Añade notas breves. Sugiere 3 Gaps.
+            
+            CONTEXTO:
+            ${assetsContext}
+            `
+        } else if (type === 'podcast') {
+            prompt = `
+            Actúa como un GUIONISTA DE PODCAST DE ALTO NIVEL (Estilo "Deep Dive" de NotebookLM).
+            Genera un GUION DE AUDIO para dos anfitriones (Host y Experto) que discuten esta metodología.
+
+            PERSONAJES:
+            - **HOST (Curioso, entusiasta):** Hace las preguntas que todos tienen, usa analogías simples, se sorprende.
+            - **EXPERTO (Analítico, profundo):** Conecta los puntos, explica el "porqué", cita los conceptos de los activos.
 
             INSTRUCCIONES:
-            1. Agrupa los activos lógicamente (Por Pilar, Por Nivel, o Por Competencia).
-            2. Genera una estructura de árbol en texto plano (estilo comando 'tree').
-            3. Añade breves notas (entre paréntesis) de por qué agrupaste así.
-            4. Sugiere 3 recursos adicionales ("Gaps") que faltarían para completar el toolkit ideal.
-            5. Formato de salida: Texto plano formateado.
+            1. Crea un diálogo fluido, dinámico y entretenido de unos 5-8 minutos de lectura.
+            2. **NO** sea robótico. Usa interjecciones ("¡Wow!", "¿En serio?", "Exacto").
+            3. Discuten los pilares principales (Shine In/Out/Up/Beyond) basándose REALMENTE en los activos provistos.
+            4. Terminan con una reflexión poderosa sobre el "Legado".
+            
+            FORMATO:
+            **HOST:** ...
+            **EXPERTO:** ...
 
             CONTEXTO DE ACTIVOS:
             ${assetsContext}

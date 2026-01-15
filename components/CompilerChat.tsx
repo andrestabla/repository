@@ -41,6 +41,7 @@ export default function CompilerChat() {
         let type = undefined
         const cleanInput = userMsg.content.toLowerCase()
         if (cleanInput.includes('dossier')) type = 'dossier'
+        else if (cleanInput.includes('Overview') || cleanInput.includes('podcast')) type = 'podcast'
         else if (cleanInput.includes('matriz') || cleanInput.includes('trazabilidad')) type = 'matrix'
         else if (cleanInput.includes('toolkit') || cleanInput.includes('estructura')) type = 'toolkit'
 
@@ -85,8 +86,8 @@ export default function CompilerChat() {
     // Quick Actions
     const quickActions = [
         "Generar Dossier Ejecutivo",
+        "Generar Podcast (Audio Overview)",
         "Crear Matriz de Trazabilidad JSON",
-        "Diseñar Estructura de Toolkit",
         "Analizar Gaps Metodológicos"
     ]
 
