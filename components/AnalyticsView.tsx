@@ -1,19 +1,22 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { LayoutDashboard, BookOpen } from 'lucide-react'
 import ResearchAnalytics from './ResearchAnalytics'
-// Import existing Analytics/Charts components if available, otherwise defaulting to placeholder
-// Assuming methodology analytics code can be moved here or reused. For now, I'll allow the parent to pass "Inventory Analytics" children or implement it here.
-// Since the user said "Inventory Analysis" is one tab, I'll reuse the existing logic if I can find it, but `analitica/page.tsx` was just "MethodologySPA" which is a list.
-// The prompt says "En el módulo de analítica, habrá 2 pestañas". Previous `analitica` page pointed to specific inventory analysis? No, it pointed to `MethodologySPA` which looked like a list view in `qa/page.tsx`. 
-// I will assume for "Inventory Analysis" I should render what was previously there (conceptually) or a placeholder if I don't have the charts yet.
-// Wait, `MethodologySPA` IS the "Inventory List" basically. But "Analítica" implies charts.
-// The user likely wants *Charts* for Inventory (like breakdown by type, completeness) and *Charts* for Research.
-// I will create a placeholder for Inventory Analysis for now or try to fetch basic inventory stats.
+import { useSearchParams } from 'next/navigation'
 
 export default function AnalyticsView() {
+    const searchParams = useSearchParams()
+    const initialTab = searchParams.get('tab') === 'research' ? 'research' : 'inventory'
     const [activeTab, setActiveTab] = useState<'inventory' | 'research'>('inventory')
+
+    useEffect(() => {
+        if (searchParams.get('tab') === 'research') {
+            setActiveTab('research')
+        } else {
+            setActiveTab('inventory')
+        }
+    }, [searchParams])
 
     return (
         <div className="min-h-screen bg-bg text-text-main font-sans selection:bg-accent/30 selection:text-accent pb-20">
