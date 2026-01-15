@@ -29,6 +29,8 @@ import TaxonomyManager from './TaxonomyManager'
 import ReleasesView from './ReleasesView'
 import HeatmapView from './HeatmapView'
 import QAView from './QAView'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 
 type UserRole = 'metodologo' | 'curador' | 'auditor' | 'admin' | 'guest' | 'pending'
 
@@ -65,14 +67,17 @@ export default function MethodologySPA({
     initialTaxonomy,
     session
 }: {
-    initialData: ContentItem[],
-    initialTaxonomy: TaxonomyItem[],
+    initialData?: ContentItem[],
+    initialTaxonomy?: TaxonomyItem[],
     session: Session | null
 }) {
+    const pathname = usePathname()
+    const router = useRouter()
+    const currentView = pathname === '/' ? 'inventory' : pathname === '/inventario' ? 'inventory' : pathname.replace('/', '')
+
     const [user, setUser] = useState<User | null>(null)
-    const [currentView, setCurrentView] = useState('inventory')
     const [consoleLog, setConsoleLog] = useState<string[]>([])
-    const [inventoryData, setInventoryData] = useState<ContentItem[]>(initialData)
+    const [inventoryData, setInventoryData] = useState<ContentItem[]>(initialData || [])
     const [isRefreshing, setIsRefreshing] = useState(false)
 
     // Initialize User from Session
@@ -86,7 +91,10 @@ export default function MethodologySPA({
                 avatar: session.user.image || null,
                 color: role === 'admin' ? '#d73a49' : '#0969da'
             })
-            setCurrentView(role === 'admin' ? 'admin' : 'inventory')
+            // Role-based redirect on first login if at root
+            if (pathname === '/') {
+                router.push(role === 'admin' ? '/admin' : '/inventario')
+            }
         }
 
         const stored = localStorage.getItem('theme') || 'light'
@@ -185,24 +193,24 @@ export default function MethodologySPA({
                     {user?.role === 'admin' && (
                         <>
                             <NavHeader label="SISTEMA" />
-                            <NavBtn id="admin" label="Administración" icon={<ShieldCheck size={18} />} active={currentView === 'admin'} onClick={() => setCurrentView('admin')} />
+                            <NavBtn id="admin" label="Administración" icon={<ShieldCheck size={18} />} active={currentView === 'admin'} href="/admin" />
                             <div className="my-3 border-t border-border opacity-50" />
                         </>
                     )}
 
                     <NavHeader label="OPERACIÓN" />
-                    <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
+                    <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={currentView === 'inventory' || currentView === ''} href="/inventario" />
                     {(user?.role === 'admin' || user?.role === 'auditor') && (
-                        <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} onClick={() => setCurrentView('qa')} />
+                        <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} href="/qa" />
                     )}
 
                     <div className="h-4" />
 
                     <NavHeader label="ARQUITECTURA" />
-                    <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} onClick={() => setCurrentView('taxonomy')} />
-                    <NavBtn id="gaps" label="Heatmap de Brechas" icon={<Grid3X3 size={18} />} active={currentView === 'gaps'} onClick={() => setCurrentView('gaps')} />
-                    <NavBtn id="releases" label="Gestión de Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} onClick={() => setCurrentView('releases')} />
-                    <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} onClick={() => setCurrentView('generator')} />
+                    <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} href="/taxonomy" />
+                    <NavBtn id="gaps" label="Heatmap de Brechas" icon={<Grid3X3 size={18} />} active={currentView === 'gaps'} href="/gap-analysis" />
+                    <NavBtn id="releases" label="Gestión de Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} href="/releases" />
+                    <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} href="/generator" />
                 </nav>
 
                 <div className="mt-auto pt-8 border-t border-border">
@@ -240,7 +248,15 @@ export default function MethodologySPA({
                             isRefreshing={isRefreshing}
                         />
                     )}
-                    {currentView === 'gaps' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy} />}
+                    {currentView === '' && (
+                        <InventoryView
+                            data={inventoryData}
+                            role={user.role}
+                            onRefresh={refreshData}
+                            isRefreshing={isRefreshing}
+                        />
+                    )}
+                    {currentView === 'gap-analysis' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy || []} />}
                     {currentView === 'generator' && <GeneratorDashboard compileArtifact={compileArtifact} consoleLog={consoleLog} />}
                     {currentView === 'qa' && (user?.role === 'admin' || user?.role === 'auditor') && <QAView role={user.role} onRefresh={refreshData} />}
                     {currentView === 'admin' && <AdminView />}
@@ -254,10 +270,10 @@ function NavHeader({ label }: { label: string }) {
     return <div className="text-[10px] font-black text-text-muted mb-2 tracking-[0.2em] ml-2 opacity-60">{label}</div>
 }
 
-function NavBtn({ id, label, icon, active, onClick }: { id: string, label: string, icon: React.ReactNode, active: boolean, onClick: () => void }) {
+function NavBtn({ id, label, icon, active, href }: { id: string, label: string, icon: React.ReactNode, active: boolean, href: string }) {
     return (
-        <button
-            onClick={onClick}
+        <Link
+            href={href}
             className={`w-full text-left p-3 rounded-xl text-[13px] font-bold flex items-center justify-between group transition-all
         ${active
                     ? 'bg-accent text-white shadow-xl shadow-accent/20 translate-x-1'
@@ -271,7 +287,7 @@ function NavBtn({ id, label, icon, active, onClick }: { id: string, label: strin
                 {label}
             </div>
             {active && <ChevronRight size={14} className="opacity-50" />}
-        </button>
+        </Link>
     )
 }
 

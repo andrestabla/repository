@@ -473,16 +473,25 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
                     </div>
                     <div className="flex gap-4">
                         <button
-                            onClick={() => handleSaveInternal('Draft')}
+                            onClick={() => handleSaveInternal('Borrador')}
                             className="px-8 py-3.5 text-[11px] font-black uppercase tracking-widest text-text-muted hover:text-text-main border-2 border-transparent hover:border-border rounded-2xl transition-all"
                         >
-                            Guardar Draft
+                            Guardar Borrador
                         </button>
+                        {formData.status === 'Borrador' && (
+                            <button
+                                onClick={() => handleSaveInternal('Revisión')}
+                                className="bg-purple-600 text-white px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-purple-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
+                            >
+                                <ShieldCheck size={14} />
+                                Solicitar Revisión
+                            </button>
+                        )}
                         <button
                             onClick={() => handleSaveInternal()}
                             className="bg-accent text-white px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all"
                         >
-                            Confirmar Activo
+                            {isEdit ? 'Guardar Cambios' : 'Confirmar Activo'}
                         </button>
                     </div>
                 </div>

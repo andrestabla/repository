@@ -18,5 +18,5 @@ export default async function Page() {
   })
 
   // Pass data to the Client Component
-  return <MethodologySPA initialData={contents} initialTaxonomy={taxonomy} session={session} />
+  return <MethodologySPA initialData={contents as any} initialTaxonomy={taxonomy as any} session={session as any} />
 }
