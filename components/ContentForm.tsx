@@ -126,6 +126,10 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
     const [loadingPicker, setLoadingPicker] = useState(false)
     const [analyzing, setAnalyzing] = useState(false)
 
+    // Folder Navigation State
+    const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
+    const [folderHistory, setFolderHistory] = useState<{ id: string, name: string }[]>([{ id: 'root', name: 'Inicio' }])
+
     // Derived States
     const [driveStatus, setDriveStatus] = useState<'idle' | 'validating' | 'valid'>('idle')
     const [isUploading, setIsUploading] = useState(false)
@@ -151,16 +155,44 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
         } catch (e) { alert('Network Error') }
     }
 
-    const openPicker = async () => {
-        if (readOnly) return
-        setShowPicker(true)
+    const fetchDriveFiles = async (folderId?: string) => {
         setLoadingPicker(true)
         try {
-            const res = await fetch('/api/inventory/drive-files')
+            const url = folderId ? `/api/inventory/drive-files?folderId=${folderId}` : '/api/inventory/drive-files'
+            const res = await fetch(url)
             const data = await res.json()
             if (Array.isArray(data)) setPickerFiles(data)
         } catch (e) { console.error(e) }
         setLoadingPicker(false)
+    }
+
+    const openPicker = async () => {
+        if (readOnly) return
+        setShowPicker(true)
+        // Reset to root on open
+        setCurrentFolderId(null)
+        setFolderHistory([{ id: 'root', name: 'Inicio' }])
+        fetchDriveFiles()
+    }
+
+    const handleFolderClick = (folder: DriveFile) => {
+        setCurrentFolderId(folder.id)
+        setFolderHistory(prev => [...prev, { id: folder.id, name: folder.name }])
+        fetchDriveFiles(folder.id)
+    }
+
+    const handleBreadcrumbClick = (index: number) => {
+        const target = folderHistory[index]
+        const newHistory = folderHistory.slice(0, index + 1)
+        setFolderHistory(newHistory)
+
+        if (target.id === 'root') {
+            setCurrentFolderId(null)
+            fetchDriveFiles()
+        } else {
+            setCurrentFolderId(target.id)
+            fetchDriveFiles(target.id)
+        }
     }
 
     const selectFile = (file: DriveFile) => {
@@ -543,6 +575,22 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                                 <X size={18} />
                             </button>
                         </div>
+
+                        {/* BREADCRUMBS */}
+                        <div className="px-8 py-3 border-b border-border bg-gray-50/50 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                            {folderHistory.map((item, idx) => (
+                                <div key={item.id} className="flex items-center text-xs whitespace-nowrap">
+                                    <button
+                                        onClick={() => handleBreadcrumbClick(idx)}
+                                        className={`hover:bg-gray-200 px-2 py-1 rounded-md transition-colors ${idx === folderHistory.length - 1 ? 'font-bold text-gray-800' : 'text-gray-500'}`}
+                                    >
+                                        {item.name}
+                                    </button>
+                                    {idx < folderHistory.length - 1 && <ChevronRight size={12} className="text-gray-400 mx-1" />}
+                                </div>
+                            ))}
+                        </div>
+
                         <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
                             {loadingPicker ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-text-muted opacity-30">
@@ -551,29 +599,34 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 gap-2">
-                                    {pickerFiles.map(file => (
-                                        <button
-                                            key={file.id}
-                                            onClick={() => selectFile(file)}
-                                            className="flex items-center justify-between p-5 hover:bg-accent/5 rounded-[24px] text-left group transition-all border border-transparent hover:border-accent/20"
-                                        >
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-12 h-12 bg-bg border border-border rounded-2xl flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent/40 shadow-inner group-hover:scale-105 transition-all">
-                                                    <FileText size={20} />
+                                    {pickerFiles.map(file => {
+                                        const isFolder = file.mimeType === 'application/vnd.google-apps.folder' || file.mimeType === 'application/vnd.google-apps.shortcut'
+
+                                        return (
+                                            <button
+                                                key={file.id}
+                                                onClick={() => isFolder ? handleFolderClick(file) : selectFile(file)}
+                                                className="flex items-center justify-between p-4 hover:bg-accent/5 rounded-[20px] text-left group transition-all border border-transparent hover:border-accent/20"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm ${isFolder ? 'bg-yellow-50 text-yellow-600 border border-yellow-200' : 'bg-white border border-gray-200 text-gray-500'
+                                                        }`}>
+                                                        {isFolder ? <Folder size={20} fill="currentColor" className="opacity-80" /> : <FileText size={20} />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-bold text-text-main group-hover:text-accent tracking-tight transition-colors">{file.name}</div>
+                                                        {!isFolder && <div className="text-[10px] font-mono text-text-muted opacity-60 mt-0.5">{file.id}</div>}
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="text-sm font-black text-text-main group-hover:text-accent tracking-tight transition-colors">{file.name}</div>
-                                                    <div className="text-[10px] font-mono text-text-muted opacity-60 mt-1">{file.id}</div>
+                                                <div className="w-8 h-8 rounded-full bg-accent/10 opacity-0 group-hover:opacity-100 flex items-center justify-center text-accent transition-all">
+                                                    <ChevronRight size={14} />
                                                 </div>
-                                            </div>
-                                            <div className="w-8 h-8 rounded-full bg-accent/10 opacity-0 group-hover:opacity-100 flex items-center justify-center text-accent transition-all">
-                                                <ChevronRight size={14} />
-                                            </div>
-                                        </button>
-                                    ))}
+                                            </button>
+                                        )
+                                    })}
                                     {pickerFiles.length === 0 && (
                                         <div className="py-20 text-center text-text-muted italic opacity-40">
-                                            No se detectaron activos compatibles en los directorios autorizados.
+                                            Carpeta vacía.
                                         </div>
                                     )}
                                 </div>
