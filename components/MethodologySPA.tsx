@@ -178,6 +178,7 @@ export default function MethodologySPA({
                     <NavHeader label="OPERACIÓN" />
                     <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={currentView === 'analitica'} href="/analitica" />
                     <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={currentView === 'inventory' || currentView === ''} href="/inventario" />
+                    <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={currentView === 'research'} href="/research" />
                     {(user?.role === 'admin' || user?.role === 'auditor') && (
                         <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} href="/qa" />
                     )}

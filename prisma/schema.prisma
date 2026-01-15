@@ -67,8 +67,26 @@ model ContentItem {
   year             String?
   releaseId        String?
   release          MethodologyRelease? @relation(fields: [releaseId], references: [id])
+  researchSources  ResearchSource[]    @relation("ContentReferences")
 
   @@index([releaseId])
+}
+
+model ResearchSource {
+  id          String        @id @default(cuid())
+  title       String
+  apa         String?       @db.Text
+  url         String?
+  summary     String?       @db.Text
+  keyConcepts String?       @db.Text // Comma separated or specific format
+  findings    String?       @db.Text
+  methodology String?
+  relation4Shine String?    @db.Text // How this relates to 4Shine methodology
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  referencedBy ContentItem[] @relation("ContentReferences")
 }
 
 model MethodologyRelease {

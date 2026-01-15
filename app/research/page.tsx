@@ -18,8 +18,7 @@ export default async function ResearchPage() {
         redirect("/api/auth/signin")
     }
 
-    const researchItems = await prisma.contentItem.findMany({
-        where: { type: 'Investigación' },
+    const researchItems = await prisma.researchSource.findMany({
         orderBy: { title: 'asc' }
     })
 
