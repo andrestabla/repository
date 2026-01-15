@@ -108,6 +108,7 @@ const TABS = [
     { id: 'audience', label: 'Audiencia', icon: <Users size={14} /> },
     { id: 'governance', label: 'Gob & IP', icon: <Scale size={14} /> },
     { id: 'context', label: 'Contexto', icon: <FileText size={14} /> },
+    { id: 'transcription', label: 'Transcripción', icon: <Terminal size={14} /> },
 ]
 
 export default function ContentForm({ initialData, onClose, onSave, readOnly = false }: Props) {
