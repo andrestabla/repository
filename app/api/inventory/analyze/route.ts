@@ -19,9 +19,45 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Drive ID required' }, { status: 400 })
         }
 
-        // 1. Get Text Content
-        console.log(`[Analyze] Fetching text for ${driveId}...`)
-        const text = await getFileContent(driveId)
+        // 1. Get Text or Transcribe Content
+        console.log(`[Analyze] Fetching content for ${driveId}...`)
+
+        let text = ''
+        let transcription = null
+
+        // Check if file is video or audio
+        const { google } = require('googleapis')
+        const { SystemSettingsService } = require('@/lib/settings')
+        const config = await SystemSettingsService.getDriveConfig()
+        const credentials = JSON.parse(config.serviceAccountJson)
+        const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/drive'] })
+        const drive = google.drive({ version: 'v3', auth })
+
+        const meta = await drive.files.get({ fileId: driveId, fields: 'mimeType, name' })
+        const mimeType = meta.data.mimeType
+
+        if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {
+            console.log(`[Analyze] Detected Media: ${mimeType}. Starting Transcription Pipeline...`)
+
+            const { downloadDriveFile } = require('@/lib/drive')
+            const { GeminiService } = require('@/lib/gemini')
+            const fs = require('fs')
+
+            // A. Download
+            const localFile = await downloadDriveFile(driveId)
+
+            // B. Transcribe
+            try {
+                transcription = await GeminiService.transcribeMedia(localFile.path, localFile.mimeType)
+                text = `[TRANSCRIPTION OF VIDEO/AUDIO: ${localFile.originalName}]\n\n${transcription}`
+            } finally {
+                // Cleanup temp file
+                if (fs.existsSync(localFile.path)) fs.unlinkSync(localFile.path)
+            }
+        } else {
+            // Text/Doc file
+            text = await getFileContent(driveId)
+        }
 
         if (!text) {
             return NextResponse.json({ error: 'No text content found in file' }, { status: 404 })
@@ -30,6 +66,11 @@ export async function POST(request: NextRequest) {
         // 2. Analyze with Gemini
         console.log(`[Analyze] Sending ${text.length} chars to Gemini...`)
         const metadata = await GeminiService.analyzeContent(text)
+
+        // Inject transcription into metadata if exists
+        if (transcription) {
+            metadata.transcription = transcription
+        }
 
         let suggestedId = null
         if (metadata?.type) {

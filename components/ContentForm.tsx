@@ -81,6 +81,7 @@ export type ContentItem = {
     driveId?: string | null
     version: string
     observations?: string | null
+    transcription?: string | null
 
     status: string
     completeness: number
@@ -238,6 +239,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
             maturity: data.maturity || prev.maturity,
             targetRole: data.targetRole || prev.targetRole,
             observations: data.observations || data.summary || prev.observations,
+            transcription: data.transcription || prev.transcription,
             duration: data.duration || prev.duration,
             completeness: data.completeness || prev.completeness,
         }))
@@ -500,6 +502,25 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                                         placeholder="Define aquí la intención didáctica, notas de facilitación y contexto técnico para el despliegue de este activo..."
                                         disabled={readOnly}
                                     ></textarea>
+                                </div>
+                            )}
+
+                            {activeTab === 'transcription' && (
+                                <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500">
+                                            <Terminal size={16} />
+                                        </div>
+                                        <h3 className="text-sm font-black text-text-main uppercase tracking-widest">Transcripción de Audio/Video</h3>
+                                    </div>
+                                    <div className="w-full h-[500px] bg-bg border-4 border-border rounded-[32px] p-8 text-sm text-text-main/80 overflow-y-auto shadow-inner leading-relaxed whitespace-pre-wrap font-mono relative">
+                                        {!formData.transcription ? (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30 text-center p-8">
+                                                <Terminal size={48} className="mb-4 text-text-muted" />
+                                                <p className="max-w-md">No hay transcripción disponible. Importa un video o audio de Drive y usa "Autocompletar" para generar una.</p>
+                                            </div>
+                                        ) : formData.transcription}
+                                    </div>
                                 </div>
                             )}
 

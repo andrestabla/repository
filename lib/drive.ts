@@ -140,6 +140,37 @@ export const getFileContent = async (fileId: string): Promise<string> => {
     }
 }
 
+import fs from 'fs'
+import path from 'path'
+import os from 'os'
+import { pipeline } from 'stream/promises'
+
+export const downloadDriveFile = async (fileId: string): Promise<{ path: string, mimeType: string, originalName: string }> => {
+    const drive = await getDriveClient()
+
+    // 1. Get Metadata
+    const meta = await drive.files.get({ fileId, fields: 'name, mimeType' })
+    const fileName = meta.data.name || 'downloaded_file'
+    const mimeType = meta.data.mimeType || 'application/octet-stream'
+
+    // 2. Prepare Temp Path
+    const tempPath = path.join(os.tmpdir(), `gemini_${fileId}_${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`)
+
+    console.log(`[Drive] Downloading ${fileName} to ${tempPath}...`)
+
+    // 3. Download Stream
+    const res = await drive.files.get(
+        { fileId, alt: 'media' },
+        { responseType: 'stream' }
+    )
+
+    // 4. Save to Disk
+    await pipeline(res.data, fs.createWriteStream(tempPath))
+
+    console.log(`[Drive] Download complete: ${tempPath}`)
+    return { path: tempPath, mimeType, originalName: fileName }
+}
+
 export const uploadToDrive = async (filename: string, buffer: Buffer, mimeType: string, folderId: string): Promise<string> => {
     try {
         const drive = await getDriveClient()

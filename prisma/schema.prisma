@@ -50,6 +50,7 @@ model ContentItem {
   nextContentId    String?
   observations     String?
   outcomeType      String?
+  transcription    String? // New field for video/audio transcripts
   prereqId         String?
   publicVisibility Boolean?
   recommendation   String?

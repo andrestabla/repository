@@ -145,4 +145,55 @@ export class GeminiService {
 
         throw new Error(`[Gemini All Models Failed] Último error: ${lastError?.message || lastError}`)
     }
+
+    static async transcribeMedia(filePath: string, mimeType: string): Promise<string> {
+        const { GoogleAIFileManager } = require("@google/generative-ai/server");
+
+        const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY!);
+
+        console.log(`[Gemini] Uploading ${mimeType} to File API...`);
+        const uploadResponse = await fileManager.uploadFile(filePath, {
+            mimeType,
+            displayName: "Asset Analysis Media",
+        });
+
+        console.log(`[Gemini] Upload complete: ${uploadResponse.file.uri} (State: ${uploadResponse.file.state})`);
+
+        // Wait for video processing
+        let fileState = uploadResponse.file.state;
+        while (fileState === 'PROCESSING') {
+            console.log('[Gemini] Waiting for video processing...');
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            const freshFile = await fileManager.getFile(uploadResponse.file.name);
+            fileState = freshFile.state;
+            if (fileState === 'FAILED') throw new Error('Video processing failed in Gemini.');
+        }
+
+        console.log(`[Gemini] File Ready. requesting transcription...`);
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+        const result = await model.generateContent([
+            {
+                fileData: {
+                    mimeType: uploadResponse.file.mimeType,
+                    fileUri: uploadResponse.file.uri
+                }
+            },
+            {
+                text: `
+                Act as a professional transcriber and analyst.
+                1. Provide a FULL, ACCURATE TRANSCRIPTION of the audio/video.
+                2. If there are visual slides, describe them briefly in brackets like [Slide: Title].
+                3. Do not summarize yet, just transcribe faithfully.
+                `
+            }
+        ]);
+
+        const transcription = result.response.text();
+        console.log(`[Gemini] Transcription generated (${transcription.length} chars).`);
+
+        return transcription;
+    }
 }
