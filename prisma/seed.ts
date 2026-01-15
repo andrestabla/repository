@@ -67,11 +67,11 @@ async function main() {
 
     // 3. Content Items from Prototype (New Dataset)
     const contents = [
-        { id: '4S-P-001', title: 'Guía Fundamental de Networking', type: 'PDF', pillar: 'Shine Out', sub: 'Networking', level: 'Básico', status: 'Approved', complete: 100, ip: 'Propio', driveId: 'VALID_ID' },
-        { id: '4S-V-020', title: 'Video: Elevator Pitch TED', type: 'Video', pillar: 'Shine In', sub: 'Comunicación', level: 'Intermedio', status: 'Review', complete: 90, ip: 'Tercero', driveId: 'VALID_ID' },
-        { id: '4S-T-099', title: 'Matriz de Influencia Política', type: 'Herramienta', pillar: 'Shine Up', sub: 'Influencia', level: 'Avanzado', status: 'Draft', complete: 20, ip: 'Completar', driveId: null },
-        { id: '4S-P-002', title: 'Checklist de LinkedIn', type: 'PDF', pillar: 'Shine Out', sub: 'Marca Personal', level: 'Básico', status: 'Approved', complete: 100, ip: 'Propio', driveId: 'VALID_ID' },
-        { id: '4S-D-105', title: 'Manual Facilitador Módulo 1', type: 'Doc', pillar: 'Transversal', sub: 'General', level: 'N/A', status: 'Draft', complete: 40, ip: 'Propio', driveId: null }
+        { id: '4S-P-001', title: 'Guía Fundamental de Networking', type: 'PDF', primaryPillar: 'Shine Out', secondaryPillars: [], sub: 'Networking', maturity: 'Básico', status: 'Approved', complete: 100, ip: 'Propio', driveId: 'VALID_ID' },
+        { id: '4S-V-020', title: 'Video: Elevator Pitch TED', type: 'Video', primaryPillar: 'Shine In', secondaryPillars: [], sub: 'Comunicación', maturity: 'Intermedio', status: 'Review', complete: 90, ip: 'Tercero', driveId: 'VALID_ID' },
+        { id: '4S-T-099', title: 'Matriz de Influencia Política', type: 'Herramienta', primaryPillar: 'Shine Up', secondaryPillars: [], sub: 'Influencia', maturity: 'Avanzado', status: 'Draft', complete: 20, ip: 'Completar', driveId: null },
+        { id: '4S-P-002', title: 'Checklist de LinkedIn', type: 'PDF', primaryPillar: 'Shine Out', secondaryPillars: [], sub: 'Marca Personal', maturity: 'Básico', status: 'Approved', complete: 100, ip: 'Propio', driveId: 'VALID_ID' },
+        { id: '4S-D-105', title: 'Manual Facilitador Módulo 1', type: 'Doc', primaryPillar: 'Transversal', secondaryPillars: [], sub: 'General', maturity: 'N/A', status: 'Draft', complete: 40, ip: 'Propio', driveId: null }
     ]
 
     for (const c of contents) {
@@ -80,9 +80,11 @@ async function main() {
             update: {
                 title: c.title,
                 type: c.type,
-                pillar: c.pillar,
+                primaryPillar: c.primaryPillar,
+                secondaryPillars: c.secondaryPillars,
                 sub: c.sub,
-                level: c.level,
+                maturity: c.maturity,
+                level: c.maturity,
                 status: c.status,
                 ip: c.ip,
                 completeness: c.complete,
@@ -92,9 +94,11 @@ async function main() {
                 id: c.id,
                 title: c.title,
                 type: c.type,
-                pillar: c.pillar,
+                primaryPillar: c.primaryPillar,
+                secondaryPillars: c.secondaryPillars,
                 sub: c.sub,
-                level: c.level,
+                maturity: c.maturity,
+                level: c.maturity,
                 version: 'v1.0',
                 status: c.status,
                 ip: c.ip,
