@@ -148,12 +148,12 @@ export default function ResearchAnalytics() {
                         <div className="w-2 h-2 rounded-full bg-purple-500"></div>
                         Densidad de Conceptos (Top 10)
                     </h3>
-                    <div className="h-80">
+                    <div style={{ height: `${Math.max(320, Math.min(data.conceptDensity.length, 10) * 50)}px` }} className="min-h-[320px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data.conceptDensity.slice(0, 10)} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} horizontal={true} vertical={false} />
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="text" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#666' }} />
+                                <YAxis dataKey="text" type="category" width={120} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#666' }} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
                                 <Bar dataKey="value" fill="#8884d8" radius={[0, 8, 8, 0]} barSize={20} />
                             </BarChart>
@@ -164,26 +164,28 @@ export default function ResearchAnalytics() {
 
             {/* CHARTS ROW 2 - Competence (Fix) & Geography (Map) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Competencias Clave - FIXED: Horizontal Bar Chart to show full text */}
-                <div className="lg:col-span-2 bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
+                {/* Competencias Clave - FIXED: Horizontal Bar Chart with Dynamic Height & Scroll */}
+                <div className="lg:col-span-2 bg-card-bg border border-border rounded-[32px] p-8 shadow-sm flex flex-col max-h-[600px]">
                     <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6">Competencias Clave Identificadas</h3>
-                    <div className="h-[400px]"> {/* Increased height for readability */}
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data.competenceDist} layout="vertical" margin={{ left: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" opacity={0.3} horizontal={true} vertical={false} />
-                                <XAxis type="number" hide />
-                                <YAxis
-                                    dataKey="name"
-                                    type="category"
-                                    width={220} // Much more space for labels
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fontSize: 11, fill: '#444', fontWeight: 500 }}
-                                />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
-                                <Bar dataKey="value" fill="#00C49F" radius={[0, 8, 8, 0]} barSize={24} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="flex-1 overflow-y-auto pr-2 no-scrollbar">
+                        <div style={{ height: `${Math.max(400, data.competenceDist.length * 40)}px` }} className="min-h-[400px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={data.competenceDist} layout="vertical" margin={{ left: 20, right: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} horizontal={true} vertical={false} />
+                                    <XAxis type="number" hide />
+                                    <YAxis
+                                        dataKey="name"
+                                        type="category"
+                                        width={220}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 11, fill: '#444', fontWeight: 500 }}
+                                    />
+                                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                                    <Bar dataKey="value" fill="#00C49F" radius={[0, 8, 8, 0]} barSize={24} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
 
