@@ -31,6 +31,7 @@ import ReleasesView from './ReleasesView'
 import HeatmapView from './HeatmapView'
 import QAView from './QAView'
 import AnalyticsView from './AnalyticsView'
+import CompilerChat from './CompilerChat'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -78,7 +79,6 @@ export default function MethodologySPA({
     const currentView = pathname === '/' ? 'inventory' : pathname === '/inventario' ? 'inventory' : pathname.replace('/', '')
 
     const [user, setUser] = useState<User | null>(null)
-    const [consoleLog, setConsoleLog] = useState<string[]>([])
     const [inventoryData, setInventoryData] = useState<ContentItem[]>(initialData || [])
     const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -122,32 +122,7 @@ export default function MethodologySPA({
         }
     }
 
-    const compileArtifact = async (releaseTag: string, artifactType: string) => {
-        setConsoleLog([`> [SYSTEM] Inicializando Compilación: ${artifactType}...`])
-        try {
-            const res = await fetch('/api/generator', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ releaseTag, artifactType })
-            })
-            const data = await res.json()
-            if (data.error) throw new Error(data.error)
 
-            setConsoleLog(prev => [...prev, `> [INFO] Versión Destino: ${releaseTag}`])
-            setConsoleLog(prev => [...prev, `> [INFO] Activos encontrados: ${data.metadata?.itemCount || 0}`])
-            setConsoleLog(prev => [...prev, `> [PROCESS] Generando estructura taxonómica... OK`])
-            setConsoleLog(prev => [...prev, `> [SUCCESS] ${artifactType} compilado correctamente.`])
-
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `4SHINE_${artifactType.replace(/\s/g, '_')}_${releaseTag}.json`
-            a.click()
-        } catch (err: any) {
-            setConsoleLog(prev => [...prev, `> [ERROR] Compilación fallida: ${err.message}`])
-        }
-    }
 
     if (!user) {
         return (
@@ -261,7 +236,7 @@ export default function MethodologySPA({
                         />
                     )}
                     {currentView === 'gap-analysis' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy || []} />}
-                    {currentView === 'generator' && <GeneratorDashboard compileArtifact={compileArtifact} consoleLog={consoleLog} />}
+                    {currentView === 'generator' && <CompilerChat />}
                     {currentView === 'qa' && (user?.role === 'admin' || user?.role === 'auditor') && <QAView role={user.role} onRefresh={refreshData} />}
                     {currentView === 'admin' && <AdminView />}
                 </div>
@@ -626,89 +601,7 @@ function DataPointCard({ icon, label, value }: { icon: React.ReactNode, label: s
     )
 }
 
-function GeneratorDashboard({ compileArtifact, consoleLog }: { compileArtifact: (v: string, a: string) => void, consoleLog: string[] }) {
-    const [selectedRelease, setSelectedRelease] = useState('v1.0')
-    const [releases, setReleases] = useState<any[]>([])
 
-    useEffect(() => {
-        fetch('/api/releases').then(r => r.json()).then(data => {
-            if (Array.isArray(data)) setReleases(data)
-        })
-    }, [])
 
-    return (
-        <div className="max-w-4xl mx-auto text-left">
-            <header className="mb-10">
-                <h2 className="text-3xl font-black text-text-main tracking-tighter">Compilador de Metodología</h2>
-                <p className="text-sm text-text-muted mt-1 font-medium">Genera entregables estructurados a partir de la arquitectura validada.</p>
-            </header>
 
-            <div className="grid gap-8">
-                <div className="bg-panel border border-border rounded-[32px] p-8 shadow-sm">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-text-muted mb-6 flex items-center gap-2">
-                        <Monitor size={14} /> Configuración de Generación
-                    </h3>
-
-                    <div className="space-y-6">
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-3 italic">Versión (Snapshot Snapshot)</label>
-                            <select
-                                value={selectedRelease}
-                                onChange={(e) => setSelectedRelease(e.target.value)}
-                                className="w-full bg-bg border-2 border-border p-4 rounded-2xl text-[14px] font-bold text-text-main focus:border-accent outline-none transition-all appearance-none cursor-pointer"
-                            >
-                                {releases.map(r => (
-                                    <option key={r.id} value={r.tag}>{r.tag} - {r.status}</option>
-                                ))}
-                                {releases.length === 0 && <option value="v1.0">v1.0 (Predeterminado)</option>}
-                            </select>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <CompBtn icon={<FileText size={18} />} label="Dossier (PDF)" onClick={() => compileArtifact(selectedRelease, 'pdf')} disabled={!selectedRelease} />
-                            <CompBtn icon={<ShieldCheck size={18} />} label="Matriz (Excel)" onClick={() => compileArtifact(selectedRelease, 'xlsx')} disabled={!selectedRelease} />
-                            <CompBtn icon={<Package size={18} />} label="Toolkit (Zip)" onClick={() => compileArtifact(selectedRelease, 'zip')} disabled={!selectedRelease} />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-[#000] border border-border/40 rounded-[32px] p-8 font-mono shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent/50 to-transparent" />
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                            Consola de Compilación
-                        </div>
-                        <div className="flex gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-border/40" />
-                            <div className="w-2.5 h-2.5 rounded-full bg-border/40" />
-                            <div className="w-2.5 h-2.5 rounded-full bg-border/40" />
-                        </div>
-                    </div>
-                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-4 italic">
-                        {consoleLog.map((line, i) => (
-                            <div key={i} className="text-[12px] text-text-muted animate-in slide-in-from-left-2 duration-300">
-                                <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString([], { hour12: false })}]</span> {line}
-                            </div>
-                        ))}
-                        {consoleLog.length === 0 && <div className="text-[12px] opacity-20 py-10 text-center">Esperando instrucciones de compilación...</div>}
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-function CompBtn({ icon, label, onClick, disabled }: { icon: React.ReactNode, label: string, onClick: () => void, disabled?: boolean }) {
-    return (
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-bg border-2 border-border rounded-[24px] hover:border-accent hover:text-accent transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:pointer-events-none group"
-        >
-            <div className="text-text-muted group-hover:text-accent transition-colors">{icon}</div>
-            <span className="text-[11px] font-black uppercase tracking-[0.1em]">{label}</span>
-        </button>
-    )
-}
 

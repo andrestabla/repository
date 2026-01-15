@@ -9,7 +9,7 @@ type CompilationType = 'dossier' | 'matrix' | 'toolkit'
 
 export async function POST(request: NextRequest) {
     try {
-        const { type, version } = await request.json() as { type: CompilationType, version?: string }
+        const { type, version, message } = await request.json() as { type: CompilationType, version?: string, message?: string }
 
         // 1. Fetch Validated Assets
         const whereClause: any = { status: 'Validado' }
@@ -17,17 +17,7 @@ export async function POST(request: NextRequest) {
 
         const items = await prisma.contentItem.findMany({
             where: whereClause,
-            select: {
-                title: true,
-                primaryPillar: true,
-                secondaryPillars: true,
-                type: true,
-                sub: true,
-                competence: true,
-                behavior: true,
-                observations: true,
-                id: true
-            }
+
         })
 
         if (items.length === 0) {
@@ -50,7 +40,29 @@ export async function POST(request: NextRequest) {
         const genAI = new GoogleGenerativeAI(apiKey)
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" }) // Use 1.5 Pro to handle large context
 
-        if (type === 'dossier') {
+        if (message) {
+            prompt = `
+             Actúa como un ARQUITECTO DE SOLUCIONES Y EXPERTO METODOLÓGICO (4Shine AI).
+             Tienes acceso total al inventario de activos de la organización (Contexto abajo).
+             
+             TU TAREA:
+             Responde a la solicitud del usuario generando el entregable o respuesta requerida basándote EXCLUSIVAMENTE en los activos validados proporcionados.
+             
+             SOLICITUD DEL USUARIO:
+             "${message}"
+             
+             PAUTAS:
+             1. Si te piden un "Dossier", genera un documento narrativo ejecutivo.
+             2. Si te piden una "Matriz", estructura la respuesta (puede ser en Markdown tables o JSON si lo piden).
+             3. Si te piden un "Toolkit", organiza los items lógicamente.
+             4. Sé proactivo: Si notas gaps en la metodología, menciónalos constructivamente.
+             5. Mantén un tono profesional, "curado" y de alto nivel.
+             6. Usa formato Markdown rico (Negritas, Listas, Tablas) para estructurar tu respuesta.
+
+             CONTEXTO DE ACTIVOS (Use this as the source of truth):
+             ${assetsContext}
+             `
+        } else if (type === 'dossier') {
             prompt = `
             Actúa como un CONSULTOR ESTRATÉGICO SENIOR especializado en Diseño Instruccional y Desarrollo Organizacional.
             Tu tarea es generar el contenido para un **DOSSIER EJECUTIVO** de la Metodología 4Shine basado en los activos validados adjuntos.
