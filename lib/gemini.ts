@@ -149,7 +149,11 @@ export class GeminiService {
     static async transcribeMedia(filePath: string, mimeType: string): Promise<string> {
         const { GoogleAIFileManager } = require("@google/generative-ai/server");
 
-        const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY!);
+        let apiKey = await SystemSettingsService.getGeminiApiKey()
+        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
+        if (!apiKey) throw new Error("GEMINI_API_KEY no configurada.")
+
+        const fileManager = new GoogleAIFileManager(apiKey);
 
         console.log(`[Gemini] Uploading ${mimeType} to File API...`);
         const uploadResponse = await fileManager.uploadFile(filePath, {
@@ -171,7 +175,7 @@ export class GeminiService {
 
         console.log(`[Gemini] File Ready. requesting transcription...`);
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const result = await model.generateContent([
