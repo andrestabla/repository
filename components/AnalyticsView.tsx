@@ -1,22 +1,11 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { LayoutDashboard, BookOpen } from 'lucide-react'
 import ResearchAnalytics from './ResearchAnalytics'
-import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
-export default function AnalyticsView() {
-    const searchParams = useSearchParams()
-    const initialTab = searchParams.get('tab') === 'research' ? 'research' : 'inventory'
-    const [activeTab, setActiveTab] = useState<'inventory' | 'research'>('inventory')
-
-    useEffect(() => {
-        if (searchParams.get('tab') === 'research') {
-            setActiveTab('research')
-        } else {
-            setActiveTab('inventory')
-        }
-    }, [searchParams])
+export default function AnalyticsView({ currentTab = 'inventory' }: { currentTab?: 'inventory' | 'research' }) {
 
     return (
         <div className="min-h-screen bg-bg text-text-main font-sans selection:bg-accent/30 selection:text-accent pb-20">
@@ -35,28 +24,29 @@ export default function AnalyticsView() {
 
             <main className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
                 <div className="flex gap-4 mb-8">
-                    <button
-                        onClick={() => setActiveTab('inventory')}
-                        className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${activeTab === 'inventory'
+                    <Link
+                        href="/analitica/inventario"
+                        className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${currentTab === 'inventory'
                             ? 'bg-text-main border-text-main text-bg'
                             : 'bg-card-bg border-border text-text-muted hover:border-text-main/20'
                             }`}
                     >
                         <LayoutDashboard size={14} /> Inventario de Activos
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('research')}
-                        className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${activeTab === 'research'
+                    </Link>
+                    <Link
+                        href="/analitica/research"
+                        className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${currentTab === 'research'
                             ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
                             : 'bg-card-bg border-border text-text-muted hover:border-accent/30 hover:text-accent'
                             }`}
                     >
                         <BookOpen size={14} /> Investigación
-                    </button>
+                    </Link>
                 </div>
 
+
                 <div className="min-h-[500px]">
-                    {activeTab === 'inventory' && (
+                    {currentTab === 'inventory' && (
                         <div className="p-12 text-center border-4 border-dashed border-border rounded-[32px] text-text-muted opacity-50">
                             <h3 className="text-xl font-bold mb-2">Análisis de Inventario</h3>
                             <p>Visualizaciones de completitud, madurez y pilares de activos internos.</p>
@@ -64,7 +54,7 @@ export default function AnalyticsView() {
                         </div>
                     )}
 
-                    {activeTab === 'research' && <ResearchAnalytics />}
+                    {currentTab === 'research' && <ResearchAnalytics />}
                 </div>
             </main>
         </div>
