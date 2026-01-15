@@ -109,7 +109,10 @@ export class GeminiService {
               "findings": "Si se solicita en contexto: Hallazgos clave",
               "methodology": "Si se solicita en contexto: Metodología usada",
               "relation4Shine": "Si se solicita en contexto: Explicación específica de relación con 4Shine",
-              "pillars": ["Shine In", "Shine Out"] // Si se solicita sugerencia de pilares multiples
+              "pillars": ["Shine In", "Shine Out"], // Si se solicita sugerencia de pilares multiples
+              "competence": "Si es investigación: Competencia técnica abordada",
+              "geographicCoverage": "Si es investigación: Alcance geográfico (Global, LATAM, etc.)",
+              "populationParams": "Si es investigación: Muestra o perfil demográfico participante"
             }
 
             CONTENT TO ANALYZE:

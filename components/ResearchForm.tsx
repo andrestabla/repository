@@ -152,7 +152,11 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
                 methodology: meta.methodology || prev.methodology,
                 relation4Shine: meta.relation4Shine || prev.relation4Shine, // If backend supports it
                 title: prev.title || meta.title, // Auto-title if empty
-                pillars: meta.pillars || prev.pillars // If backend guesses pillars
+                pillars: meta.pillars || prev.pillars, // If backend guesses pillars
+                transcription: meta.transcription || prev.transcription,
+                competence: meta.competence || prev.competence, // New
+                geographicCoverage: meta.geographicCoverage || meta.geography || prev.geographicCoverage, // New
+                populationParams: meta.populationParams || meta.population || prev.populationParams // New
             }))
         } catch (e: any) {
             alert('Error en análisis IA: ' + e.message)

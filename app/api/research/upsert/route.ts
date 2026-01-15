@@ -9,24 +9,26 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json()
-        const { id, title, apa, url, summary, keyConcepts, findings, methodology, relation4Shine, pillars, driveId } = body
+        const { id, title, apa, url, summary, keyConcepts, findings, methodology, relation4Shine, pillars, driveId, transcription, competence, geographicCoverage, populationParams } = body
 
         // Simple validation
         if (!title) return NextResponse.json({ error: 'Title required' }, { status: 400 })
 
         const result = await prisma.researchSource.upsert({
-            where: { id: id || 'new' }, // 'new' won't match, so it creates. If id present, updates.
+            where: { id: id || 'new' },
             update: {
                 title, apa, url, summary,
                 keyConcepts, findings, methodology, relation4Shine,
                 pillars: pillars || [],
-                driveId
+                driveId, transcription,
+                competence, geographicCoverage, populationParams
             },
             create: {
                 title, apa, url, summary,
                 keyConcepts, findings, methodology, relation4Shine,
                 pillars: pillars || [],
-                driveId
+                driveId, transcription,
+                competence, geographicCoverage, populationParams
             }
         })
 

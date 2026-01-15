@@ -110,6 +110,9 @@ export async function POST(request: NextRequest) {
             - "findings": Una sección detallada de hallazgos empíricos o teóricos del documento.
             - "methodology": Describe brevemente la metodología (Cualitativa, Cuantitativa, Revisión, etc.).
             - "keyConcepts": Lista de conceptos clave separados por comas.
+            - "competence": Competencia técnica o de liderazgo principal que aborda el estudio.
+            - "geographicCoverage": Región geográfica del estudio (e.g., Global, LATAM, USA, Europa).
+            - "populationParams": Descripción breve de la muestra (e.g., 500 Ejecutivos, Estudiantes MBA, etc.).
             - "pillars": Array de Strings sugiriendo qué pilares 4Shine toca (Shine In, Shine Out, Shine Up, Shine On).
             - "relation4Shine": UN PÁRRAFO CRÍTICO explicando cómo este paper sustenta o valida científicamente los pilares seleccionados.
             

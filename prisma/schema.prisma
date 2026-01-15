@@ -81,9 +81,13 @@ model ResearchSource {
   keyConcepts String?       @db.Text // Comma separated or specific format
   findings    String?       @db.Text
   methodology String?
+  competence       String?  // Main competence addressed
+  geographicCoverage String? // e.g., "Global", "LATAM", "USA"
+  populationParams   String? // e.g., "C-Level Executives", "Managers"
   relation4Shine String?    @db.Text
   pillars     String[]      @default([]) // 4Shine Pillars (Shine In, Out, Up, On)
   driveId     String?       // For attached PDF/Doc
+  transcription String?     @db.Text
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   
