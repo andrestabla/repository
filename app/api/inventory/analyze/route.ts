@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
-        const { driveId } = await request.json()
+        const { driveId, url } = await request.json()
 
         if (!driveId) {
             return NextResponse.json({ error: 'Drive ID required' }, { status: 400 })
