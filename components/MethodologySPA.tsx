@@ -280,7 +280,9 @@ function HeatmapViewWrapper({ inventory, taxonomy }: { inventory: any[], taxonom
     subcomponents.forEach(sub => {
         heatmap[sub.name] = {}
         levels.forEach(lvl => {
-            const matches = inventory.filter(i => i.sub === sub.name && i.maturity === lvl)
+            const matches = inventory.filter(i =>
+                (i.sub === sub.name || i.primaryPillar === sub.name) && i.maturity === lvl
+            )
             const count = matches.length
             const hasValidated = matches.some(m => m.status === 'Validado' || m.status === 'Approved')
             heatmap[sub.name][lvl] = { count, status: count === 0 ? 'red' : hasValidated ? 'green' : 'yellow' }
@@ -303,7 +305,12 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
     const filteredData = data.filter(i => {
         const matchesSearch = i.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             i.id.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesPillar = !pillarFilter || i.pillar === pillarFilter
+
+        // Match if it is the primary pillar OR if it is in secondary pillars
+        const matchesPillar = !pillarFilter ||
+            (i as any).primaryPillar === pillarFilter ||
+            ((i as any).secondaryPillars && (i as any).secondaryPillars.includes(pillarFilter))
+
         const matchesMaturity = !maturityFilter || i.maturity === maturityFilter
         const matchesStatus = !statusFilter || i.status === statusFilter
         return matchesSearch && matchesPillar && matchesMaturity && matchesStatus
@@ -502,12 +509,23 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                            <DataPointCard icon={<LayoutDashboard size={18} />} label="Pilar 4Shine" value={selectedItem.pillar || ''} />
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+                            <DataPointCard icon={<LayoutDashboard size={18} />} label="Pilar Principal" value={(selectedItem as any).primaryPillar || ''} />
                             <DataPointCard icon={<Grid3X3 size={18} />} label="Subcomponente" value={selectedItem.sub || ''} />
                             <DataPointCard icon={<Monitor size={18} />} label="Nivel Madurez" value={selectedItem.maturity || ''} />
                             <DataPointCard icon={<ShieldCheck size={18} />} label="Estado de Calidad" value={selectedItem.status || ''} />
                         </div>
+
+                        {(selectedItem as any).secondaryPillars && (selectedItem as any).secondaryPillars.length > 0 && (
+                            <div className="mb-10 flex flex-wrap gap-2 items-center">
+                                <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mr-2">Pilares Secundarios:</span>
+                                {(selectedItem as any).secondaryPillars.map((p: string) => (
+                                    <span key={p} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[9px] font-bold border border-accent/20">
+                                        {p}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
 
                         <div className="flex-1 bg-bg border border-border rounded-3xl overflow-hidden shadow-2xl relative group min-h-[400px]">
                             {selectedItem.driveId ? (

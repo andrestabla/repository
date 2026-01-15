@@ -33,17 +33,19 @@ export class GeminiService {
             ${methodologyReference}
 
             --- MANDATO DE OBSERVACIONES (OBLIGATORIO) ---
-            El campo "observations" DEBE ser extenso (800 a 1500 caracteres) y seguir esta estructura interna:
+            El campo "observations" DEBE ser extenso (1000 a 2000 caracteres) y seguir esta estructura interna:
             1. [ANÁLISIS DE IMPACTO]: Explica cómo este contenido específico desactiva creencias limitantes y activa el "brillo" del líder.
-            2. [CONEXIÓN METODOLÓGICA]: Relaciona el contenido con al menos uno de los 4 pilares y explica la sinergia con las otras dimensiones.
-            3. [GUÍA DEL FACILITADOR]: Da 3 pasos tácticos para que un mentor use este material de forma transformadora.
+            2. [CONEXIÓN METODOLÓGICA]: Relaciona el contenido con el pilar principal y explica por qué se vincula también con los pilares secundarios sugeridos.
+            3. [GUÍA DEL FACILITADOR]: Da 5 pasos tácticos para que un mentor use este material de forma transformadora.
             4. [CONDUCTA OBSERVABLE]: Describe cómo se verá el líder una vez que haya integrado este conocimiento.
 
-            --- REGLAS DE RESPUESTA ---
-            - TODO EN ESPAÑOL.
+            --- REGLAS DE COMPLETITUD (100% OBLIGATORIO) ---
+            - Todos los campos del JSON deben estar presentes y completados con datos lógicos.
             - "type": PDF, Video, Audio, Toolkit, Test, Rúbrica, Workbook, Documento maestro.
             - "maturity": Básico, En Desarrollo, Avanzado, Maestría.
-            - "observations": Mínimo 4 párrafos densos. No uses frases cortas. Se elocuente y estratégico.
+            - "primaryPillar": El pilar más relevante (de los 4 definidos).
+            - "secondaryPillars": Array de strings con otros pilares relevantes si aplica. Si no hay otros, usar [].
+            - "completeness": Siempre calcular un porcentaje de 0 a 100 basado en tu propio análisis.
 
             Return ONLY a valid JSON object.
 
@@ -52,7 +54,8 @@ export class GeminiService {
               "title": "Título oficial de alto impacto",
               "summary": "Resumen ejecutivo estratégico",
               "type": "CÓDIGO_TIPO",
-              "pillar": "Pilar Principal",
+              "primaryPillar": "Pilar Principal",
+              "secondaryPillars": ["Pilar Secundario 1", "Pilar Secundario 2"],
               "sub": "Subcomponente",
               "competence": "Competencia Maestra",
               "behavior": "Conducta Observable específica",
@@ -63,7 +66,8 @@ export class GeminiService {
               "moment": "Inicio | Refuerzo | Profundización | Cierre",
               "language": "ES",
               "format": "Formato Técnico",
-              "observations": "TEXTO_DE_ANÁLISIS_PROFUNDO_MÍNIMO_800_CARACTERES"
+              "completeness": 100,
+              "observations": "TEXTO_DE_ANÁLISIS_PROFUNDO_DENSE_Y_ESTRATÉGICO"
             }
 
             CONTENT TO ANALYZE:

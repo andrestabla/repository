@@ -19,7 +19,8 @@ model ContentItem {
   id               String              @id
   title            String
   type             String
-  pillar           String
+  primaryPillar    String              @default("Transversal")
+  secondaryPillars String[]            @default([])
   version          String
   status           String
   ip               String?

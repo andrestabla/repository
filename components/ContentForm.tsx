@@ -41,7 +41,9 @@ export type ContentItem = {
     year?: string | null
     source?: string | null
 
-    pillar: string
+    pillar?: string // Legacy or temporary
+    primaryPillar: string
+    secondaryPillars: string[]
     sub?: string | null
     competence?: string | null
     behavior?: string | null
@@ -111,7 +113,7 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
 
     const [formData, setFormData] = useState<Partial<ContentItem>>({
         id: '', title: '', type: 'PDF', version: 'v1.0', status: 'Borrador', completeness: 0,
-        pillar: 'Shine Out', maturity: 'Básico', ipOwner: 'Propio',
+        primaryPillar: 'Transversal', secondaryPillars: [], maturity: 'Básico', ipOwner: 'Propio',
         ...initialData
     })
 
@@ -194,13 +196,15 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             ...prev,
             title: data.title || prev.title,
             type: data.type || prev.type,
-            pillar: data.pillar || prev.pillar,
+            primaryPillar: data.primaryPillar || prev.primaryPillar,
+            secondaryPillars: data.secondaryPillars || prev.secondaryPillars || [],
             sub: data.sub || prev.sub,
             competence: data.competence || prev.competence,
             maturity: data.maturity || prev.maturity,
             targetRole: data.targetRole || prev.targetRole,
-            observations: data.summary || prev.observations,
+            observations: data.observations || data.summary || prev.observations,
             duration: data.duration || prev.duration,
+            completeness: data.completeness || prev.completeness,
         }))
     }
 
@@ -219,6 +223,36 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
             </div>
         </div>
     )
+
+    const MultiSelect = ({ label, field, options, icon }: any) => {
+        const values = (formData as any)[field] || []
+        const toggleOption = (opt: string) => {
+            const newValues = values.includes(opt)
+                ? values.filter((v: string) => v !== opt)
+                : [...values, opt]
+            setFormData({ ...formData, [field]: newValues })
+        }
+
+        return (
+            <div className="col-span-2">
+                <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-3 pl-1 italic">{label}</label>
+                <div className="flex flex-wrap gap-2">
+                    {options.map((opt: string) => (
+                        <button
+                            key={opt}
+                            onClick={() => toggleOption(opt)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${values.includes(opt)
+                                ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
+                                : 'bg-bg border-border text-text-muted hover:border-accent/40'
+                                }`}
+                        >
+                            {opt}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        )
+    }
 
     const Select = ({ label, field, options, icon, width = 'half' }: any) => (
         <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
@@ -360,7 +394,8 @@ export default function ContentForm({ initialData, onClose, onSave }: Props) {
 
                             {activeTab === 'classification' && (
                                 <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                                    <Select label="Pilar Metodológico" field="pillar" options={['Shine Out', 'Shine In', 'Shine Up', 'Shine On']} width="full" icon={<Fingerprint size={16} />} />
+                                    <Select label="Pilar Metodológico Principal" field="primaryPillar" options={['Shine In', 'Shine Out', 'Shine Up', 'Shine On', 'Transversal']} width="full" icon={<Fingerprint size={16} />} />
+                                    <MultiSelect label="Pilares de Apoyo (Secundarios)" field="secondaryPillars" options={['Shine In', 'Shine Out', 'Shine Up', 'Shine On', 'Transversal']} />
                                     <Input label="Subcomponente" field="sub" placeholder="Liderazgo, IA..." icon={<Database size={16} />} />
                                     <Input label="Competencia Clave" field="competence" placeholder="Negociación" icon={<Brain size={16} />} />
                                     <Input label="Conducta Observable" field="behavior" placeholder="Aplica marcos ágiles..." width="full" icon={<Users size={16} />} />

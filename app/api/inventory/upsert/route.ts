@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         let {
             id, title, type, format, language, duration, year, source,
-            pillar, sub, competence, behavior, maturity,
+            pillar, primaryPillar, secondaryPillars,
+            sub, competence, behavior, maturity,
             intervention, moment, prereqId, testId, variable, impactScore, outcomeType,
             trigger, recommendation, challengeType, evidenceRequired, nextContentId,
             targetRole, roleLevel, industry, vipUsage, publicVisibility,
@@ -29,6 +30,9 @@ export async function POST(request: NextRequest) {
         if (!id || !title) {
             return NextResponse.json({ error: 'Missing required fields (ID or Title)' }, { status: 400 })
         }
+
+        const finalPrimaryPillar = primaryPillar || pillar || 'Transversal'
+        const finalSecondaryPillars = Array.isArray(secondaryPillars) ? secondaryPillars : []
 
         // 1. Authorization check for existing items
         const existingItem = await prisma.contentItem.findUnique({ where: { id } })
@@ -49,7 +53,7 @@ export async function POST(request: NextRequest) {
 
         // 3. Calculate Completeness
         const criticalFields = [
-            title, type, pillar, sub, maturity,
+            title, type, finalPrimaryPillar, sub, maturity,
             targetRole, ipOwner, cleanDriveId, version
         ]
         const filledFields = criticalFields.filter(f => f && f !== 'Completar' && f !== '').length
@@ -59,7 +63,9 @@ export async function POST(request: NextRequest) {
         // 4. Data Payload
         const dataPayload = {
             title, type, format, language, duration, year, source,
-            pillar, sub, competence, behavior, maturity: maturity || level,
+            primaryPillar: finalPrimaryPillar,
+            secondaryPillars: finalSecondaryPillars,
+            sub, competence, behavior, maturity: maturity || level,
             intervention, moment, prereqId, testId, variable, impactScore, outcomeType,
             trigger, recommendation, challengeType, evidenceRequired, nextContentId,
             targetRole, roleLevel, industry, vipUsage, publicVisibility,

@@ -10,7 +10,12 @@ export async function GET(request: NextRequest) {
     const pillar = searchParams.get('pillar')
 
     const where: any = {}
-    if (pillar) where.pillar = pillar
+    if (pillar) {
+        where.OR = [
+            { primaryPillar: pillar },
+            { secondaryPillars: { has: pillar } }
+        ]
+    }
 
     try {
         const items = await prisma.contentItem.findMany({
