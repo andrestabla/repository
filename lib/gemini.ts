@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { SystemSettingsService } from "./settings"
+import prisma from "./prisma"
 
 export class GeminiService {
     static async analyzeContent(text: string) {
@@ -7,14 +8,41 @@ export class GeminiService {
 
         // Upgrading to Pro models for higher reasoning and better observations
         const modelsToTry = [
+            "gemini-2.0-flash", // Preferred for speed/reasoning balance
             "gemini-1.5-pro-latest",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash"
+            "gemini-1.5-pro"
         ]
 
         let apiKey = await SystemSettingsService.getGeminiApiKey()
         if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
         if (!apiKey) throw new Error("GEMINI_API_KEY no configurada.")
+
+        // 1. Fetch Dynamic Context (RAG)
+        // We get examples of high-quality validated assets to guide the IA
+        const validatedSamples = await prisma.contentItem.findMany({
+            where: { status: 'Validado' },
+            take: 5,
+            select: {
+                title: true,
+                primaryPillar: true,
+                secondaryPillars: true,
+                sub: true,
+                competence: true,
+                behavior: true,
+                observations: true
+            }
+        })
+
+        const dynamicContext = validatedSamples.length > 0
+            ? "\nEJEMPLOS DE ACTIVOS VALIDADOS (Referencia de Estilo y Nivel):\n" +
+            validatedSamples.map(s => `
+            - Título: ${s.title}
+            - Pilar: ${s.primaryPillar} (${(s.secondaryPillars as string[]).join(', ')})
+            - Sub: ${s.sub} | Competencia: ${s.competence}
+            - Conducta: ${s.behavior}
+            - Observación Clave: ${s.observations?.substring(0, 300)}...
+            `).join('\n')
+            : "";
 
         // Massive Context Injection
         const methodologyReference = `
@@ -22,8 +50,8 @@ export class GeminiService {
         - Propósito: Fortalecer liderazgo y marca personal ("Brillar").
         - Pilar 1: SHINE WITHIN (Dominio Interior). Subcomponentes: Autoconfianza, Inteligencia emocional, Propósito personal.
         - Pilar 2: SHINE OUT (Presencia y Proyección). Subcomponentes: Comunicación poderosa, Influencia positiva, Networking estratégico.
-        - Pilar 3: SHINE UP (Visión y Estrategia). Subcomponentes: Visión de futuro, Toma de decisiones bajo presión, Adaptabilidad.
-        - Pilar 4: SHINE BEYOND (Trascendencia y Legado). Subcomponentes: Desarrollo de otros líderes, Impacto social y humano, Legado personal.
+        - Pilar 3: SHINE UP (Visión y Estrategia). Subcomponentes: Política Organizacional, Liderazgo Estratégico, Negociación Avanzada, Gestión de Stakeholders.
+        - Pilar 4: SHINE BEYOND (Trascendencia y Legado). Subcomponentes: Mentoría & Coaching, Innovación y Futuro, Sostenibilidad del Éxito, Transferencia de Conocimiento.
         Principios: Liderazgo de adentro hacia afuera, autenticidad, bienestar y resultados estratégicos.
         `;
 
@@ -31,6 +59,8 @@ export class GeminiService {
             Eres la INTELIGENCIA ARTIFICIAL MAESTRA de la METODOLOGÍA 4SHINE. Tu razonamiento debe ser de NIVEL EJECUTIVO (C-Level).
             Analiza el contenido adjunto usando la siguiente GUÍA DE REFERENCIA:
             ${methodologyReference}
+
+            ${dynamicContext}
 
             --- MANDATO DE OBSERVACIONES (OBLIGATORIO) ---
             El campo "observations" DEBE ser extenso (1000 a 2000 caracteres) y seguir esta estructura interna:
