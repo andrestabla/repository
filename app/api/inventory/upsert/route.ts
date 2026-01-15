@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
         const existingItem = await prisma.contentItem.findUnique({ where: { id } })
 
         // RBAC: Only Auditor or Admin can set status to 'Validado'
-        if (status === 'Validado' && role !== 'ADMIN' && role !== 'AUDITOR') {
+        const normalizedRole = role?.toUpperCase()
+        if (status === 'Validado' && normalizedRole !== 'ADMIN' && normalizedRole !== 'AUDITOR') {
             return NextResponse.json({ error: 'Permisos insuficientes: Solo un Auditor puede validar activos.' }, { status: 403 })
         }
 
