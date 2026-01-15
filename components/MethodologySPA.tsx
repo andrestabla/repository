@@ -345,7 +345,7 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                     </h2>
                     <p className="text-sm text-text-muted mt-2 font-medium">Gestiona y consulta el repositorio central de activos metodológicos.</p>
                 </div>
-                {role === 'curador' && (
+                {(role === 'admin' || role === 'metodologo' || role === 'curador') && (
                     <button
                         onClick={() => { setSelectedItem(null); setShowForm(true); }}
                         className="bg-accent text-white px-6 py-3 rounded-2xl font-bold text-sm hover:brightness-110 hover:shadow-xl hover:shadow-accent/20 transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-accent/10"
