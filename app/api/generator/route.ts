@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey)
-        // Use Gemini 1.5 Pro for maximum reasoning capability and context window
+        // Use Gemini 1.5 Pro (Stable)
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-pro-latest",
+            model: "gemini-1.5-pro",
             generationConfig: {
                 temperature: 0.4, // Balanced for creativity and adherence
                 maxOutputTokens: 8192, // Allow extensive output
