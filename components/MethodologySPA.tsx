@@ -20,7 +20,8 @@ import {
     Terminal,
     ChevronRight,
     Search,
-    Trash2
+    Trash2,
+    Activity
 } from 'lucide-react'
 import { signIn, signOut } from "next-auth/react"
 import AdminView from './AdminView'
@@ -29,6 +30,7 @@ import TaxonomyManager from './TaxonomyManager'
 import ReleasesView from './ReleasesView'
 import HeatmapView from './HeatmapView'
 import QAView from './QAView'
+import AnalyticsView from './AnalyticsView'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -199,6 +201,7 @@ export default function MethodologySPA({
                     )}
 
                     <NavHeader label="OPERACIÓN" />
+                    <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={currentView === 'analitica'} href="/analitica" />
                     <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={currentView === 'inventory' || currentView === ''} href="/inventario" />
                     {(user?.role === 'admin' || user?.role === 'auditor') && (
                         <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} href="/qa" />
@@ -240,6 +243,7 @@ export default function MethodologySPA({
                 <div className="p-10 animate-in fade-in duration-700">
                     {currentView === 'taxonomy' && <TaxonomyManager initialData={initialTaxonomy as any} />}
                     {currentView === 'releases' && <ReleasesView />}
+                    {currentView === 'analitica' && <AnalyticsView />}
                     {currentView === 'inventory' && (
                         <InventoryView
                             data={inventoryData}

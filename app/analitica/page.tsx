@@ -1,0 +1,20 @@
+import prisma from '@/lib/prisma'
+import MethodologySPA from '@/components/MethodologySPA'
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+
+export const dynamic = 'force-dynamic'
+
+export default async function Page() {
+    const session = await getServerSession(authOptions)
+
+    const contents = await prisma.contentItem.findMany({
+        orderBy: { id: 'asc' }
+    })
+
+    const taxonomy = await prisma.taxonomy.findMany({
+        orderBy: { name: 'asc' }
+    })
+
+    return <MethodologySPA initialData={contents as any} initialTaxonomy={taxonomy as any} session={session as any} />
+}
