@@ -62,6 +62,11 @@ export class GeminiService {
 
             ${dynamicContext}
 
+            --- REGLAS DE ORO DE ANÁLISIS ---
+            1. SELECCIÓN DE PILAR OBLIGATORIA: DEBES elegir uno de los 4 pilares (Shine In, Shine Out, Shine Up, Shine Beyond) como "primaryPillar". Solo usa "Transversal" si el contenido es 100% administrativo, pero siempre prioriza la vinculación metodológica.
+            2. RESEÑA FIEL: El campo "summary" NO debe ser genérico. Debe ser una reseña/resumen fiel y detallado de lo que realmente dice el archivo. Si es un video, describe la narrativa. Si es un toolkit, describe las herramientas.
+            3. CRITERIO DE EXPERTO: Tus sugerencias de "sub", "competence" y "behavior" deben ser ultra-específicas al contenido analizado.
+
             --- MANDATO DE OBSERVACIONES (OBLIGATORIO) ---
             El campo "observations" DEBE ser extenso (1000 a 2000 caracteres) y seguir esta estructura interna:
             1. [ANÁLISIS DE IMPACTO]: Explica cómo este contenido específico desactiva creencias limitantes y activa el "brillo" del líder.
@@ -73,8 +78,8 @@ export class GeminiService {
             - Todos los campos del JSON deben estar presentes y completados con datos lógicos.
             - "type": PDF, Video, Audio, Toolkit, Test, Rúbrica, Workbook, Documento maestro.
             - "maturity": Básico, En Desarrollo, Avanzado, Maestría.
-            - "primaryPillar": El pilar más relevante (de los 4 definidos).
-            - "secondaryPillars": Array de strings con otros pilares relevantes si aplica. Si no hay otros, usar [].
+            - "primaryPillar": OBLIGATORIO (Shine In, Shine Out, Shine Up, o Shine Beyond).
+            - "secondaryPillars": Array de strings con otros pilares relevantes.
             - "completeness": Siempre calcular un porcentaje de 0 a 100 basado en tu propio análisis.
 
             Return ONLY a valid JSON object.
@@ -82,11 +87,11 @@ export class GeminiService {
             JSON STRUCTURE:
             {
               "title": "Título oficial de alto impacto",
-              "summary": "Resumen ejecutivo estratégico",
+              "summary": "Reseña fiel, técnica y detallada del contenido analizado",
               "type": "CÓDIGO_TIPO",
-              "primaryPillar": "Pilar Principal",
+              "primaryPillar": "Pilar Principal Seleccionado",
               "secondaryPillars": ["Pilar Secundario 1", "Pilar Secundario 2"],
-              "sub": "Subcomponente",
+              "sub": "Subcomponente Específico",
               "competence": "Competencia Maestra",
               "behavior": "Conducta Observable específica",
               "maturity": "Nivel de Madurez",
