@@ -54,8 +54,9 @@ export default function ResearchSPA({ initialItems, session }: any) {
                         Nueva Fuente
                     </button>
 
-                    <a href="/inventory" className="text-xs font-bold text-text-muted hover:text-accent transition-colors">
-                        Volver al Inventario
+
+                    <a href="/analitica" className="text-xs font-bold text-text-muted hover:text-accent transition-colors">
+                        Volver
                     </a>
                 </div>
             </nav>
