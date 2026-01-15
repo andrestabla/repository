@@ -89,12 +89,34 @@ model Taxonomy {
   children Taxonomy[] @relation("TaxonomyHierarchy")
 }
 
+enum Role {
+  METODOLOGO
+  CURADOR
+  AUDITOR
+  ADMIN
+}
+
 model User {
   email     String   @id
   name      String?
-  role      String   @default("curador")
+  role      Role     @default(CURADOR)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  logs      SystemLog[]
+}
+
+model SystemLog {
+  id         Int      @id @default(autoincrement())
+  action     String   // 'LOGIN', 'APPROVE', 'FORCE_UNLOCK', 'DELETE_NODE'
+  details    String?  // JSON o texto: "Cambió título de X a Y"
+  resourceId String?  // ID del contenido afectado (opcional)
+  
+  userEmail  String
+  user       User     @relation(fields: [userEmail], references: [email])
+  
+  createdAt  DateTime @default(now())
 }
 
 model Artifact {

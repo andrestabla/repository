@@ -6,6 +6,7 @@ type User = {
     email: string
     role: string
     name: string | null
+    isActive: boolean
     createdAt: string
 }
 
@@ -23,8 +24,24 @@ type DriveConfig = {
     serviceAccountJson?: string
 }
 
+type SystemLog = {
+    id: number
+    action: string
+    details: string | null
+    resourceId: string | null
+    userEmail: string
+    createdAt: string
+    user?: { name: string | null, email: string }
+}
+
+type HealthInfo = {
+    database: { status: string, details: string }
+    drive: { status: string, details: string }
+    gemini: { status: string, details: string }
+}
+
 export default function AdminView() {
-    const [activeTab, setActiveTab] = useState<'users' | 'settings'>('users')
+    const [activeTab, setActiveTab] = useState<'users' | 'settings' | 'health' | 'logs'>('users')
 
     // --- USERS STATE ---
     const [users, setUsers] = useState<User[]>([])
@@ -43,6 +60,14 @@ export default function AdminView() {
     const [loadingSettings, setLoadingSettings] = useState(false)
     const [refreshSettings, setRefreshSettings] = useState(0)
     const [newFolderId, setNewFolderId] = useState('')
+
+    // --- HEALTH STATE ---
+    const [health, setHealth] = useState<HealthInfo | null>(null)
+    const [loadingHealth, setLoadingHealth] = useState(false)
+
+    // --- LOGS STATE ---
+    const [logs, setLogs] = useState<SystemLog[]>([])
+    const [loadingLogs, setLoadingLogs] = useState(false)
 
     // Fetch Users
     useEffect(() => {
@@ -72,7 +97,51 @@ export default function AdminView() {
         }
     }, [activeTab, refreshSettings])
 
+    // Fetch Health
+    useEffect(() => {
+        if (activeTab === 'health') {
+            setLoadingHealth(true)
+            fetch('/api/health')
+                .then(res => res.json())
+                .then(data => {
+                    setHealth(data)
+                    setLoadingHealth(false)
+                })
+                .catch(err => { console.error(err); setLoadingHealth(false) })
+        }
+    }, [activeTab])
+
+    // Fetch Logs
+    useEffect(() => {
+        if (activeTab === 'logs') {
+            setLoadingLogs(true)
+            fetch('/api/logs')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) setLogs(data)
+                    setLoadingLogs(false)
+                })
+                .catch(err => { console.error(err); setLoadingLogs(false) })
+        }
+    }, [activeTab])
+
     // --- USER HANDLERS ---
+    const handleUpdateUser = async (email: string, updates: Partial<User>) => {
+        try {
+            const res = await fetch('/api/users', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, ...updates })
+            })
+            if (res.ok) {
+                setRefreshUsers(p => p + 1)
+            } else {
+                const err = await res.json()
+                alert('Error: ' + err.error)
+            }
+        } catch (e) { alert('Error de red') }
+    }
+
     const handleAddUser = async () => {
         if (!newEmail) return alert('Email requerido')
         try {
@@ -180,6 +249,24 @@ export default function AdminView() {
                 >
                     Configuración
                 </button>
+                <button
+                    onClick={() => setActiveTab('health')}
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'health'
+                        ? 'border-[var(--accent)] text-[var(--text-main)]'
+                        : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        }`}
+                >
+                    Salud del Sistema
+                </button>
+                <button
+                    onClick={() => setActiveTab('logs')}
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'logs'
+                        ? 'border-[var(--accent)] text-[var(--text-main)]'
+                        : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        }`}
+                >
+                    Logs
+                </button>
             </div>
 
             {/* CONTENT: USERS */}
@@ -242,25 +329,48 @@ export default function AdminView() {
                             <thead className="bg-[#1c2128] text-[var(--text-muted)]">
                                 <tr>
                                     <th className="p-3 text-left">Usuario</th>
+                                    <th className="p-3 text-left">Estado</th>
                                     <th className="p-3 text-left">Rol</th>
                                     <th className="p-3 text-left">Fecha Registro</th>
                                     <th className="p-3 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {loadingUsers && <tr><td colSpan={4} className="p-5 text-center text-[var(--text-muted)]">Cargando...</td></tr>}
+                                {loadingUsers && <tr><td colSpan={5} className="p-5 text-center text-[var(--text-muted)]">Cargando...</td></tr>}
                                 {activeUsers.map(u => (
-                                    <tr key={u.email} className="border-t border-[var(--border)] hover:bg-white/5">
+                                    <tr key={u.email} className={`border-t border-[var(--border)] hover:bg-white/5 ${!u.isActive ? 'opacity-50 grayscale' : ''}`}>
                                         <td className="p-3">
                                             <div className="font-semibold text-[var(--text-main)]">{u.name || 'Sin nombre'}</div>
                                             <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
                                         </td>
                                         <td className="p-3">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${u.role === 'admin' ? 'bg-purple-900 text-purple-200' : u.role === 'curador' ? 'bg-blue-900 text-blue-200' : u.role === 'auditor' ? 'bg-green-900 text-green-200' : 'bg-gray-800 text-gray-300'}`}>{u.role}</span>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleUpdateUser(u.email, { isActive: !u.isActive })}
+                                                    disabled={u.email === 'andrestablarico@gmail.com'}
+                                                    className={`w-10 h-5 rounded-full transition-colors relative ${u.isActive ? 'bg-[var(--success)]' : 'bg-gray-600'}`}
+                                                >
+                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${u.isActive ? 'left-6' : 'left-1'}`} />
+                                                </button>
+                                                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)]">{u.isActive ? 'Activo' : 'Inactivo'}</span>
+                                            </div>
                                         </td>
-                                        <td className="p-3 text-[var(--text-muted)]">{new Date(u.createdAt).toLocaleDateString()}</td>
+                                        <td className="p-3">
+                                            <select
+                                                value={u.role.toLowerCase()}
+                                                onChange={(e) => handleUpdateUser(u.email, { role: e.target.value })}
+                                                disabled={u.email === 'andrestablarico@gmail.com'}
+                                                className="bg-bg border border-[var(--border)] rounded px-2 py-1 text-[10px] font-bold uppercase outline-none focus:border-[var(--accent)]"
+                                            >
+                                                <option value="admin">ADMIN</option>
+                                                <option value="metodologo">METODOLOGO</option>
+                                                <option value="curador">CURADOR</option>
+                                                <option value="auditor">AUDITOR</option>
+                                            </select>
+                                        </td>
+                                        <td className="p-3 text-[var(--text-muted)] text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
                                         <td className="p-3 text-right">
-                                            {u.role !== 'admin' && (
+                                            {u.email !== 'andrestablarico@gmail.com' && (
                                                 <button onClick={() => handleDelete(u.email)} className="text-[var(--danger)] hover:underline text-xs">Revocar</button>
                                             )}
                                         </td>
@@ -348,18 +458,6 @@ export default function AdminView() {
                             </div>
 
                             {/* SENDER CUSTOMIZATION */}
-                            <div className="col-span-2 pt-2 border-t border-[var(--border)] grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre del Remitente (Opcional)</label>
-                                    <input value={emailConfig.senderName || ''} onChange={e => setEmailConfig({ ...emailConfig, senderName: e.target.value })} placeholder="Ej: Soporte TI" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-[var(--text-muted)] block mb-1">Email del Remitente (Opcional)</label>
-                                    <input value={emailConfig.senderEmail || ''} onChange={e => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })} placeholder="Ej: no-reply@empresa.com" className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm" />
-                                    <p className="text-[10px] text-[var(--text-muted)] mt-1">Si se deja vacío, se usa el Usuario SMTP.</p>
-                                </div>
-                            </div>
-
                             <div className="col-span-2 pt-2 border-t border-[var(--border)] grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-xs text-[var(--text-muted)] block mb-1">Nombre del Remitente (Opcional)</label>
@@ -534,6 +632,79 @@ export default function AdminView() {
                             </p>
                         </div>
 
+                    </div>
+                </div>
+            )}
+            {/* CONTENT: HEALTH */}
+            {activeTab === 'health' && (
+                <div className="space-y-6">
+                    <h3 className="text-sm uppercase text-[var(--text-muted)] font-bold mb-4">Estado de Salud de Integraciones</h3>
+                    {loadingHealth && <div className="text-[var(--text-muted)]">Analizando servicios...</div>}
+                    {health && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {Object.entries(health).map(([service, info]) => (
+                                <div key={service} className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h4 className="capitalize font-bold text-[var(--text-main)] text-sm">{service}</h4>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${info.status === 'healthy' ? 'bg-green-900/40 text-green-400' :
+                                            info.status === 'warning' ? 'bg-yellow-900/40 text-yellow-400' :
+                                                'bg-red-900/40 text-red-400'
+                                            }`}>
+                                            {info.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-[var(--text-muted)]">{info.details}</p>
+                                    <div className="mt-4 pt-4 border-t border-[var(--border)] flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${info.status === 'healthy' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                                        <span className="text-[10px] text-[var(--text-muted)] uppercase">Live Check</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* CONTENT: LOGS */}
+            {activeTab === 'logs' && (
+                <div className="space-y-4">
+                    <h3 className="text-sm uppercase text-[var(--text-muted)] font-bold mb-4">Logs de Auditoría (Últimos 100)</h3>
+                    <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-[#1c2128] text-[var(--text-muted)]">
+                                <tr>
+                                    <th className="p-3 text-left">Fecha</th>
+                                    <th className="p-3 text-left">Acción</th>
+                                    <th className="p-3 text-left">Usuario</th>
+                                    <th className="p-3 text-left">Detalles</th>
+                                    <th className="p-3 text-left">ID Recurso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loadingLogs && <tr><td colSpan={5} className="p-5 text-center text-[var(--text-muted)]">Cargando logs...</td></tr>}
+                                {logs.map(log => (
+                                    <tr key={log.id} className="border-t border-[var(--border)] hover:bg-white/5 text-[11px]">
+                                        <td className="p-3 text-[var(--text-muted)] whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
+                                        <td className="p-3">
+                                            <span className={`px-2 py-0.5 rounded font-bold uppercase tracking-tighter ${log.action.includes('FORCE') ? 'bg-red-900/40 text-red-400 border border-red-800/50' :
+                                                log.action.includes('DELETE') ? 'bg-orange-900/40 text-orange-400' :
+                                                    'bg-blue-900/40 text-blue-400'
+                                                }`}>
+                                                {log.action}
+                                            </span>
+                                        </td>
+                                        <td className="p-3">
+                                            <div className="font-semibold text-[var(--text-main)] truncate max-w-[120px]" title={log.userEmail}>{log.user?.name || log.userEmail.split('@')[0]}</div>
+                                        </td>
+                                        <td className="p-3 text-[var(--text-muted)] max-w-[250px] truncate" title={log.details || ''}>{log.details}</td>
+                                        <td className="p-3 font-mono text-xs text-[var(--accent)]">{log.resourceId}</td>
+                                    </tr>
+                                ))}
+                                {logs.length === 0 && !loadingLogs && (
+                                    <tr><td colSpan={5} className="p-10 text-center italic text-[var(--text-muted)]">No se encontraron registros en la auditoría.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}

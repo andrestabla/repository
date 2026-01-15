@@ -453,12 +453,43 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                                 <h3 className="text-3xl font-black text-text-main leading-[1.1] tracking-tighter">{selectedItem.title}</h3>
                             </div>
                             <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setShowForm(true)}
-                                    className="px-5 py-2.5 rounded-xl border-2 border-accent text-accent hover:bg-accent hover:text-white transition-all font-bold text-xs uppercase tracking-widest"
-                                >
-                                    Editar Metadatos
-                                </button>
+                                {!(selectedItem.status === 'Validado' && role !== 'admin') && (
+                                    <button
+                                        onClick={() => setShowForm(true)}
+                                        className="px-5 py-2.5 rounded-xl border-2 border-accent text-accent hover:bg-accent hover:text-white transition-all font-bold text-xs uppercase tracking-widest"
+                                    >
+                                        Editar Metadatos
+                                    </button>
+                                )}
+                                {role === 'admin' && selectedItem.status === 'Validado' && (
+                                    <button
+                                        onClick={async () => {
+                                            const reason = prompt('Motivo obligatorio para revertir estado (God Mode):')
+                                            if (!reason) return
+                                            try {
+                                                const res = await fetch('/api/inventory/upsert', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        ...selectedItem,
+                                                        status: 'Borrador',
+                                                        forceReason: reason
+                                                    })
+                                                })
+                                                if (res.ok) {
+                                                    alert('✅ Estado revertido a Borrador exitosamente.')
+                                                    onRefresh()
+                                                } else {
+                                                    const err = await res.json()
+                                                    alert('❌ Error: ' + err.error)
+                                                }
+                                            } catch (e) { alert('Error de red') }
+                                        }}
+                                        className="px-5 py-2.5 rounded-xl bg-orange-600 text-white hover:bg-orange-700 transition-all font-bold text-xs uppercase tracking-widest shadow-lg shadow-orange-900/20"
+                                    >
+                                        ⚡ Revertir Estado
+                                    </button>
+                                )}
                                 {(role === 'admin' || role === 'metodologo') && (
                                     <button
                                         onClick={() => handleDelete(selectedItem.id)}
