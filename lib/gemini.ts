@@ -7,10 +7,11 @@ export class GeminiService {
         if (!text || text.length < 50) return null
 
         // Upgrading to Pro models for higher reasoning and better observations
+        // Upgrading to Pro models for higher reasoning and better observations
         const modelsToTry = [
             "gemini-2.0-flash", // Preferred for speed/reasoning balance
-            "gemini-1.5-pro-latest",
-            "gemini-1.5-pro"
+            "gemini-2.5-flash", // Latest experimental
+            "gemini-1.5-flash-latest" // Fallback
         ]
 
         let apiKey = await SystemSettingsService.getGeminiApiKey()

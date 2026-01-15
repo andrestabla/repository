@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" }) // Use 1.5 Pro to handle large context
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }) // Upgrading to 2.0 Flash (confirmed available)
 
         if (message) {
             prompt = `
