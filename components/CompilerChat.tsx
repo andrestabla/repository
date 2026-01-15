@@ -201,14 +201,14 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                     </div>
                 </div>
                 {openSections.has('inventory') && (
-                    <div className="flex-1 overflow-y-auto p-2 space-y-1 border-b border-border min-h-[100px] max-h-[30vh]">
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1 border-b border-border min-h-[100px] max-h-[30vh] no-scrollbar">
                         {assets.filter(a => a.status === 'Validado').map(asset => (
                             <div
                                 key={asset.id}
                                 onClick={() => toggleAsset(asset.id)}
-                                className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedAssetIds.has(asset.id)
-                                    ? 'bg-accent/5 border-accent/20'
-                                    : 'bg-transparent border-transparent hover:bg-panel'
+                                className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group hover:shadow-sm ${selectedAssetIds.has(asset.id)
+                                    ? 'bg-accent/5 border-accent/20 translate-x-1'
+                                    : 'bg-transparent border-transparent hover:bg-panel hover:translate-x-1'
                                     }`}
                             >
                                 <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedAssetIds.has(asset.id) ? 'bg-accent border-accent' : 'border-border'
@@ -253,14 +253,14 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                     </div>
                 </div>
                 {openSections.has('research') && (
-                    <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-gray-50/50 dark:bg-black/20 min-h-[100px] max-h-[30vh]">
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-gray-50/50 dark:bg-black/20 min-h-[100px] max-h-[30vh] no-scrollbar">
                         {research.map(item => (
                             <div
                                 key={item.id}
                                 onClick={() => toggleResearch(item.id)}
-                                className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group ${selectedResearchIds.has(item.id)
-                                    ? 'bg-purple-500/10 border-purple-500/30'
-                                    : 'bg-transparent border-transparent hover:bg-panel'
+                                className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start gap-3 group hover:shadow-sm ${selectedResearchIds.has(item.id)
+                                    ? 'bg-purple-500/10 border-purple-500/30 translate-x-1'
+                                    : 'bg-transparent border-transparent hover:bg-panel hover:translate-x-1'
                                     }`}
                             >
                                 <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedResearchIds.has(item.id) ? 'bg-purple-500 border-purple-500' : 'border-border'
@@ -294,11 +294,11 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                     </h3>
                 </div>
                 {openSections.has('history') && (
-                    <div className="flex-1 overflow-y-auto p-0 border-t border-border min-h-[100px]">
+                    <div className="flex-1 overflow-y-auto p-0 border-t border-border min-h-[100px] no-scrollbar">
                         {history.map((h: any) => (
                             <div
                                 key={h.id}
-                                className="p-4 border-b border-border hover:bg-black/5 cursor-pointer group transition-colors"
+                                className="p-4 border-b border-border hover:bg-black/5 cursor-pointer group transition-all hover:pl-5"
                                 onClick={() => {
                                     setMessages((prev) => [
                                         ...prev,
@@ -342,8 +342,9 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                                     <button
                                         key={opt.label}
                                         onClick={() => handleSend(`Generar ${opt.label}`, opt.type)}
-                                        className="flex flex-col gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-[#1E1F20] border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-left group"
+                                        className="flex flex-col gap-3 p-4 rounded-2xl bg-white dark:bg-[#1E1F20] border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-300 text-left group relative overflow-hidden"
                                     >
+                                        <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/30 dark:to-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         <div className="w-10 h-10 rounded-full bg-white dark:bg-black border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm group-hover:bg-blue-50 dark:group-hover:bg-blue-900/10 transition-colors">
                                             {opt.icon}
                                         </div>
@@ -407,8 +408,8 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 px-[15%] pointer-events-none sticky bottom-0">
-                    <div className="pointer-events-auto relative shadow-2xl rounded-3xl bg-white dark:bg-[#1E1F20] border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                <div className="p-4 px-[15%] pointer-events-none sticky bottom-0 z-20">
+                    <div className="pointer-events-auto relative shadow-2xl shadow-blue-500/10 rounded-3xl bg-white/90 dark:bg-[#1E1F20]/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500/30 transition-all duration-300">
                         <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
