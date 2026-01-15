@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json()
-        const { id, title, apa, url, summary, keyConcepts, findings, methodology, relation4Shine } = body
+        const { id, title, apa, url, summary, keyConcepts, findings, methodology, relation4Shine, pillars, driveId } = body
 
         // Simple validation
         if (!title) return NextResponse.json({ error: 'Title required' }, { status: 400 })
@@ -18,11 +18,15 @@ export async function POST(request: NextRequest) {
             where: { id: id || 'new' }, // 'new' won't match, so it creates. If id present, updates.
             update: {
                 title, apa, url, summary,
-                keyConcepts, findings, methodology, relation4Shine
+                keyConcepts, findings, methodology, relation4Shine,
+                pillars: pillars || [],
+                driveId
             },
             create: {
                 title, apa, url, summary,
-                keyConcepts, findings, methodology, relation4Shine
+                keyConcepts, findings, methodology, relation4Shine,
+                pillars: pillars || [],
+                driveId
             }
         })
 

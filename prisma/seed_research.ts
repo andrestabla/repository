@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// 12 Records provided by user + Relation to 4Shine
+// 12 Records provided by user + Relation to 4Shine + Pillars
 const records = [
     {
         title: "1. Liderazgo y Carácter del Líder (Crossan et al., 2017)",
@@ -12,7 +12,8 @@ const records = [
         concepts: "Carácter del líder, Virtudes, Juicio (prudence), Competencias, Liderazgo efectivo",
         findings: "El carácter es esencial y complementario a las competencias. Se identificó el Juicio como la dimensión central que orquesta a las demás.",
         methods: "Estudio multimétodo: grupos focales + encuestas 360° a casi 2000 ejecutivos.",
-        rel4shine: "Fundamenta el pilar 'Esencia del Líder' en 4Shine. Valida que el carácter no es 'soft' sino estructural para el desempeño. El 'Juicio' corresponde a nuestra dimensión de Toma de Decisiones Consciente."
+        rel4shine: "Fundamenta el pilar 'Esencia del Líder' en 4Shine. Valida que el carácter no es 'soft' sino estructural para el desempeño. El 'Juicio' corresponde a nuestra dimensión de Toma de Decisiones Consciente.",
+        pillars: ["Shine In"]
     },
     {
         title: "2. Entrelazamiento Carácter-Competencia (Sturm, Vera & Crossan, 2017)",
@@ -22,7 +23,8 @@ const records = [
         concepts: "Entrelazamiento carácter-competencia, Learning-by-living, Desempeño extraordinario",
         findings: "Alto entrelazamiento genera performance superior largo plazo. Requiere aprendizaje por experiencia (vivencial).",
         methods: "Teórico-conceptual / Revisión interdisciplinaria.",
-        rel4shine: "Sustenta la integración de 'Ser' (Carácter) y 'Hacer' (Competencia) que propone 4Shine. Refuerza que la excelencia técnica sin base ética es insostenible."
+        rel4shine: "Sustenta la integración de 'Ser' (Carácter) y 'Hacer' (Competencia) que propone 4Shine. Refuerza que la excelencia técnica sin base ética es insostenible.",
+        pillars: ["Shine In", "Shine Out"]
     },
     {
         title: "3. Carácter del Líder y Resultados en Colaboradores (Monzani et al., 2021)",
@@ -32,7 +34,8 @@ const records = [
         concepts: "Network structure, Juicio (prudence), Ímpetu (drive), Resultados positivos del seguidor",
         findings: "Juicio es central. Juicio y Drive son los puentes clave para impactar el engagement y bienestar del equipo.",
         methods: "Cuantitativo: Análisis de Redes y CFA en 188 díadas líder-colaborador.",
-        rel4shine: "Evidencia cómo el liderazgo impacta en el 'Engagement' y resultados del equipo, alineándose con nuestro pilar de 'Liderazgo de Alto Impacto' y bienestar organizacional."
+        rel4shine: "Evidencia cómo el liderazgo impacta en el 'Engagement' y resultados del equipo, alineándose con nuestro pilar de 'Liderazgo de Alto Impacto' y bienestar organizacional.",
+        pillars: ["Shine Out", "Shine In"]
     },
     {
         title: "4. Revisión Sistemática sobre Personal Branding (Gorbatov, Khapova & Lysova, 2018)",
@@ -42,7 +45,8 @@ const records = [
         concepts: "Marca personal, Personal branding, Nomología de marca, Modelo integrador",
         findings: "Definición integradora: proceso estratégico de gestión de impresiones basado en identidad única que aporta valor.",
         methods: "Revisión sistemática de >100 fuentes académicas.",
-        rel4shine: "Base teórica para el pilar de 'Marca Personal'. Clarifica la diferencia entre autopromoción y gestión estratégica de la reputación basada en valor."
+        rel4shine: "Base teórica para el pilar de 'Marca Personal'. Clarifica la diferencia entre autopromoción y gestión estratégica de la reputación basada en valor.",
+        pillars: ["Shine Up"]
     },
     {
         title: "5. Marca Personal de Líderes en Redes (Venciūtė, Yue & Thelen, 2023)",
@@ -52,7 +56,8 @@ const records = [
         concepts: "Marca personal ejecutiva, Presencia estratégica en redes, Motivaciones duales",
         findings: "Lideres motivados por legado y beneficio empresa. La autenticidad y visibilidad estratégica refuerzan la confianza.",
         methods: "Cualitativo: 25 entrevistas en profundidad a líderes senior.",
-        rel4shine: "Justifica la necesidad de la 'Visibilidad Digital' en líderes modernos. Conecta la marca del líder con el Employer Branding (atracción de talento)."
+        rel4shine: "Justifica la necesidad de la 'Visibilidad Digital' en líderes modernos. Conecta la marca del líder con el Employer Branding (atracción de talento).",
+        pillars: ["Shine Up", "Shine On"]
     },
     {
         title: "6. Branding Personal del Dueño y Reputación (Situmorang & Salamah, 2018)",
@@ -62,7 +67,8 @@ const records = [
         concepts: "Marca personal del dueño, Liderazgo branding, Reputación corporativa",
         findings: "La marca personal del líder ES la marca de la empresa en estos contextos. Actos visibles (filantropía) generan confianza.",
         methods: "Estudio de caso cualitativo (Indonesia), análisis de contenido.",
-        rel4shine: "Demuestra el efecto 'halo' de la marca personal del líder sobre la reputación corporativa, clave para dueños y empresarios."
+        rel4shine: "Demuestra el efecto 'halo' de la marca personal del líder sobre la reputación corporativa, clave para dueños y empresarios.",
+        pillars: ["Shine Up", "Shine On"]
     },
     {
         title: "7. Modelo de Desarrollo del Carácter (Crossan et al., 2021)",
@@ -72,7 +78,8 @@ const records = [
         concepts: "Desarrollo del carácter, Anatomía del carácter (PABC), Musicoterapia",
         findings: "Desarrollar carácter requiere alinear cuerpo, emoción, mente y hábito. Intervenciones como música pueden ejercitar el sistema completo.",
         methods: "Ensayo teórico conceptual transdisciplinario.",
-        rel4shine: "Apoya metodología vivencial de 4Shine: el liderazgo no se aprende solo intelectualmente, requiere intervención en conductas, emociones y mentalidad (PABC)."
+        rel4shine: "Apoya metodología vivencial de 4Shine: el liderazgo no se aprende solo intelectualmente, requiere intervención en conductas, emociones y mentalidad (PABC).",
+        pillars: ["Shine In"]
     },
     {
         title: "8. Presencia Ejecutiva y Employee Engagement (Chukwuma & Okonkwo, 2023)",
@@ -82,7 +89,8 @@ const records = [
         concepts: "Presencia ejecutiva (EP), Employee engagement, Gravitas",
         findings: "Relación casi perfecta (r=0.95). Líderes con presencia inspiran mayor dedicación y energía en sus equipos.",
         methods: "Cuantitativo: Encuesta a 74 gerentes, correlación y regresión.",
-        rel4shine: "Evidencia estadística para el pilar de 'Presencia Ejecutiva' y 'Comunicación'. La forma (presencia, gravitas) fondo impacta resultados tangibles (engagement)."
+        rel4shine: "Evidencia estadística para el pilar de 'Presencia Ejecutiva' y 'Comunicación'. La forma (presencia, gravitas) fondo impacta resultados tangibles (engagement).",
+        pillars: ["Shine Up", "Shine Out"]
     },
     {
         title: "9. Liderazgo Virtuoso para Inclusión (Grimani & Gotsis, 2020)",
@@ -92,7 +100,8 @@ const records = [
         concepts: "Liderazgo virtuoso, Liderazgo inclusivo, Resultados multinivel",
         findings: "El líder virtuoso es inclusivo por naturaleza (derriba barreras de ego). Satisface necesidades de pertenencia y autorrealización.",
         methods: "Revisión conceptual teórica.",
-        rel4shine: "Vincula el liderazgo ético con la construcción de Culturas Inclusivas, un resultado esperado de aplicar 4Shine en equipos diversos."
+        rel4shine: "Vincula el liderazgo ético con la construcción de Culturas Inclusivas, un resultado esperado de aplicar 4Shine en equipos diversos.",
+        pillars: ["Shine In", "Shine Out"]
     },
     {
         title: "10. Soft Skills e Innovación (Ballester-Miquel et al., 2026)",
@@ -102,7 +111,8 @@ const records = [
         concepts: "Soft skills, Innovación en el lugar de trabajo, Liderazgo influenciador, Problem-solving",
         findings: "Liderazgo es el driver #1 de innovación, seguido de Resolución de Problemas. Clave para ventaja competitiva.",
         methods: "Cuantitativo: PLS-SEM en 125 profesionales.",
-        rel4shine: "Posiciona las 'Habilidades Blandas' (Soft Skills) como motor de rentabilidad e innovación, no solo como 'nice to have'."
+        rel4shine: "Posiciona las 'Habilidades Blandas' (Soft Skills) como motor de rentabilidad e innovación, no solo como 'nice to have'.",
+        pillars: ["Shine Out", "Shine On"]
     },
     {
         title: "11. Liderazgo Inclusivo y Éxito de Proyectos (Javed et al., 2025)",
@@ -112,7 +122,8 @@ const records = [
         concepts: "Liderazgo inclusivo, Éxito de proyectos, Autosacrificio, Engagement mediador",
         findings: "Inclusión genera engagement -> éxito. El líder que 'se sacrifica' por el equipo potencia este efecto.",
         methods: "Cuantitativo: Modelo de mediación/moderación en serie (n=400).",
-        rel4shine: "Conecta el liderazgo humano con el Éxito de Proyectos (KPis). Refuerza la idea de 'Liderazgo de Servicio' transversal a resultados."
+        rel4shine: "Conecta el liderazgo humano con el Éxito de Proyectos (KPis). Refuerza la idea de 'Liderazgo de Servicio' transversal a resultados.",
+        pillars: ["Shine Out", "Shine On"]
     },
     {
         title: "12. Beneficios del Executive Coaching (Longenecker & McCartney, 2020)",
@@ -122,7 +133,8 @@ const records = [
         concepts: "Coaching ejecutivo, C-suite, Inteligencia emocional, Control del ego",
         findings: "Beneficios tangibles (enfoque, alineación) e intangibles (bajar la guardia, apoyo emocional, reducción de soledad).",
         methods: "Cualitativo: Entrevistas y focus groups a 70 ejecutivos.",
-        rel4shine: "Valida científicamente la metodología de Coaching Ejecutivo como herramienta para C-Levels, mejorando autoconciencia y ROI."
+        rel4shine: "Valida científicamente la metodología de Coaching Ejecutivo como herramienta para C-Levels, mejorando autoconciencia y ROI.",
+        pillars: ["Shine In", "Shine Up"]
     }
 ]
 
@@ -150,7 +162,8 @@ async function main() {
                 keyConcepts: r.concepts,
                 findings: r.findings,
                 methodology: r.methods,
-                relation4Shine: r.rel4shine
+                relation4Shine: r.rel4shine,
+                pillars: r.pillars || []
             },
             create: {
                 id,
@@ -161,7 +174,8 @@ async function main() {
                 keyConcepts: r.concepts,
                 findings: r.findings,
                 methodology: r.methods,
-                relation4Shine: r.rel4shine
+                relation4Shine: r.rel4shine,
+                pillars: r.pillars || []
             }
         })
     }

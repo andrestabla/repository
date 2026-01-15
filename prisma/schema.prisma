@@ -81,7 +81,9 @@ model ResearchSource {
   keyConcepts String?       @db.Text // Comma separated or specific format
   findings    String?       @db.Text
   methodology String?
-  relation4Shine String?    @db.Text // How this relates to 4Shine methodology
+  relation4Shine String?    @db.Text
+  pillars     String[]      @default([]) // 4Shine Pillars (Shine In, Out, Up, On)
+  driveId     String?       // For attached PDF/Doc
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   
