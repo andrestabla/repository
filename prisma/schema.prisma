@@ -57,6 +57,7 @@ model ContentItem {
   reuseExternal    Boolean?
   roleLevel        String?
   source           String?
+  metadata         Json?               // For storing APA, Key Concepts, Research Findings, URL, etc.
   targetRole       String?
   testId           String?
   trigger          String?

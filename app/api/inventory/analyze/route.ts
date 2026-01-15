@@ -31,33 +31,69 @@ export async function POST(request: NextRequest) {
         const config = await SystemSettingsService.getDriveConfig()
         const credentials = JSON.parse(config.serviceAccountJson)
         const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/drive'] })
-        const drive = google.drive({ version: 'v3', auth })
+        if (driveId) {
+            // 1. Get Text or Transcribe Content from Drive
+            console.log(`[Analyze] Fetching content for ${driveId}...`)
 
-        const meta = await drive.files.get({ fileId: driveId, fields: 'mimeType, name' })
-        const mimeType = meta.data.mimeType
+            // Check if file is video or audio
+            const { google } = require('googleapis')
+            const { SystemSettingsService } = require('@/lib/settings')
+            const config = await SystemSettingsService.getDriveConfig()
+            const credentials = JSON.parse(config.serviceAccountJson)
+            const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/drive'] })
+            const drive = google.drive({ version: 'v3', auth })
 
-        if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {
-            console.log(`[Analyze] Detected Media: ${mimeType}. Starting Transcription Pipeline...`)
+            const meta = await drive.files.get({ fileId: driveId, fields: 'mimeType, name' })
+            const mimeType = meta.data.mimeType
 
-            const { downloadDriveFile } = require('@/lib/drive')
-            const { GeminiService } = require('@/lib/gemini')
-            const fs = require('fs')
+            if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {
+                console.log(`[Analyze] Detected Media: ${mimeType}. Starting Transcription Pipeline...`)
 
-            // A. Download
-            const localFile = await downloadDriveFile(driveId)
+                const { downloadDriveFile } = require('@/lib/drive')
+                const { GeminiService } = require('@/lib/gemini')
+                const fs = require('fs')
 
-            // B. Transcribe
-            try {
-                transcription = await GeminiService.transcribeMedia(localFile.path, localFile.mimeType)
-                text = `[TRANSCRIPTION OF VIDEO/AUDIO: ${localFile.originalName}]\n\n${transcription}`
-            } finally {
-                // Cleanup temp file
-                if (fs.existsSync(localFile.path)) fs.unlinkSync(localFile.path)
+                // A. Download
+                const localFile = await downloadDriveFile(driveId)
+
+                // B. Transcribe
+                try {
+                    transcription = await GeminiService.transcribeMedia(localFile.path, localFile.mimeType)
+                    text = `[TRANSCRIPTION OF VIDEO/AUDIO: ${localFile.originalName}]\n\n${transcription}`
+                } finally {
+                    // Cleanup temp file
+                    if (fs.existsSync(localFile.path)) fs.unlinkSync(localFile.path)
+                }
+            } else {
+                // Text/Doc file
+                text = await getFileContent(driveId)
             }
-        } else {
-            // Text/Doc file
-            text = await getFileContent(driveId)
         }
+
+        // --- NEW: URL HANDLING ---
+        // If driveId looks like a URL, treat it as such (or add 'url' param to request body, 
+        // but let's see if we can just reuse the field or add a check).
+        // For clean architecture, we should support 'url' in body.
+
+        if (url) {
+            console.log(`[Analyze] Analyzing URL: ${url}`)
+            // Simple fetch for now. For complex pages, we'd need Puppeteer (browser tool) but backend typically uses fetch/cheerio.
+            // Or assume user pastes content. 
+            // Better: Use Gemini 2.0 Web Search capabilities if available or just fetch HTML text.
+            try {
+                const res = await fetch(url)
+                const html = await res.text()
+                // Simple stripping using regex (Cheerio would be better but keeping deps low)
+                text = html.replace(/<[^>]*>/g, ' ').substring(0, 30000)
+                text = `[CONTENT FROM URL: ${url}]\n\n` + text
+            } catch (e) {
+                console.error('URL Fetch failed', e)
+                return NextResponse.json({ error: 'Could not fetch URL content' }, { status: 400 })
+            }
+        } else if (!driveId) {
+            return NextResponse.json({ error: 'Drive ID or URL required' }, { status: 400 })
+        }
+        // --- END NEW ---
 
         if (!text) {
             return NextResponse.json({ error: 'No text content found in file' }, { status: 404 })
