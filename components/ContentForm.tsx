@@ -218,15 +218,21 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
         setShowPicker(false)
     }
 
-    const handleAutoAnalyze = async () => {
+    const handleAutoAnalyze = async (source: 'drive' | 'transcription' = 'drive') => {
         if (readOnly) return
-        if (!formData.driveId) return alert('Primero selecciona un archivo de Drive')
+        if (source === 'drive' && !formData.driveId) return alert('Primero selecciona un archivo de Drive')
+        if (source === 'transcription' && !formData.transcription) return alert('Primero ingresa texto en la pestaña Transcripción')
+
         setAnalyzing(true)
         try {
+            const body = source === 'drive'
+                ? { driveId: formData.driveId }
+                : { transcription: formData.transcription }
+
             const res = await fetch('/api/inventory/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ driveId: formData.driveId })
+                body: JSON.stringify(body)
             })
 
             // Checks for HTTP Errors first
@@ -452,11 +458,18 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                                 <div className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-relaxed mb-2">Asistente IA</div>
                                 <p className="text-[9px] text-text-muted italic opacity-60 leading-relaxed mb-4">Analiza estructuras de Drive automáticamente.</p>
                                 <button
-                                    onClick={handleAutoAnalyze}
+                                    onClick={() => handleAutoAnalyze('drive')}
                                     disabled={analyzing || !formData.driveId}
                                     className="w-full bg-accent/10 text-accent border border-accent/20 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none"
                                 >
-                                    {analyzing ? 'Procesando...' : 'Autocompletar'}
+                                    {analyzing ? 'Procesando...' : 'Autocompletar (Drive)'}
+                                </button>
+                                <button
+                                    onClick={() => handleAutoAnalyze('transcription')}
+                                    disabled={analyzing || !formData.transcription}
+                                    className="w-full mt-2 bg-purple-500/10 text-purple-600 border border-purple-500/20 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none"
+                                >
+                                    {analyzing ? '...' : 'Analizar Transcripción'}
                                 </button>
                             </div>
                         )}

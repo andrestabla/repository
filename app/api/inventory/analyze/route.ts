@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
-        const { driveId, url, type } = await request.json()
+        const { driveId, url, type, transcription: manualTranscription } = await request.json()
 
-        if (!driveId && !url) {
-            return NextResponse.json({ error: 'Drive ID or URL required' }, { status: 400 })
+        if (!driveId && !url && !manualTranscription) {
+            return NextResponse.json({ error: 'Drive ID, URL or Transcription required' }, { status: 400 })
         }
 
         console.log(`[Analyze] Fetching content for ${driveId || url}...`)
@@ -87,6 +87,12 @@ export async function POST(request: NextRequest) {
             } catch (e) {
                 text = `[URL_ACCESS_FAILED] ${targetUrl}\nFallback to Knowledge Base.`
             }
+        }
+
+        if (manualTranscription) {
+            console.log(`[Analyze] Using Manual Transcription`)
+            transcription = manualTranscription
+            text = `[MANUAL TRANSCRIPTION PROVIDED]\n\n${manualTranscription}`
         }
 
         // Context
