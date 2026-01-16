@@ -62,6 +62,8 @@ model ContentItem {
   testId           String?
   trigger          String?
   uploadedAt       DateTime?
+  geminiUri        String?             // For async video processing
+  geminiName       String?             // For async video processing
   variable         String?
   vipUsage         Boolean?
   year             String?

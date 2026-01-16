@@ -156,7 +156,7 @@ export class GeminiService {
         throw new Error(`[Gemini All Models Failed] Último error: ${lastError?.message || lastError}`)
     }
 
-    static async transcribeMedia(filePath: string, mimeType: string): Promise<string> {
+    static async uploadMedia(filePath: string, mimeType: string) {
         const { GoogleAIFileManager } = require("@google/generative-ai/server");
 
         let apiKey = await SystemSettingsService.getGeminiApiKey()
@@ -171,28 +171,35 @@ export class GeminiService {
             displayName: "Asset Analysis Media",
         });
 
-        console.log(`[Gemini] Upload complete: ${uploadResponse.file.uri} (State: ${uploadResponse.file.state})`);
+        console.log(`[Gemini] Upload complete: ${uploadResponse.file.uri} (Name: ${uploadResponse.file.name})`);
 
-        // Wait for video processing
-        let fileState = uploadResponse.file.state;
-        while (fileState === 'PROCESSING') {
-            console.log('[Gemini] Waiting for video processing...');
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            const freshFile = await fileManager.getFile(uploadResponse.file.name);
-            fileState = freshFile.state;
-            if (fileState === 'FAILED') throw new Error('Video processing failed in Gemini.');
+        return {
+            uri: uploadResponse.file.uri,
+            name: uploadResponse.file.name,
+            mimeType: uploadResponse.file.mimeType,
+            state: uploadResponse.file.state
         }
+    }
 
-        console.log(`[Gemini] File Ready. requesting transcription...`);
+    static async checkFileState(fileId: string) {
+        const { GoogleAIFileManager } = require("@google/generative-ai/server");
+        let apiKey = await SystemSettingsService.getGeminiApiKey() || process.env.GEMINI_API_KEY
+        const fileManager = new GoogleAIFileManager(apiKey);
+        const file = await fileManager.getFile(fileId);
+        return file.state; // 'PROCESSING', 'ACTIVE', 'FAILED'
+    }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
+    static async generateFromUri(uri: string, mimeType: string) {
+        let apiKey = await SystemSettingsService.getGeminiApiKey() || process.env.GEMINI_API_KEY
+        const genAI = new GoogleGenerativeAI(apiKey!)
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
+        console.log(`[Gemini] Requesting analysis for URI: ${uri}...`);
         const result = await model.generateContent([
             {
                 fileData: {
-                    mimeType: uploadResponse.file.mimeType,
-                    fileUri: uploadResponse.file.uri
+                    mimeType: mimeType,
+                    fileUri: uri
                 }
             },
             {
@@ -205,9 +212,21 @@ export class GeminiService {
             }
         ]);
 
-        const transcription = result.response.text();
-        console.log(`[Gemini] Transcription generated (${transcription.length} chars).`);
+        return result.response.text();
+    }
 
-        return transcription;
+    static async transcribeMedia(filePath: string, mimeType: string): Promise<string> {
+        // ... Legacy Wrapper for backward compatibility or small files ...
+        const upload = await this.uploadMedia(filePath, mimeType)
+
+        // Wait loop
+        let state = upload.state
+        while (state === 'PROCESSING') {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            state = await this.checkFileState(upload.name)
+            if (state === 'FAILED') throw new Error('Video processing failed.')
+        }
+
+        return this.generateFromUri(upload.uri, upload.mimeType)
     }
 }

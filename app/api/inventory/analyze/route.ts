@@ -57,16 +57,45 @@ export async function POST(request: NextRequest) {
             }
 
             if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {
-                console.log(`[Analyze] Detected Media: ${mimeType}. Starting Transcription Pipeline...`)
+                console.log(`[Analyze] Detected Media: ${mimeType}. Starting Async Upload...`)
                 const { downloadDriveFile } = require('@/lib/drive')
                 const { GeminiService } = require('@/lib/gemini')
+                const { IdGeneratorService } = require('@/lib/id-generator')
+                const prisma = require('@/lib/prisma').default
                 const fs = require('fs')
 
-                // A. Download
+                // A. Download to Temp
                 const localFile = await downloadDriveFile(driveId)
+
                 try {
-                    transcription = await GeminiService.transcribeMedia(localFile.path, localFile.mimeType)
-                    text = `[TRANSCRIPTION OF VIDEO/AUDIO: ${localFile.originalName}]\n\n${transcription}`
+                    // B. Upload to Gemini (Fast)
+                    const upload = await GeminiService.uploadMedia(localFile.path, localFile.mimeType)
+
+                    // C. Create Async Record
+                    const newId = await IdGeneratorService.generateId('VIDEO') // Temporary ID type
+
+                    const contentItem = await prisma.contentItem.create({
+                        data: {
+                            id: newId,
+                            title: localFile.originalName || 'Video en Proceso',
+                            type: 'Video',
+                            version: '1.0',
+                            status: 'PROCESANDO_VIDEO', // Special status
+                            driveId: driveId,
+                            geminiUri: upload.uri,
+                            geminiName: upload.name
+                        }
+                    })
+
+                    console.log(`[Analyze] Async Video Started. ID: ${newId}`)
+
+                    return NextResponse.json({
+                        success: true,
+                        async: true,
+                        contentId: newId,
+                        message: "El video se está procesando. Esto puede tomar unos minutos."
+                    })
+
                 } finally {
                     if (fs.existsSync(localFile.path)) fs.unlinkSync(localFile.path)
                 }
