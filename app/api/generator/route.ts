@@ -303,7 +303,9 @@ export async function POST(request: NextRequest) {
             await prisma.generationHistory.create({
                 data: {
                     user: userEmail, // Correct field name per schema
-                    prompt: message || `Generate ${type}`,
+                    prompt: (message || `Generate ${type}`) +
+                        (tone ? `\n[Tone: ${tone}]` : '') +
+                        (customInstructions ? `\n[Instructions: ${customInstructions}]` : ''),
                     response: output,
                     type: type || 'chat',
                     assets: selectedAssetIds || [],
