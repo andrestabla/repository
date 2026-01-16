@@ -16,6 +16,10 @@ export default async function Page() {
         orderBy: { order: 'asc' } // Ensure order is respected
     })
 
+    const researchItems = await prisma.researchSource.findMany({
+        orderBy: { title: 'asc' }
+    })
+
     // Build Tree
     const taxonomyTree = taxonomyRaw.map(item => ({ ...item, children: [] as any[] }))
     const dataMap: any = {}
@@ -39,5 +43,5 @@ export default async function Page() {
         return a.order - b.order
     })
 
-    return <MethodologySPA initialData={contents as any} initialTaxonomy={rootNodes as any} session={session as any} />
+    return <MethodologySPA initialData={contents as any} initialTaxonomy={rootNodes as any} research={researchItems as any} session={session as any} />
 }

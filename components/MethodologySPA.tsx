@@ -149,7 +149,7 @@ export default function MethodologySPA({
 
     return (
         <div className="h-full w-full overflow-y-auto bg-bg transition-colors p-6 sm:p-10 animate-in fade-in duration-500">
-            {currentView === 'taxonomy' && <TaxonomyManager initialData={initialTaxonomy as any} inventory={inventoryData} />}
+            {currentView === 'taxonomy' && <TaxonomyManager initialData={initialTaxonomy as any} inventory={inventoryData} research={researchData} />}
             {currentView === 'releases' && <ReleasesView />}
             {currentView === 'analitica' && <AnalyticsView />}
             {currentView === 'inventory' && (

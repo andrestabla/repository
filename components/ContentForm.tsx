@@ -44,6 +44,7 @@ export type ResearchSource = {
     populationParams?: string | null
     driveId?: string | null
     findings?: string | null
+    pillars?: string[]
 }
 
 export type ContentItem = {

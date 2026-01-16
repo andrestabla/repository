@@ -4,10 +4,21 @@ import React, { useState } from 'react'
 import { Search, Plus, BookOpen, Quote, Globe, ArrowRight } from 'lucide-react'
 import ResearchForm from './ResearchForm'
 
+import { useSearchParams } from 'next/navigation'
+
 export default function ResearchSPA({ initialItems, session }: any) {
     const [items, setItems] = useState(initialItems)
     const [searchTerm, setSearchTerm] = useState('')
-    const [selectedItem, setSelectedItem] = useState<any>(null)
+    const searchParams = useSearchParams()
+    const urlId = searchParams.get('id')
+
+    // Auto-select item from URL if present
+    const [selectedItem, setSelectedItem] = useState<any>(() => {
+        if (urlId) {
+            return initialItems.find((i: any) => i.id === urlId) || null
+        }
+        return null
+    })
     const [isCreating, setIsCreating] = useState(false)
 
     const filteredItems = items.filter((item: any) =>

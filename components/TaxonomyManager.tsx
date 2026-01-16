@@ -14,7 +14,8 @@ import {
     Plus,
     Box,
     RefreshCw,
-    Link as LinkIcon
+    Link as LinkIcon,
+    BookOpen
 } from 'lucide-react'
 
 type ContentItem = {
@@ -27,6 +28,13 @@ type ContentItem = {
     behavior?: string | null
 }
 
+type ResearchItem = {
+    id: string
+    title: string
+    pillars?: string[]
+    competence?: string | null
+}
+
 type TaxonomyItem = {
     id: string
     name: string
@@ -37,18 +45,40 @@ type TaxonomyItem = {
     children?: TaxonomyItem[]
 }
 
-export default function TaxonomyManager({ initialData, inventory = [] }: { initialData: TaxonomyItem[], inventory?: ContentItem[] }) {
+export default function TaxonomyManager({
+    initialData,
+    inventory = [],
+    research = []
+}: {
+    initialData: TaxonomyItem[],
+    inventory?: ContentItem[],
+    research?: ResearchItem[]
+}) {
     const [data, setData] = useState<TaxonomyItem[]>(initialData)
     const [isLoading, setIsLoading] = useState(false)
 
     const getLinkedAssets = (node: TaxonomyItem, level: 'Pillar' | 'Sub' | 'Comp' | 'Behavior') => {
-        return inventory.filter(item => {
+        const invMatches = inventory.filter(item => {
             if (level === 'Pillar') return item.primaryPillar === node.name
             if (level === 'Sub') return item.sub === node.name
             if (level === 'Comp') return item.competence === node.name
             if (level === 'Behavior') return item.behavior === node.name
             return false
         })
+
+        const resMatches = research.filter(item => {
+            if (level === 'Pillar') return item.pillars && item.pillars.includes(node.name)
+            // For sub/comp/behavior, we check if competence matches or loosely match text if needed.
+            // Assuming strict mapping via competence for L3. 
+            if (level === 'Comp') return item.competence === node.name
+            return false
+        })
+
+        // Map to common interface for display
+        return [
+            ...invMatches.map(i => ({ ...i, source: 'inventory' as const })),
+            ...resMatches.map(r => ({ ...r, source: 'research' as const, type: 'Investigación' }))
+        ]
     }
 
     const handleToggleActive = async (id: string, current: boolean) => {
@@ -284,23 +314,30 @@ function IconButton({ icon, onClick }: { icon: React.ReactNode, onClick: () => v
     )
 }
 
-function LinkedAssets({ assets }: { assets: ContentItem[] }) {
+function LinkedAssets({ assets }: { assets: any[] }) {
     if (assets.length === 0) return null
     return (
         <div className="ml-8 mb-3 pl-2 border-l-2 border-accent/20">
             <div className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2 flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
                 <LinkIcon size={10} className="text-accent" />
-                Fuentes Vinculadas ({assets.length})
+                Fuentes ({assets.length})
             </div>
             <div className="flex flex-wrap gap-2">
-                {assets.map(a => (
-                    <Link key={a.id} href={`/inventario?id=${a.id}`} className="group/link block">
-                        <div className="text-[10px] items-center gap-1.5 inline-flex bg-bg border border-border px-2.5 py-1.5 rounded-lg hover:border-accent hover:text-accent hover:shadow-sm transition-all truncate max-w-[200px]" title={a.title}>
-                            <FileText size={10} className="opacity-50 group-hover/link:text-accent" />
-                            <span className="truncate max-w-[150px]">{a.title}</span>
-                        </div>
-                    </Link>
-                ))}
+                {assets.map((a, i) => {
+                    const isResearch = a.source === 'research'
+                    const href = isResearch ? `/research?id=${a.id}` : `/inventario?id=${a.id}`
+                    return (
+                        <Link key={a.id + i} href={href} className="group/link block">
+                            <div className={`text-[10px] items-center gap-1.5 inline-flex bg-bg border px-2.5 py-1.5 rounded-lg hover:shadow-sm transition-all truncate max-w-[200px] ${isResearch
+                                ? 'border-yellow-200 text-yellow-700 hover:border-yellow-500 hover:text-yellow-600'
+                                : 'border-border text-text-muted hover:border-accent hover:text-accent'
+                                }`} title={a.title}>
+                                {isResearch ? <BookOpen size={10} /> : <FileText size={10} className="opacity-50 group-hover/link:text-accent" />}
+                                <span className="truncate max-w-[150px]">{a.title}</span>
+                            </div>
+                        </Link>
+                    )
+                })}
             </div>
         </div>
     )
