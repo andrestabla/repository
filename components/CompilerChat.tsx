@@ -56,19 +56,33 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
     }
 
     const handleDownloadPNG = () => {
-        const originalSvg = ref.current?.querySelector('svg')
-        if (!originalSvg) return
+        const svgElement = ref.current?.querySelector('svg')
+        if (!svgElement) return
 
-        // 1. Get exact dimensions from the rendered SVG
-        const box = originalSvg.getBoundingClientRect()
-        const width = box.width
-        const height = box.height
+        // 1. Get exact dimensions
+        const box = svgElement.getBoundingClientRect()
+        // Use intrinsic dimensions if available, else clientRect
+        const width = box.width || parseInt(svgElement.getAttribute('width') || '0')
+        const height = box.height || parseInt(svgElement.getAttribute('height') || '0')
 
-        // 2. Clone the SVG to modify it safely
-        const clonedSvg = originalSvg.cloneNode(true) as SVGSVGElement
+        // 2. Clone and Prepare SVG
+        const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
         clonedSvg.setAttribute('width', width.toString())
         clonedSvg.setAttribute('height', height.toString())
-        clonedSvg.style.backgroundColor = 'white' // Force white background
+        clonedSvg.style.backgroundColor = 'white'
+
+        // 3. EMBED STYLES (Criticial for Mermaid/Canvas)
+        const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style")
+        let cssText = ""
+        // Naive but effective: grab all styles to ensure mermaid classes are present
+        const sheets = document.querySelectorAll('style, link[rel="stylesheet"]')
+        sheets.forEach(sheet => {
+            if (sheet.tagName === 'STYLE') {
+                cssText += sheet.textContent + "\n"
+            }
+        })
+        styleElement.textContent = cssText
+        clonedSvg.insertBefore(styleElement, clonedSvg.firstChild)
 
         const data = (new XMLSerializer()).serializeToString(clonedSvg)
         const img = new window.Image()
