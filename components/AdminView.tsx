@@ -58,6 +58,7 @@ export default function AdminView() {
     const [driveConfig, setDriveConfig] = useState<DriveConfig>({ authorizedFolderIds: [] })
     const [geminiApiKey, setGeminiApiKey] = useState('')
     const [openaiApiKey, setOpenaiApiKey] = useState('')
+    const [flikiApiKey, setFlikiApiKey] = useState('')
     const [loadingSettings, setLoadingSettings] = useState(false)
     const [refreshSettings, setRefreshSettings] = useState(0)
     const [newFolderId, setNewFolderId] = useState('')
@@ -94,6 +95,7 @@ export default function AdminView() {
                     if (data.driveConfig) setDriveConfig(data.driveConfig)
                     if (data.geminiApiKey) setGeminiApiKey(data.geminiApiKey)
                     if (data.openaiApiKey) setOpenaiApiKey(data.openaiApiKey)
+                    if (data.flikiApiKey) setFlikiApiKey(data.flikiApiKey)
                     setLoadingSettings(false)
                 })
                 .catch(err => { console.error(err); setLoadingSettings(false) })
@@ -675,6 +677,49 @@ export default function AdminView() {
                             </div>
                             <p className="text-[10px] text-[var(--text-muted)] mt-2">
                                 Se requiere créditos o una cuenta activada en <a href="https://platform.openai.com/" target="_blank" className="underline hover:text-[var(--accent)]">OpenAI Platform</a>.
+                            </p>
+                        </div>
+
+                        {/* FLIKI CONFIG WIZARD */}
+                        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg p-5 mt-5">
+                            <h3 className="text-lg font-bold text-[var(--text-main)] mb-1 flex items-center gap-2">🗣️ Inteligencia Artificial (Fliki.ai)</h3>
+                            <p className="text-xs text-[var(--text-muted)] mb-4">Configura la API Key de Fliki para habilitar la generación de audio realista.</p>
+
+                            <div className="flex gap-2 items-end">
+                                <div className="flex-1">
+                                    <label className="text-xs text-[var(--text-muted)] block mb-1 font-bold">Fliki API Key</label>
+                                    <input
+                                        type="password"
+                                        placeholder={flikiApiKey && flikiApiKey.includes('*') ? '******** (Configurado)' : 'API Key...'}
+                                        onChange={e => setFlikiApiKey(e.target.value)}
+                                        className="w-full bg-bg border border-[var(--border)] rounded p-2 text-sm text-[var(--text-main)] focus:border-[var(--accent)] outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        if (!flikiApiKey) return alert('Ingresa una API Key válida')
+                                        try {
+                                            const res = await fetch('/api/settings', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ flikiApiKey })
+                                            })
+                                            if (res.ok) {
+                                                alert('✅ API Key de Fliki guardada.')
+                                                setFlikiApiKey('') // Clear input for security
+                                                setRefreshSettings(p => p + 1)
+                                            } else {
+                                                alert('❌ Error al guardar.')
+                                            }
+                                        } catch (e) { alert('Error de red') }
+                                    }}
+                                    className="bg-pink-700 hover:bg-pink-600 text-white px-4 py-2 rounded text-sm font-bold h-[38px] shadow-lg shadow-pink-900/20"
+                                >
+                                    Guardar Key
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-[var(--text-muted)] mt-2">
+                                Obtén tu clave en <a href="https://app.fliki.ai/account/api" target="_blank" className="underline hover:text-[var(--accent)]">Fliki Dashboard</a>.
                             </p>
                         </div>
 

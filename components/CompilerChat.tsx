@@ -330,6 +330,84 @@ const PresentationView = ({ slides }: { slides: any[] }) => {
     )
 }
 
+const PodcastView = ({ script }: { script: string }) => {
+    const [audioUrl, setAudioUrl] = useState<string | null>(null)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const generateAudio = async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const res = await fetch('/api/audio/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: script })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Error generando audio')
+
+            // Fliki usually returns { audio_url: "..." } or similar
+            if (data.audio_url) {
+                setAudioUrl(data.audio_url)
+            } else if (data.data?.audio_url) {
+                setAudioUrl(data.data.audio_url) // Handle potential wrapper
+            } else {
+                // If the response structure isn't exactly as expected, try strictly looking for any url field
+                const possibleUrl = Object.values(data).find(v => typeof v === 'string' && v.startsWith('http')) as string
+                if (possibleUrl) setAudioUrl(possibleUrl)
+                else throw new Error('No se recibió URL de audio')
+            }
+
+        } catch (e: any) {
+            console.error(e)
+            setError(e.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <div className="bg-gray-50 dark:bg-[#1E1F20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <Headphones className="text-pink-500" size={20} />
+                    <h3 className="font-bold text-gray-700 dark:text-gray-200">Guion de Podcast Generado</h3>
+                </div>
+                {!audioUrl && (
+                    <button
+                        onClick={generateAudio}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                    >
+                        {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                        {loading ? 'Generando Audio...' : 'Generar Audio Real (Fliki)'}
+                    </button>
+                )}
+            </div>
+
+            {error && (
+                <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100 flex items-center gap-2">
+                    ⚠️ {error}
+                </div>
+            )}
+
+            {audioUrl && (
+                <div className="mb-6 p-4 bg-white dark:bg-black/20 rounded-xl border border-pink-100 dark:border-pink-900/30">
+                    <div className="text-xs font-bold text-pink-500 mb-2 uppercase tracking-wide">Audio Generado</div>
+                    <audio controls src={audioUrl} className="w-full h-8" />
+                </div>
+            )}
+
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+                <pre className="whitespace-pre-wrap font-mono text-xs bg-transparent border-0 p-0 text-gray-600 dark:text-gray-400">
+                    {script}
+                </pre>
+            </div>
+        </div>
+    )
+}
+
 export default function CompilerChat({ assets = [], research = [] }: { assets?: any[], research?: any[] }) {
     // ... (rest of component state) ...
     // ...
@@ -750,9 +828,13 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                                             })()}
                                         </div>
                                     ) : msg.content.includes('**HOST:**') || msg.content.includes('graph TD') || msg.content.includes('|') ? (
-                                        <div className="bg-gray-50 dark:bg-[#1E1F20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-x-auto shadow-sm">
-                                            <pre className="whitespace-pre-wrap font-mono text-xs">{msg.content}</pre>
-                                        </div>
+                                        msg.content.includes('**HOST:**') ? (
+                                            <PodcastView script={msg.content} />
+                                        ) : (
+                                            <div className="bg-gray-50 dark:bg-[#1E1F20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-x-auto shadow-sm">
+                                                <pre className="whitespace-pre-wrap font-mono text-xs">{msg.content}</pre>
+                                            </div>
+                                        )
                                     ) : (
                                         msg.content.split('\n').map((line, i) => <p key={i} className="mb-2">{line}</p>)
                                     )}
