@@ -55,7 +55,124 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
     )
 }
 
+// --- SUB-COMPONENTS FOR TYPES ---
+
+const FlashcardList = ({ cards }: { cards: any[] }) => {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+            {cards.map((card, idx) => (
+                <div key={idx} className="bg-white dark:bg-[#1E1F20] p-6 rounded-xl border-2 border-indigo-100 dark:border-indigo-900/30 shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[180px]">
+                    <div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 mb-2">Pregunta</div>
+                        <p className="font-medium text-gray-800 dark:text-gray-200">{card.question}</p>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-dashed border-gray-200 dark:border-gray-700">
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-1">Respuesta</div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{card.answer}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+const QuizView = ({ questions }: { questions: any[] }) => {
+    const [answers, setAnswers] = useState<Record<number, string>>({})
+    const [showResults, setShowResults] = useState(false)
+
+    return (
+        <div className="space-y-6 my-6 max-w-2xl">
+            {questions.map((q, idx) => {
+                const isCorrect = answers[idx] === q.correctAnswer
+                return (
+                    <div key={idx} className={`p-6 rounded-2xl border-l-4 ${showResults ? (isCorrect ? 'border-l-emerald-500 bg-emerald-50/10' : 'border-l-red-500 bg-red-50/10') : 'border-l-blue-500 bg-white dark:bg-[#1E1F20]'} shadow-sm`}>
+                        <p className="font-bold text-lg mb-4">{idx + 1}. {q.question}</p>
+                        <div className="space-y-2">
+                            {q.options.map((opt: string) => {
+                                const optLetter = opt.charAt(0) // Assuming "A) Answer"
+                                return (
+                                    <button
+                                        key={opt}
+                                        onClick={() => setAnswers(p => ({ ...p, [idx]: optLetter }))}
+                                        disabled={showResults}
+                                        className={`w-full text-left p-3 rounded-lg text-sm transition-colors border ${answers[idx] === optLetter
+                                            ? 'bg-blue-100 border-blue-500 text-blue-900'
+                                            : 'hover:bg-gray-50 dark:hover:bg-white/5 border-gray-200 dark:border-gray-700'
+                                            } ${showResults && q.correctAnswer === optLetter ? '!bg-emerald-100 !border-emerald-500 !text-emerald-900' : ''}`}
+                                    >
+                                        {opt}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                        {showResults && (
+                            <div className="mt-4 text-xs p-3 bg-black/5 rounded font-mono">
+                                {isCorrect ? '✅ Correcto' : `❌ Correcto: ${q.correctAnswer}`}. {q.explanation}
+                            </div>
+                        )}
+                    </div>
+                )
+            })}
+            {!showResults && (
+                <button onClick={() => setShowResults(true)} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold shadow-lg transition-transform hover:scale-105">
+                    Verificar Respuestas
+                </button>
+            )}
+        </div>
+    )
+}
+
+const PresentationView = ({ slides }: { slides: any[] }) => {
+    const [current, setCurrent] = useState(0)
+    return (
+        <div className="my-6 bg-white dark:bg-[#1E1F20] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden aspect-video flex flex-col">
+            <div className="flex-1 p-12 flex flex-col justify-center">
+                <div className="uppercase tracking-widest text-xs font-bold text-blue-500 mb-4">Slide {current + 1} / {slides.length}</div>
+                <h2 className="text-3xl md:text-4xl font-black mb-8 text-gray-900 dark:text-white">{slides[current].title}</h2>
+                <ul className="space-y-4 mb-8">
+                    {slides[current].bullets?.map((b: string, i: number) => (
+                        <li key={i} className="flex items-start gap-3 text-lg text-gray-700 dark:text-gray-300">
+                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                            {b}
+                        </li>
+                    ))}
+                </ul>
+                {slides[current].visual && (
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 rounded-lg text-xs text-yellow-700 dark:text-yellow-400 italic">
+                        📸 Sugerencia Visual: {slides[current].visual}
+                    </div>
+                )}
+            </div>
+            <div className="h-16 bg-gray-50 dark:bg-black/20 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between px-6">
+                <button
+                    disabled={current === 0}
+                    onClick={() => setCurrent(c => c - 1)}
+                    className="p-2 hover:bg-black/5 rounded-full disabled:opacity-30"
+                >
+                    Anterior
+                </button>
+                <div className="flex gap-1">
+                    {slides.map((_, i) => (
+                        <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === current ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                    ))}
+                </div>
+                <button
+                    disabled={current === slides.length - 1}
+                    onClick={() => setCurrent(c => c + 1)}
+                    className="p-2 hover:bg-black/5 rounded-full disabled:opacity-30"
+                >
+                    Siguiente
+                </button>
+            </div>
+        </div>
+    )
+}
+
 export default function CompilerChat({ assets = [], research = [] }: { assets?: any[], research?: any[] }) {
+    // ... (rest of component state) ...
+    // ...
+    // Jump to render logic:
+
     // 1. Initial State: Select ALL validated assets by default
     const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set())
     const [selectedResearchIds, setSelectedResearchIds] = useState<Set<string>>(new Set())
@@ -434,7 +551,7 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                                             <MermaidDiagram chart={msg.content.split('```mermaid')[1].split('```')[0].trim()} />
                                             {msg.content.split('```').slice(2).join('')}
                                         </div>
-                                    ) : (msg.content.trim().startsWith('{') || (msg.content.includes('"sections"') && msg.content.includes('"title"'))) ? (
+                                    ) : (msg.content.trim().startsWith('{') || (msg.content.includes('"type"') && msg.content.includes('"sections"'))) ? (
                                         <div className="w-full">
                                             {/* Try to parse even if there is junk around */}
                                             {(() => {
@@ -442,7 +559,22 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                                                     // Clean potential markdown
                                                     const cleanJson = msg.content.replace(/```json/g, '').replace(/```/g, '').trim()
                                                     const data = JSON.parse(cleanJson)
+
+                                                    if (data.type === 'mindmap' && data.mermaid) {
+                                                        return <MermaidDiagram chart={data.mermaid} />
+                                                    }
+                                                    if (data.type === 'flashcards' && data.cards) {
+                                                        return <FlashcardList cards={data.cards} />
+                                                    }
+                                                    if (data.type === 'quiz' && data.questions) {
+                                                        return <QuizView questions={data.questions} />
+                                                    }
+                                                    if (data.type === 'presentation' && data.slides) {
+                                                        return <PresentationView slides={data.slides} />
+                                                    }
+                                                    // Default to infographic for legacy or explicit type
                                                     return <InfographicRenderer data={data} />
+
                                                 } catch (e) {
                                                     // Fallback to text if not really json
                                                     return msg.content.split('\n').map((line, i) => <p key={i} className="mb-2">{line}</p>)

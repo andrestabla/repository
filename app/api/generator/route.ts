@@ -76,8 +76,6 @@ export async function POST(request: NextRequest) {
 
         // 5. Construct Prompt (Done before calling service to pass it)
         let prompt = ""
-        // ... prompt construction continues below ...
-
 
         if (message) {
             prompt = `
@@ -159,41 +157,53 @@ export async function POST(request: NextRequest) {
         } else if (type === 'mindmap') {
             prompt = `
             Actúa como EXPERTO EN VISUALIZACIÓN DE DATOS.
-            Genera un ** MAPA MENTAL ** complejo sobre la metodología.
-            
-            Usa sintaxis ** MERMAID ** (graph TD).
-            
-            REGLAS ESTRICTAS:
-            1. Tu respuesta debe comenzar EXACTAMENTE con \`\`\`mermaid
-            2. Tu respuesta debe terminar EXACTAMENTE con \`\`\`
-            3. NO escribas ni una sola palabra fuera del bloque de código.
-            4. Usa nodos cortos y claros: A[Concepto] --> B(Detalle)
+            Genera un JSON para un MAPA MENTAL basado en la metodología.
+
+            FORMATO JSON OBLIGATORIO:
+            {
+              "type": "mindmap",
+              "mermaid": "graph TD\\n  A[Concepto Central] --> B(Idea Secundaria)\\n  B --> C{Detalle}"
+            }
+
+            REGLAS:
+            1. Usa sintaxis Mermaid válida (graph TD).
+            2. La cadena de mermaid debe tener saltos de línea con \\n.
+            3. NO uses Markdown. Solo JSON.
             
             CONTEXTO:
             ${combinedContext}
             `
         } else if (type === 'flashcards') {
             prompt = `
-            Actúa como PEDAGOGO. Genera 5 **TARJETAS DE ESTUDIO (Flashcards)** clave.
+            Actúa como PEDAGOGO. Genera un JSON con 5 TARJETAS DE ESTUDIO (Flashcards).
             
-            FORMATO:
-            ---
-            **PREGUNTA:** ...
-            **RESPUESTA:** ...
-            **FUENTE:** [ID]
-            ---
+            FORMATO JSON OBLIGATORIO:
+            {
+              "type": "flashcards",
+              "cards": [
+                { "question": "Pregunta...", "answer": "Respuesta...", "source": "Ref ID" }
+              ]
+            }
 
             CONTEXTO:
             ${combinedContext}
             `
         } else if (type === 'quiz') {
             prompt = `
-            Actúa como EVALUADOR. Genera un **QUIZ DE 5 PREGUNTAS** opción múltiple.
+            Actúa como EVALUADOR. Genera un JSON con un QUIZ DE 5 PREGUNTAS.
             
-            FORMATO:
-            1. [Pregunta]
-               a) ... b) ... c) ...
-               *Respuesta Correcta: X (Explicación breve)*
+            FORMATO JSON OBLIGATORIO:
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "question": "¿Pregunta?",
+                  "options": ["A","B","C","D"],
+                  "correctAnswer": "A",
+                  "explanation": "Por qué..."
+                }
+              ]
+            }
             
             CONTEXTO:
             ${combinedContext}
@@ -207,6 +217,7 @@ export async function POST(request: NextRequest) {
 
             FORMATO JSON REQUERIDO:
             {
+              "type": "infographic",
               "title": "Título llamativo",
               "intro": "Breve introducción visual",
               "sections": [
@@ -234,32 +245,37 @@ export async function POST(request: NextRequest) {
         } else if (type === 'presentation') {
             prompt = `
             Actúa como EXPERTO EN COMUNICACIÓN.
-            Genera la estructura para una ** PRESENTACIÓN(Slide Deck) ** de 7 diapositivas.
+            Genera un JSON para una PRESENTACIÓN (7 Slides).
             
-            FORMATO POR SLIDE:
-            ** SLIDE X: [Título] **
-                - Bullet points del contenido.
-            - Sugerencia visual(Imagen / Gráfico).
+            FORMATO JSON OBLIGATORIO:
+            {
+              "type": "presentation",
+              "slides": [
+                { "title": "Slide 1", "bullets": ["Punto 1", "Punto 2"], "visual": "Descripción imagen" }
+              ]
+            }
 
-                CONTEXTO:
+            CONTEXTO:
             ${combinedContext}
             `
         }
 
         // --- SAFETY CHECK FOR JSON MODE ---
-        if (type === 'infographic' && !prompt.toLowerCase().includes('json')) {
-            prompt += `\n\nIMPORTANTE: ESTÁS EN MODO INFOGRAFÍA. TU RESPUESTA DEBE SER EXCLUSIVAMENTE UN OBJETO JSON VÁLIDO. (The word 'json' is required here).`
+        const jsonTypes = ['infographic', 'mindmap', 'flashcards', 'quiz', 'presentation', 'matrix']
+        if (jsonTypes.includes(type as string) && !prompt.toLowerCase().includes('json')) {
+            prompt += `\n\nIMPORTANTE: ESTÁS EN MODO STRICT JSON. TU RESPUESTA DEBE SER EXCLUSIVAMENTE UN OBJETO JSON VÁLIDO.`
         }
 
         // 6. Generate (OpenAI)
         console.log("[Generator] Starting OpenAI generation...")
         let output = ""
         try {
-            const options = type === 'infographic' ? { response_format: { type: "json_object" } } : undefined
+            // Apply JSON mode to all structured types
+            const options = jsonTypes.includes(type as string) ? { response_format: { type: "json_object" } } : undefined
             output = await OpenAIService.generateContent(prompt, "gpt-4o", options) || "No response generated."
 
-            // CLEANING: If type is infographic, we MUST ensure we have a clean JSON string
-            if (type === 'infographic') {
+            // CLEANING: JSON Sanitization
+            if (jsonTypes.includes(type as string)) {
                 // Remove Markdown code blocks if present
                 output = output.replace(/```json/g, '').replace(/```/g, '').trim()
                 // Validate if it is JSON
@@ -268,7 +284,6 @@ export async function POST(request: NextRequest) {
                     // If safe, we keep it clean.
                 } catch (e) {
                     console.error("Generator Output was not valid JSON:", output.substring(0, 100))
-                    // Fallback to text if JSON fails? Or just let it be text so frontend shows error.
                 }
             }
 
