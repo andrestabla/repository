@@ -33,7 +33,7 @@ import QAView from './QAView'
 import AnalyticsView from './AnalyticsView'
 import CompilerChat from './CompilerChat'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 type UserRole = 'metodologo' | 'curador' | 'auditor' | 'admin' | 'guest' | 'pending'
 
@@ -226,13 +226,21 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
     const [showForm, setShowForm] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
 
-    // Auto-sync selectedItem when data refreshes (Fixes "Not saving" visual bug)
+    // Deep Linking Support
+    const searchParams = useSearchParams()
+    const urlId = searchParams.get('id')
+
+    // Auto-select item from URL or sync when data refreshes
     useEffect(() => {
-        if (selectedItem) {
+        if (urlId && data.length > 0) {
+            const target = data.find(i => i.id === urlId)
+            if (target) setSelectedItem(target)
+        } else if (selectedItem) {
+            // Fix "Not saving" visual bug
             const upToDateItem = data.find(i => i.id === selectedItem.id)
             if (upToDateItem) setSelectedItem(upToDateItem)
         }
-    }, [data])
+    }, [data, urlId])
 
     // Filters State
     const [pillarFilter, setPillarFilter] = useState('')
