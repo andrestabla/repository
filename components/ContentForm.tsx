@@ -602,13 +602,19 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                                         </div>
                                         <h3 className="text-sm font-black text-text-main uppercase tracking-widest">Transcripción de Audio/Video</h3>
                                     </div>
-                                    <div className="w-full h-[500px] bg-bg border-4 border-border rounded-[32px] p-8 text-sm text-text-main/80 overflow-y-auto shadow-inner leading-relaxed whitespace-pre-wrap font-mono relative">
-                                        {!formData.transcription ? (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30 text-center p-8">
+                                    <div className="relative w-full h-[500px]">
+                                        <textarea
+                                            value={formData.transcription || ''}
+                                            onChange={e => setFormData({ ...formData, transcription: e.target.value })}
+                                            className="w-full h-full bg-bg border-4 border-border rounded-[32px] p-8 text-sm text-text-main/80 shadow-inner leading-relaxed font-mono focus:border-accent outline-none resize-none transition-all placeholder:text-text-muted/30"
+                                            placeholder="No hay transcripción disponible. Importa un video o audio de Drive para generarla automáticamente, o pega aquí el texto manualmente..."
+                                            disabled={readOnly}
+                                        />
+                                        {!formData.transcription && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-30 text-center p-8">
                                                 <Terminal size={48} className="mb-4 text-text-muted" />
-                                                <p className="max-w-md">No hay transcripción disponible. Importa un video o audio de Drive y usa "Autocompletar" para generar una.</p>
                                             </div>
-                                        ) : formData.transcription}
+                                        )}
                                     </div>
                                 </div>
                             )}
