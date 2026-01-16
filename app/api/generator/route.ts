@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
             // CLEANING: If type is infographic, we MUST ensure we have a clean JSON string
             if (type === 'infographic') {
                 // Remove Markdown code blocks if present
-                output = output.replace(/```json / g, '').replace(/```/g, '').trim()
+                output = output.replace(/```json/g, '').replace(/```/g, '').trim()
                 // Validate if it is JSON
                 try {
                     JSON.parse(output)
