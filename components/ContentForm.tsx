@@ -263,7 +263,6 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                     if (pollData.status === 'COMPLETED') {
                         toast.dismiss()
                         toast.success('¡Video procesado exitosamente!')
-                        onCancel()
 
                         setTimeout(() => {
                             const targetId = pollData.data?.suggestedId || data.contentId
