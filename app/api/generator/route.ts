@@ -246,6 +246,18 @@ export async function POST(request: NextRequest) {
             INPUT:
             ${combinedContext}
             `
+        } else {
+            // DEFAULT: General Chat / Q&A
+            prompt = `
+            ${agentPersona}.
+            Responde a la consulta del usuario basándote EXCLUSIVAMENTE en la información proporcionada en el CONTEXTO.
+            Si la respuesta no está en el contexto, indícalo claramente. No inventes información.
+
+            CONSULTA DEL USUARIO: "${message}"
+
+            CONTEXTO:
+            ${combinedContext}
+            `
         }
 
         // --- SAFETY CHECK FOR JSON MODE ---
