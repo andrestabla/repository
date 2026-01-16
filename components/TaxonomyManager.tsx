@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import {
     Folder,
     FileText,
@@ -12,8 +13,19 @@ import {
     Loader2,
     Plus,
     Box,
-    RefreshCw
+    RefreshCw,
+    Link as LinkIcon
 } from 'lucide-react'
+
+type ContentItem = {
+    id: string
+    title: string
+    type: string
+    primaryPillar: string
+    sub?: string | null
+    competence?: string | null
+    behavior?: string | null
+}
 
 type TaxonomyItem = {
     id: string
@@ -25,9 +37,19 @@ type TaxonomyItem = {
     children?: TaxonomyItem[]
 }
 
-export default function TaxonomyManager({ initialData }: { initialData: TaxonomyItem[] }) {
+export default function TaxonomyManager({ initialData, inventory = [] }: { initialData: TaxonomyItem[], inventory?: ContentItem[] }) {
     const [data, setData] = useState<TaxonomyItem[]>(initialData)
     const [isLoading, setIsLoading] = useState(false)
+
+    const getLinkedAssets = (node: TaxonomyItem, level: 'Pillar' | 'Sub' | 'Comp' | 'Behavior') => {
+        return inventory.filter(item => {
+            if (level === 'Pillar') return item.primaryPillar === node.name
+            if (level === 'Sub') return item.sub === node.name
+            if (level === 'Comp') return item.competence === node.name
+            if (level === 'Behavior') return item.behavior === node.name
+            return false
+        })
+    }
 
     const handleToggleActive = async (id: string, current: boolean) => {
         setIsLoading(true)
@@ -179,7 +201,10 @@ export default function TaxonomyManager({ initialData }: { initialData: Taxonomy
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3 ml-2 lg:ml-16">
+                        {/* Linked Assets for Pillar */}
+                        <LinkedAssets assets={getLinkedAssets(pillar, 'Pillar')} />
+
+                        <div className="flex flex-col gap-3 ml-2 lg:ml-16 mt-4">
                             {pillar.children?.map(level2 => (
                                 <div key={level2.id} className="border border-border rounded-xl p-4 bg-panel/50">
                                     {/* LEVEL 2: SUBCOMPONENT */}
@@ -195,6 +220,9 @@ export default function TaxonomyManager({ initialData }: { initialData: Taxonomy
                                         </div>
                                     </div>
 
+                                    {/* Linked Assets for L2 */}
+                                    <LinkedAssets assets={getLinkedAssets(level2, 'Sub')} />
+
                                     {/* LEVEL 3: COMPETENCIA */}
                                     <div className="ml-8 border-l-2 border-border pl-4 grid gap-2">
                                         {level2.children?.map(level3 => (
@@ -207,12 +235,19 @@ export default function TaxonomyManager({ initialData }: { initialData: Taxonomy
                                                     </div>
                                                 </div>
 
+                                                {/* Linked Assets for L3 */}
+                                                <LinkedAssets assets={getLinkedAssets(level3, 'Comp')} />
+
                                                 {/* LEVEL 4: CONDUCTA */}
                                                 <div className="ml-6 mt-1 space-y-1">
                                                     {level3.children?.map(level4 => (
-                                                        <div key={level4.id} className="flex items-center gap-2 text-xs text-text-muted py-1 pl-2 border-l border-border hover:text-accent hover:border-accent transition-colors">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-accent" />
-                                                            <span>{level4.name}</span>
+                                                        <div key={level4.id}>
+                                                            <div className="flex items-center gap-2 text-xs text-text-muted py-1 pl-2 border-l border-border hover:text-accent hover:border-accent transition-colors">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-accent" />
+                                                                <span>{level4.name}</span>
+                                                            </div>
+                                                            {/* Linked Assets for L4 */}
+                                                            <LinkedAssets assets={getLinkedAssets(level4, 'Behavior')} />
                                                         </div>
                                                     ))}
                                                 </div>
@@ -246,5 +281,27 @@ function IconButton({ icon, onClick }: { icon: React.ReactNode, onClick: () => v
         >
             {icon}
         </button>
+    )
+}
+
+function LinkedAssets({ assets }: { assets: ContentItem[] }) {
+    if (assets.length === 0) return null
+    return (
+        <div className="ml-8 mb-3 pl-2 border-l-2 border-accent/20">
+            <div className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2 flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+                <LinkIcon size={10} className="text-accent" />
+                Fuentes Vinculadas ({assets.length})
+            </div>
+            <div className="flex flex-wrap gap-2">
+                {assets.map(a => (
+                    <Link key={a.id} href={`/inventario?id=${a.id}`} className="group/link block">
+                        <div className="text-[10px] items-center gap-1.5 inline-flex bg-bg border border-border px-2.5 py-1.5 rounded-lg hover:border-accent hover:text-accent hover:shadow-sm transition-all truncate max-w-[200px]" title={a.title}>
+                            <FileText size={10} className="opacity-50 group-hover/link:text-accent" />
+                            <span className="truncate max-w-[150px]">{a.title}</span>
+                        </div>
+                    </Link>
+                ))}
+            </div>
+        </div>
     )
 }
