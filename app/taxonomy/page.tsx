@@ -12,9 +12,32 @@ export default async function Page() {
         orderBy: { id: 'asc' }
     })
 
-    const taxonomy = await prisma.taxonomy.findMany({
-        orderBy: { name: 'asc' }
+    const taxonomyRaw = await prisma.taxonomy.findMany({
+        orderBy: { order: 'asc' } // Ensure order is respected
     })
 
-    return <MethodologySPA initialData={contents as any} initialTaxonomy={taxonomy as any} session={session as any} />
+    // Build Tree
+    const taxonomyTree = taxonomyRaw.map(item => ({ ...item, children: [] as any[] }))
+    const dataMap: any = {}
+    taxonomyTree.forEach(item => dataMap[item.id] = item)
+
+    const rootNodes: any[] = []
+    taxonomyTree.forEach(item => {
+        if (item.parentId && dataMap[item.parentId]) {
+            dataMap[item.parentId].children.push(item)
+        } else {
+            rootNodes.push(item)
+        }
+    })
+
+    // Sort pillars manually if needed, or rely on 'order'
+    const shineOrder = ['Shine In', 'Shine Out', 'Shine Up', 'Shine On']
+    rootNodes.sort((a, b) => {
+        const idxA = shineOrder.indexOf(a.name)
+        const idxB = shineOrder.indexOf(b.name)
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB
+        return a.order - b.order
+    })
+
+    return <MethodologySPA initialData={contents as any} initialTaxonomy={rootNodes as any} session={session as any} />
 }
