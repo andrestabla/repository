@@ -133,7 +133,7 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
         setIsAnalyzing(true)
         try {
             // New endpoint response structure should be handled here
-            const res = await fetch('/api/inventory/analyze', {
+            const res = await fetch('/api/analyze-media', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
