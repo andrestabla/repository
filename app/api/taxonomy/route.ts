@@ -53,44 +53,63 @@ export async function PATCH(req: Request) {
 
 export async function PUT(req: Request) {
     try {
-        // 1. Define Base Pillars
+        // 1. Define Base Pillars (Level 1)
         const basePillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine On']
         let stats = { added: 0, exist: 0 }
 
-        // 2. Ensure Base Pillars Exist
+        // Ensure Level 1 Exists
         for (const name of basePillars) {
-            const exists = await prisma.taxonomy.findFirst({
-                where: { name, type: 'Pillar' }
-            })
+            let pillar = await prisma.taxonomy.findFirst({ where: { name, type: 'Pillar' } })
+            if (!pillar) {
+                await prisma.taxonomy.create({ data: { name, type: 'Pillar', order: 0 } })
+                stats.added++
+            }
+        }
 
-            if (!exists) {
-                await prisma.taxonomy.create({
-                    data: { name, type: 'Pillar', order: 0 }
+        // 2. Fetch all ContentItems to Map Hierarchy
+        const items = await prisma.contentItem.findMany({
+            select: { primaryPillar: true, sub: true, competence: true, behavior: true },
+            where: {
+                primaryPillar: { in: basePillars } // Only sync valid pillars
+            }
+        })
+
+        // Helper to find/create node
+        const syncNode = async (name: string, type: string, parentId: string | null, order: number) => {
+            if (!name) return null
+            let node = await prisma.taxonomy.findFirst({
+                where: { name, type, parentId }
+            })
+            if (!node) {
+                node = await prisma.taxonomy.create({
+                    data: { name, type, parentId, order }
                 })
                 stats.added++
             } else {
                 stats.exist++
             }
+            return node
         }
 
-        // 3. Scan ContentItems for used pillars (Auto-Discovery)
-        const contentPillars = await prisma.contentItem.findMany({
-            select: { primaryPillar: true },
-            distinct: ['primaryPillar']
-        })
+        for (const item of items) {
+            // Level 1: Pillar
+            const pillar = await prisma.taxonomy.findFirst({ where: { name: item.primaryPillar, type: 'Pillar' } })
+            if (!pillar) continue
 
-        for (const item of contentPillars) {
-            if (item.primaryPillar && !basePillars.includes(item.primaryPillar)) {
-                // Check if it exists in Taxonomy
-                const exists = await prisma.taxonomy.findFirst({
-                    where: { name: item.primaryPillar, type: 'Pillar' }
-                })
+            // Level 2: Subcomponent (from 'sub')
+            if (item.sub) {
+                const subNode = await syncNode(item.sub, 'Subcomponent', pillar.id, 1)
 
-                if (!exists) {
-                    await prisma.taxonomy.create({
-                        data: { name: item.primaryPillar, type: 'Pillar', order: 99 } // Default to end
-                    })
-                    stats.added++
+                // Level 3: Competence (from 'competence')
+                // Only if sub exists
+                if (subNode && item.competence) {
+                    const compNode = await syncNode(item.competence, 'Competence', subNode.id, 2)
+
+                    // Level 4: Behavior (from 'behavior')
+                    // Only if competence exists
+                    if (compNode && item.behavior) {
+                        await syncNode(item.behavior, 'Behavior', compNode.id, 3)
+                    }
                 }
             }
         }

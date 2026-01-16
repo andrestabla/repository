@@ -139,7 +139,9 @@ export default function TaxonomyManager({ initialData }: { initialData: Taxonomy
                     </button>
                     <button
                         onClick={() => handleAddNode(null, 'Pillar')}
-                        className="bg-accent text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 shadow-lg shadow-accent/20 transition-all flex items-center gap-2"
+                        className="bg-gray-100 text-gray-400 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest cursor-not-allowed flex items-center gap-2"
+                        title="Los pilares base son fijos (4Shine)"
+                        disabled
                     >
                         <Plus size={16} />
                         Agregar Pilar
@@ -177,32 +179,48 @@ export default function TaxonomyManager({ initialData }: { initialData: Taxonomy
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 ml-2 lg:ml-16">
-                            {pillar.children?.map(comp => (
-                                <div
-                                    key={comp.id}
-                                    className={`flex justify-between items-center p-4 rounded-2xl border transition-all hover:scale-[1.02] ${comp.active
-                                        ? 'bg-panel border-border group-hover:border-accent/20'
-                                        : 'bg-panel/40 border-dashed border-border opacity-60'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-3 overflow-hidden">
-                                        {comp.active ? <FileText size={14} className="text-accent shrink-0" /> : <EyeOff size={14} className="text-text-muted shrink-0" />}
-                                        <span className="text-[13px] font-bold text-text-main truncate">{comp.name}</span>
+                        <div className="flex flex-col gap-3 ml-2 lg:ml-16">
+                            {pillar.children?.map(level2 => (
+                                <div key={level2.id} className="border border-border rounded-xl p-4 bg-panel/50">
+                                    {/* LEVEL 2: SUBCOMPONENT */}
+                                    <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px] font-bold">L2</div>
+                                            <span className="font-bold text-sm text-text-main">{level2.name}</span>
+                                            <span className="text-[10px] text-text-muted uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-1.5 rounded">Subcomponente</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <IconButton icon={<Edit2 size={12} />} onClick={() => handleEditName(level2.id, level2.name)} />
+                                            <IconButton icon={level2.active ? <EyeOff size={12} /> : <Eye size={12} />} onClick={() => handleToggleActive(level2.id, level2.active)} />
+                                        </div>
                                     </div>
-                                    <div className="flex gap-1">
-                                        <button onClick={() => handleEditName(comp.id, comp.name)} className="p-1.5 text-text-muted hover:text-accent transition-colors"><Edit2 size={12} /></button>
-                                        <button onClick={() => handleToggleActive(comp.id, comp.active)} className="p-1.5 text-text-muted hover:text-accent transition-colors">
-                                            {comp.active ? <EyeOff size={12} /> : <Eye size={12} />}
-                                        </button>
+
+                                    {/* LEVEL 3: COMPETENCIA */}
+                                    <div className="ml-8 border-l-2 border-border pl-4 grid gap-2">
+                                        {level2.children?.map(level3 => (
+                                            <div key={level3.id} className="group/l3">
+                                                <div className="flex justify-between items-center py-2 hover:bg-black/5 rounded px-2 -ml-2 transition-colors">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-5 h-5 rounded bg-purple-500/10 text-purple-500 flex items-center justify-center text-[9px] font-bold">L3</div>
+                                                        <span className="text-sm font-medium text-text-main">{level3.name}</span>
+                                                        <span className="text-[9px] text-text-muted uppercase tracking-widest opacity-50">Competencia</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* LEVEL 4: CONDUCTA */}
+                                                <div className="ml-6 mt-1 space-y-1">
+                                                    {level3.children?.map(level4 => (
+                                                        <div key={level4.id} className="flex items-center gap-2 text-xs text-text-muted py-1 pl-2 border-l border-border hover:text-accent hover:border-accent transition-colors">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-accent" />
+                                                            <span>{level4.name}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}
-                            {(!pillar.children || pillar.children.length === 0) && (
-                                <div className="text-[11px] italic text-text-muted opacity-40 p-4 bg-panel/30 border border-dashed border-border rounded-2xl flex items-center justify-center gap-2 col-span-full">
-                                    <ChevronRight size={14} /> Sin subcomponentes asociados
-                                </div>
-                            )}
                         </div>
                     </div>
                 ))}
