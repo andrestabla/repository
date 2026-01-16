@@ -286,7 +286,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
             }
             // -----------------------------
 
-            const json = await res.json()
+            const json = data
             if (json.success && json.data) {
                 applyMetadata(json.data)
                 if (json.suggestedId) {
