@@ -127,6 +127,7 @@ const TABS = [
 ]
 
 export default function ContentForm({ initialData, onClose, onSave, readOnly = false }: Props) {
+    const router = useRouter()
     const [activeTab, setActiveTab] = useState('identity')
 
     const [formData, setFormData] = useState<Partial<ContentItem>>({
