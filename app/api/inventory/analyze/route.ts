@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
             const mimeType = meta.data.mimeType
             const size = parseInt(meta.data.size || '0')
 
-            // Hard Limit: 250MB (Vercel /tmp Limit Safety)
-            const MAX_SIZE_MB = 250
+            // Limit increased to 1000MB per user request
+            const MAX_SIZE_MB = 1000
             if (size > MAX_SIZE_MB * 1024 * 1024) {
                 return NextResponse.json({
                     error: `El archivo (${(size / 1024 / 1024).toFixed(1)}MB) excede el límite de procesamiento (${MAX_SIZE_MB}MB). Por favor usa un archivo más pequeño o solo audio.`

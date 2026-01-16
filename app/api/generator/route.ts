@@ -245,7 +245,8 @@ export async function POST(request: NextRequest) {
         console.log("[Generator] Starting OpenAI generation...")
         let output = ""
         try {
-            output = await OpenAIService.generateContent(prompt) || "No response generated."
+            const options = type === 'infographic' ? { response_format: { type: "json_object" } } : undefined
+            output = await OpenAIService.generateContent(prompt, "gpt-4o", options) || "No response generated."
 
             // CLEANING: If type is infographic, we MUST ensure we have a clean JSON string
             if (type === 'infographic') {

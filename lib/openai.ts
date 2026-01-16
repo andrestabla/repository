@@ -2,7 +2,7 @@ import OpenAI from 'openai'
 import { SystemSettingsService } from "./settings"
 
 export class OpenAIService {
-    static async generateContent(prompt: string, model: string = "gpt-4o") {
+    static async generateContent(prompt: string, model: string = "gpt-4o", options?: any) {
         let apiKey = await SystemSettingsService.getOpenAIApiKey()
         if (!apiKey) apiKey = process.env.OPENAI_API_KEY || null
         if (!apiKey) throw new Error("OPENAI_API_KEY no configurada.")
@@ -17,6 +17,7 @@ export class OpenAIService {
                 temperature: 0.4,
                 max_tokens: 4096, // Reasonable limit for GPT-4o
                 top_p: 0.95,
+                ...options
             })
 
             return completion.choices[0].message.content
