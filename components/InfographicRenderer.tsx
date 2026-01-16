@@ -41,9 +41,9 @@ export default function InfographicRenderer({ data }: { data: InfographicData })
 
             {/* SECTIONS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 md:p-12 bg-slate-50 dark:bg-black/20">
-                {data.sections.map((section, idx) => {
+                {data.sections?.map((section, idx) => {
                     const Icon = section.icon && IconMap[section.icon] ? IconMap[section.icon] : Zap
-                    const isFullWidth = idx === data.sections.length - 1 && data.sections.length % 2 !== 0
+                    const isFullWidth = idx === (data.sections?.length || 0) - 1 && (data.sections?.length || 0) % 2 !== 0
 
                     return (
                         <div
