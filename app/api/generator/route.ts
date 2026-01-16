@@ -156,104 +156,112 @@ export async function POST(request: NextRequest) {
             `
         } else if (type === 'mindmap') {
             prompt = `
-            Actúa como EXPERTO EN VISUALIZACIÓN DE DATOS.
-            Genera un JSON para un MAPA MENTAL basado en la metodología.
+            Actúa como EXPERTO EN MERMAID.JS.
+            Genera un JSON que contenga EXCLUSIVAMENTE el código para un diagrama de flujo (Mindmap).
 
-            FORMATO JSON OBLIGATORIO:
+            ESTRUCTURA JSON EXACTA (Respétala al 100%):
             {
               "type": "mindmap",
-              "mermaid": "graph TD\\n  A[Concepto Central] --> B(Idea Secundaria)\\n  B --> C{Detalle}"
+              "mermaid": "graph TD\\n  A[Concepto Principal] --> B(Concepto Secundario)\\n  B --> C{Detalle}"
             }
 
-            REGLAS:
-            1. Usa sintaxis Mermaid válida (graph TD).
-            2. La cadena de mermaid debe tener saltos de línea con \\n.
-            3. NO uses Markdown. Solo JSON.
-            
+            REGLAS CRÍTICAS:
+            1. NO uses claves como "mapa_mental", "content", "structure". Solo "type" y "mermaid".
+            2. El valor de "mermaid" debe ser un STRING único con saltos de línea (\\n).
+            3. NO devolvas un objeto anidado para el mapa. DEBE ser código Mermaid plano.
+
             CONTEXTO:
             ${combinedContext}
             `
         } else if (type === 'flashcards') {
             prompt = `
-            Actúa como PEDAGOGO. Genera un JSON con 5 TARJETAS DE ESTUDIO (Flashcards).
-            
-            FORMATO JSON OBLIGATORIO:
+            Actúa como CREADOR DE FLASHCARDS.
+            Genera un JSON con una lista de tarjetas de estudio.
+
+            ESTRUCTURA JSON EXACTA:
             {
               "type": "flashcards",
               "cards": [
-                { "question": "Pregunta...", "answer": "Respuesta...", "source": "Ref ID" }
+                { "question": "¿Qué es X?", "answer": "Es Y", "source": "Referencia" }
               ]
             }
+
+            REGLAS CRÍTICAS:
+            1. Usa la clave "cards" para el array. NO uses "sections" ni "items".
+            2. Genera exactamente 5 tarjetas.
 
             CONTEXTO:
             ${combinedContext}
             `
         } else if (type === 'quiz') {
             prompt = `
-            Actúa como EVALUADOR. Genera un JSON con un QUIZ DE 5 PREGUNTAS.
-            
-            FORMATO JSON OBLIGATORIO:
+            Actúa como PROFESOR EVALUADOR.
+            Genera un JSON con un examen de opción múltiple.
+
+            ESTRUCTURA JSON EXACTA:
             {
               "type": "quiz",
               "questions": [
                 {
-                  "question": "¿Pregunta?",
+                  "question": "Pregunta",
                   "options": ["A","B","C","D"],
                   "correctAnswer": "A",
-                  "explanation": "Por qué..."
+                  "explanation": "Razón"
                 }
               ]
             }
-            
+
+            REGLAS CRÍTICAS:
+            1. Usa la clave "questions". NO uses "sections".
+            2. "correctAnswer" debe coincidir con una de las opciones.
+
             CONTEXTO:
             ${combinedContext}
             `
         } else if (type === 'infographic') {
             prompt = `
-            Actúa como VISUAL DATA DESIGNER.
-            Genera un JSON ESTRUCTURADO para una INFOGRAFÍA de alto impacto.
+            Actúa como DISEÑADOR DE DATOS.
+            Genera un JSON para una infografía.
 
-            IMPORTANTE: Tu respuesta DEBE contener la palabra "json" explícitamente en el cuerpo del mensaje para cumplir con los requisitos de la API.
-
-            FORMATO JSON REQUERIDO:
+            ESTRUCTURA JSON EXACTA:
             {
               "type": "infographic",
-              "title": "Título llamativo",
-              "intro": "Breve introducción visual",
+              "title": "Título",
+              "intro": "Introducción",
               "sections": [
                  {
-                    "title": "Encabezado Sección",
-                    "content": " Texto explicativo conciso",
-                    "icon": "zap | chart | trend | users | target",
-                    "stats": [ { "label": "Dato", "value": "50%" } ],
-                    "chart": { "type": "bar", "data": [ { "name": "A", "value": 80 }, { "name": "B", "value": 40 } ] }
+                    "title": "Sección",
+                    "content": "Contenido",
+                    "icon": "zap",
+                    "stats": [ { "label": "Label", "value": "Val" } ]
                  }
               ],
-              "conclusion": "Cierre impactante"
+              "conclusion": "Cierre"
             }
 
-            IMPORTANTE:
-            - RESPUESTA DEBE SER ÚNICAMENTE EL JSON.
-            - NO Markdown code blocks. Solo el JSON raw string.
-            - Crea al menos 4 secciones. ASEGURA QUE "sections" NO ESTÉ VACÍO.
-            - Si la información es escasa, extrapola o usa tu conocimiento general sobre el tema para completar la estructura.
-            - Si hay datos numéricos en el texto, úsalos para los "stats" y "charts". Si no, genera estimaciones lógicas.
+            REGLAS:
+            1. "sections" NO debe estar vacío.
+            2. Usa iconos de Lucide (zap, users, trend, chart, target).
 
             CONTEXTO:
             ${combinedContext}
             `
         } else if (type === 'presentation') {
             prompt = `
-            Actúa como EXPERTO EN COMUNICACIÓN.
-            Genera un JSON para una PRESENTACIÓN (7 Slides).
-            
-            FORMATO JSON OBLIGATORIO:
+            Actúa como CONSULTOR DE PRESENTACIONES.
+            Genera un JSON para diapositivas.
+
+            ESTRUCTURA JSON EXACTA:
             {
               "type": "presentation",
               "slides": [
-                { "title": "Slide 1", "bullets": ["Punto 1", "Punto 2"], "visual": "Descripción imagen" }
+                { "title": "Título Slide", "bullets": ["Punto 1", "Punto 2"], "visual": "Descripción img" }
               ]
             }
+
+            REGLAS CRÍTICAS:
+            1. Usa la clave "slides". NO uses "sections".
+            2. Genera 7 slides.
 
             CONTEXTO:
             ${combinedContext}
