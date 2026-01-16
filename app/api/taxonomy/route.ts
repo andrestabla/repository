@@ -57,13 +57,24 @@ export async function PUT(req: Request) {
         const basePillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine On']
         let stats = { added: 0, exist: 0 }
 
-        // Ensure Level 1 Exists
+        // Ensure Level 1 Exists (And ONLY these exist)
         for (const name of basePillars) {
             let pillar = await prisma.taxonomy.findFirst({ where: { name, type: 'Pillar' } })
             if (!pillar) {
                 await prisma.taxonomy.create({ data: { name, type: 'Pillar', order: 0 } })
                 stats.added++
             }
+        }
+
+        // Cleanup: Remove any root pillar NOT in basePillars
+        const invalidPillars = await prisma.taxonomy.deleteMany({
+            where: {
+                type: 'Pillar',
+                name: { notIn: basePillars }
+            }
+        })
+        if (invalidPillars.count > 0) {
+            console.log(`[Taxonomy Sync] Removed ${invalidPillars.count} invalid pillars.`)
         }
 
         // 2. Fetch all ContentItems to Map Hierarchy
