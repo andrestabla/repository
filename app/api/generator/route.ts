@@ -243,6 +243,11 @@ export async function POST(request: NextRequest) {
             `
         }
 
+        // --- SAFETY CHECK FOR JSON MODE ---
+        if (type === 'infographic' && !prompt.toLowerCase().includes('json')) {
+            prompt += `\n\nIMPORTANTE: ESTÁS EN MODO INFOGRAFÍA. TU RESPUESTA DEBE SER EXCLUSIVAMENTE UN OBJETO JSON VÁLIDO. (The word 'json' is required here).`
+        }
+
         // 6. Generate (OpenAI)
         console.log("[Generator] Starting OpenAI generation...")
         let output = ""
