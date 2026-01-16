@@ -220,7 +220,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
         if (!formData.driveId) return alert('Primero selecciona un archivo de Drive')
         setAnalyzing(true)
         try {
-            const res = await fetch('/api/analyze-v2', {
+            const res = await fetch('/api/inventory/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ driveId: formData.driveId })
