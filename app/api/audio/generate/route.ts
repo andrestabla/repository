@@ -5,46 +5,53 @@ import { authOptions } from "@/lib/auth"
 import { SystemSettingsService } from '@/lib/settings'
 
 export async function POST(req: Request) {
-    const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     try {
+        const session = await getServerSession(authOptions)
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const { text } = await req.json()
-        if (!text) return NextResponse.json({ error: 'Text is required' }, { status: 400 })
+        if (!text) {
+            return NextResponse.json({ error: 'Text content is required' }, { status: 400 })
+        }
 
-        const apiKey = await SystemSettingsService.getFlikiApiKey()
-        if (!apiKey) return NextResponse.json({ error: 'Fliki API Key not configured' }, { status: 503 })
+        const apiKey = await SystemSettingsService.getOpenAIApiKey()
+        if (!apiKey) {
+            return NextResponse.json({ error: 'OpenAI API Key not configured' }, { status: 500 })
+        }
 
-        // Retrieve voice list to pick a default if needed, or just send text. 
-        // According to docs, we need content. VoiceId might be optional or have a default.
-        // We will try sending just content first.
-
-        // Using the endpoint found in search.
-        const response = await fetch('https://api.fliki.ai/v1/generate/text-to-speech', {
+        const response = await fetch('https://api.openai.com/v1/audio/speech', {
             method: 'POST',
             headers: {
+                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                content: text,
-                // voiceId: '...' // Optional? Let's hope so or use a generic one if known.
-            })
+                model: 'tts-1',
+                input: text,
+                voice: 'alloy', // Default voice, can be made configurable later
+            }),
         })
 
         if (!response.ok) {
-            const errorText = await response.text()
-            console.error('Fliki API Error:', errorText)
-            return NextResponse.json({ error: `Fliki API Error: ${response.statusText}`, details: errorText }, { status: response.status })
+            const error = await response.json()
+            console.error('OpenAI TTS Error:', error)
+            return NextResponse.json({ error: error.error?.message || 'Error generating audio' }, { status: response.status })
         }
 
-        const data = await response.json()
-        // Response should contain audio_url based on search results.
+        // Return the binary audio stream
+        const audioBuffer = await response.arrayBuffer()
 
-        return NextResponse.json(data)
+        return new NextResponse(audioBuffer, {
+            headers: {
+                'Content-Type': 'audio/mpeg',
+                'Content-Length': audioBuffer.byteLength.toString(),
+            }
+        })
 
     } catch (error: any) {
-        console.error('Audio generation error:', error)
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
+        console.error('Audio Generation Error:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }

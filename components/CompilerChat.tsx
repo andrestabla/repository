@@ -344,20 +344,16 @@ const PodcastView = ({ script }: { script: string }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: script })
             })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Error generando audio')
 
-            // Fliki usually returns { audio_url: "..." } or similar
-            if (data.audio_url) {
-                setAudioUrl(data.audio_url)
-            } else if (data.data?.audio_url) {
-                setAudioUrl(data.data.audio_url) // Handle potential wrapper
-            } else {
-                // If the response structure isn't exactly as expected, try strictly looking for any url field
-                const possibleUrl = Object.values(data).find(v => typeof v === 'string' && v.startsWith('http')) as string
-                if (possibleUrl) setAudioUrl(possibleUrl)
-                else throw new Error('No se recibió URL de audio')
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.error || 'Error generando audio')
             }
+
+            // Handle binary response (Blob)
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            setAudioUrl(url)
 
         } catch (e: any) {
             console.error(e)

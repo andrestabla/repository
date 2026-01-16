@@ -82,19 +82,5 @@ export class SystemSettingsService {
         })
     }
 
-    // --- Fliki ---
-    static async getFlikiApiKey(): Promise<string | null> {
-        const setting = await prisma.systemSettings.findUnique({
-            where: { key: 'fliki_api_key' }
-        })
-        return setting?.value as string | null
-    }
 
-    static async saveFlikiApiKey(key: string) {
-        return prisma.systemSettings.upsert({
-            where: { key: 'fliki_api_key' },
-            update: { value: key },
-            create: { key: 'fliki_api_key', value: key }
-        })
-    }
 }
