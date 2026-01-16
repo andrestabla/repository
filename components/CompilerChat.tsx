@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown, Trash2 } from 'lucide-react'
+import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown, Trash2, Maximize2, Minimize2, X, Download, Code } from 'lucide-react'
 
 // ... existing code ...
 
@@ -14,13 +14,17 @@ type Message = {
 
 
 // Helper Component for Mermaid
+
+
+// Enhanced Mermaid Component
 const MermaidDiagram = ({ chart }: { chart: string }) => {
     const ref = useRef<HTMLDivElement>(null)
     const [svg, setSvg] = useState('')
     const [error, setError] = useState<string | null>(null)
+    const [isZoomed, setIsZoomed] = useState(false)
 
     useEffect(() => {
-        if (ref.current && chart) {
+        if (chart) {
             setError(null)
             mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' })
             const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`
@@ -39,6 +43,52 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
         }
     }, [chart])
 
+    const handleDownloadSVG = () => {
+        const blob = new Blob([svg], { type: 'image/svg+xml' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'diagrama_4shine.svg'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
+    const handleDownloadPNG = () => {
+        const svgElement = ref.current?.querySelector('svg')
+        if (!svgElement) return
+
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        const data = (new XMLSerializer()).serializeToString(svgElement)
+        const img = new window.Image()
+        const svgBlob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' })
+        const url = URL.createObjectURL(svgBlob)
+
+        img.onload = function () {
+            // High resolution scale
+            const scale = 2
+            canvas.width = svgElement.clientWidth * scale
+            canvas.height = svgElement.clientHeight * scale
+
+            if (ctx) {
+                ctx.scale(scale, scale)
+                ctx.fillStyle = 'white'
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                ctx.drawImage(img, 0, 0)
+            }
+
+            const pngUrl = canvas.toDataURL('image/png')
+            const downloadLink = document.createElement('a')
+            downloadLink.href = pngUrl
+            downloadLink.download = 'diagrama_4shine.png'
+            document.body.appendChild(downloadLink)
+            downloadLink.click()
+            document.body.removeChild(downloadLink)
+        }
+        img.src = url
+    }
+
     if (error) {
         return (
             <div className="my-4 p-4 bg-red-50 rounded-xl border border-red-200 text-xs font-mono">
@@ -48,10 +98,68 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
         )
     }
 
+    const DiagramContent = () => (
+        <div
+            dangerouslySetInnerHTML={{ __html: svg }}
+            className="w-full flex justify-center"
+        />
+    )
+
     return (
-        <div className="my-4 p-6 bg-white rounded-xl border border-gray-200 overflow-x-auto flex justify-center shadow-sm" ref={ref}>
-            <div dangerouslySetInnerHTML={{ __html: svg }} />
-        </div>
+        <>
+            {/* Standard View */}
+            <div className="my-6 relative group" ref={ref}>
+                <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+
+                    {/* Toolbar */}
+                    <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-1.5 rounded-lg border border-gray-200 shadow-sm backdrop-blur-sm z-10">
+                        <button onClick={handleDownloadSVG} className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600 tooltip-trigger" title="SVG">
+                            <Code size={16} />
+                        </button>
+                        <button onClick={handleDownloadPNG} className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-green-600 tooltip-trigger" title="PNG">
+                            <Download size={16} />
+                        </button>
+                        <div className="w-px h-4 bg-gray-200 mx-1" />
+                        <button onClick={() => setIsZoomed(true)} className="p-1.5 hover:bg-gray-100 rounded text-blue-500 hover:text-blue-700 tooltip-trigger" title="Ampliar">
+                            <Maximize2 size={16} />
+                        </button>
+                    </div>
+
+                    {/* Diagram */}
+                    <div className="overflow-x-auto">
+                        <DiagramContent />
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal for Zoom */}
+            {isZoomed && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-200">
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full h-full max-w-[90vw] max-h-[90vh] flex flex-col overflow-hidden">
+
+                        {/* Modal Header */}
+                        <div className="h-14 border-b border-gray-200 flex items-center justify-between px-6 bg-gray-50/50">
+                            <h3 className="font-bold text-gray-700">Vista Detallada</h3>
+                            <div className="flex items-center gap-2">
+                                <button onClick={handleDownloadPNG} className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors">
+                                    <Download size={14} /> Descargar PNG
+                                </button>
+                                <button onClick={() => setIsZoomed(false)} className="p-2 hover:bg-gray-200/50 rounded-full text-gray-500 transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body (Scrollable) */}
+                        <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-graph-paper">
+                            <div className="scale-125 transform-origin-center">
+                                <DiagramContent />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     )
 }
 
