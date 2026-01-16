@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown, Trash2, Maximize2, Minimize2, X, Download, Code } from 'lucide-react'
+import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown, Trash2, Maximize2, Minimize2, X, Download, Code, ZoomIn, ZoomOut } from 'lucide-react'
 
 // ... existing code ...
 
@@ -22,6 +22,7 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
     const [svg, setSvg] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [isZoomed, setIsZoomed] = useState(false)
+    const [zoomLevel, setZoomLevel] = useState(1)
 
     useEffect(() => {
         if (chart) {
@@ -55,27 +56,38 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
     }
 
     const handleDownloadPNG = () => {
-        const svgElement = ref.current?.querySelector('svg')
-        if (!svgElement) return
+        const originalSvg = ref.current?.querySelector('svg')
+        if (!originalSvg) return
 
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-        const data = (new XMLSerializer()).serializeToString(svgElement)
+        // 1. Get exact dimensions from the rendered SVG
+        const box = originalSvg.getBoundingClientRect()
+        const width = box.width
+        const height = box.height
+
+        // 2. Clone the SVG to modify it safely
+        const clonedSvg = originalSvg.cloneNode(true) as SVGSVGElement
+        clonedSvg.setAttribute('width', width.toString())
+        clonedSvg.setAttribute('height', height.toString())
+        clonedSvg.style.backgroundColor = 'white' // Force white background
+
+        const data = (new XMLSerializer()).serializeToString(clonedSvg)
         const img = new window.Image()
         const svgBlob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' })
         const url = URL.createObjectURL(svgBlob)
 
         img.onload = function () {
-            // High resolution scale
-            const scale = 2
-            canvas.width = svgElement.clientWidth * scale
-            canvas.height = svgElement.clientHeight * scale
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            const scale = 2 // High Res
+
+            canvas.width = width * scale
+            canvas.height = height * scale
 
             if (ctx) {
                 ctx.scale(scale, scale)
                 ctx.fillStyle = 'white'
                 ctx.fillRect(0, 0, canvas.width, canvas.height)
-                ctx.drawImage(img, 0, 0)
+                ctx.drawImage(img, 0, 0, width, height)
             }
 
             const pngUrl = canvas.toDataURL('image/png')
@@ -85,6 +97,7 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
             document.body.appendChild(downloadLink)
             downloadLink.click()
             document.body.removeChild(downloadLink)
+            URL.revokeObjectURL(url)
         }
         img.src = url
     }
@@ -120,7 +133,7 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
                             <Download size={16} />
                         </button>
                         <div className="w-px h-4 bg-gray-200 mx-1" />
-                        <button onClick={() => setIsZoomed(true)} className="p-1.5 hover:bg-gray-100 rounded text-blue-500 hover:text-blue-700 tooltip-trigger" title="Ampliar">
+                        <button onClick={() => { setIsZoomed(true); setZoomLevel(1); }} className="p-1.5 hover:bg-gray-100 rounded text-blue-500 hover:text-blue-700 tooltip-trigger" title="Ampliar">
                             <Maximize2 size={16} />
                         </button>
                     </div>
@@ -135,25 +148,52 @@ const MermaidDiagram = ({ chart }: { chart: string }) => {
             {/* Modal for Zoom */}
             {isZoomed && (
                 <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-200">
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full h-full max-w-[90vw] max-h-[90vh] flex flex-col overflow-hidden">
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] flex flex-col overflow-hidden">
 
                         {/* Modal Header */}
-                        <div className="h-14 border-b border-gray-200 flex items-center justify-between px-6 bg-gray-50/50">
-                            <h3 className="font-bold text-gray-700">Vista Detallada</h3>
+                        <div className="h-14 border-b border-gray-200 flex items-center justify-between px-6 bg-gray-50/50 shrink-0">
+                            <div className="flex items-center gap-4">
+                                <h3 className="font-bold text-gray-700">Vista Detallada</h3>
+                                {/* Zoom Controls */}
+                                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-md p-1">
+                                    <button
+                                        onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.25))}
+                                        className="p-1 hover:bg-gray-100 rounded text-gray-600"
+                                        title="Reducir"
+                                    >
+                                        <ZoomOut size={16} />
+                                    </button>
+                                    <span className="text-xs font-mono w-12 text-center text-gray-500">{Math.round(zoomLevel * 100)}%</span>
+                                    <button
+                                        onClick={() => setZoomLevel(z => Math.min(3, z + 0.25))}
+                                        className="p-1 hover:bg-gray-100 rounded text-gray-600"
+                                        title="Aumentar"
+                                    >
+                                        <ZoomIn size={16} />
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="flex items-center gap-2">
                                 <button onClick={handleDownloadPNG} className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors">
                                     <Download size={14} /> Descargar PNG
                                 </button>
+                                <div className="w-px h-4 bg-gray-300 mx-2" />
                                 <button onClick={() => setIsZoomed(false)} className="p-2 hover:bg-gray-200/50 rounded-full text-gray-500 transition-colors">
                                     <X size={20} />
                                 </button>
                             </div>
                         </div>
 
-                        {/* Modal Body (Scrollable) */}
-                        <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-graph-paper">
-                            <div className="scale-125 transform-origin-center">
-                                <DiagramContent />
+                        {/* Modal Body (Scrollable with Zoom) */}
+                        <div className="flex-1 overflow-auto bg-graph-paper relative">
+                            <div
+                                className="min-w-full min-h-full flex items-center justify-center p-20 transition-transform duration-200 ease-out origin-center"
+                                style={{ transform: `scale(${zoomLevel})` }}
+                            >
+                                <div className="bg-white shadow-sm p-4 rounded-lg border border-gray-100">
+                                    <DiagramContent />
+                                </div>
                             </div>
                         </div>
                     </div>
