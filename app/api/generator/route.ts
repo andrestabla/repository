@@ -160,23 +160,24 @@ export async function POST(request: NextRequest) {
             `
         } else if (type === 'mindmap') {
             prompt = `
-            TU TAREA: Generar código de Mermaid.js. NO generes una estructura semántica del contenido.
-
+            TU TAREA: Generar código de Mermaid.js para un diagrama de flujo.
+            
             INPUT:
             ${combinedContext}
 
             OUTPUT ESPERADO:
-            Un objeto JSON válido con una sola clave "mermaid" conteniendo el string del diagrama.
+            ÚNICAMENTE un bloque de código Markdown con el diagrama.
+            
+            EJEMPLO:
+            \`\`\`mermaid
+            graph TD
+              A[Concepto] --> B(Detalle)
+            \`\`\`
 
-            EJEMPLO DE OUTPUT CORRECTO:
-            {
-              "type": "mindmap",
-              "mermaid": "graph TD\\n  A[Liderazgo] --> B(Empatía)\\n  A --> C{Visión}\\n  C --> D[Futuro]"
-            }
-
-            REGLAS (CRÍTICAS):
-            1. El string "mermaid" debe usar sintaxis "graph TD".
-            2. NO crees objetos anidados como "nodos" o "ramas". Todo el diagrama debe estar contenido en el string "mermaid".
+            REGLAS:
+            1. NO expliques nada. Solo el código.
+            2. Usa sintaxis "graph TD".
+            3. Asegúrate de cerrar el bloque de código.
             `
         } else if (type === 'flashcards') {
             prompt = `
@@ -258,7 +259,9 @@ export async function POST(request: NextRequest) {
         }
 
         // --- SAFETY CHECK FOR JSON MODE ---
-        const jsonTypes = ['infographic', 'mindmap', 'flashcards', 'quiz', 'presentation', 'matrix']
+        // V3 CHANGE: Removing 'mindmap' from JSON mode to avoid hallwaycination of semantic objects.
+        // We will parse the markdown manually for mindmaps.
+        const jsonTypes = ['infographic', 'flashcards', 'quiz', 'presentation', 'matrix']
         if (jsonTypes.includes(type as string) && !prompt.toLowerCase().includes('json')) {
             prompt += `\n\nIMPORTANTE: ESTÁS EN MODO STRICT JSON. TU RESPUESTA DEBE SER EXCLUSIVAMENTE UN OBJETO JSON VÁLIDO.`
         }
@@ -288,6 +291,16 @@ export async function POST(request: NextRequest) {
                 } catch (e) {
                     console.error("Generator Output was not valid JSON:", output.substring(0, 100))
                 }
+            } else if (type === 'mindmap') {
+                // V3 PARSING: Extract Mermaid code from Markdown block
+                const match = output.match(/```mermaid([\s\S]*?)```/)
+                let mermaidCode = match ? match[1].trim() : output;
+
+                // Construct the JSON expected by frontend
+                output = JSON.stringify({
+                    type: "mindmap",
+                    mermaid: mermaidCode
+                })
             }
 
         } catch (err: any) {
