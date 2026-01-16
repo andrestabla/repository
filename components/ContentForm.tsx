@@ -228,35 +228,61 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
 
             // Checks for HTTP Errors first
             if (!res.ok) {
-                if (res.status === 504) throw new Error('El análisis excedió el tiempo límite (Timeout). El archivo puede ser demasiado grande/pesado para este entorno.')
-                if (res.status === 413) throw new Error('El archivo es demasiado grande para ser procesado por el servidor.')
+                if (res.status === 504) throw new Error('Timeout: El video es demasiado pesado. Intenta un archivo más pequeño.')
+                if (res.status === 413) throw new Error('El archivo es demasiado grande (413).')
+                if (res.status === 405) throw new Error('Error 405: API Route Not Found.')
 
-                let errorMsg = `Error del servidor (${res.status})`
+                const errData = await res.json().catch(() => ({}))
+                throw new Error(errData.error || `Error ${res.status}: Fallo en el servidor`)
+            }
 
-                // DIAGNOSTIC START
-                if (res.status === 405) {
-                    try {
-                        const debugRes = await fetch('/api/test-debug', { method: 'POST' })
-                        if (debugRes.ok) {
-                            errorMsg += ' [Diagnóstico: La ruta de prueba funciona, el error es específico de analyze]'
-                        } else {
-                            errorMsg += ` [Diagnóstico: La ruta de prueba TAMBIÉN falló (${debugRes.status})]`
-                        }
-                    } catch (dErr) {
-                        errorMsg += ' [Diagnóstico: Fallo al contactar ruta de prueba]'
+            const data = await res.json()
+
+            // --- ASYNC VIDEO HANDLING ---
+            if (data.async && data.contentId) {
+                toast.loading('El video se está procesando en la nube (esto puede tomar varios minutos)...', { duration: 10000 })
+
+                let attempts = 0
+                const maxAttempts = 120 // 10 mins approx
+
+                while (attempts < maxAttempts) {
+                    attempts++
+                    await new Promise(r => setTimeout(r, 5000)) // Wait 5s
+
+                    const pollRes = await fetch('/api/inventory/poll', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contentId: data.contentId })
+                    })
+
+                    if (!pollRes.ok) continue
+
+                    const pollData = await pollRes.json()
+
+                    if (pollData.status === 'COMPLETED') {
+                        toast.dismiss()
+                        toast.success('¡Video procesado exitosamente!')
+                        onCancel()
+
+                        setTimeout(() => {
+                            const targetId = pollData.data?.suggestedId || data.contentId
+                            if (pollData.data) {
+                                localStorage.setItem(`temp_content_${targetId}`, JSON.stringify(pollData.data))
+                            }
+                            router.push(`/dashboard/inventory/edit/${targetId}?new=true`)
+                        }, 500)
+                        return
+                    }
+
+                    if (pollData.status === 'ERROR') {
+                        toast.dismiss()
+                        throw new Error('Fallo en el procesamiento del video en la nube.')
                     }
                 }
-                // DIAGNOSTIC END
-
-                try {
-                    const errJson = await res.json()
-                    if (errJson.error) errorMsg = errJson.error
-                } catch (e) {
-                    // response was likely HTML or empty
-                    if (res.status === 500) errorMsg = 'Error Interno del Servidor (Posible fallo de memoria o configuración).'
-                }
-                throw new Error(errorMsg)
+                toast.dismiss()
+                throw new Error('Tiempo de espera agotado. El video sigue procesándose en segundo plano.')
             }
+            // -----------------------------
 
             const json = await res.json()
             if (json.success && json.data) {
