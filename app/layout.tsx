@@ -4,6 +4,7 @@ import './globals.css'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import Shell from '@/components/Shell'
+import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-main' })
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
@@ -25,6 +26,7 @@ export default async function RootLayout({
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased h-screen overflow-hidden`}>
         <Shell session={session}>
           {children}
+          <Toaster richColors position="bottom-right" />
         </Shell>
       </body>
     </html>
