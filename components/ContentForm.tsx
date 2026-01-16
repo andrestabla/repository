@@ -235,8 +235,9 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
             } else {
                 alert('Error: ' + (json.error || 'No se pudo analizar'))
             }
-        } catch (e) {
-            alert('Error de conexión con IA')
+        } catch (e: any) {
+            console.error(e)
+            alert(`Error de conexión con IA: ${e.message || 'Timeout o Fallo de Red'}`)
         }
         setAnalyzing(false)
     }
