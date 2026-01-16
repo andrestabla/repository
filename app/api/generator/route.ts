@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { GeminiService } from '@/lib/gemini'
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 
 // Allow longer timeout for generation
 export const maxDuration = 60
@@ -21,6 +22,9 @@ type CompilationType =
 
 export async function POST(request: NextRequest) {
     try {
+        const session = await getServerSession(authOptions)
+        const userEmail = session?.user?.email || 'anonymous'
+
         const { type, message, selectedAssetIds, selectedResearchIds } = await request.json() as {
             type: CompilationType,
             message?: string,
@@ -295,8 +299,7 @@ export async function POST(request: NextRequest) {
         try {
             await prisma.generationHistory.create({
                 data: {
-                    user: 'anonymous', // session is not available here, using anonymous default
-
+                    user: userEmail, // Correct field name per schema
                     prompt: message || `Generate ${type}`,
                     response: output,
                     type: type || 'chat',
