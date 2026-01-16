@@ -232,6 +232,22 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                 if (res.status === 413) throw new Error('El archivo es demasiado grande para ser procesado por el servidor.')
 
                 let errorMsg = `Error del servidor (${res.status})`
+
+                // DIAGNOSTIC START
+                if (res.status === 405) {
+                    try {
+                        const debugRes = await fetch('/api/test-debug', { method: 'POST' })
+                        if (debugRes.ok) {
+                            errorMsg += ' [Diagnóstico: La ruta de prueba funciona, el error es específico de analyze]'
+                        } else {
+                            errorMsg += ` [Diagnóstico: La ruta de prueba TAMBIÉN falló (${debugRes.status})]`
+                        }
+                    } catch (dErr) {
+                        errorMsg += ' [Diagnóstico: Fallo al contactar ruta de prueba]'
+                    }
+                }
+                // DIAGNOSTIC END
+
                 try {
                     const errJson = await res.json()
                     if (errJson.error) errorMsg = errJson.error
