@@ -5,7 +5,8 @@ import React, { useState, useEffect } from 'react'
 import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, Treemap, Cell, Legend, ScatterChart, Scatter, ZAxis
+    LineChart, Line, Treemap, Cell, Legend, ScatterChart, Scatter, ZAxis,
+    PieChart, Pie
 } from 'recharts'
 import { Loader2, LayoutDashboard, Target, Layers, ArrowRight, BookOpen } from 'lucide-react'
 
@@ -122,12 +123,13 @@ export default function InventoryAnalytics() {
                 </div>
             </div>
 
-            {/* 2.3 Treemap: Cobertura Taxonómica */}
+            {/* 2.3 Treemap: Cobertura Taxonómica (ENHANCED VISIBILITY) */}
             <div className="bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
                 <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6">
                     Árbol de Cobertura Taxonómica (Treemap)
                 </h3>
-                <div className="h-96 w-full">
+                {/* INCREASED HEIGHT FOR BETTER VISIBILITY */}
+                <div className="h-[600px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <Treemap
                             data={data.treeMap}
@@ -136,11 +138,52 @@ export default function InventoryAnalytics() {
                             stroke="#fff"
                             fill="#8884d8"
                             content={<CustomizedContent />}
-                        />
+                        >
+                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                        </Treemap>
                     </ResponsiveContainer>
                 </div>
-                <div className="mt-2 text-xs text-text-muted text-center">
-                    Tamaño del cuadro = Cantidad de Activos. Color = Pilar.
+                <div className="mt-4 text-xs text-text-muted text-center max-w-2xl mx-auto">
+                    Este mapa muestra la densidad de activos por Subcomponente (Cajas Grandes) y Competencias (Cajas Pequeñas).
+                    <br />
+                    <strong>Tamaño</strong> = Cantidad de Activos. <strong>Color</strong> = Pilar Principal.
+                </div>
+            </div>
+
+            {/* NEW SECTION: CATEGORÍA TÉCNICA */}
+            <div className="bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
+                <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <Layers size={18} className="text-pink-500" />
+                    Distribución por Categoría Técnica
+                </h3>
+                <div className="flex flex-col md:flex-row items-center gap-8">
+                    <div className="h-80 flex-1 w-full relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data.typeDist}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    nameKey="name"
+                                >
+                                    {data.typeDist?.map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                                <Legend layout="vertical" align="right" verticalAlign="middle" />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        {/* Center Label */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none pr-28">
+                            <div className="text-3xl font-black text-text-main">{data.total}</div>
+                            <div className="text-[10px] uppercase font-bold text-text-muted">Activos</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -212,8 +255,8 @@ export default function InventoryAnalytics() {
                                         return (
                                             <td key={level} className="py-3 text-center">
                                                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${count === 0 ? 'bg-gray-100 text-gray-400' :
-                                                        count < 3 ? 'bg-yellow-100 text-yellow-700' :
-                                                            'bg-emerald-100 text-emerald-700'
+                                                    count < 3 ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-emerald-100 text-emerald-700'
                                                     }`}>
                                                     {count}
                                                 </span>

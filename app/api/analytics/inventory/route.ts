@@ -9,6 +9,7 @@ export async function GET() {
             select: {
                 id: true,
                 title: true,
+                type: true, // Needed for distribution
                 primaryPillar: true,
                 maturity: true,
                 intervention: true,
@@ -115,6 +116,15 @@ export async function GET() {
             return dataPoint
         })
 
+        // 8. Technical Category Distribution
+        // Group by 'type' (PDF, Video, Toolkit, etc)
+        const typeCounts: Record<string, number> = {}
+        rawItems.forEach(i => {
+            const t = i.type || 'Desconocido'
+            typeCounts[t] = (typeCounts[t] || 0) + 1
+        })
+        const typeDist = Object.entries(typeCounts).map(([name, value]) => ({ name, value }))
+
         return NextResponse.json({
             stats: {
                 total: rawItems.length,
@@ -124,7 +134,8 @@ export async function GET() {
                 interventionDist,
                 journeyDist,
                 roleMatrix,
-                rawRoles: roles // sending roles list for mapping in frontend
+                typeDist, // New Field
+                rawRoles: roles
             }
         })
 
