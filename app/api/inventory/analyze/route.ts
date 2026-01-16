@@ -7,22 +7,6 @@ import { authOptions } from "@/lib/auth"
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 minutes for large video analysis
 
-export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 200,
-        headers: {
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Allow-Origin': '*',
-        },
-    })
-}
-
-// Connectivity Test
-export async function GET() {
-    return NextResponse.json({ status: 'API Online', methods: 'POST, OPTIONS' })
-}
-
 export async function POST(request: NextRequest) {
     // Auth Check
     const session = await getServerSession(authOptions)
