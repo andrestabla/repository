@@ -107,7 +107,7 @@ export default function TaxonomyManager({ initialData }: { initialData: Taxonomy
             const res = await fetch('/api/taxonomy', { method: 'PUT' })
             const data = await res.json()
             if (res.ok) {
-                alert(`Sincronización completada.\nAgregados: ${data.stats.added}\nExistentes: ${data.stats.exist}`)
+                alert(`Sincronización completada.\nAgregados: ${data.stats.added}\nEliminados: ${data.stats.deleted}\nExistentes: ${data.stats.exist}`)
                 window.location.reload()
             }
         } catch (err) {

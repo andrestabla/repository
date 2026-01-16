@@ -55,7 +55,7 @@ export async function PUT(req: Request) {
     try {
         // 1. Define Base Pillars (Level 1)
         const basePillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine On']
-        let stats = { added: 0, exist: 0 }
+        let stats = { added: 0, exist: 0, deleted: 0 }
 
         // Ensure Level 1 Exists (And ONLY these exist)
         for (const name of basePillars) {
@@ -74,6 +74,7 @@ export async function PUT(req: Request) {
             }
         })
         if (invalidPillars.count > 0) {
+            stats.deleted = invalidPillars.count
             console.log(`[Taxonomy Sync] Removed ${invalidPillars.count} invalid pillars.`)
         }
 
