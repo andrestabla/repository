@@ -6,6 +6,17 @@ import { authOptions } from "@/lib/auth"
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 minutes
 
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Origin': '*',
+        },
+    })
+}
+
 export async function POST(request: NextRequest) {
     // Auth Check
     const session = await getServerSession(authOptions)
@@ -18,13 +29,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Drive ID or URL required' }, { status: 400 })
         }
 
-        // 1. Get Text or Transcribe Content
         console.log(`[Analyze] Fetching content for ${driveId || url}...`)
 
         let text = ''
         let transcription = null
 
-        // ... (Drive file handling) ...
         const { google } = require('googleapis')
         const { SystemSettingsService } = require('@/lib/settings')
         const config = await SystemSettingsService.getDriveConfig()
@@ -37,54 +46,24 @@ export async function POST(request: NextRequest) {
             const mimeType = meta.data.mimeType
             const size = parseInt(meta.data.size || '0')
 
-            // Limit increased to 1000MB
             const MAX_SIZE_MB = 1000
             if (size > MAX_SIZE_MB * 1024 * 1024) {
                 return NextResponse.json({
-                    error: `El archivo (${(size / 1024 / 1024).toFixed(1)}MB) excede el límite de procesamiento.`
+                    error: `El archivo supera el límite de ${MAX_SIZE_MB}MB.`
                 }, { status: 400 })
             }
 
             if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {
-                console.log(`[Analyze] Detected Media: ${mimeType}. Starting Async Upload...`)
+                console.log(`[Analyze] Processing Media: ${mimeType}`)
                 const { downloadDriveFile } = require('@/lib/drive')
                 const { GeminiService } = require('@/lib/gemini')
-                const { IdGeneratorService } = require('@/lib/id-generator')
-                const prisma = require('@/lib/prisma').default
                 const fs = require('fs')
 
-                // A. Download to Temp
                 const localFile = await downloadDriveFile(driveId)
-
                 try {
-                    // B. Upload to Gemini
-                    const upload = await GeminiService.uploadMedia(localFile.path, localFile.mimeType)
-
-                    // C. Create Async Record
-                    const newId = await IdGeneratorService.generateId('VIDEO')
-
-                    const contentItem = await prisma.contentItem.create({
-                        data: {
-                            id: newId,
-                            title: localFile.originalName || 'Video en Proceso',
-                            type: 'Video',
-                            version: '1.0',
-                            status: 'PROCESANDO_VIDEO',
-                            driveId: driveId,
-                            geminiUri: upload.uri,
-                            geminiName: upload.name
-                        }
-                    })
-
-                    console.log(`[Analyze] Async Video Started. ID: ${newId}`)
-
-                    return NextResponse.json({
-                        success: true,
-                        async: true,
-                        contentId: newId,
-                        message: "El video se está procesando. Esto puede tomar unos minutos."
-                    })
-
+                    // Synchronous Transcribe
+                    transcription = await GeminiService.transcribeMedia(localFile.path, localFile.mimeType)
+                    text = `[TRANSCRIPTION OF VIDEO/AUDIO: ${localFile.originalName}]\n\n${transcription}`
                 } finally {
                     if (fs.existsSync(localFile.path)) fs.unlinkSync(localFile.path)
                 }
@@ -93,36 +72,30 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // ... (URL handling) ...
         if (url) {
             let targetUrl = url.trim()
-            if (!/^https?:\/\//i.test(targetUrl)) {
-                targetUrl = 'https://' + targetUrl
-            }
-
+            if (!/^https?:\/\//i.test(targetUrl)) targetUrl = 'https://' + targetUrl
             console.log(`[Analyze] Analyzing URL: ${targetUrl}`)
+
             try {
                 const res = await fetch(targetUrl, {
                     headers: { 'User-Agent': 'Mozilla/5.0...' }
                 })
                 if (!res.ok) throw new Error(`Status: ${res.status}`)
                 const html = await res.text()
-                text = html.replace(/<[^>]*>/g, ' ').substring(0, 30000)
-                text = `[CONTENT FROM URL: ${targetUrl}]\n\n` + text
+                text = `[CONTENT FROM URL: ${targetUrl}]\n\n` + html.replace(/<[^>]*>/g, ' ').substring(0, 30000)
             } catch (e) {
-                console.warn('URL Fetch failed', e)
-                text = `[URL_ACCESS_FAILED] ${targetUrl}\nTry to analyze based on knowledge.`
+                text = `[URL_ACCESS_FAILED] ${targetUrl}\nFallback to Knowledge Base.`
             }
         }
 
-        // --- CONTEXT --
+        // Context
         let promptContext = ''
         if (type === 'Investigación') {
-            promptContext = `MODO: ANÁLISIS DE FUENTE ACADÉMICA...`
+            promptContext = `MODO: ANÁLISIS DE FUENTE ACADÉMICA / INVESTIGACIÓN... (Completa 4Shine info)`
         }
 
-        // 2. Analyze
-        console.log(`[Analyze] Sending content to Gemini...`)
+        // Analyze
         const { GeminiService } = await import('@/lib/gemini')
         const metadata = await GeminiService.analyzeContent(text, promptContext)
 
@@ -137,9 +110,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: metadata, suggestedId })
 
     } catch (error: any) {
-        console.error('Analysis API Error:', error)
-        return NextResponse.json({
-            error: error?.message || String(error)
-        }, { status: 500 })
+        console.error('[Analyze Error]', error)
+        return NextResponse.json({ error: error?.message || 'Internal Server Error' }, { status: 500 })
     }
 }
