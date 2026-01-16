@@ -3,8 +3,12 @@ import { getFileContent } from '@/lib/drive'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-export const dynamic = 'force-dynamic'
+// export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 minutes
+
+export async function GET() {
+    return NextResponse.json({ status: 'Analyze V2 Online' })
+}
 
 export async function POST(request: NextRequest) {
     // Auth Check
