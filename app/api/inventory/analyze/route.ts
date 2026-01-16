@@ -7,6 +7,10 @@ import { authOptions } from "@/lib/auth"
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 minutes for large video analysis
 
+export async function OPTIONS() {
+    return NextResponse.json({}, { status: 200 })
+}
+
 export async function POST(request: NextRequest) {
     // Auth Check
     const session = await getServerSession(authOptions)
