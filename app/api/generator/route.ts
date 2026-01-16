@@ -198,46 +198,47 @@ export async function POST(request: NextRequest) {
             ${combinedContext}
             `
         } else if (type === 'infographic') {
-            prompt = `
             Actúa como VISUAL DATA DESIGNER.
             Genera un JSON ESTRUCTURADO para una INFOGRAFÍA de alto impacto.
 
+                IMPORTANTE: Tu respuesta DEBE contener la palabra "json" explícitamente en el cuerpo del mensaje para cumplir con los requisitos de la API.
+
             FORMATO JSON REQUERIDO:
             {
-              "title": "Título llamativo",
-              "intro": "Breve introducción visual",
-              "sections": [
-                 {
-                    "title": "Encabezado Sección",
-                    "content": " Texto explicativo conciso",
-                    "icon": "zap | chart | trend | users | target",
-                    "stats": [ { "label": "Dato", "value": "50%" } ],
-                    "chart": { "type": "bar", "data": [ { "name": "A", "value": 80 }, { "name": "B", "value": 40 } ] }
-                 }
-              ],
-              "conclusion": "Cierre impactante"
+                "title": "Título llamativo",
+                    "intro": "Breve introducción visual",
+                        "sections": [
+                            {
+                                "title": "Encabezado Sección",
+                                "content": " Texto explicativo conciso",
+                                "icon": "zap | chart | trend | users | target",
+                                "stats": [{ "label": "Dato", "value": "50%" }],
+                                "chart": { "type": "bar", "data": [{ "name": "A", "value": 80 }, { "name": "B", "value": 40 }] }
+                            }
+                        ],
+                            "conclusion": "Cierre impactante"
             }
 
             IMPORTANTE:
             - RESPUESTA DEBE SER ÚNICAMENTE EL JSON.
-            - NO Markdown code blocks. Solo el JSON raw string.
+            - NO Markdown code blocks.Solo el JSON raw string.
             - Crea al menos 4 secciones.
 
-            CONTEXTO:
-            ${combinedContext}
+                CONTEXTO:
+            ${ combinedContext }
             `
         } else if (type === 'presentation') {
             prompt = `
             Actúa como EXPERTO EN COMUNICACIÓN.
-            Genera la estructura para una **PRESENTACIÓN (Slide Deck)** de 7 diapositivas.
+            Genera la estructura para una ** PRESENTACIÓN(Slide Deck) ** de 7 diapositivas.
             
             FORMATO POR SLIDE:
-            **SLIDE X: [Título]**
-            - Bullet points del contenido.
-            - Sugerencia visual (Imagen/Gráfico).
-            
-            CONTEXTO:
-            ${combinedContext}
+            ** SLIDE X: [Título] **
+                - Bullet points del contenido.
+            - Sugerencia visual(Imagen / Gráfico).
+
+                CONTEXTO:
+            ${ combinedContext }
             `
         }
 
@@ -251,46 +252,46 @@ export async function POST(request: NextRequest) {
             // CLEANING: If type is infographic, we MUST ensure we have a clean JSON string
             if (type === 'infographic') {
                 // Remove Markdown code blocks if present
-                output = output.replace(/```json/g, '').replace(/```/g, '').trim()
-                // Validate if it is JSON
-                try {
-                    JSON.parse(output)
-                    // If safe, we keep it clean.
-                } catch (e) {
-                    console.error("Generator Output was not valid JSON:", output.substring(0, 100))
-                    // Fallback to text if JSON fails? Or just let it be text so frontend shows error.
-                }
+                output = output.replace(/```json / g, '').replace(/```/g, '').trim()
+            // Validate if it is JSON
+            try {
+                JSON.parse(output)
+                // If safe, we keep it clean.
+            } catch (e) {
+                console.error("Generator Output was not valid JSON:", output.substring(0, 100))
+                // Fallback to text if JSON fails? Or just let it be text so frontend shows error.
             }
-
-        } catch (err: any) {
-            console.error("[Generator] OpenAI Failed:", err)
-            return NextResponse.json({ error: `OpenAI Error: ${err.message}` }, { status: 500 })
         }
 
-        // 7. Persist History
-        try {
-            await prisma.generationHistory.create({
-                data: {
-                    user: 'anonymous', // session is not available here, using anonymous default
-
-                    prompt: message || `Generate ${type}`,
-                    response: output,
-                    type: type || 'chat',
-                    assets: selectedAssetIds || [],
-                    research: selectedResearchIds || []
-                }
-            })
-        } catch (dbError) {
-            console.error("Failed to save history:", dbError)
-        }
-
-        return NextResponse.json({
-            result: output,
-            count: assets.length + research.length
-        })
-
-    } catch (error) {
-        console.error('Generator API Error:', error)
-        return NextResponse.json({ error: String(error) }, { status: 500 })
+    } catch (err: any) {
+        console.error("[Generator] OpenAI Failed:", err)
+        return NextResponse.json({ error: `OpenAI Error: ${err.message}` }, { status: 500 })
     }
+
+    // 7. Persist History
+    try {
+        await prisma.generationHistory.create({
+            data: {
+                user: 'anonymous', // session is not available here, using anonymous default
+
+                prompt: message || `Generate ${type}`,
+                response: output,
+                type: type || 'chat',
+                assets: selectedAssetIds || [],
+                research: selectedResearchIds || []
+            }
+        })
+    } catch (dbError) {
+        console.error("Failed to save history:", dbError)
+    }
+
+    return NextResponse.json({
+        result: output,
+        count: assets.length + research.length
+    })
+
+} catch (error) {
+    console.error('Generator API Error:', error)
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+}
 }
