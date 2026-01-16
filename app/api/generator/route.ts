@@ -272,7 +272,10 @@ export async function POST(request: NextRequest) {
         try {
             // Apply JSON mode to all structured types
             const options = jsonTypes.includes(type as string) ? { response_format: { type: "json_object" } } : undefined
+            console.log(`[Generator] Sending prompt to OpenAI (Type: ${type}, JSON Mode: ${!!options})... Preamble: ${prompt.substring(0, 50)}`)
+
             output = await OpenAIService.generateContent(prompt, "gpt-4o", options) || "No response generated."
+            console.log(`[Generator] Raw Output received: ${output.substring(0, 100)}...`)
 
             // CLEANING: JSON Sanitization
             if (jsonTypes.includes(type as string)) {

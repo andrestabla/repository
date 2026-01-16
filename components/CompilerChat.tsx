@@ -560,20 +560,26 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                                                     const cleanJson = msg.content.replace(/```json/g, '').replace(/```/g, '').trim()
                                                     const data = JSON.parse(cleanJson)
 
-                                                    if (data.type === 'mindmap' && data.mermaid) {
-                                                        return <MermaidDiagram chart={data.mermaid} />
+                                                    // Renderers
+                                                    if (data.type === 'mindmap' && data.mermaid) return <MermaidDiagram chart={data.mermaid} />
+                                                    if (data.type === 'flashcards' && data.cards) return <FlashcardList cards={data.cards} />
+                                                    if (data.type === 'quiz' && data.questions) return <QuizView questions={data.questions} />
+                                                    if (data.type === 'presentation' && data.slides) return <PresentationView slides={data.slides} />
+
+                                                    // Infographic Fallback
+                                                    if (data.sections && data.sections.length > 0) {
+                                                        return <InfographicRenderer data={data} />
                                                     }
-                                                    if (data.type === 'flashcards' && data.cards) {
-                                                        return <FlashcardList cards={data.cards} />
-                                                    }
-                                                    if (data.type === 'quiz' && data.questions) {
-                                                        return <QuizView questions={data.questions} />
-                                                    }
-                                                    if (data.type === 'presentation' && data.slides) {
-                                                        return <PresentationView slides={data.slides} />
-                                                    }
-                                                    // Default to infographic for legacy or explicit type
-                                                    return <InfographicRenderer data={data} />
+
+                                                    // DEBUG FALLBACK: Show Raw JSON if structure is unrecognized
+                                                    return (
+                                                        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                                                            <div className="text-xs font-bold text-orange-600 mb-2">Estructura JSON No Reconocida:</div>
+                                                            <pre className="text-[10px] font-mono whitespace-pre-wrap text-gray-700 bg-white p-2 rounded border border-orange-100">
+                                                                {JSON.stringify(data, null, 2)}
+                                                            </pre>
+                                                        </div>
+                                                    )
 
                                                 } catch (e) {
                                                     // Fallback to text if not really json
