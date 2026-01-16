@@ -159,14 +159,15 @@ export async function POST(request: NextRequest) {
         } else if (type === 'mindmap') {
             prompt = `
             Actúa como EXPERTO EN VISUALIZACIÓN DE DATOS.
-            Genera un ** MAPA MENTAL ** complejo sobre la metodología, basado en los activos.
+            Genera un ** MAPA MENTAL ** complejo sobre la metodología.
             
             Usa sintaxis ** MERMAID ** (graph TD).
-
-            IMPORTANTE:
-            Tu respuesta debe contener EXCLUSIVAMENTE el bloque de código markdown.
-            Empieza con \`\`\`mermaid y termina con \`\`\`.
-            NO incluyas explicaciones, ni títulos, ni texto adicional. SOLO el código.
+            
+            REGLAS ESTRICTAS:
+            1. Tu respuesta debe comenzar EXACTAMENTE con \`\`\`mermaid
+            2. Tu respuesta debe terminar EXACTAMENTE con \`\`\`
+            3. NO escribas ni una sola palabra fuera del bloque de código.
+            4. Usa nodos cortos y claros: A[Concepto] --> B(Detalle)
             
             CONTEXTO:
             ${combinedContext}
@@ -223,7 +224,9 @@ export async function POST(request: NextRequest) {
             IMPORTANTE:
             - RESPUESTA DEBE SER ÚNICAMENTE EL JSON.
             - NO Markdown code blocks. Solo el JSON raw string.
-            - Crea al menos 4 secciones.
+            - Crea al menos 4 secciones. ASEGURA QUE "sections" NO ESTÉ VACÍO.
+            - Si la información es escasa, extrapola o usa tu conocimiento general sobre el tema para completar la estructura.
+            - Si hay datos numéricos en el texto, úsalos para los "stats" y "charts". Si no, genera estimaciones lógicas.
 
             CONTEXTO:
             ${combinedContext}

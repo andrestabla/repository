@@ -17,18 +17,39 @@ type Message = {
 const MermaidDiagram = ({ chart }: { chart: string }) => {
     const ref = useRef<HTMLDivElement>(null)
     const [svg, setSvg] = useState('')
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        if (ref.current) {
-            mermaid.initialize({ startOnLoad: false, theme: 'default' })
-            mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, chart)
-                .then(({ svg }) => setSvg(svg))
-                .catch((e) => console.error("Mermaid error:", e))
+        if (ref.current && chart) {
+            setError(null)
+            mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' })
+            const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`
+
+            try {
+                mermaid.render(id, chart)
+                    .then(({ svg }) => setSvg(svg))
+                    .catch((e) => {
+                        console.error("Mermaid render error:", e)
+                        setError("Error visualizando diagrama. Mostrando código fuente.")
+                    })
+            } catch (e: any) {
+                console.error("Mermaid sync error:", e)
+                setError(e.message)
+            }
         }
     }, [chart])
 
+    if (error) {
+        return (
+            <div className="my-4 p-4 bg-red-50 rounded-xl border border-red-200 text-xs font-mono">
+                <div className="text-red-500 font-bold mb-2">⚠️ {error}</div>
+                <pre className="whitespace-pre-wrap text-gray-700">{chart}</pre>
+            </div>
+        )
+    }
+
     return (
-        <div className="my-4 p-4 bg-white rounded-xl border border-gray-200 overflow-x-auto flex justify-center" ref={ref}>
+        <div className="my-4 p-6 bg-white rounded-xl border border-gray-200 overflow-x-auto flex justify-center shadow-sm" ref={ref}>
             <div dangerouslySetInnerHTML={{ __html: svg }} />
         </div>
     )
