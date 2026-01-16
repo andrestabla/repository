@@ -81,35 +81,8 @@ export async function POST(request: NextRequest) {
         // 5. Construct Prompt (Done before calling service to pass it)
         let prompt = ""
 
-        if (message) {
-            prompt = `
-             ACTÚA COMO UN ESTRATEGA SÉNIOR Y EXPERTO EN LIDERAZGO (NIVEL C-SUITE / NOTEBOOKLM).
-             Tu objetivo es generar un análisis PROFUNDO, EXHAUSTIVO Y ESTRATÉGICO basado ÚNICAMENTE en las fuentes proporcionadas.
-
-             TIENES ACCESO A:
-             - ${assets.length} Activos de Inventario (Conocimiento Validado 4Shine).
-             - ${research.length} Investigaciones Externas (Papers/Tendencias).
-
-             FUENTES DISPONIBLES:
-             ${combinedContext}
-
-             INSTRUCCIÓN DE PROFUNDIDAD (DEEP DIVE):
-             1. **IDIOMA:** EL RESULTADO DEBE ESTAR AL 100% EN ESPAÑOL. NO uses inglés.
-             2. NO hagas resúmenes superficiales. Tu valor está en la SÍNTESIS DE ALTO NIVEL.
-             3. Cruza información: ¿Cómo se complementa el activo X con el hallazgo Y de la investigación?
-             4. Busca "Insights Ocultos": No te quedes en lo obvio. Deduce implicaciones estratégicas.
-             5. EXHAUSTIVIDAD: Si el usuario pide un plan, detalla cada paso. Si pide un dossier, cubre todas las aristas.
-             6. TONO: Profesional, inspirador, ejecutivo, riguroso.
-
-             SOLICITUD DEL USUARIO:
-             "${message}"
-
-             REGLAS FORMATO:
-             - Usa Markdown avanzado (negritas, tablas, citas en bloque).
-             - Si citas una fuente, usa [Título Fuente] para referenciarla explícitamente.
-             - Estructura tu respuesta con encabezados claros.
-            `
-        } else if (type === 'dossier') {
+        // PRIORITY: Check for restricted types FIRST.
+        if (type === 'dossier') {
             prompt = `
             Actúa como CONSULTOR ESTRATÉGICO.Genera un ** DOSSIER EJECUTIVO **.
 
@@ -119,6 +92,8 @@ export async function POST(request: NextRequest) {
             3. ** Impacto **: Conductas esperadas.
             4. ** Cierre **: Next Steps.
 
+            SOLICITUD ADICIONAL: "${message || ''}"
+
                 CONTEXTO:
             ${combinedContext}
             `
@@ -127,11 +102,13 @@ export async function POST(request: NextRequest) {
             Actúa como ANALISTA DE DATOS.Genera una ** MATRIZ DE TRAZABILIDAD ** en Markdown Table.
                 Columnas: ID | Título | Tipo(Asset / Research) | Concepto Clave
 
+            SOLICITUD ADICIONAL: "${message || ''}"
+
             CONTEXTO:
             ${combinedContext}
             `
         } else if (type === 'toolkit') {
-            prompt = `Actúa como ARQUITECTO.Diseña una ** ESTRUCTURA DE TOOLKIT ** en formato árbol.`
+            prompt = `Actúa como ARQUITECTO.Diseña una ** ESTRUCTURA DE TOOLKIT ** en formato árbol. SOLICITUD ADICIONAL: "${message || ''}"`
         } else if (type === 'podcast') {
             prompt = `
             Actúa como GUIONISTA DE PODCAST "Deep Dive".
@@ -141,6 +118,8 @@ export async function POST(request: NextRequest) {
                 FORMATO:
             ** HOST:** ...
             ** EXPERTO:** ...
+            
+            SOLICITUD ADICIONAL: "${message || ''}"
 
             CONTEXTO:
             ${combinedContext}
@@ -155,6 +134,9 @@ export async function POST(request: NextRequest) {
             | 0:00 | ...             | ...                |
 
                 OBJETIVO: Video resumen de alto impacto sobre los activos seleccionados.
+                
+            SOLICITUD ADICIONAL: "${message || ''}"
+
                     CONTEXTO:
             ${combinedContext}
             `
