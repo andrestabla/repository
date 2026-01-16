@@ -574,7 +574,7 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                                                     // DEBUG FALLBACK: Show Raw JSON if structure is unrecognized
                                                     return (
                                                         <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                                                            <div className="text-xs font-bold text-orange-600 mb-2">Estructura JSON No Reconocida (Debug v3.0 - MD Bypass):</div>
+                                                            <div className="text-xs font-bold text-orange-600 mb-2">Estructura JSON No Reconocida (Debug v3.1 - Priority Fix):</div>
                                                             <pre className="text-[10px] font-mono whitespace-pre-wrap text-gray-700 bg-white p-2 rounded border border-orange-100">
                                                                 {JSON.stringify(data, null, 2)}
                                                             </pre>
