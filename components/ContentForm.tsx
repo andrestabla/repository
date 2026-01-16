@@ -126,6 +126,77 @@ const TABS = [
     { id: 'transcription', label: 'Transcripción', icon: <Terminal size={14} /> },
 ]
 
+// --- EXTRACTED COMPONENTS ---
+const FormInput = ({ label, value, onChange, placeholder, icon, width = 'full', disabled = false, readOnly = false }: any) => (
+    <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
+        <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-2 pl-1 italic">{label}</label>
+        <div className="relative group">
+            {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50 group-hover:text-accent transition-colors">{icon}</div>}
+            <input
+                value={value || ''}
+                onChange={e => onChange(e.target.value)}
+                className={`w-full bg-bg border-2 border-border rounded-xl p-3 text-sm text-text-main focus:border-accent outline-none transition-all ${icon ? 'pl-10' : ''} ${(disabled || readOnly) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:border-border/80'}`}
+                placeholder={!readOnly ? placeholder : ''}
+                disabled={disabled || readOnly}
+            />
+        </div>
+    </div>
+)
+
+const FormMultiSelect = ({ label, value = [], onChange, options, readOnly = false }: any) => {
+    const toggleOption = (opt: string) => {
+        if (readOnly) return
+        const newValues = value.includes(opt)
+            ? value.filter((v: string) => v !== opt)
+            : [...value, opt]
+        onChange(newValues)
+    }
+
+    return (
+        <div className="col-span-2">
+            <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-3 pl-1 italic">{label}</label>
+            <div className="flex flex-wrap gap-2">
+                {options.map((opt: string) => (
+                    <button
+                        key={opt}
+                        onClick={() => toggleOption(opt)}
+                        disabled={readOnly}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${value.includes(opt)
+                            ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
+                            : 'bg-bg border-border text-text-muted hover:border-accent/40'
+                            } ${readOnly ? 'cursor-default opacity-80' : ''}`}
+                    >
+                        {opt}
+                    </button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+const FormSelect = ({ label, value, onChange, options, icon, width = 'half', readOnly = false }: any) => (
+    <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
+        <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-2 pl-1 italic">{label}</label>
+        <div className="relative group">
+            {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50 group-hover:text-accent transition-colors">{icon}</div>}
+            <select
+                value={value || ''}
+                onChange={e => onChange(e.target.value)}
+                disabled={readOnly}
+                className={`w-full bg-panel border-2 border-border rounded-xl p-3 text-sm text-text-main outline-none focus:border-accent transition-all appearance-none ${!readOnly ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${icon ? 'pl-10' : ''}`}
+            >
+                <option value="">{readOnly ? '' : 'Seleccionar...'}</option>
+                {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            {!readOnly && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40 group-hover:text-accent transition-colors">
+                    <ChevronDown size={14} />
+                </div>
+            )}
+        </div>
+    </div>
+)
+
 export default function ContentForm({ initialData, onClose, onSave, readOnly = false }: Props) {
     const router = useRouter()
     const [activeTab, setActiveTab] = useState('identity')
@@ -327,76 +398,10 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
         }))
     }
 
-    const Input = ({ label, field, placeholder, icon, width = 'full', disabled = false }: any) => (
-        <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-2 pl-1 italic">{label}</label>
-            <div className="relative group">
-                {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50 group-hover:text-accent transition-colors">{icon}</div>}
-                <input
-                    value={(formData as any)[field] || ''}
-                    onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                    className={`w-full bg-bg border-2 border-border rounded-xl p-3 text-sm text-text-main focus:border-accent outline-none transition-all ${icon ? 'pl-10' : ''} ${(disabled || readOnly) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:border-border/80'}`}
-                    placeholder={!readOnly ? placeholder : ''}
-                    disabled={disabled || readOnly}
-                />
-            </div>
-        </div>
-    )
-
-    const MultiSelect = ({ label, field, options, icon }: any) => {
-        const values = (formData as any)[field] || []
-        const toggleOption = (opt: string) => {
-            if (readOnly) return
-            const newValues = values.includes(opt)
-                ? values.filter((v: string) => v !== opt)
-                : [...values, opt]
-            setFormData({ ...formData, [field]: newValues })
-        }
-
-        return (
-            <div className="col-span-2">
-                <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-3 pl-1 italic">{label}</label>
-                <div className="flex flex-wrap gap-2">
-                    {options.map((opt: string) => (
-                        <button
-                            key={opt}
-                            onClick={() => toggleOption(opt)}
-                            disabled={readOnly}
-                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${values.includes(opt)
-                                ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
-                                : 'bg-bg border-border text-text-muted hover:border-accent/40'
-                                } ${readOnly ? 'cursor-default opacity-80' : ''}`}
-                        >
-                            {opt}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        )
+    // --- HELPER HANDLER FOR UPDATING FIELDS ---
+    const updateField = (field: keyof ContentItem, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }))
     }
-
-    const Select = ({ label, field, options, icon, width = 'half' }: any) => (
-        <div className={width === 'half' ? 'col-span-1' : 'col-span-2'}>
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-[0.15em] mb-2 pl-1 italic">{label}</label>
-            <div className="relative">
-                {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50 group-hover:text-accent transition-colors">{icon}</div>}
-                <select
-                    value={(formData as any)[field] || ''}
-                    onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-                    disabled={readOnly}
-                    className={`w-full bg-panel border-2 border-border rounded-xl p-3 text-sm text-text-main outline-none focus:border-accent transition-all appearance-none ${!readOnly ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${icon ? 'pl-10' : ''}`}
-                >
-                    <option value="">{readOnly ? '' : 'Seleccionar...'}</option>
-                    {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
-                </select>
-                {!readOnly && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40 group-hover:text-accent transition-colors">
-                        <ChevronDown size={14} />
-                    </div>
-                )}
-            </div>
-        </div>
-    )
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all duration-500 animate-in fade-in">
@@ -513,66 +518,66 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-8">
-                                        <Input label="Identificador Único" field="id" placeholder="4S-P-001" icon={<Tag size={16} />} disabled={isEdit} />
-                                        <Input label="Título Oficial del Activo" field="title" placeholder="Manual Maestro..." icon={<BookOpen size={16} />} />
+                                        <FormInput label="Identificador Único" value={formData.id} onChange={(v: string) => updateField('id', v)} placeholder="4S-P-001" icon={<Tag size={16} />} disabled={isEdit} readOnly={readOnly} />
+                                        <FormInput label="Título Oficial del Activo" value={formData.title} onChange={(v: string) => updateField('title', v)} placeholder="Manual Maestro..." icon={<BookOpen size={16} />} readOnly={readOnly} />
 
-                                        <Select label="Categoría Técnica" field="type" options={['PDF', 'Video', 'Audio', 'Toolkit', 'Test', 'Plantilla']} icon={<FileText size={16} />} />
-                                        <Input label="Extensión / Formato" field="format" placeholder="PNG, PDF..." width="half" icon={<Terminal size={16} />} />
+                                        <FormSelect label="Categoría Técnica" value={formData.type} onChange={(v: string) => updateField('type', v)} options={['PDF', 'Video', 'Audio', 'Toolkit', 'Test', 'Plantilla']} icon={<FileText size={16} />} readOnly={readOnly} />
+                                        <FormInput label="Extensión / Formato" value={formData.format} onChange={(v: string) => updateField('format', v)} placeholder="PNG, PDF..." width="half" icon={<Terminal size={16} />} readOnly={readOnly} />
 
-                                        <Input label="Lenguaje" field="language" placeholder="Spanish (Latam)" width="half" icon={<Globe size={16} />} />
-                                        <Input label="Duración Estimada" field="duration" placeholder="90 min" width="half" icon={<Clock size={16} />} />
+                                        <FormInput label="Lenguaje" value={formData.language} onChange={(v: string) => updateField('language', v)} placeholder="Spanish (Latam)" width="half" icon={<Globe size={16} />} readOnly={readOnly} />
+                                        <FormInput label="Duración Estimada" value={formData.duration} onChange={(v: string) => updateField('duration', v)} placeholder="90 min" width="half" icon={<Clock size={16} />} readOnly={readOnly} />
 
-                                        <Input label="Ciclo / Año" field="year" placeholder="2025" width="half" icon={<Tag size={16} />} />
-                                        <Input label="Origen / Autor" field="source" placeholder="Propio" width="half" icon={<Users size={16} />} />
+                                        <FormInput label="Ciclo / Año" value={formData.year} onChange={(v: string) => updateField('year', v)} placeholder="2025" width="half" icon={<Tag size={16} />} readOnly={readOnly} />
+                                        <FormInput label="Origen / Autor" value={formData.source} onChange={(v: string) => updateField('source', v)} placeholder="Propio" width="half" icon={<Users size={16} />} readOnly={readOnly} />
                                     </div>
                                 </div>
                             )}
 
                             {activeTab === 'classification' && (
                                 <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                                    <Select label="Pilar Metodológico Principal" field="primaryPillar" options={['Shine In', 'Shine Out', 'Shine Up', 'Shine On', 'Transversal']} width="full" icon={<Fingerprint size={16} />} />
-                                    <MultiSelect label="Pilares de Apoyo (Secundarios)" field="secondaryPillars" options={['Shine In', 'Shine Out', 'Shine Up', 'Shine On', 'Transversal']} />
-                                    <Input label="Subcomponente" field="sub" placeholder="Liderazgo, IA..." icon={<Database size={16} />} />
-                                    <Input label="Competencia Clave" field="competence" placeholder="Negociación" icon={<Brain size={16} />} />
-                                    <Input label="Conducta Observable" field="behavior" placeholder="Aplica marcos ágiles..." width="full" icon={<Users size={16} />} />
-                                    <Select label="Escala de Madurez" field="maturity" options={['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']} icon={<Zap size={16} />} />
+                                    <FormSelect label="Pilar Metodológico Principal" value={formData.primaryPillar} onChange={(v: string) => updateField('primaryPillar', v)} options={['Shine In', 'Shine Out', 'Shine Up', 'Shine On', 'Transversal']} width="full" icon={<Fingerprint size={16} />} readOnly={readOnly} />
+                                    <FormMultiSelect label="Pilares de Apoyo (Secundarios)" value={formData.secondaryPillars} onChange={(v: string[]) => updateField('secondaryPillars', v)} options={['Shine In', 'Shine Out', 'Shine Up', 'Shine On', 'Transversal']} readOnly={readOnly} />
+                                    <FormInput label="Subcomponente" value={formData.sub} onChange={(v: string) => updateField('sub', v)} placeholder="Liderazgo, IA..." icon={<Database size={16} />} readOnly={readOnly} />
+                                    <FormInput label="Competencia Clave" value={formData.competence} onChange={(v: string) => updateField('competence', v)} placeholder="Negociación" icon={<Brain size={16} />} readOnly={readOnly} />
+                                    <FormInput label="Conducta Observable" value={formData.behavior} onChange={(v: string) => updateField('behavior', v)} placeholder="Aplica marcos ágiles..." width="full" icon={<Users size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Escala de Madurez" value={formData.maturity} onChange={(v: string) => updateField('maturity', v)} options={['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']} icon={<Zap size={16} />} readOnly={readOnly} />
                                 </div>
                             )}
 
                             {activeTab === 'trajectory' && (
                                 <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                                    <Select label="Modalidad de Intervención" field="intervention" options={['Conciencia', 'Práctica', 'Herramienta', 'Evaluación']} icon={<Rocket size={16} />} />
-                                    <Select label="Momento del Journey" field="moment" options={['Inicio', 'Refuerzo', 'Profundización', 'Cierre']} icon={<Clock size={16} />} />
-                                    <Input label="ID Prerrequisito" field="prereqId" placeholder="4S-000" width="half" icon={<LockIcon size={16} />} />
-                                    <Input label="ID Test Predictivo" field="testId" placeholder="T-01" width="half" icon={<CheckCircle2 size={16} />} />
-                                    <Input label="Variable a Medir" field="variable" placeholder="Networking..." width="full" icon={<Zap size={16} />} />
-                                    <Select label="Tipo de Output" field="outcomeType" options={['Insight', 'Acción', 'Evidencia', 'Score']} icon={<FileText size={16} />} />
+                                    <FormSelect label="Modalidad de Intervención" value={formData.intervention} onChange={(v: string) => updateField('intervention', v)} options={['Conciencia', 'Práctica', 'Herramienta', 'Evaluación']} icon={<Rocket size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Momento del Journey" value={formData.moment} onChange={(v: string) => updateField('moment', v)} options={['Inicio', 'Refuerzo', 'Profundización', 'Cierre']} icon={<Clock size={16} />} readOnly={readOnly} />
+                                    <FormInput label="ID Prerrequisito" value={formData.prereqId} onChange={(v: string) => updateField('prereqId', v)} placeholder="4S-000" width="half" icon={<LockIcon size={16} />} readOnly={readOnly} />
+                                    <FormInput label="ID Test Predictivo" value={formData.testId} onChange={(v: string) => updateField('testId', v)} placeholder="T-01" width="half" icon={<CheckCircle2 size={16} />} readOnly={readOnly} />
+                                    <FormInput label="Variable a Medir" value={formData.variable} onChange={(v: string) => updateField('variable', v)} placeholder="Networking..." width="full" icon={<Zap size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Tipo de Output" value={formData.outcomeType} onChange={(v: string) => updateField('outcomeType', v)} options={['Insight', 'Acción', 'Evidencia', 'Score']} icon={<FileText size={16} />} readOnly={readOnly} />
                                 </div>
                             )}
 
                             {activeTab === 'activation' && (
                                 <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                                    <Input label="Disparador Lógico (Trigger)" field="trigger" placeholder="Score < 60%" width="full" icon={<Zap size={16} />} />
-                                    <Input label="Regla de Recomendación" field="recommendation" placeholder="IF logic..." width="full" icon={<Brain size={16} />} />
-                                    <Select label="Naturaleza del Reto" field="challengeType" options={['Reflexivo', 'Práctico', 'Aplicado']} icon={<Rocket size={16} />} />
-                                    <Select label="Evidencia Necesaria" field="evidenceRequired" options={['Texto', 'Archivo', 'Video', 'No aplica']} icon={<FileText size={16} />} />
+                                    <FormInput label="Disparador Lógico (Trigger)" value={formData.trigger} onChange={(v: string) => updateField('trigger', v)} placeholder="Score < 60%" width="full" icon={<Zap size={16} />} readOnly={readOnly} />
+                                    <FormInput label="Regla de Recomendación" value={formData.recommendation} onChange={(v: string) => updateField('recommendation', v)} placeholder="IF logic..." width="full" icon={<Brain size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Naturaleza del Reto" value={formData.challengeType} onChange={(v: string) => updateField('challengeType', v)} options={['Reflexivo', 'Práctico', 'Aplicado']} icon={<Rocket size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Evidencia Necesaria" value={formData.evidenceRequired} onChange={(v: string) => updateField('evidenceRequired', v)} options={['Texto', 'Archivo', 'Video', 'No aplica']} icon={<FileText size={16} />} readOnly={readOnly} />
                                 </div>
                             )}
 
                             {activeTab === 'audience' && (
                                 <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                                    <Select label="Perfil Destinatario" field="targetRole" options={['Líder', 'Mentor', 'Facilitador', 'Metodólogo']} width="full" icon={<Users size={16} />} />
-                                    <Select label="Nivel Jerárquico" field="roleLevel" options={['Junior', 'Senior', 'Experto', 'C-Level']} icon={<LockIcon size={16} />} />
-                                    <Input label="Segmento Industria" field="industry" placeholder="Multisectorial" width="half" icon={<Globe size={16} />} />
+                                    <FormSelect label="Perfil Destinatario" value={formData.targetRole} onChange={(v: string) => updateField('targetRole', v)} options={['Líder', 'Mentor', 'Facilitador', 'Metodólogo']} width="full" icon={<Users size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Nivel Jerárquico" value={formData.roleLevel} onChange={(v: string) => updateField('roleLevel', v)} options={['Junior', 'Senior', 'Experto', 'C-Level']} icon={<LockIcon size={16} />} readOnly={readOnly} />
+                                    <FormInput label="Segmento Industria" value={formData.industry} onChange={(v: string) => updateField('industry', v)} placeholder="Multisectorial" width="half" icon={<Globe size={16} />} readOnly={readOnly} />
                                 </div>
                             )}
 
                             {activeTab === 'governance' && (
                                 <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                                    <Input label="Titular de Propiedad Intelectual" field="ipOwner" placeholder="4Shine Global" width="full" icon={<Scale size={16} />} />
-                                    <Select label="Régimen de IP" field="ipType" options={['Derecho de autor', 'Know-how', 'Licencia', 'Adaptación']} icon={<Fingerprint size={16} />} />
-                                    <Select label="Alcance de Uso" field="authorizedUse" options={['Formación interna', 'Consultoría', 'Venta']} icon={<Globe size={16} />} />
-                                    <Select label="Nivel de Confidencialidad" field="confidentiality" options={['Baja', 'Media', 'Alta', 'Restringida']} icon={<ShieldCheck size={16} />} />
+                                    <FormInput label="Titular de Propiedad Intelectual" value={formData.ipOwner} onChange={(v: string) => updateField('ipOwner', v)} placeholder="4Shine Global" width="full" icon={<Scale size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Régimen de IP" value={formData.ipType} onChange={(v: string) => updateField('ipType', v)} options={['Derecho de autor', 'Know-how', 'Licencia', 'Adaptación']} icon={<Fingerprint size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Alcance de Uso" value={formData.authorizedUse} onChange={(v: string) => updateField('authorizedUse', v)} options={['Formación interna', 'Consultoría', 'Venta']} icon={<Globe size={16} />} readOnly={readOnly} />
+                                    <FormSelect label="Nivel de Confidencialidad" value={formData.confidentiality} onChange={(v: string) => updateField('confidentiality', v)} options={['Baja', 'Media', 'Alta', 'Restringida']} icon={<ShieldCheck size={16} />} readOnly={readOnly} />
                                 </div>
                             )}
 
