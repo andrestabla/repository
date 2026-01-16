@@ -35,8 +35,17 @@ export async function POST(request: NextRequest) {
 
         if (driveId) {
             const drive = google.drive({ version: 'v3', auth })
-            const meta = await drive.files.get({ fileId: driveId, fields: 'mimeType, name' })
+            const meta = await drive.files.get({ fileId: driveId, fields: 'mimeType, name, size' })
             const mimeType = meta.data.mimeType
+            const size = parseInt(meta.data.size || '0')
+
+            // Hard Limit: 250MB (Vercel /tmp Limit Safety)
+            const MAX_SIZE_MB = 250
+            if (size > MAX_SIZE_MB * 1024 * 1024) {
+                return NextResponse.json({
+                    error: `El archivo (${(size / 1024 / 1024).toFixed(1)}MB) excede el límite de procesamiento (${MAX_SIZE_MB}MB). Por favor usa un archivo más pequeño o solo audio.`
+                }, { status: 400 })
+            }
 
             if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {
                 console.log(`[Analyze] Detected Media: ${mimeType}. Starting Transcription Pipeline...`)
