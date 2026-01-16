@@ -3,6 +3,7 @@
 import React from 'react'
 import { LayoutDashboard, BookOpen } from 'lucide-react'
 import ResearchAnalytics from './ResearchAnalytics'
+import InventoryAnalytics from './InventoryAnalytics'
 import Link from 'next/link'
 
 export default function AnalyticsView({ currentTab = 'inventory' }: { currentTab?: 'inventory' | 'research' }) {
@@ -46,14 +47,7 @@ export default function AnalyticsView({ currentTab = 'inventory' }: { currentTab
 
 
                 <div className="min-h-[500px]">
-                    {currentTab === 'inventory' && (
-                        <div className="p-12 text-center border-4 border-dashed border-border rounded-[32px] text-text-muted opacity-50">
-                            <h3 className="text-xl font-bold mb-2">Análisis de Inventario</h3>
-                            <p>Visualizaciones de completitud, madurez y pilares de activos internos.</p>
-                            {/* NOTE: If there were existing charts for inventory, they'd go here. */}
-                        </div>
-                    )}
-
+                    {currentTab === 'inventory' && <InventoryAnalytics />}
                     {currentTab === 'research' && <ResearchAnalytics />}
                 </div>
             </main>
