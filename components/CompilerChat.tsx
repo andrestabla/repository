@@ -413,9 +413,20 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                                             <MermaidDiagram chart={msg.content.split('```mermaid')[1].split('```')[0].trim()} />
                                             {msg.content.split('```').slice(2).join('')}
                                         </div>
-                                    ) : msg.content.trim().startsWith('{') && msg.content.includes('"sections"') ? (
+                                    ) : (msg.content.trim().startsWith('{') || (msg.content.includes('"sections"') && msg.content.includes('"title"'))) ? (
                                         <div className="w-full">
-                                            <InfographicRenderer data={JSON.parse(msg.content)} />
+                                            {/* Try to parse even if there is junk around */}
+                                            {(() => {
+                                                try {
+                                                    // Clean potential markdown
+                                                    const cleanJson = msg.content.replace(/```json/g, '').replace(/```/g, '').trim()
+                                                    const data = JSON.parse(cleanJson)
+                                                    return <InfographicRenderer data={data} />
+                                                } catch (e) {
+                                                    // Fallback to text if not really json
+                                                    return msg.content.split('\n').map((line, i) => <p key={i} className="mb-2">{line}</p>)
+                                                }
+                                            })()}
                                         </div>
                                     ) : msg.content.includes('**HOST:**') || msg.content.includes('graph TD') || msg.content.includes('|') ? (
                                         <div className="bg-gray-50 dark:bg-[#1E1F20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-x-auto shadow-sm">

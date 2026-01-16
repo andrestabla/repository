@@ -246,6 +246,21 @@ export async function POST(request: NextRequest) {
         let output = ""
         try {
             output = await OpenAIService.generateContent(prompt) || "No response generated."
+
+            // CLEANING: If type is infographic, we MUST ensure we have a clean JSON string
+            if (type === 'infographic') {
+                // Remove Markdown code blocks if present
+                output = output.replace(/```json/g, '').replace(/```/g, '').trim()
+                // Validate if it is JSON
+                try {
+                    JSON.parse(output)
+                    // If safe, we keep it clean.
+                } catch (e) {
+                    console.error("Generator Output was not valid JSON:", output.substring(0, 100))
+                    // Fallback to text if JSON fails? Or just let it be text so frontend shows error.
+                }
+            }
+
         } catch (err: any) {
             console.error("[Generator] OpenAI Failed:", err)
             return NextResponse.json({ error: `OpenAI Error: ${err.message}` }, { status: 500 })
