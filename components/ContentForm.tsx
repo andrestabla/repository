@@ -225,6 +225,23 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ driveId: formData.driveId })
             })
+
+            // Checks for HTTP Errors first
+            if (!res.ok) {
+                if (res.status === 504) throw new Error('El análisis excedió el tiempo límite (Timeout). El archivo puede ser demasiado grande/pesado para este entorno.')
+                if (res.status === 413) throw new Error('El archivo es demasiado grande para ser procesado por el servidor.')
+
+                let errorMsg = `Error del servidor (${res.status})`
+                try {
+                    const errJson = await res.json()
+                    if (errJson.error) errorMsg = errJson.error
+                } catch (e) {
+                    // response was likely HTML or empty
+                    if (res.status === 500) errorMsg = 'Error Interno del Servidor (Posible fallo de memoria o configuración).'
+                }
+                throw new Error(errorMsg)
+            }
+
             const json = await res.json()
             if (json.success && json.data) {
                 applyMetadata(json.data)
@@ -233,11 +250,11 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                 }
                 alert('✨ Análisis Completo: Metadatos sugeridos aplicados.')
             } else {
-                alert('Error: ' + (json.error || 'No se pudo analizar'))
+                throw new Error(json.error || 'No se pudo analizar el contenido.')
             }
         } catch (e: any) {
             console.error(e)
-            alert(`Error de conexión con IA: ${e.message || 'Timeout o Fallo de Red'}`)
+            alert(`🛑 Error al procesar: ${e.message}`)
         }
         setAnalyzing(false)
     }
