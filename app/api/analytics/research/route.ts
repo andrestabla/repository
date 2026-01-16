@@ -20,6 +20,18 @@ const getEvidenceScore = (methodology: string | null): number => {
     return 1
 }
 
+// Helper to normalize methodology
+const normalizeMethodology = (raw: string): string => {
+    const lower = raw.toLowerCase()
+    if (lower.includes('meta-análisis') || lower.includes('meta-analysis') || lower.includes('meta analysis')) return 'Meta-Analysis'
+    if (lower.includes('sistemática') || lower.includes('systematic review') || lower.includes('slr')) return 'Systematic Review'
+    if (lower.includes('cuantitati') || lower.includes('quantitative') || lower.includes('encuesta') || lower.includes('survey') || lower.includes('structural equation')) return 'Quantitative'
+    if (lower.includes('cualitati') || lower.includes('qualitative') || lower.includes('entrevista') || lower.includes('interview') || lower.includes('focus group') || lower.includes('caso') || lower.includes('case study')) return 'Qualitative'
+    if (lower.includes('mixto') || lower.includes('mixed')) return 'Mixed Methods'
+    if (lower.includes('teórico') || lower.includes('conceptual') || lower.includes('theoretical')) return 'Theoretical/Conceptual'
+    return 'Other'
+}
+
 export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -87,6 +99,8 @@ export async function GET(request: NextRequest) {
 
         // --- ITERATE & AGGREGATE ---
         research.forEach(item => {
+            const normalizedMethod = item.methodology ? normalizeMethodology(item.methodology) : 'Unknown'
+
             // Pillars
             item.pillars.forEach(p => {
                 if (pillarCounts[p] !== undefined) pillarCounts[p]++
@@ -96,52 +110,49 @@ export async function GET(request: NextRequest) {
                     item.competence.split(',').forEach(c => {
                         const comp = c.trim()
                         if (pillarCompetenceMatrix[p]) {
-                            pillarCompetenceMatrix[p][comp] = (pillarCompetenceMatrix[p][comp] || 0) + 1
+                            // Truncate logic
+                            const safeComp = comp.length > 30 ? comp.substring(0, 30) + '...' : comp
+                            pillarCompetenceMatrix[p][safeComp] = (pillarCompetenceMatrix[p][safeComp] || 0) + 1
                         }
-
-                        // F. Tree Helper (simplified for depth)
-                        // This logic is complex for general 'forEach', building properly below loops might be cleaner but let's try inline
                     })
                 }
 
-                // H. Method x Pillar
-                if (item.methodology) {
-                    const m = item.methodology.trim()
-                    if (!methodPillarMatrix[m]) methodPillarMatrix[m] = {}
-                    methodPillarMatrix[m][p] = (methodPillarMatrix[m][p] || 0) + 1
-                }
+                // H. Method x Pillar (USING NORMALIZED)
+                if (!methodPillarMatrix[normalizedMethod]) methodPillarMatrix[normalizedMethod] = {}
+                methodPillarMatrix[normalizedMethod][p] = (methodPillarMatrix[normalizedMethod][p] || 0) + 1
 
                 // K. Geo x Pillar
                 if (item.geographicCoverage) {
                     const g = item.geographicCoverage.trim()
-                    if (!geoPillarMatrix[g]) geoPillarMatrix[g] = {}
-                    geoPillarMatrix[g][p] = (geoPillarMatrix[g][p] || 0) + 1
+                    const safeGeo = g.length > 20 ? g.split(' ')[0] : g
+                    if (!geoPillarMatrix[safeGeo]) geoPillarMatrix[safeGeo] = {}
+                    geoPillarMatrix[safeGeo][p] = (geoPillarMatrix[safeGeo][p] || 0) + 1
                 }
 
                 // M. Pop x Pillar
                 if (item.populationParams) {
                     const pop = item.populationParams.trim()
-                    if (!popPillarMatrix[pop]) popPillarMatrix[pop] = {}
-                    popPillarMatrix[pop][p] = (popPillarMatrix[pop][p] || 0) + 1
+                    const safePop = pop.length > 25 ? pop.substring(0, 25) + '...' : pop
+                    if (!popPillarMatrix[safePop]) popPillarMatrix[safePop] = {}
+                    popPillarMatrix[safePop][p] = (popPillarMatrix[safePop][p] || 0) + 1
                 }
             })
 
-            // Method Mix
-            if (item.methodology) {
-                const m = item.methodology.trim()
-                methodCounts[m] = (methodCounts[m] || 0) + 1
-            }
+            // Method Mix (USING NORMALIZED)
+            methodCounts[normalizedMethod] = (methodCounts[normalizedMethod] || 0) + 1
 
             // Geo
             if (item.geographicCoverage) {
                 const g = item.geographicCoverage.trim()
-                geoCounts[g] = (geoCounts[g] || 0) + 1
+                const safeGeo = g.length > 20 ? g.split(' ')[0] : g
+                geoCounts[safeGeo] = (geoCounts[safeGeo] || 0) + 1
             }
 
             // Pop
             if (item.populationParams) {
                 const pop = item.populationParams.trim()
-                popCounts[pop] = (popCounts[pop] || 0) + 1
+                const safePop = pop.length > 25 ? pop.substring(0, 25) + '...' : pop
+                popCounts[safePop] = (popCounts[safePop] || 0) + 1
             }
 
             // Concepts & Co-occurrence
