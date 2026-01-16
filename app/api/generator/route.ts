@@ -156,49 +156,44 @@ export async function POST(request: NextRequest) {
             `
         } else if (type === 'mindmap') {
             prompt = `
-            Actúa como EXPERTO EN MERMAID.JS.
-            Genera un JSON que contenga EXCLUSIVAMENTE el código para un diagrama de flujo (Mindmap).
+            TU TAREA: Generar código de Mermaid.js. NO generes una estructura semántica del contenido.
 
-            ESTRUCTURA JSON EXACTA (Respétala al 100%):
+            INPUT:
+            ${combinedContext}
+
+            OUTPUT ESPERADO:
+            Un objeto JSON válido con una sola clave "mermaid" conteniendo el string del diagrama.
+
+            EJEMPLO DE OUTPUT CORRECTO:
             {
               "type": "mindmap",
-              "mermaid": "graph TD\\n  A[Concepto Principal] --> B(Concepto Secundario)\\n  B --> C{Detalle}"
+              "mermaid": "graph TD\\n  A[Liderazgo] --> B(Empatía)\\n  A --> C{Visión}\\n  C --> D[Futuro]"
             }
 
-            REGLAS CRÍTICAS:
-            1. NO uses claves como "mapa_mental", "content", "structure". Solo "type" y "mermaid".
-            2. El valor de "mermaid" debe ser un STRING único con saltos de línea (\\n).
-            3. NO devolvas un objeto anidado para el mapa. DEBE ser código Mermaid plano.
-
-            CONTEXTO:
-            ${combinedContext}
+            REGLAS (CRÍTICAS):
+            1. El string "mermaid" debe usar sintaxis "graph TD".
+            2. NO crees objetos anidados como "nodos" o "ramas". Todo el diagrama debe estar contenido en el string "mermaid".
             `
         } else if (type === 'flashcards') {
             prompt = `
-            Actúa como CREADOR DE FLASHCARDS.
-            Genera un JSON con una lista de tarjetas de estudio.
+            TU TAREA: Extraer 5 conceptos clave y convertirlos en tarjetas de estudio.
 
-            ESTRUCTURA JSON EXACTA:
+            OUTPUT ESPERADO:
             {
               "type": "flashcards",
               "cards": [
-                { "question": "¿Qué es X?", "answer": "Es Y", "source": "Referencia" }
+                { "question": "¿Concepto?", "answer": "Definición", "source": "Contexto" }
               ]
             }
 
-            REGLAS CRÍTICAS:
-            1. Usa la clave "cards" para el array. NO uses "sections" ni "items".
-            2. Genera exactamente 5 tarjetas.
-
-            CONTEXTO:
+            INPUT:
             ${combinedContext}
             `
         } else if (type === 'quiz') {
             prompt = `
-            Actúa como PROFESOR EVALUADOR.
-            Genera un JSON con un examen de opción múltiple.
+            TU TAREA: Crear un examen de 5 preguntas basado en el texto.
 
-            ESTRUCTURA JSON EXACTA:
+            OUTPUT ESPERADO:
             {
               "type": "quiz",
               "questions": [
@@ -206,64 +201,54 @@ export async function POST(request: NextRequest) {
                   "question": "Pregunta",
                   "options": ["A","B","C","D"],
                   "correctAnswer": "A",
-                  "explanation": "Razón"
+                  "explanation": "Por qué es A"
                 }
               ]
             }
 
-            REGLAS CRÍTICAS:
-            1. Usa la clave "questions". NO uses "sections".
-            2. "correctAnswer" debe coincidir con una de las opciones.
-
-            CONTEXTO:
+            INPUT:
             ${combinedContext}
             `
         } else if (type === 'infographic') {
             prompt = `
-            Actúa como DISEÑADOR DE DATOS.
-            Genera un JSON para una infografía.
+            TU TAREA: Estructurar la información para una infografía visual.
 
-            ESTRUCTURA JSON EXACTA:
+            OUTPUT ESPERADO:
             {
               "type": "infographic",
-              "title": "Título",
-              "intro": "Introducción",
+              "title": "Main Title",
+              "intro": "Intro text",
               "sections": [
                  {
-                    "title": "Sección",
-                    "content": "Contenido",
+                    "title": "Section Title",
+                    "content": "Short text",
                     "icon": "zap",
-                    "stats": [ { "label": "Label", "value": "Val" } ]
+                    "stats": [ { "label": "Stat", "value": "100%" } ]
                  }
               ],
-              "conclusion": "Cierre"
+              "conclusion": "Closing text"
             }
 
             REGLAS:
-            1. "sections" NO debe estar vacío.
-            2. Usa iconos de Lucide (zap, users, trend, chart, target).
+            1. Usa iconos de Lucide (zap, users, trend, chart, target).
+            2. "sections" debe tener contenido real.
 
-            CONTEXTO:
+            INPUT:
             ${combinedContext}
             `
         } else if (type === 'presentation') {
             prompt = `
-            Actúa como CONSULTOR DE PRESENTACIONES.
-            Genera un JSON para diapositivas.
+            TU TAREA: Crear el esquema para una presentación de 7 diapositivas.
 
-            ESTRUCTURA JSON EXACTA:
+            OUTPUT ESPERADO:
             {
               "type": "presentation",
               "slides": [
-                { "title": "Título Slide", "bullets": ["Punto 1", "Punto 2"], "visual": "Descripción img" }
+                { "title": "Slide Title", "bullets": ["Point 1", "Point 2"], "visual": "Image description" }
               ]
             }
 
-            REGLAS CRÍTICAS:
-            1. Usa la clave "slides". NO uses "sections".
-            2. Genera 7 slides.
-
-            CONTEXTO:
+            INPUT:
             ${combinedContext}
             `
         }
@@ -279,7 +264,10 @@ export async function POST(request: NextRequest) {
         let output = ""
         try {
             // Apply JSON mode to all structured types
-            const options = jsonTypes.includes(type as string) ? { response_format: { type: "json_object" } } : undefined
+            const options = jsonTypes.includes(type as string) ? {
+                response_format: { type: "json_object" },
+                temperature: 0.1 // FORCE DETERMINISTIC STRUCTURE
+            } : undefined
             console.log(`[Generator] Sending prompt to OpenAI (Type: ${type}, JSON Mode: ${!!options})... Preamble: ${prompt.substring(0, 50)}`)
 
             output = await OpenAIService.generateContent(prompt, "gpt-4o", options) || "No response generated."
