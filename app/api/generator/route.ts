@@ -25,11 +25,13 @@ export async function POST(request: NextRequest) {
         const session = await getServerSession(authOptions)
         const userEmail = session?.user?.email || 'anonymous'
 
-        const { type, message, selectedAssetIds, selectedResearchIds } = await request.json() as {
+        const { type, message, selectedAssetIds, selectedResearchIds, tone, customInstructions } = await request.json() as {
             type: CompilationType,
             message?: string,
             selectedAssetIds?: string[],
-            selectedResearchIds?: string[]
+            selectedResearchIds?: string[],
+            tone?: string,
+            customInstructions?: string
         }
 
         // 1. Fetch Assets (Inventory)
@@ -81,10 +83,15 @@ export async function POST(request: NextRequest) {
         // 5. Construct Prompt (Done before calling service to pass it)
         let prompt = ""
 
+        // INJECT CUSTOM SETTINGS
+        let agentPersona = "Actúa como CONSULTOR EXPERTO"
+        if (tone) agentPersona += ` con un tono ${tone.toUpperCase()}`
+        if (customInstructions) agentPersona += `. INSTRUCCIONES ADICIONALES: ${customInstructions}`
+
         // PRIORITY: Check for restricted types FIRST.
         if (type === 'dossier') {
             prompt = `
-            Actúa como CONSULTOR ESTRATÉGICO.Genera un ** DOSSIER EJECUTIVO **.
+            ${agentPersona}. Genera un ** DOSSIER EJECUTIVO **.
 
                 ESTRUCTURA:
             1. ** Intro Ejecutiva **: Valor de la metodología(basado en lo seleccionado).
@@ -113,7 +120,8 @@ export async function POST(request: NextRequest) {
             prompt = `
             Actúa como GUIONISTA DE PODCAST "Deep Dive".
             Genera un GUION DE AUDIO(Host vs Experto) de 5 min discutiendo los activos seleccionados.
-            Usa un tono, casual, sorprendente y analítico.
+            Usa un tono ${tone || 'casual, sorprendente y analítico'}.
+            ${customInstructions ? `INSTRUCCIONES ADICIONALES: ${customInstructions}` : ''}
 
                 FORMATO:
             ** HOST:** ...

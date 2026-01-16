@@ -11,7 +11,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const { text } = await req.json()
+        const { text, voice } = await req.json()
         if (!text) {
             return NextResponse.json({ error: 'Text content is required' }, { status: 400 })
         }
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
             body: JSON.stringify({
                 model: 'tts-1',
                 input: text,
-                voice: 'alloy', // Default voice, can be made configurable later
+                voice: voice || 'alloy', // Support dynamic voice, default to alloy
             }),
         })
 

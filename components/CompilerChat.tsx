@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown, Trash2, Maximize2, Minimize2, X, Download, Code, ZoomIn, ZoomOut } from 'lucide-react'
+import { Send, Terminal, Cpu, User, Sparkles, StopCircle, Bot, Loader2, Headphones, Database, Video, Network, FileText, Layers, HelpCircle, Image, Monitor, Table, Check, Globe, ChevronDown, Trash2, Maximize2, Minimize2, X, Download, Code, ZoomIn, ZoomOut, Settings, Mic, Volume2 } from 'lucide-react'
 
 // ... existing code ...
 
@@ -334,15 +334,27 @@ const PodcastView = ({ script }: { script: string }) => {
     const [audioUrl, setAudioUrl] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [showConfig, setShowConfig] = useState(false)
+    const [selectedVoice, setSelectedVoice] = useState('alloy')
+
+    const voices = [
+        { id: 'alloy', name: 'Alloy', desc: 'Neutral/Versátil' },
+        { id: 'echo', name: 'Echo', desc: 'Masculino' },
+        { id: 'fable', name: 'Fable', desc: 'Británico' },
+        { id: 'onyx', name: 'Onyx', desc: 'Profundo' },
+        { id: 'nova', name: 'Nova', desc: 'Femenino/Enérgico' },
+        { id: 'shimmer', name: 'Shimmer', desc: 'Femenino/Claro' }
+    ]
 
     const generateAudio = async () => {
         setLoading(true)
         setError(null)
+        setShowConfig(false)
         try {
             const res = await fetch('/api/audio/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: script })
+                body: JSON.stringify({ text: script, voice: selectedVoice })
             })
 
             if (!res.ok) {
@@ -371,14 +383,35 @@ const PodcastView = ({ script }: { script: string }) => {
                     <h3 className="font-bold text-gray-700 dark:text-gray-200">Guion de Podcast Generado</h3>
                 </div>
                 {!audioUrl && (
-                    <button
-                        onClick={generateAudio}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
-                    >
-                        {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                        {loading ? 'Generando Audio...' : 'Generar Audio Real (Fliki)'}
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowConfig(!showConfig)}
+                            disabled={loading}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                        >
+                            {loading ? <Loader2 size={12} className="animate-spin" /> : <Settings size={12} />}
+                            {loading ? 'Generando...' : 'Generar Audio'}
+                        </button>
+                        {showConfig && (
+                            <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#252627] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 z-10">
+                                <h4 className="text-[10px] font-bold uppercase text-gray-400 mb-2">Selecciona una Voz</h4>
+                                <div className="space-y-1 mb-3">
+                                    {voices.map(v => (
+                                        <button
+                                            key={v.id}
+                                            onClick={() => setSelectedVoice(v.id)}
+                                            className={`w-full text-left px-2 py-1.5 rounded text-xs flex justify-between items-center ${selectedVoice === v.id ? 'bg-pink-50 text-pink-600' : 'hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                                        >
+                                            <span>{v.name} <span className="opacity-50 text-[9px]">({v.desc})</span></span>
+                                            {selectedVoice === v.id && <Check size={10} />}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button onClick={generateAudio} className="w-full py-1.5 bg-pink-600 text-white rounded text-xs font-bold hover:bg-pink-700">Confirmar</button>
+                            </div>
+                        )}
+                        {showConfig && <div className="fixed inset-0 z-0" onClick={() => setShowConfig(false)} />}
+                    </div>
                 )}
             </div>
 
@@ -438,6 +471,13 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
     const [messages, setMessages] = useState<Message[]>([])
     const [history, setHistory] = useState<any[]>([])
     const [openSections, setOpenSections] = useState<Set<string>>(new Set(['inventory', 'research', 'history']))
+
+    // Agent Configuration State
+    const [showAgentSettings, setShowAgentSettings] = useState(false)
+    const [agentConfig, setAgentConfig] = useState({
+        tone: 'Profesional, Analítico y Directo',
+        instructions: ''
+    })
 
     const toggleSection = (section: string) => {
         const next = new Set(openSections)
@@ -522,7 +562,9 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                     message: userMsg.content,
                     type: type,
                     selectedAssetIds: Array.from(selectedAssetIds),
-                    selectedResearchIds: Array.from(selectedResearchIds)
+                    selectedResearchIds: Array.from(selectedResearchIds),
+                    tone: agentConfig.tone,
+                    customInstructions: agentConfig.instructions
                 })
             })
             const data = await res.json()
@@ -729,7 +771,62 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                         <span className="text-xl">✨</span>
                         <h1 className="font-medium text-sm tracking-tight text-gray-600 dark:text-gray-300">Notebook 4Shine Studio</h1>
                     </div>
+                    <button
+                        onClick={() => setShowAgentSettings(true)}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Configuración del Agente"
+                    >
+                        <Settings size={18} />
+                    </button>
                 </header>
+
+                {/* Agent Settings Modal */}
+                {showAgentSettings && (
+                    <div className="absolute top-16 right-6 z-30 w-80 bg-white dark:bg-[#1E1F20] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-5 animate-in fade-in slide-in-from-top-2">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-sm text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                                <Bot size={16} className="text-blue-500" /> Configuración de Agente
+                            </h3>
+                            <button onClick={() => setShowAgentSettings(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Tono de Respuesta</label>
+                                <select
+                                    value={agentConfig.tone}
+                                    onChange={e => setAgentConfig(p => ({ ...p, tone: e.target.value }))}
+                                    className="w-full text-xs p-2.5 rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 outline-none focus:border-blue-500"
+                                >
+                                    <option>Profesional, Analítico y Directo</option>
+                                    <option>Creativo, Inspirador y Visionario</option>
+                                    <option>Casual, Cercano y Simplificado</option>
+                                    <option>Académico, Riguroso y Detallado</option>
+                                    <option>Socrático (Basado en preguntas)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">Instrucciones de Sistema</label>
+                                <textarea
+                                    value={agentConfig.instructions}
+                                    onChange={e => setAgentConfig(p => ({ ...p, instructions: e.target.value }))}
+                                    placeholder="Ej: Prioriza fuentes de investigación sobre activos internos. Usa analogías deportivas..."
+                                    className="w-full text-xs p-3 rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 outline-none focus:border-blue-500 min-h-[80px] resize-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                            <button
+                                onClick={() => setShowAgentSettings(false)}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors"
+                            >
+                                Guardar Preferencias
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex-1 overflow-y-auto px-[5%] py-8 scroll-smooth">
 
