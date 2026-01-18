@@ -160,7 +160,15 @@ export const getFileContent = async (fileId: string): Promise<string> => {
             try {
                 // @ts-ignore
                 const officeParser = require('officeparser')
-                const text = await officeParser.parseOfficeAsync(buffer)
+
+                // Wrap callback-based parseOffice in a Promise
+                const text = await new Promise<string>((resolve, reject) => {
+                    officeParser.parseOffice(buffer, (data: string, err: any) => {
+                        if (err) reject(err)
+                        else resolve(data)
+                    })
+                })
+
                 return text
             } catch (err: any) {
                 console.error('[Drive] Office Parser Error:', err)
