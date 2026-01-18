@@ -161,13 +161,13 @@ export const getFileContent = async (fileId: string): Promise<string> => {
                 // @ts-ignore
                 const officeParser = require('officeparser')
 
-                // Wrap callback-based parseOffice in a Promise
-                const text = await new Promise<string>((resolve, reject) => {
-                    officeParser.parseOffice(buffer, (data: string, err: any) => {
-                        if (err) reject(err)
-                        else resolve(data)
-                    })
-                })
+                // Use Promise API (v6+) which returns AST
+                const ast = await officeParser.parseOffice(buffer)
+
+                // Extract text from AST (check if it has toText method, or fallback)
+                const text = (ast && typeof ast.toText === 'function')
+                    ? ast.toText()
+                    : (typeof ast === 'string' ? ast : JSON.stringify(ast))
 
                 return text
             } catch (err: any) {
