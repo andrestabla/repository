@@ -246,6 +246,9 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
     const [pillarFilter, setPillarFilter] = useState('')
     const [maturityFilter, setMaturityFilter] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
+    const [typeFilter, setTypeFilter] = useState('')
+    const [formatFilter, setFormatFilter] = useState('')
+    const [sortOrder, setSortOrder] = useState('default')
 
     const filteredData = data.filter(i => {
         const matchesSearch = i.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -258,7 +261,18 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
 
         const matchesMaturity = !maturityFilter || i.maturity === maturityFilter
         const matchesStatus = !statusFilter || i.status === statusFilter
-        return matchesSearch && matchesPillar && matchesMaturity && matchesStatus
+        const matchesType = !typeFilter || i.type === typeFilter
+        const matchesFormat = !formatFilter || i.format === formatFilter
+
+        return matchesSearch && matchesPillar && matchesMaturity && matchesStatus && matchesType && matchesFormat
+    }).sort((a, b) => {
+        if (sortOrder === 'newest') {
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        }
+        if (sortOrder === 'oldest') {
+            return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+        }
+        return 0 // default order (by ID usually or preserved)
     })
 
     const handleDelete = async (id: string) => {
@@ -279,6 +293,9 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
         setPillarFilter('')
         setMaturityFilter('')
         setStatusFilter('')
+        setTypeFilter('')
+        setFormatFilter('')
+        setSortOrder('default')
         setSearchTerm('')
     }
 
@@ -343,7 +360,40 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                                     {['Básico', 'En Desarrollo', 'Avanzado', 'Maestría'].map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}
                                 </select>
                             </div>
+                            {/* New Filters Row 1 */}
                             <div className="flex gap-2">
+                                <select
+                                    value={typeFilter}
+                                    onChange={e => setTypeFilter(e.target.value)}
+                                    className="flex-1 bg-bg border border-border rounded-lg p-2 text-[10px] font-bold text-text-muted outline-none focus:border-accent"
+                                >
+                                    <option value="">CATEGORÍA: TODAS</option>
+                                    {Array.from(new Set(data.map(i => i.type).filter(Boolean))).sort().map(t => (
+                                        <option key={t} value={t}>{t?.toUpperCase()}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={formatFilter}
+                                    onChange={e => setFormatFilter(e.target.value)}
+                                    className="flex-1 bg-bg border border-border rounded-lg p-2 text-[10px] font-bold text-text-muted outline-none focus:border-accent"
+                                >
+                                    <option value="">FORMATO: TODOS</option>
+                                    {Array.from(new Set(data.map(i => i.format).filter(Boolean))).sort().map(f => (
+                                        <option key={f} value={f}>{f?.toUpperCase()}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            {/* New Filters Row 2 */}
+                            <div className="flex gap-2">
+                                <select
+                                    value={sortOrder}
+                                    onChange={e => setSortOrder(e.target.value)}
+                                    className="flex-1 bg-bg border border-border rounded-lg p-2 text-[10px] font-bold text-text-muted outline-none focus:border-accent"
+                                >
+                                    <option value="default">ORDEN: ID (DEF)</option>
+                                    <option value="newest">MÁS RECIENTES</option>
+                                    <option value="oldest">MÁS ANTIGUOS</option>
+                                </select>
                                 <select
                                     value={statusFilter}
                                     onChange={e => setStatusFilter(e.target.value)}
