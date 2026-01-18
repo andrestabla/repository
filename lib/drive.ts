@@ -124,6 +124,7 @@ export const getFileContent = async (fileId: string): Promise<string> => {
 
             const data = await pdf(buffer)
             return data.text
+
         } else if (mimeType?.startsWith('text/')) {
             // Plain Text
             const res = await drive.files.get({
@@ -131,6 +132,40 @@ export const getFileContent = async (fileId: string): Promise<string> => {
                 alt: 'media'
             })
             return typeof res.data === 'string' ? res.data : JSON.stringify(res.data)
+
+        } else if (mimeType === 'application/vnd.google-apps.presentation') {
+            // Google Slides -> Export as Text
+            const res = await drive.files.export({
+                fileId,
+                mimeType: 'text/plain'
+            })
+            return typeof res.data === 'string' ? res.data : ''
+
+        } else if (
+            mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || // .docx
+            mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' // .pptx
+        ) {
+            console.log(`[Drive] Downloading Office File ${fileId}...`)
+            const res = await drive.files.get({
+                fileId,
+                alt: 'media'
+            }, { responseType: 'arraybuffer' })
+
+            if (!res.data) throw new Error('No receiving data from Drive')
+
+            // @ts-ignore
+            const buffer = Buffer.from(res.data as ArrayBuffer)
+            console.log(`[Drive] Parsing Office File buffer (${buffer.length} bytes)...`)
+
+            try {
+                // @ts-ignore
+                const officeParser = require('officeparser')
+                const text = await officeParser.parseOfficeAsync(buffer)
+                return text
+            } catch (err: any) {
+                console.error('[Drive] Office Parser Error:', err)
+                throw new Error(`Failed to parse Office file: ${err.message}`)
+            }
         }
 
         return ''
