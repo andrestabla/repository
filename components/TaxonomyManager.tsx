@@ -15,8 +15,11 @@ import {
     Box,
     RefreshCw,
     Link as LinkIcon,
-    BookOpen
+    BookOpen,
+    Share2,
+    List
 } from 'lucide-react'
+import TaxonomyGraph from './TaxonomyGraph'
 
 type ContentItem = {
     id: string
@@ -56,6 +59,7 @@ export default function TaxonomyManager({
 }) {
     const [data, setData] = useState<TaxonomyItem[]>(initialData)
     const [isLoading, setIsLoading] = useState(false)
+    const [activeTab, setActiveTab] = useState<'list' | 'visual'>('list')
 
     const getLinkedAssets = (node: TaxonomyItem, level: 'Pillar' | 'Sub' | 'Comp' | 'Behavior') => {
         const invMatches = inventory.filter(item => {
@@ -201,95 +205,124 @@ export default function TaxonomyManager({
                 </div>
             </header>
 
-            <div className="grid gap-6">
-                {data.map(pillar => (
-                    <div key={pillar.id} className={`group bg-bg border-2 border-border/40 rounded-3xl p-6 transition-all hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5 ${!pillar.active ? 'opacity-50 grayscale' : ''}`}>
-                        <div className="flex justify-between items-center mb-6">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-accent/5 text-accent rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
-                                    <Folder size={24} fill={pillar.active ? 'currentColor' : 'none'} fillOpacity={0.2} />
-                                </div>
-                                <div>
-                                    <div className="font-black text-xl text-text-main flex items-center gap-3 tracking-tight">
-                                        {pillar.name}
-                                        {!pillar.active && (
-                                            <span className="text-[9px] bg-danger/10 text-danger border border-danger/20 px-2 py-0.5 rounded-full uppercase font-black tracking-widest">Inactivo</span>
-                                        )}
+            <div className="flex gap-4 mb-8">
+                <button
+                    onClick={() => setActiveTab('list')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'list'
+                        ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                        : 'bg-bg border border-border text-text-muted hover:border-accent hover:text-accent'
+                        }`}
+                >
+                    <List size={16} />
+                    Listado Detallado
+                </button>
+                <button
+                    onClick={() => setActiveTab('visual')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'visual'
+                        ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                        : 'bg-bg border border-border text-text-muted hover:border-accent hover:text-accent'
+                        }`}
+                >
+                    <Share2 size={16} />
+                    Esquema Visual
+                </button>
+            </div>
+
+            {activeTab === 'visual' ? (
+                <div className="h-[600px] w-full animate-in fade-in duration-500">
+                    <TaxonomyGraph taxonomy={data} />
+                </div>
+            ) : (
+                <div className="grid gap-6 animate-in fade-in duration-500">
+                    {data.map(pillar => (
+                        <div key={pillar.id} className={`group bg-bg border-2 border-border/40 rounded-3xl p-6 transition-all hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5 ${!pillar.active ? 'opacity-50 grayscale' : ''}`}>
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-accent/5 text-accent rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
+                                        <Folder size={24} fill={pillar.active ? 'currentColor' : 'none'} fillOpacity={0.2} />
                                     </div>
-                                    <div className="text-[10px] text-text-muted uppercase font-bold tracking-widest mt-1 opacity-60">Pilar Maestría</div>
+                                    <div>
+                                        <div className="font-black text-xl text-text-main flex items-center gap-3 tracking-tight">
+                                            {pillar.name}
+                                            {!pillar.active && (
+                                                <span className="text-[9px] bg-danger/10 text-danger border border-danger/20 px-2 py-0.5 rounded-full uppercase font-black tracking-widest">Inactivo</span>
+                                            )}
+                                        </div>
+                                        <div className="text-[10px] text-text-muted uppercase font-bold tracking-widest mt-1 opacity-60">Pilar Maestría</div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <IconButton icon={<Edit2 size={14} />} onClick={() => handleEditName(pillar.id, pillar.name)} />
+                                    <IconButton icon={pillar.active ? <EyeOff size={14} /> : <Eye size={14} />} onClick={() => handleToggleActive(pillar.id, pillar.active)} />
+                                    <button
+                                        onClick={() => handleAddNode(pillar.id, 'Component')}
+                                        className="bg-panel border border-border text-text-muted px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest hover:border-accent hover:text-accent transition-all flex items-center gap-2"
+                                    >
+                                        <PlusCircle size={14} /> Subcomponente
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <IconButton icon={<Edit2 size={14} />} onClick={() => handleEditName(pillar.id, pillar.name)} />
-                                <IconButton icon={pillar.active ? <EyeOff size={14} /> : <Eye size={14} />} onClick={() => handleToggleActive(pillar.id, pillar.active)} />
-                                <button
-                                    onClick={() => handleAddNode(pillar.id, 'Component')}
-                                    className="bg-panel border border-border text-text-muted px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest hover:border-accent hover:text-accent transition-all flex items-center gap-2"
-                                >
-                                    <PlusCircle size={14} /> Subcomponente
-                                </button>
-                            </div>
-                        </div>
 
-                        {/* Linked Assets for Pillar */}
-                        <LinkedAssets assets={getLinkedAssets(pillar, 'Pillar')} />
+                            {/* Linked Assets for Pillar */}
+                            <LinkedAssets assets={getLinkedAssets(pillar, 'Pillar')} />
 
-                        <div className="flex flex-col gap-3 ml-2 lg:ml-16 mt-4">
-                            {pillar.children?.map(level2 => (
-                                <div key={level2.id} className="border border-border rounded-xl p-4 bg-panel/50">
-                                    {/* LEVEL 2: SUBCOMPONENT */}
-                                    <div className="flex justify-between items-center mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px] font-bold">L2</div>
-                                            <span className="font-bold text-sm text-text-main">{level2.name}</span>
-                                            <span className="text-[10px] text-text-muted uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-1.5 rounded">Subcomponente</span>
+                            <div className="flex flex-col gap-3 ml-2 lg:ml-16 mt-4">
+                                {pillar.children?.map(level2 => (
+                                    <div key={level2.id} className="border border-border rounded-xl p-4 bg-panel/50">
+                                        {/* LEVEL 2: SUBCOMPONENT */}
+                                        <div className="flex justify-between items-center mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px] font-bold">L2</div>
+                                                <span className="font-bold text-sm text-text-main">{level2.name}</span>
+                                                <span className="text-[10px] text-text-muted uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-1.5 rounded">Subcomponente</span>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <IconButton icon={<Edit2 size={12} />} onClick={() => handleEditName(level2.id, level2.name)} />
+                                                <IconButton icon={level2.active ? <EyeOff size={12} /> : <Eye size={12} />} onClick={() => handleToggleActive(level2.id, level2.active)} />
+                                            </div>
                                         </div>
-                                        <div className="flex gap-1">
-                                            <IconButton icon={<Edit2 size={12} />} onClick={() => handleEditName(level2.id, level2.name)} />
-                                            <IconButton icon={level2.active ? <EyeOff size={12} /> : <Eye size={12} />} onClick={() => handleToggleActive(level2.id, level2.active)} />
-                                        </div>
-                                    </div>
 
-                                    {/* Linked Assets for L2 */}
-                                    <LinkedAssets assets={getLinkedAssets(level2, 'Sub')} />
+                                        {/* Linked Assets for L2 */}
+                                        <LinkedAssets assets={getLinkedAssets(level2, 'Sub')} />
 
-                                    {/* LEVEL 3: COMPETENCIA */}
-                                    <div className="ml-8 border-l-2 border-border pl-4 grid gap-2">
-                                        {level2.children?.map(level3 => (
-                                            <div key={level3.id} className="group/l3">
-                                                <div className="flex justify-between items-center py-2 hover:bg-black/5 rounded px-2 -ml-2 transition-colors">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-5 h-5 rounded bg-purple-500/10 text-purple-500 flex items-center justify-center text-[9px] font-bold">L3</div>
-                                                        <span className="text-sm font-medium text-text-main">{level3.name}</span>
-                                                        <span className="text-[9px] text-text-muted uppercase tracking-widest opacity-50">Competencia</span>
+                                        {/* LEVEL 3: COMPETENCIA */}
+                                        <div className="ml-8 border-l-2 border-border pl-4 grid gap-2">
+                                            {level2.children?.map(level3 => (
+                                                <div key={level3.id} className="group/l3">
+                                                    <div className="flex justify-between items-center py-2 hover:bg-black/5 rounded px-2 -ml-2 transition-colors">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-5 h-5 rounded bg-purple-500/10 text-purple-500 flex items-center justify-center text-[9px] font-bold">L3</div>
+                                                            <span className="text-sm font-medium text-text-main">{level3.name}</span>
+                                                            <span className="text-[9px] text-text-muted uppercase tracking-widest opacity-50">Competencia</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Linked Assets for L3 */}
+                                                    <LinkedAssets assets={getLinkedAssets(level3, 'Comp')} />
+
+                                                    {/* LEVEL 4: CONDUCTA */}
+                                                    <div className="ml-6 mt-1 space-y-1">
+                                                        {level3.children?.map(level4 => (
+                                                            <div key={level4.id}>
+                                                                <div className="flex items-center gap-2 text-xs text-text-muted py-1 pl-2 border-l border-border hover:text-accent hover:border-accent transition-colors">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-accent" />
+                                                                    <span>{level4.name}</span>
+                                                                </div>
+                                                                {/* Linked Assets for L4 */}
+                                                                <LinkedAssets assets={getLinkedAssets(level4, 'Behavior')} />
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
-
-                                                {/* Linked Assets for L3 */}
-                                                <LinkedAssets assets={getLinkedAssets(level3, 'Comp')} />
-
-                                                {/* LEVEL 4: CONDUCTA */}
-                                                <div className="ml-6 mt-1 space-y-1">
-                                                    {level3.children?.map(level4 => (
-                                                        <div key={level4.id}>
-                                                            <div className="flex items-center gap-2 text-xs text-text-muted py-1 pl-2 border-l border-border hover:text-accent hover:border-accent transition-colors">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-accent" />
-                                                                <span>{level4.name}</span>
-                                                            </div>
-                                                            {/* Linked Assets for L4 */}
-                                                            <LinkedAssets assets={getLinkedAssets(level4, 'Behavior')} />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             {isLoading && (
                 <div className="fixed inset-0 bg-bg/80 backdrop-blur-md flex items-center justify-center z-[100] transition-all">
