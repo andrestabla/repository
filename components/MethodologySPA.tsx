@@ -349,7 +349,7 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                                     className="flex-1 bg-bg border border-border rounded-lg p-2 text-[10px] font-bold text-text-muted outline-none focus:border-accent"
                                 >
                                     <option value="">PILLAR: TODOS</option>
-                                    {['Shine In', 'Shine Out', 'Shine Up', 'Shine On'].map(p => <option key={p} value={p}>{p.toUpperCase()}</option>)}
+                                    {['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond'].map(p => <option key={p} value={p}>{p.toUpperCase()}</option>)}
                                 </select>
                                 <select
                                     value={maturityFilter}

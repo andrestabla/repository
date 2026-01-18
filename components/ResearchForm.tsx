@@ -271,7 +271,7 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
                         <div className="space-y-2">
                             <label className="block text-[10px] font-black text-accent uppercase tracking-widest pl-1">Pilares Relacionados (4Shine)</label>
                             <div className="grid grid-cols-4 gap-2">
-                                {['Shine In', 'Shine Out', 'Shine Up', 'Shine On'].map((pillar) => {
+                                {['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond'].map((pillar) => {
                                     const isSelected = formData.pillars?.includes(pillar)
                                     return (
                                         <button

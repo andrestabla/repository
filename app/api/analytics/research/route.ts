@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
         })
 
         // --- 2. COBERTURA CIENTÍFICA ---
-        const pillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine On']
+        const pillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond']
 
         // D. Distribución por Pilar
-        const pillarCounts: Record<string, number> = { 'Shine In': 0, 'Shine Out': 0, 'Shine Up': 0, 'Shine On': 0 }
+        const pillarCounts: Record<string, number> = { 'Shine In': 0, 'Shine Out': 0, 'Shine Up': 0, 'Shine Beyond': 0 }
 
         // E. Heatmap: Pillar x Competence
         const pillarCompetenceMatrix: Record<string, Record<string, number>> = {}

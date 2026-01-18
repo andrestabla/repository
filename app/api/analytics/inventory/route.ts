@@ -28,7 +28,7 @@ export async function GET() {
         }
 
         // 2. Process Radar: Methodology Coverage (Pillars)
-        const pillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine On']
+        const pillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond']
         const pillarDist = pillars.map(p => ({
             subject: p, // Radar uses 'subject' or 'name'
             A: rawItems.filter(i => i.primaryPillar === p).length,

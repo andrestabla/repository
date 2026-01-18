@@ -31,7 +31,7 @@ async function main() {
             subcomponents: ['Política Organizacional', 'Liderazgo Estratégico', 'Negociación Avanzada', 'Gestión de Stakeholders']
         },
         {
-            name: 'Shine On',
+            name: 'Shine Beyond',
             subcomponents: ['Mentoría & Coaching', 'Innovación y Futuro', 'Sostenibilidad del Éxito', 'Transferencia de Conocimiento']
         }
     ]

@@ -49,7 +49,7 @@ async function main() {
     // 4. INTEGRIDAD Y HUÉRFANOS
     const orphanPillars = await prisma.contentItem.count({
         where: {
-            NOT: { primaryPillar: { in: ['Shine In', 'Shine Out', 'Shine Up', 'Shine On', 'Transversal'] } }
+            NOT: { primaryPillar: { in: ['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond', 'Transversal'] } }
         }
     })
     console.log(`⚠️ ALERTAS DE INTEGRIDAD`)

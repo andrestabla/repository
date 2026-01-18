@@ -35,7 +35,7 @@ export default async function Page() {
     })
 
     // Sort pillars manually if needed, or rely on 'order'
-    const shineOrder = ['Shine In', 'Shine Out', 'Shine Up', 'Shine On']
+    const shineOrder = ['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond']
     rootNodes.sort((a, b) => {
         const idxA = shineOrder.indexOf(a.name)
         const idxB = shineOrder.indexOf(b.name)

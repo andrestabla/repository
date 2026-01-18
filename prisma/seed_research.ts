@@ -57,7 +57,7 @@ const records = [
         findings: "Lideres motivados por legado y beneficio empresa. La autenticidad y visibilidad estratégica refuerzan la confianza.",
         methods: "Cualitativo: 25 entrevistas en profundidad a líderes senior.",
         rel4shine: "Justifica la necesidad de la 'Visibilidad Digital' en líderes modernos. Conecta la marca del líder con el Employer Branding (atracción de talento).",
-        pillars: ["Shine Up", "Shine On"]
+        pillars: ["Shine Up", "Shine Beyond"]
     },
     {
         title: "6. Branding Personal del Dueño y Reputación (Situmorang & Salamah, 2018)",
@@ -68,7 +68,7 @@ const records = [
         findings: "La marca personal del líder ES la marca de la empresa en estos contextos. Actos visibles (filantropía) generan confianza.",
         methods: "Estudio de caso cualitativo (Indonesia), análisis de contenido.",
         rel4shine: "Demuestra el efecto 'halo' de la marca personal del líder sobre la reputación corporativa, clave para dueños y empresarios.",
-        pillars: ["Shine Up", "Shine On"]
+        pillars: ["Shine Up", "Shine Beyond"]
     },
     {
         title: "7. Modelo de Desarrollo del Carácter (Crossan et al., 2021)",
@@ -112,7 +112,7 @@ const records = [
         findings: "Liderazgo es el driver #1 de innovación, seguido de Resolución de Problemas. Clave para ventaja competitiva.",
         methods: "Cuantitativo: PLS-SEM en 125 profesionales.",
         rel4shine: "Posiciona las 'Habilidades Blandas' (Soft Skills) como motor de rentabilidad e innovación, no solo como 'nice to have'.",
-        pillars: ["Shine Out", "Shine On"]
+        pillars: ["Shine Out", "Shine Beyond"]
     },
     {
         title: "11. Liderazgo Inclusivo y Éxito de Proyectos (Javed et al., 2025)",
@@ -123,7 +123,7 @@ const records = [
         findings: "Inclusión genera engagement -> éxito. El líder que 'se sacrifica' por el equipo potencia este efecto.",
         methods: "Cuantitativo: Modelo de mediación/moderación en serie (n=400).",
         rel4shine: "Conecta el liderazgo humano con el Éxito de Proyectos (KPis). Refuerza la idea de 'Liderazgo de Servicio' transversal a resultados.",
-        pillars: ["Shine Out", "Shine On"]
+        pillars: ["Shine Out", "Shine Beyond"]
     },
     {
         title: "12. Beneficios del Executive Coaching (Longenecker & McCartney, 2020)",
