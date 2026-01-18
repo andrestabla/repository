@@ -379,7 +379,7 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                                 >
                                     <option value="">FORMATO: TODOS</option>
                                     {Array.from(new Set(data.map(i => i.format).filter(Boolean))).sort().map(f => (
-                                        <option key={f} value={f}>{f?.toUpperCase()}</option>
+                                        <option key={f as string} value={f as string}>{(f as string).toUpperCase()}</option>
                                     ))}
                                 </select>
                             </div>
