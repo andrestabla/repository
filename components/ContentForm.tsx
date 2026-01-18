@@ -101,6 +101,7 @@ export type ContentItem = {
 
     status: string
     completeness: number
+    createdAt?: Date | string
 }
 
 type DriveFile = {
