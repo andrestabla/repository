@@ -225,6 +225,68 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
     const [driveStatus, setDriveStatus] = useState<'idle' | 'validating' | 'valid'>('idle')
     const [isUploading, setIsUploading] = useState(false)
 
+    // Taxonomy State
+    const [taxonomyTree, setTaxonomyTree] = useState<any[]>([])
+    const [pillarOptions, setPillarOptions] = useState<string[]>([])
+    const [subOptions, setSubOptions] = useState<string[]>([])
+    const [competenceOptions, setCompetenceOptions] = useState<string[]>([])
+    const [behaviorOptions, setBehaviorOptions] = useState<string[]>([])
+
+    // Fetch Taxonomy Tree
+    useEffect(() => {
+        fetch('/api/taxonomy/tree')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setTaxonomyTree(data)
+                    setPillarOptions(data.map((p: any) => p.name))
+                }
+            })
+            .catch(err => console.error('Failed to load taxonomy:', err))
+    }, [])
+
+    // Cascading Logic
+    useEffect(() => {
+        if (!taxonomyTree.length) return
+
+        // 1. Get current Pillar Node
+        const currentPillarNode = taxonomyTree.find(p => p.name === formData.primaryPillar)
+
+        if (currentPillarNode) {
+            // Update Sub Options
+            const subs = currentPillarNode.children?.map((c: any) => c.name) || []
+            setSubOptions(subs)
+
+            // 2. Get current Sub Node (if selected)
+            const currentSubNode = currentPillarNode.children?.find((c: any) => c.name === formData.sub)
+
+            if (currentSubNode) {
+                // Update Comp Options
+                const comps = currentSubNode.children?.map((c: any) => c.name) || []
+                setCompetenceOptions(comps)
+
+                // 3. Get current Comp Node (if selected)
+                const currentCompNode = currentSubNode.children?.find((c: any) => c.name === formData.competence)
+
+                if (currentCompNode) {
+                    // Update Behavior Options
+                    const behaviors = currentCompNode.children?.map((c: any) => c.name) || []
+                    setBehaviorOptions(behaviors)
+                } else {
+                    setBehaviorOptions([])
+                }
+
+            } else {
+                setCompetenceOptions([])
+                setBehaviorOptions([])
+            }
+        } else {
+            setSubOptions([])
+            setCompetenceOptions([])
+            setBehaviorOptions([])
+        }
+    }, [taxonomyTree, formData.primaryPillar, formData.sub, formData.competence])
+
     useEffect(() => {
         if (formData.driveId) setDriveStatus('valid')
     }, [formData.driveId])
@@ -554,11 +616,58 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
 
                             {activeTab === 'classification' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                                    <FormSelect label="Pilar Metodológico Principal" value={formData.primaryPillar} onChange={(v: string) => updateField('primaryPillar', v)} options={['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond', 'Transversal']} width="full" icon={<Fingerprint size={16} />} readOnly={readOnly} />
-                                    <FormMultiSelect label="Pilares de Apoyo (Secundarios)" value={formData.secondaryPillars} onChange={(v: string[]) => updateField('secondaryPillars', v)} options={['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond', 'Transversal']} readOnly={readOnly} />
-                                    <FormInput label="Subcomponente" value={formData.sub} onChange={(v: string) => updateField('sub', v)} placeholder="Liderazgo, IA..." icon={<Database size={16} />} readOnly={readOnly} />
-                                    <FormInput label="Competencia Clave" value={formData.competence} onChange={(v: string) => updateField('competence', v)} placeholder="Negociación" icon={<Brain size={16} />} readOnly={readOnly} />
-                                    <FormInput label="Conducta Observable" value={formData.behavior} onChange={(v: string) => updateField('behavior', v)} placeholder="Aplica marcos ágiles..." width="full" icon={<Users size={16} />} readOnly={readOnly} />
+                                    <FormSelect
+                                        label="Pilar Metodológico Principal"
+                                        value={formData.primaryPillar}
+                                        onChange={(v: string) => {
+                                            updateField('primaryPillar', v)
+                                            // Reset downstream on change
+                                            updateField('sub', '')
+                                            updateField('competence', '')
+                                            updateField('behavior', '')
+                                        }}
+                                        options={pillarOptions}
+                                        width="full"
+                                        icon={<Fingerprint size={16} />}
+                                        readOnly={readOnly}
+                                    />
+                                    <FormMultiSelect label="Pilares de Apoyo (Secundarios)" value={formData.secondaryPillars} onChange={(v: string[]) => updateField('secondaryPillars', v)} options={pillarOptions} readOnly={readOnly} />
+
+                                    <FormSelect
+                                        label="Subcomponente"
+                                        value={formData.sub}
+                                        onChange={(v: string) => {
+                                            updateField('sub', v)
+                                            updateField('competence', '')
+                                            updateField('behavior', '')
+                                        }}
+                                        options={subOptions}
+                                        icon={<Database size={16} />}
+                                        readOnly={readOnly || !formData.primaryPillar}
+                                    />
+
+                                    <FormSelect
+                                        label="Competencia Clave"
+                                        value={formData.competence}
+                                        onChange={(v: string) => {
+                                            updateField('competence', v)
+                                            updateField('behavior', '')
+                                        }}
+                                        options={competenceOptions}
+                                        icon={<Brain size={16} />}
+                                        readOnly={readOnly || !formData.sub}
+                                    />
+
+                                    <FormSelect // Changed from Input to Select
+                                        label="Conducta Observable"
+                                        value={formData.behavior}
+                                        onChange={(v: string) => updateField('behavior', v)}
+                                        options={behaviorOptions}
+                                        width="full"
+                                        icon={<Users size={16} />}
+                                        readOnly={readOnly || !formData.competence}
+                                    />
+
                                     <FormSelect label="Escala de Madurez" value={formData.maturity} onChange={(v: string) => updateField('maturity', v)} options={['Básico', 'En Desarrollo', 'Avanzado', 'Maestría']} icon={<Zap size={16} />} readOnly={readOnly} />
                                 </div>
                             )}
