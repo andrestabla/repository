@@ -94,7 +94,7 @@ async function main() {
             You are a Methodological Classifier for a Leadership Platform.
             
             Taxonomy Pillars:
-            1. Shine In (Self-Leadership, Mindset, Emotional Intelligence) - Note: Formerly 'Shine Within'
+            1. Shine Within (Self-Leadership, Mindset, Emotional Intelligence) - Note: Formerly 'Shine Within'
             2. Shine Out (Relationship Management, Networking, Negotiation)
             3. Shine Up (Strategic Influence, Managing Up, Political Savvy)
             4. Shine Beyond (Legacy, Visibility, Mentoring, Public Speaking)

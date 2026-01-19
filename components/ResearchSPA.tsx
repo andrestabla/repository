@@ -157,7 +157,7 @@ export default function ResearchSPA({ initialItems, session }: any) {
                         className="h-8 bg-card-bg border border-border rounded-lg px-2 text-xs focus:border-accent outline-none cursor-pointer"
                     >
                         <option value="">Todos los Pilares</option>
-                        <option value="Shine In">Shine In</option>
+                        <option value="Shine Within">Shine Within</option>
                         <option value="Shine Out">Shine Out</option>
                         <option value="Shine Up">Shine Up</option>
                         <option value="Shine Beyond">Shine Beyond</option>

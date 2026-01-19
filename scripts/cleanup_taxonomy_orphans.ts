@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 async function main() {
     console.log('🚀 Starting Taxonomy Cleanup...')
 
-    const VALID_PILLARS = ['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond']
+    const VALID_PILLARS = ['Shine Within', 'Shine Out', 'Shine Up', 'Shine Beyond']
 
 
     let iteration = 0
