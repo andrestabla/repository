@@ -168,7 +168,7 @@ async function main() {
         const meta = await analyzeItem(textSource, taxContext, apiKey)
 
         if (meta) {
-            console.log(`   ✅ Classified: ${meta.primaryPillar} > ${meta.sub}`)
+            console.log(`   ✅ Classified: ${meta.primaryPillar} > ${meta.sub} > ${meta.competence} > ${meta.behavior?.substring(0, 20)}...`)
 
             // Update DB
             await prisma.contentItem.update({
@@ -190,6 +190,8 @@ async function main() {
                 oldPillar: item.primaryPillar,
                 newPillar: meta.primaryPillar,
                 newSub: meta.sub,
+                newComp: meta.competence,
+                newBeh: meta.behavior,
                 status: 'Updated'
             })
         } else {
@@ -206,11 +208,11 @@ async function main() {
     let reportMD = '# Batch Metadata Update Report\n\n'
     reportMD += `**Date:** ${new Date().toISOString()}\n`
     reportMD += `**Items Processed:** ${processed}\n\n`
-    reportMD += '| ID | Title | Status | Old Pillar | New Pillar | New Subcomponent |\n'
-    reportMD += '|---|---|---|---|---|---|\n'
+    reportMD += '| ID | Title | Status | Old Pillar | New Pillar | New Sub | New Competence | New Behavior |\n'
+    reportMD += '|---|---|---|---|---|---|---|---|\n'
 
     results.forEach(r => {
-        reportMD += `| ${r.id} | ${r.title} | ${r.status} | ${r.oldPillar || '-'} | ${r.newPillar || '-'} | ${r.newSub || '-'} |\n`
+        reportMD += `| ${r.id} | ${r.title} | ${r.status} | ${r.oldPillar || '-'} | ${r.newPillar || '-'} | ${r.newSub || '-'} | ${r.newComp || '-'} | ${r.newBeh || '-'} |\n`
     })
 
     const reportPath = path.join(process.cwd(), 'BATCH_UPDATE_REPORT.md')
