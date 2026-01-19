@@ -38,13 +38,30 @@ export default function ResearchSPA({ initialItems, session }: any) {
         return Array.from(years).sort().reverse()
     }, [items])
 
-    const uniqueMethodologies = useMemo(() => {
-        const methods = new Set<string>()
-        items.forEach((item: any) => {
-            if (item.methodology) methods.add(item.methodology)
-        })
-        return Array.from(methods).sort()
-    }, [items])
+    // METHODOLOGY GROUPING LOGIC
+    const getMethodologyClass = (methodology: string | undefined) => {
+        if (!methodology) return 'Otros'
+        const lower = methodology.toLowerCase()
+
+        if (lower.includes('mixt') || lower.includes('mix')) return 'Mixta'
+        if (
+            lower.includes('cuant') || lower.includes('quant') ||
+            lower.includes('encuesta') || lower.includes('survey') ||
+            lower.includes('estadístic') || lower.includes('regresión') ||
+            lower.includes('sem') || lower.includes('scale') || lower.includes('escala')
+        ) return 'Cuantitativa'
+
+        if (
+            lower.includes('cual') || lower.includes('qual') ||
+            lower.includes('entrevista') || lower.includes('interview') ||
+            lower.includes('focus') || lower.includes('caso') || lower.includes('case') ||
+            lower.includes('revisión') || lower.includes('review') || lower.includes('teóric')
+        ) return 'Cualitativa'
+
+        return 'Otros'
+    }
+
+    const methodologyOptions = ['Cualitativa', 'Cuantitativa', 'Mixta', 'Otros']
 
     // Filtering Logic
     const filteredItems = items.filter((item: any) => {
@@ -57,7 +74,9 @@ export default function ResearchSPA({ initialItems, session }: any) {
 
         const matchesYear = !selectedYear || (item.apa && item.apa.includes(`(${selectedYear})`))
 
-        const matchesMethodology = !selectedMethodology || item.methodology === selectedMethodology
+        // Use classification for methodology matching
+        const itemClass = getMethodologyClass(item.methodology)
+        const matchesMethodology = !selectedMethodology || itemClass === selectedMethodology
 
         return matchesSearch && matchesAuthor && matchesPillar && matchesYear && matchesMethodology
     })
@@ -163,7 +182,7 @@ export default function ResearchSPA({ initialItems, session }: any) {
                         className="h-8 bg-card-bg border border-border rounded-lg px-2 text-xs focus:border-accent outline-none cursor-pointer max-w-[200px]"
                     >
                         <option value="">Todas las Metodologías</option>
-                        {uniqueMethodologies.map(m => (
+                        {methodologyOptions.map(m => (
                             <option key={m} value={m}>{m}</option>
                         ))}
                     </select>
