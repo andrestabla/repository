@@ -19,8 +19,6 @@ model ContentItem {
   id               String              @id
   title            String
   type             String
-  primaryPillar    String              @default("Transversal")
-  secondaryPillars String[]            @default([])
   version          String
   status           String
   ip               String?
@@ -50,24 +48,26 @@ model ContentItem {
   nextContentId    String?
   observations     String?
   outcomeType      String?
-  transcription    String? // New field for video/audio transcripts
   prereqId         String?
   publicVisibility Boolean?
   recommendation   String?
   reuseExternal    Boolean?
   roleLevel        String?
   source           String?
-  metadata         Json?               // For storing APA, Key Concepts, Research Findings, URL, etc.
   targetRole       String?
   testId           String?
   trigger          String?
   uploadedAt       DateTime?
-  geminiUri        String?             // For async video processing
-  geminiName       String?             // For async video processing
   variable         String?
   vipUsage         Boolean?
   year             String?
   releaseId        String?
+  primaryPillar    String              @default("Transversal")
+  secondaryPillars String[]            @default([])
+  transcription    String?
+  metadata         Json?
+  geminiName       String?
+  geminiUri        String?
   release          MethodologyRelease? @relation(fields: [releaseId], references: [id])
   researchSources  ResearchSource[]    @relation("ContentReferences")
 
@@ -75,26 +75,24 @@ model ContentItem {
 }
 
 model ResearchSource {
-  id          String        @id @default(cuid())
-  title       String
-  apa         String?       @db.Text
-  url         String?
-  summary     String?       @db.Text
-  keyConcepts String?       @db.Text // Comma separated or specific format
-  findings    String?       @db.Text
-  methodology String?
-  competence       String?  // Main competence addressed
-  geographicCoverage String? // e.g., "Global", "LATAM", "USA"
-  populationParams   String? // e.g., "C-Level Executives", "Managers"
-  relation4Shine String?    @db.Text
-  pillars     String[]      @default([]) // 4Shine Pillars (Shine In, Out, Up, On)
-  driveId     String?       // For attached PDF/Doc
-  transcription String?     @db.Text
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  
-  // Relations
-  referencedBy ContentItem[] @relation("ContentReferences")
+  id                 String        @id @default(cuid())
+  title              String
+  apa                String?
+  url                String?
+  summary            String?
+  keyConcepts        String?
+  findings           String?
+  methodology        String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  relation4Shine     String?
+  driveId            String?
+  pillars            String[]      @default([])
+  transcription      String?
+  competence         String?
+  geographicCoverage String?
+  populationParams   String?
+  referencedBy       ContentItem[] @relation("ContentReferences")
 }
 
 model MethodologyRelease {
@@ -118,34 +116,24 @@ model Taxonomy {
   children Taxonomy[] @relation("TaxonomyHierarchy")
 }
 
-enum Role {
-  METODOLOGO
-  CURADOR
-  AUDITOR
-  ADMIN
-}
-
 model User {
-  email     String   @id
+  email     String      @id
   name      String?
-  role      Role     @default(CURADOR)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  isActive  Boolean     @default(true)
+  role      Role        @default(CURADOR)
   logs      SystemLog[]
 }
 
 model SystemLog {
   id         Int      @id @default(autoincrement())
-  action     String   // 'LOGIN', 'APPROVE', 'FORCE_UNLOCK', 'DELETE_NODE'
-  details    String?  // JSON o texto: "Cambió título de X a Y"
-  resourceId String?  // ID del contenido afectado (opcional)
-  
+  action     String
+  details    String?
+  resourceId String?
   userEmail  String
-  user       User     @relation(fields: [userEmail], references: [email])
-  
   createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userEmail], references: [email])
 }
 
 model Artifact {
@@ -166,19 +154,26 @@ model GenerationHistory {
   id        String   @id @default(cuid())
   user      String?
   prompt    String
-  response  String   @db.Text
+  response  String
   type      String
   assets    String[]
-  research  String[] @default([])
   createdAt DateTime @default(now())
+  research  String[] @default([])
 }
 
 model GlossaryTerm {
-  id          String   @id @default(cuid())
-  term        String   @unique
-  definition  String   @db.Text
-  pillars     String[] @default([]) // Related pillars
-  source      String?  // "AI", "Manual"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  term       String   @unique
+  definition String
+  pillars    String[] @default([])
+  source     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum Role {
+  METODOLOGO
+  CURADOR
+  AUDITOR
+  ADMIN
 }
