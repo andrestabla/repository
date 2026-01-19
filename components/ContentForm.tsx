@@ -437,9 +437,26 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                 </div>
 
                 {/* Main Layout: Tabs + Content */}
-                <div className="flex flex-1 overflow-hidden">
-                    {/* Sidebar Tabs */}
-                    <div className="w-[260px] border-r border-border bg-bg/50 overflow-y-auto no-scrollbar py-6 px-3 space-y-2">
+                {/* Main Layout: Tabs + Content */}
+                <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+                    {/* Mobile Tabs (Horizontal) */}
+                    <div className="md:hidden w-full border-b border-border bg-bg/50 overflow-x-auto no-scrollbar py-2 px-4 flex items-center gap-2 shrink-0">
+                        {TABS.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap rounded-xl transition-all flex items-center gap-2 ${activeTab === tab.id
+                                    ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                                    : 'text-text-muted bg-panel border border-border'
+                                    }`}
+                            >
+                                {tab.icon} {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Desktop Sidebar Tabs */}
+                    <div className="hidden md:block w-[260px] border-r border-border bg-bg/50 overflow-y-auto no-scrollbar py-6 px-3 space-y-2 shrink-0">
                         {TABS.map(tab => (
                             <button
                                 key={tab.id}
@@ -483,7 +500,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto p-12 bg-bg/20 no-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-6 md:p-12 bg-bg/20 no-scrollbar">
                         <div className="max-w-3xl mx-auto">
 
                             {activeTab === 'identity' && (
@@ -519,7 +536,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <FormInput label="Identificador Único" value={formData.id} onChange={(v: string) => updateField('id', v)} placeholder="4S-P-001" icon={<Tag size={16} />} disabled={isEdit} readOnly={readOnly} />
                                         <FormInput label="Título Oficial del Activo" value={formData.title} onChange={(v: string) => updateField('title', v)} placeholder="Manual Maestro..." icon={<BookOpen size={16} />} readOnly={readOnly} />
 
@@ -536,7 +553,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                             )}
 
                             {activeTab === 'classification' && (
-                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <FormSelect label="Pilar Metodológico Principal" value={formData.primaryPillar} onChange={(v: string) => updateField('primaryPillar', v)} options={['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond', 'Transversal']} width="full" icon={<Fingerprint size={16} />} readOnly={readOnly} />
                                     <FormMultiSelect label="Pilares de Apoyo (Secundarios)" value={formData.secondaryPillars} onChange={(v: string[]) => updateField('secondaryPillars', v)} options={['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond', 'Transversal']} readOnly={readOnly} />
                                     <FormInput label="Subcomponente" value={formData.sub} onChange={(v: string) => updateField('sub', v)} placeholder="Liderazgo, IA..." icon={<Database size={16} />} readOnly={readOnly} />
@@ -547,7 +564,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                             )}
 
                             {activeTab === 'trajectory' && (
-                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <FormSelect label="Modalidad de Intervención" value={formData.intervention} onChange={(v: string) => updateField('intervention', v)} options={['Conciencia', 'Práctica', 'Herramienta', 'Evaluación']} icon={<Rocket size={16} />} readOnly={readOnly} />
                                     <FormSelect label="Momento del Journey" value={formData.moment} onChange={(v: string) => updateField('moment', v)} options={['Inicio', 'Refuerzo', 'Profundización', 'Cierre']} icon={<Clock size={16} />} readOnly={readOnly} />
                                     <FormInput label="ID Prerrequisito" value={formData.prereqId} onChange={(v: string) => updateField('prereqId', v)} placeholder="4S-000" width="half" icon={<LockIcon size={16} />} readOnly={readOnly} />
@@ -558,7 +575,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                             )}
 
                             {activeTab === 'activation' && (
-                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <FormInput label="Disparador Lógico (Trigger)" value={formData.trigger} onChange={(v: string) => updateField('trigger', v)} placeholder="Score < 60%" width="full" icon={<Zap size={16} />} readOnly={readOnly} />
                                     <FormInput label="Regla de Recomendación" value={formData.recommendation} onChange={(v: string) => updateField('recommendation', v)} placeholder="IF logic..." width="full" icon={<Brain size={16} />} readOnly={readOnly} />
                                     <FormSelect label="Naturaleza del Reto" value={formData.challengeType} onChange={(v: string) => updateField('challengeType', v)} options={['Reflexivo', 'Práctico', 'Aplicado']} icon={<Rocket size={16} />} readOnly={readOnly} />
@@ -567,7 +584,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                             )}
 
                             {activeTab === 'audience' && (
-                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <FormSelect label="Perfil Destinatario" value={formData.targetRole} onChange={(v: string) => updateField('targetRole', v)} options={['Líder', 'Mentor', 'Facilitador', 'Metodólogo']} width="full" icon={<Users size={16} />} readOnly={readOnly} />
                                     <FormSelect label="Nivel Jerárquico" value={formData.roleLevel} onChange={(v: string) => updateField('roleLevel', v)} options={['Junior', 'Senior', 'Experto', 'C-Level']} icon={<LockIcon size={16} />} readOnly={readOnly} />
                                     <FormInput label="Segmento Industria" value={formData.industry} onChange={(v: string) => updateField('industry', v)} placeholder="Multisectorial" width="half" icon={<Globe size={16} />} readOnly={readOnly} />
@@ -575,7 +592,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                             )}
 
                             {activeTab === 'governance' && (
-                                <div className="grid grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <FormInput label="Titular de Propiedad Intelectual" value={formData.ipOwner} onChange={(v: string) => updateField('ipOwner', v)} placeholder="4Shine Global" width="full" icon={<Scale size={16} />} readOnly={readOnly} />
                                     <FormSelect label="Régimen de IP" value={formData.ipType} onChange={(v: string) => updateField('ipType', v)} options={['Derecho de autor', 'Know-how', 'Licencia', 'Adaptación']} icon={<Fingerprint size={16} />} readOnly={readOnly} />
                                     <FormSelect label="Alcance de Uso" value={formData.authorizedUse} onChange={(v: string) => updateField('authorizedUse', v)} options={['Formación interna', 'Consultoría', 'Venta']} icon={<Globe size={16} />} readOnly={readOnly} />

@@ -225,7 +225,7 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
                         </div>
 
                         {/* Sources: URL & Drive */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="col-span-1">
                                 <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">URL Pública</label>
                                 <div className="relative flex gap-2">
@@ -270,7 +270,7 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
                         {/* 4SHINE PILLARS MULTI-SELECT */}
                         <div className="space-y-2">
                             <label className="block text-[10px] font-black text-accent uppercase tracking-widest pl-1">Pilares Relacionados (4Shine)</label>
-                            <div className="grid grid-cols-4 gap-2">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                 {['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond'].map((pillar) => {
                                     const isSelected = formData.pillars?.includes(pillar)
                                     return (
@@ -324,8 +324,8 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
                         </div>
 
                         {/* Details Grid */}
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="col-span-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="col-span-1 md:col-span-2">
                                 <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Reseña Ejecutiva</label>
                                 <textarea
                                     value={formData.summary || ''}
@@ -355,7 +355,7 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
                                 />
                             </div>
 
-                            <div className="col-span-2 grid grid-cols-3 gap-4">
+                            <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Competencia Clave</label>
                                     <input
@@ -388,7 +388,7 @@ export default function ResearchForm({ initialData, onClose, onSave, readOnly = 
                                 </div>
                             </div>
 
-                            <div className="col-span-2">
+                            <div className="col-span-1 md:col-span-2">
                                 <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Diferencial Metodológico</label>
                                 <input
                                     value={formData.methodology || ''}

@@ -325,9 +325,9 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                 )}
             </header>
 
-            <div className="grid grid-cols-[380px_1fr] gap-8 h-[calc(100vh-280px)] min-h-[600px]">
+            <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8 h-[calc(100vh-280px)] min-h-[600px]">
                 {/* Filter & List Panel */}
-                <div className="bg-panel border border-border rounded-3xl flex flex-col overflow-hidden shadow-sm">
+                <div className={`bg-panel border border-border rounded-3xl flex flex-col overflow-hidden shadow-sm ${selectedItem ? 'hidden lg:flex' : 'flex'}`}>
                     <div className="p-4 border-b border-border bg-bg/50 space-y-4">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
@@ -447,123 +447,135 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
                 </div>
 
                 {/* Detail Panel */}
-                {selectedItem ? (
-                    <div className="bg-panel border border-border rounded-3xl p-10 overflow-y-auto shadow-sm flex flex-col h-full ring-1 ring-border/50">
-                        <div className="flex justify-between items-start mb-10 pb-8 border-b border-border/60">
-                            <div className="max-w-[70%] text-left">
-                                <div className="text-[10px] font-black text-accent uppercase tracking-[0.2em] mb-3">CONSTRUCTOR DE METODOLOGÍA</div>
-                                <h3 className="text-3xl font-black text-text-main leading-[1.1] tracking-tighter">{selectedItem.title}</h3>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setShowForm(true)}
-                                    className={`px-5 py-2.5 rounded-xl border-2 font-bold text-xs uppercase tracking-widest transition-all ${selectedItem.status === 'Validado' && role !== 'admin'
-                                        ? 'border-border text-text-muted hover:border-text-main hover:text-text-main'
-                                        : 'border-accent text-accent hover:bg-accent hover:text-white'
-                                        }`}
-                                >
-                                    {selectedItem.status === 'Validado' && role !== 'admin' ? 'Consultar Detalles' : 'Editar Metadatos'}
-                                </button>
-                                {role === 'admin' && selectedItem.status === 'Validado' && (
+                <div className={`flex flex-col h-full overflow-hidden ${selectedItem ? 'flex' : 'hidden lg:flex'}`}>
+                    {/* Mobile Back Button */}
+                    <div className="lg:hidden mb-4">
+                        <button
+                            onClick={() => setSelectedItem(null)}
+                            className="flex items-center gap-2 text-text-muted hover:text-text-main font-bold text-xs uppercase tracking-widest"
+                        >
+                            <ChevronRight className="rotate-180" size={16} /> Volver al Inventario
+                        </button>
+                    </div>
+
+                    {selectedItem ? (
+                        <div className="bg-panel border border-border rounded-3xl p-6 md:p-10 overflow-y-auto shadow-sm flex flex-col h-full ring-1 ring-border/50">
+                            <div className="flex flex-col md:flex-row justify-between items-start mb-10 pb-8 border-b border-border/60 gap-4">
+                                <div className="max-w-full md:max-w-[70%] text-left">
+                                    <div className="text-[10px] font-black text-accent uppercase tracking-[0.2em] mb-3">CONSTRUCTOR DE METODOLOGÍA</div>
+                                    <h3 className="text-2xl md:text-3xl font-black text-text-main leading-[1.1] tracking-tighter">{selectedItem.title}</h3>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                                     <button
-                                        onClick={async () => {
-                                            const reason = prompt('Motivo obligatorio para revertir estado (God Mode):')
-                                            if (!reason) return
-                                            try {
-                                                const res = await fetch('/api/inventory/upsert', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        ...selectedItem,
-                                                        status: 'Borrador',
-                                                        forceReason: reason
+                                        onClick={() => setShowForm(true)}
+                                        className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl border-2 font-bold text-xs uppercase tracking-widest transition-all ${selectedItem.status === 'Validado' && role !== 'admin'
+                                            ? 'border-border text-text-muted hover:border-text-main hover:text-text-main'
+                                            : 'border-accent text-accent hover:bg-accent hover:text-white'
+                                            }`}
+                                    >
+                                        {selectedItem.status === 'Validado' && role !== 'admin' ? 'Consultar Detalles' : 'Editar Metadatos'}
+                                    </button>
+                                    {role === 'admin' && selectedItem.status === 'Validado' && (
+                                        <button
+                                            onClick={async () => {
+                                                const reason = prompt('Motivo obligatorio para revertir estado (God Mode):')
+                                                if (!reason) return
+                                                try {
+                                                    const res = await fetch('/api/inventory/upsert', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            ...selectedItem,
+                                                            status: 'Borrador',
+                                                            forceReason: reason
+                                                        })
                                                     })
-                                                })
-                                                if (res.ok) {
-                                                    alert('✅ Estado revertido a Borrador exitosamente.')
-                                                    onRefresh()
-                                                } else {
-                                                    const err = await res.json()
-                                                    alert('❌ Error: ' + err.error)
-                                                }
-                                            } catch (e) { alert('Error de red') }
-                                        }}
-                                        className="px-5 py-2.5 rounded-xl bg-orange-600 text-white hover:bg-orange-700 transition-all font-bold text-xs uppercase tracking-widest shadow-lg shadow-orange-900/20"
-                                    >
-                                        ⚡ Revertir Estado
-                                    </button>
-                                )}
-                                {(role === 'admin' || role === 'metodologo') && (
-                                    <button
-                                        onClick={() => handleDelete(selectedItem.id)}
-                                        className="w-10 h-10 rounded-xl border border-danger/30 text-danger hover:bg-danger hover:text-white transition-all flex items-center justify-center shadow-lg shadow-danger/5"
-                                        title="Eliminar Activo"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
-                            <DataPointCard icon={<LayoutDashboard size={18} />} label="Pilar Principal" value={(selectedItem as any).primaryPillar || ''} />
-                            <DataPointCard icon={<Grid3X3 size={18} />} label="Subcomponente" value={selectedItem.sub || ''} />
-                            <DataPointCard icon={<Monitor size={18} />} label="Nivel Madurez" value={selectedItem.maturity || ''} />
-                            <DataPointCard icon={<ShieldCheck size={18} />} label="Estado de Calidad" value={selectedItem.status || ''} />
-                        </div>
-
-                        {(selectedItem as any).secondaryPillars && (selectedItem as any).secondaryPillars.length > 0 && (
-                            <div className="mb-10 flex flex-wrap gap-2 items-center">
-                                <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mr-2">Pilares Secundarios:</span>
-                                {(selectedItem as any).secondaryPillars.map((p: string) => (
-                                    <span key={p} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[9px] font-bold border border-accent/20">
-                                        {p}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-
-                        <div className="flex-1 bg-bg border border-border rounded-3xl overflow-hidden shadow-2xl relative group min-h-[400px]">
-                            {selectedItem.driveId ? (
-                                <>
-                                    <iframe
-                                        src={`https://drive.google.com/file/d/${selectedItem.driveId}/preview`}
-                                        className="w-full h-full border-none"
-                                        allow="autoplay"
-                                    />
-                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <a
-                                            href={`https://drive.google.com/file/d/${selectedItem.driveId}/view`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-3 bg-accent text-white rounded-xl shadow-xl hover:scale-110 transition-all flex items-center gap-2 font-bold text-xs"
+                                                    if (res.ok) {
+                                                        alert('✅ Estado revertido a Borrador exitosamente.')
+                                                        onRefresh()
+                                                    } else {
+                                                        const err = await res.json()
+                                                        alert('❌ Error: ' + err.error)
+                                                    }
+                                                } catch (e) { alert('Error de red') }
+                                            }}
+                                            className="px-5 py-2.5 rounded-xl bg-orange-600 text-white hover:bg-orange-700 transition-all font-bold text-xs uppercase tracking-widest shadow-lg shadow-orange-900/20"
                                         >
-                                            <Zap size={14} fill="currentColor" />
-                                            ABRIR EN DRIVE
-                                        </a>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-text-muted bg-panel/30">
-                                    <div className="w-20 h-20 bg-panel rounded-3xl flex items-center justify-center mb-4 text-text-muted/40 border border-border/50">
-                                        <RefreshCw size={40} />
-                                    </div>
-                                    <div className="italic font-bold tracking-tight text-lg opacity-40">Sin vista previa disponible</div>
-                                    <p className="text-sm mt-1 opacity-40">Carga un ID de Drive válido para visualizar.</p>
+                                            ⚡ Revertir Estado
+                                        </button>
+                                    )}
+                                    {(role === 'admin' || role === 'metodologo') && (
+                                        <button
+                                            onClick={() => handleDelete(selectedItem.id)}
+                                            className="w-10 h-10 rounded-xl border border-danger/30 text-danger hover:bg-danger hover:text-white transition-all flex items-center justify-center shadow-lg shadow-danger/5"
+                                            title="Eliminar Activo"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+                                <DataPointCard icon={<LayoutDashboard size={18} />} label="Pilar Principal" value={(selectedItem as any).primaryPillar || ''} />
+                                <DataPointCard icon={<Grid3X3 size={18} />} label="Subcomponente" value={selectedItem.sub || ''} />
+                                <DataPointCard icon={<Monitor size={18} />} label="Nivel Madurez" value={selectedItem.maturity || ''} />
+                                <DataPointCard icon={<ShieldCheck size={18} />} label="Estado de Calidad" value={selectedItem.status || ''} />
+                            </div>
+
+                            {(selectedItem as any).secondaryPillars && (selectedItem as any).secondaryPillars.length > 0 && (
+                                <div className="mb-10 flex flex-wrap gap-2 items-center">
+                                    <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mr-2">Pilares Secundarios:</span>
+                                    {(selectedItem as any).secondaryPillars.map((p: string) => (
+                                        <span key={p} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[9px] font-bold border border-accent/20">
+                                            {p}
+                                        </span>
+                                    ))}
                                 </div>
                             )}
+
+                            <div className="flex-1 bg-bg border border-border rounded-3xl overflow-hidden shadow-2xl relative group min-h-[400px]">
+                                {selectedItem.driveId ? (
+                                    <>
+                                        <iframe
+                                            src={`https://drive.google.com/file/d/${selectedItem.driveId}/preview`}
+                                            className="w-full h-full border-none"
+                                            allow="autoplay"
+                                        />
+                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <a
+                                                href={`https://drive.google.com/file/d/${selectedItem.driveId}/view`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-3 bg-accent text-white rounded-xl shadow-xl hover:scale-110 transition-all flex items-center gap-2 font-bold text-xs"
+                                            >
+                                                <Zap size={14} fill="currentColor" />
+                                                ABRIR EN DRIVE
+                                            </a>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-text-muted bg-panel/30">
+                                        <div className="w-20 h-20 bg-panel rounded-3xl flex items-center justify-center mb-4 text-text-muted/40 border border-border/50">
+                                            <RefreshCw size={40} />
+                                        </div>
+                                        <div className="italic font-bold tracking-tight text-lg opacity-40">Sin vista previa disponible</div>
+                                        <p className="text-sm mt-1 opacity-40">Carga un ID de Drive válido para visualizar.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="bg-panel/50 border-2 border-dashed border-border rounded-[40px] flex flex-col items-center justify-center text-text-muted italic h-full transition-colors group hover:border-accent/30 hover:bg-accent/5">
-                        <div className="w-24 h-24 bg-bg border border-border rounded-[32px] flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 group-hover:border-accent group-hover:text-accent transition-all text-text-muted/20">
-                            <LayoutDashboard size={40} />
+                    ) : (
+                        <div className="bg-panel/50 border-2 border-dashed border-border rounded-[40px] flex flex-col items-center justify-center text-text-muted italic h-full transition-colors group hover:border-accent/30 hover:bg-accent/5">
+                            <div className="w-24 h-24 bg-bg border border-border rounded-[32px] flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 group-hover:border-accent group-hover:text-accent transition-all text-text-muted/20">
+                                <LayoutDashboard size={40} />
+                            </div>
+                            <div className="font-black tracking-tight text-xl opacity-40 group-hover:opacity-100 transition-opacity uppercase text-center max-w-sm px-10">
+                                Selecciona un activo para visualizar su estructura
+                            </div>
                         </div>
-                        <div className="font-black tracking-tight text-xl opacity-40 group-hover:opacity-100 transition-opacity uppercase text-center max-w-sm px-10">
-                            Selecciona un activo para visualizar su estructura
-                        </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {showForm && (
                     <ContentForm

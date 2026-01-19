@@ -21,17 +21,22 @@ import {
 } from 'lucide-react'
 import { signOut } from "next-auth/react"
 
+// ... imports remain the same
+
 interface SidebarProps {
     session: any
     collapsed: boolean
     setCollapsed: (v: boolean) => void
+    mobileMenuOpen?: boolean
+    setMobileMenuOpen?: (v: boolean) => void
 }
 
-const NavBtn = ({ id, label, icon, active, href, collapsed }: any) => {
+const NavBtn = ({ id, label, icon, active, href, collapsed, onClick }: any) => {
     if (collapsed) {
         return (
             <Link
                 href={href}
+                onClick={onClick}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all relative group
                 ${active ? 'bg-accent text-white shadow-lg shadow-accent/30' : 'text-text-muted hover:bg-accent/10 hover:text-accent'}`}
                 title={label}
@@ -45,6 +50,7 @@ const NavBtn = ({ id, label, icon, active, href, collapsed }: any) => {
     return (
         <Link
             href={href}
+            onClick={onClick}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group relative overflow-hidden
             ${active ? 'bg-accent text-white shadow-lg shadow-accent/30' : 'text-text-muted hover:bg-accent/10 hover:text-accent'}`}
         >
@@ -66,7 +72,7 @@ const NavHeader = ({ label, collapsed }: any) => {
     )
 }
 
-export function Sidebar({ session, collapsed, setCollapsed }: SidebarProps) {
+export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen }: SidebarProps) {
     const pathname = usePathname()
     // Normalizing currentView logic as in original SPA
     const currentView = pathname === '/' ? 'inventory' : pathname === '/inventario' ? 'inventory' : pathname.replace('/', '')
@@ -87,9 +93,17 @@ export function Sidebar({ session, collapsed, setCollapsed }: SidebarProps) {
         else document.documentElement.classList.remove('dark')
     }, [])
 
+    const handleNavClick = () => {
+        if (setMobileMenuOpen) {
+            setMobileMenuOpen(false)
+        }
+    }
+
     return (
         <aside
             className={`bg-panel border-r border-border flex flex-col transition-all duration-300 ease-in-out shadow-2xl z-50
+            fixed md:relative inset-y-0 left-0 h-full
+            ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${collapsed ? 'w-[80px] p-4 items-center' : 'w-[280px] p-6'}`}
         >
             {/* Header */}
@@ -109,14 +123,14 @@ export function Sidebar({ session, collapsed, setCollapsed }: SidebarProps) {
                 {!collapsed ? (
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className="w-6 h-6 rounded-full bg-bg border border-border flex items-center justify-center text-text-muted hover:text-accent transition-colors"
+                        className="hidden md:flex w-6 h-6 rounded-full bg-bg border border-border items-center justify-center text-text-muted hover:text-accent transition-colors"
                     >
                         <ChevronLeft size={14} />
                     </button>
                 ) : (
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className="w-6 h-6 rounded-full bg-bg border border-border flex items-center justify-center text-text-muted hover:text-accent transition-colors"
+                        className="hidden md:flex w-6 h-6 rounded-full bg-bg border border-border items-center justify-center text-text-muted hover:text-accent transition-colors"
                     >
                         <ChevronRight size={14} />
                     </button>
@@ -128,38 +142,28 @@ export function Sidebar({ session, collapsed, setCollapsed }: SidebarProps) {
                 {userRole === 'admin' && (
                     <>
                         <NavHeader label="SISTEMA" collapsed={collapsed} />
-                        <NavBtn id="admin" label="Administración" icon={<ShieldCheck size={18} />} active={currentView === 'admin'} href="/admin" collapsed={collapsed} />
+                        <NavBtn id="admin" label="Administración" icon={<ShieldCheck size={18} />} active={currentView === 'admin'} href="/admin" collapsed={collapsed} onClick={handleNavClick} />
                         {!collapsed && <div className="my-3 border-t border-border opacity-50" />}
                     </>
                 )}
 
                 <NavHeader label="OPERACIÓN" collapsed={collapsed} />
-                <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={pathname.startsWith('/analitica')} href="/analitica" collapsed={collapsed} />
-                <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={pathname === '/inventario' || pathname === '/'} href="/inventario" collapsed={collapsed} />
-                <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={pathname.startsWith('/research')} href="/research" collapsed={collapsed} />
-                {/* Note: Research is now tab inside AnalyticsView, or check routing. 
-                    Wait, previous code had `href="/research"` but I made AnalyticsView main for research. 
-                    I'll point to "/analitica" for now or keep "/research" if that route exists? 
-                    Wait, Step 848 replaced `app/analitica/page.tsx`. `app/research` folder exists? 
-                    Listing said `research` dir exists. Let's check if it has a page. 
-                    Assuming user meant the new Analytics Tab "Investigación". 
-                    Actually, if I look at Step 848, `app/analitica` handles BOTH Inventory and Research. 
-                    So the "Investigación" link might just go to `/analitica` or `/analitica?tab=research`.
-                    I'll use `/analitica` for now.
-                */}
+                <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={pathname.startsWith('/analitica')} href="/analitica" collapsed={collapsed} onClick={handleNavClick} />
+                <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={pathname === '/inventario' || pathname === '/'} href="/inventario" collapsed={collapsed} onClick={handleNavClick} />
+                <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={pathname.startsWith('/research')} href="/research" collapsed={collapsed} onClick={handleNavClick} />
 
                 {(userRole === 'admin' || userRole === 'auditor') && (
-                    <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} href="/qa" collapsed={collapsed} />
+                    <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} href="/qa" collapsed={collapsed} onClick={handleNavClick} />
                 )}
 
                 <div className="h-4" />
 
                 <NavHeader label="ARQUITECTURA" collapsed={collapsed} />
-                <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} href="/taxonomy" collapsed={collapsed} />
-                <NavBtn id="glossary" label="Glosario" icon={<Book size={18} />} active={currentView === 'glossary'} href="/glossary" collapsed={collapsed} />
-                <NavBtn id="gaps" label="Heatmap" icon={<Grid3X3 size={18} />} active={currentView === 'gap-analysis'} href="/gap-analysis" collapsed={collapsed} />
-                <NavBtn id="releases" label="Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} href="/releases" collapsed={collapsed} />
-                <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} href="/generator" collapsed={collapsed} />
+                <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} href="/taxonomy" collapsed={collapsed} onClick={handleNavClick} />
+                <NavBtn id="glossary" label="Glosario" icon={<Book size={18} />} active={currentView === 'glossary'} href="/glossary" collapsed={collapsed} onClick={handleNavClick} />
+                <NavBtn id="gaps" label="Heatmap" icon={<Grid3X3 size={18} />} active={currentView === 'gap-analysis'} href="/gap-analysis" collapsed={collapsed} onClick={handleNavClick} />
+                <NavBtn id="releases" label="Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} href="/releases" collapsed={collapsed} onClick={handleNavClick} />
+                <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} href="/generator" collapsed={collapsed} onClick={handleNavClick} />
             </nav>
 
             {/* Footer */}
