@@ -26,26 +26,32 @@ export async function POST(request: NextRequest) {
         const researchItems = await prisma.researchSource.findMany({
             take: 5,
             orderBy: { createdAt: 'desc' },
-            select: { title: true, summary: true, findings: true }
+            select: { id: true, title: true, summary: true, findings: true, apa: true }
         })
 
         const context = `
         ACTIVE ASSETS CONTEXT:
         ${validatedAssets.map(a => `- ${a.title} (${a.primaryPillar}): ${a.observations?.substring(0, 200)}`).join('\n')}
 
-        RESEARCH CONTEXT:
-        ${researchItems.map(r => `- ${r.title}: ${r.summary?.substring(0, 200)}`).join('\n')}
+        RESEARCH CONTEXT (Usa estos IDs para citar):
+        ${researchItems.map(r => `- [ID: ${r.id}] ${r.title}: ${r.summary?.substring(0, 200)} (APA: ${r.apa})`).join('\n')}
         `
 
         const prompt = `
         Define el término "${term}" bajo el marco de la metodología 4Shine.
         Usa el contexto suministrado de Activos e Investigaciones para dar una definición precisa, académica y alineada con los pilares (Shine In, Out, Up, Beyond).
         
+        REGLAS DE CITACIÓN (CRÍTICO):
+        1. Si usas información del "RESEARCH CONTEXT", DEBES citar al autor usando formato APA 7.
+        2. ADEMÁS, la cita debe ser un hipervínculo en formato Markdown que lleve a la fuente.
+        3. Formato del Link: [Autor, Año](/research?id=ID_DE_LA_FUENTE)
+        Ejemplo: "...como afirma [Smith, 2023](/research?id=clq...) en su estudio..."
+
         ${context}
 
         Responde ÚNICAMENTE con un JSON:
         {
-            "definition": "Definición conceptual robusta (máx 300 caracteres).",
+            "definition": "Definición conceptual robusta con citas hipervinculadas (máx 500 caracteres).",
             "pillars": ["Shine In", "Shine Out"] // Pilares relacionados detectados
         }
         `

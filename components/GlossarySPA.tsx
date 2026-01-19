@@ -27,6 +27,27 @@ export default function GlossarySPA({ initialItems }: any) {
         window.location.reload()
     }
 
+    // Helper to render markdown links [Label](url)
+    const renderWithLinks = (text: string) => {
+        if (!text) return ''
+        const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g)
+        return parts.map((part, i) => {
+            const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+            if (match) {
+                return (
+                    <a
+                        key={i}
+                        href={match[2]}
+                        className="text-accent underline font-bold hover:text-indigo-600 transition-colors"
+                    >
+                        {match[1]}
+                    </a>
+                )
+            }
+            return part
+        })
+    }
+
     return (
         <div className="min-h-screen bg-bg text-text-main font-sans selection:bg-accent/30 selection:text-accent pb-20">
 
@@ -88,9 +109,9 @@ export default function GlossarySPA({ initialItems }: any) {
                                 </div>
                             </div>
 
-                            <p className="text-sm text-text-muted leading-relaxed line-clamp-5 flex-1 mb-4">
-                                {item.definition}
-                            </p>
+                            <div className="text-sm text-text-muted leading-relaxed line-clamp-5 flex-1 mb-4 overflow-y-auto pr-2">
+                                {renderWithLinks(item.definition)}
+                            </div>
 
                             <div className="mt-auto pt-4 border-t border-border/50 flex flex-wrap gap-2">
                                 {item.pillars?.map((p: string) => (
