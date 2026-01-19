@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Search, Plus, Book, Trash2, Edit3, Filter } from 'lucide-react'
+import { Search, Plus, Book, Trash2, Edit3, Filter, X } from 'lucide-react'
 import GlossaryForm from './GlossaryForm'
 
 export default function GlossarySPA({ initialItems }: any) {
@@ -9,6 +9,7 @@ export default function GlossarySPA({ initialItems }: any) {
     const [searchTerm, setSearchTerm] = useState('')
     const [isCreating, setIsCreating] = useState(false)
     const [editingItem, setEditingItem] = useState<any>(null)
+    const [viewingItem, setViewingItem] = useState<any>(null)
 
     const filteredItems = items.filter((item: any) =>
         item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,37 +94,89 @@ export default function GlossarySPA({ initialItems }: any) {
             <main className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredItems.map((item: any) => (
-                        <div key={item.id} className="bg-card-bg border-2 border-transparent hover:border-accent rounded-[24px] p-6 hover:shadow-xl transition-all duration-300 group flex flex-col h-[280px]">
-
+                        <div
+                            key={item.id}
+                            onClick={() => setViewingItem(item)}
+                            className="bg-card-bg border-2 border-transparent hover:border-accent rounded-[24px] p-6 hover:shadow-xl transition-all duration-300 group flex flex-col h-[280px] cursor-pointer"
+                        >
                             <div className="flex items-start justify-between mb-2">
                                 <h3 className="text-xl font-bold tracking-tight text-text-main group-hover:text-accent transition-colors line-clamp-2">
                                     {item.term}
                                 </h3>
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => setEditingItem(item)} className="p-2 hover:bg-black/5 rounded-full text-text-muted">
+                                <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setEditingItem(item) }}
+                                        className="p-2 hover:bg-black/5 rounded-full text-text-muted transition-colors"
+                                    >
                                         <Edit3 size={14} />
                                     </button>
-                                    <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-50 rounded-full text-red-400 hover:text-red-500">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(item.id) }}
+                                        className="p-2 hover:bg-red-50 rounded-full text-red-400 hover:text-red-500 transition-colors"
+                                    >
                                         <Trash2 size={14} />
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="text-sm text-text-muted leading-relaxed line-clamp-5 flex-1 mb-4 overflow-y-auto pr-2">
+                            <div className="text-sm text-text-muted leading-relaxed line-clamp-5 flex-1 mb-4 overflow-hidden mask-linear-fade">
                                 {renderWithLinks(item.definition)}
                             </div>
 
-                            <div className="mt-auto pt-4 border-t border-border/50 flex flex-wrap gap-2">
-                                {item.pillars?.map((p: string) => (
-                                    <span key={p} className="text-[9px] font-black uppercase tracking-widest bg-accent/5 text-accent px-2 py-1 rounded-md">
-                                        {p}
-                                    </span>
-                                ))}
+                            <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
+                                <div className="flex flex-wrap gap-2">
+                                    {item.pillars?.map((p: string) => (
+                                        <span key={p} className="text-[9px] font-black uppercase tracking-widest bg-accent/5 text-accent px-2 py-1 rounded-md">
+                                            {p}
+                                        </span>
+                                    ))}
+                                </div>
+                                <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest group-hover:text-accent transition-colors">
+                                    Ver Completo
+                                </span>
                             </div>
                         </div>
                     ))}
                 </div>
             </main>
+
+            {/* View Modal */}
+            {viewingItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+                    <div className="bg-bg w-full max-w-2xl rounded-[32px] border-4 border-border shadow-2xl flex flex-col overflow-hidden relative max-h-[90vh]">
+                        <div className="h-20 border-b-4 border-border flex items-center justify-between px-8 bg-card-bg shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                                    <Book size={20} />
+                                </div>
+                                <h2 className="text-lg font-black text-text-main tracking-tight">
+                                    {viewingItem.term}
+                                </h2>
+                            </div>
+                            <button onClick={() => setViewingItem(null)} className="w-8 h-8 rounded-full hover:bg-black/5 flex items-center justify-center text-text-muted transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-8 overflow-y-auto">
+                            <div className="prose prose-sm max-w-none text-text-main leading-relaxed">
+                                <div className="whitespace-pre-wrap text-base">
+                                    {renderWithLinks(viewingItem.definition)}
+                                </div>
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-border flex flex-wrap gap-3">
+                                {viewingItem.pillars?.map((p: string) => (
+                                    <span key={p} className="text-xs font-black uppercase tracking-widest bg-accent/10 text-accent px-3 py-1.5 rounded-lg border border-accent/20">
+                                        {p}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {(isCreating || editingItem) && (
                 <GlossaryForm
