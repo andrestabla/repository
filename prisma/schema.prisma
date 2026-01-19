@@ -172,3 +172,13 @@ model GenerationHistory {
   research  String[] @default([])
   createdAt DateTime @default(now())
 }
+
+model GlossaryTerm {
+  id          String   @id @default(cuid())
+  term        String   @unique
+  definition  String   @db.Text
+  pillars     String[] @default([]) // Related pillars
+  source      String?  // "AI", "Manual"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
