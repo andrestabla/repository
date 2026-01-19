@@ -453,6 +453,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
             secondaryPillars: data.secondaryPillars || prev.secondaryPillars || [],
             sub: data.sub || prev.sub,
             competence: data.competence || prev.competence,
+            behavior: data.behavior || prev.behavior, // Added behavior
             maturity: data.maturity || prev.maturity,
             targetRole: data.targetRole || prev.targetRole,
             observations: data.observations || data.summary || prev.observations,
