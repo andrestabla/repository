@@ -91,6 +91,7 @@ export class GeminiService {
             {
               "title": "Título oficial de alto impacto",
               "summary": "Reseña fiel, técnica y detallada del contenido analizado",
+              "keyConcepts": "Lista de conceptos teóricos o técnicos fundamentales definidos en el texto",
               "type": "CÓDIGO_TIPO",
               "primaryPillar": "Pilar Principal Seleccionado",
               "secondaryPillars": ["Pilar Secundario 1", "Pilar Secundario 2"],
