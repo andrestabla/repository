@@ -430,7 +430,8 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
             const json = data
             if (json.success && json.data) {
                 applyMetadata(json.data)
-                if (json.suggestedId) {
+                // Fix: Only apply suggestedId if creating a new asset, NOT when editing
+                if (!isEdit && json.suggestedId) {
                     setFormData(prev => ({ ...prev, id: json.suggestedId }))
                 }
                 alert('✨ Análisis Completo: Metadatos sugeridos aplicados.')
