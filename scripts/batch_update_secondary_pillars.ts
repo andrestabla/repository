@@ -76,10 +76,9 @@ async function main() {
         console.log(`\n📦 Processing Batch ${Math.floor(i / BATCH_SIZE) + 1} (${i + 1}-${Math.min(i + BATCH_SIZE, validItems.length)}/${validItems.length})`)
 
         await Promise.all(batch.map(async (item) => {
-            // Skip if already assigned (simple heuristic)
+            // Skip if already assigned (ensure we only target those with empty secondaries for this fix)
             if (item.secondaryPillars && item.secondaryPillars.length > 0) {
                 console.log(`   ⏭️ Skipping: ${item.title.substring(0, 30)}... (Already assigned)`)
-                reportParams.push({ id: item.id, title: item.title, primary: item.primaryPillar, secondary: item.secondaryPillars.join(', '), status: 'Skipped' })
                 return
             }
 
@@ -95,7 +94,7 @@ async function main() {
             You are a Methodological Classifier for a Leadership Platform.
             
             Taxonomy Pillars:
-            1. Shine Within (Self-Leadership, Mindset, Emotional Intelligence)
+            1. Shine In (Self-Leadership, Mindset, Emotional Intelligence) - Note: Formerly 'Shine Within'
             2. Shine Out (Relationship Management, Networking, Negotiation)
             3. Shine Up (Strategic Influence, Managing Up, Political Savvy)
             4. Shine Beyond (Legacy, Visibility, Mentoring, Public Speaking)
@@ -106,13 +105,13 @@ async function main() {
             
             Rules:
             1. Analyze the content below.
-            2. Select 0 to maximum 2 ADDITIONAL pillars from the list above.
+            2. Select 1 to 2 ADDITIONAL pillars from the list above.
             3. DO NOT include the Primary Pillar "${item.primaryPillar}" in the list.
-            4. If the content is purely focused on the primary pillar, return an empty list.
+            4. YOU MUST SELECT AT LEAST ONE SECONDARY PILLAR. Find the strongest connection if none are obvious.
 
             Output JSON Format:
             {
-                "secondaryPillars": ["Shine Out", "Shine Beyond"] // Example
+                "secondaryPillars": ["Shine Out"] // Example
             }
 
             CONTENT:
