@@ -11,6 +11,7 @@ import {
     Grid3X3,
     Tag,
     Zap,
+    Book,
     BookOpen,
     Monitor,
     Activity,
@@ -155,6 +156,7 @@ export function Sidebar({ session, collapsed, setCollapsed }: SidebarProps) {
 
                 <NavHeader label="ARQUITECTURA" collapsed={collapsed} />
                 <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} href="/taxonomy" collapsed={collapsed} />
+                <NavBtn id="glossary" label="Glosario" icon={<Book size={18} />} active={currentView === 'glossary'} href="/glossary" collapsed={collapsed} />
                 <NavBtn id="gaps" label="Heatmap" icon={<Grid3X3 size={18} />} active={currentView === 'gap-analysis'} href="/gap-analysis" collapsed={collapsed} />
                 <NavBtn id="releases" label="Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} href="/releases" collapsed={collapsed} />
                 <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} href="/generator" collapsed={collapsed} />
