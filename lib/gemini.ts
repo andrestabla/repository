@@ -44,77 +44,79 @@ export class GeminiService {
             `).join('\n')
             : "";
 
-        // Massive Context Injection
-        const methodologyReference = `
-        METODOLOGÍA 4SHINE DE CARMENZA ALARCÓN:
-        - Propósito: Fortalecer liderazgo y marca personal ("Brillar").
-        - Pilar 1: SHINE WITHIN (Dominio Interior). Subcomponentes: Autoconfianza, Inteligencia emocional, Propósito personal.
-        - Pilar 2: SHINE OUT (Presencia y Proyección). Subcomponentes: Comunicación poderosa, Influencia positiva, Networking estratégico.
-        - Pilar 3: SHINE UP (Visión y Estrategia). Subcomponentes: Política Organizacional, Liderazgo Estratégico, Negociación Avanzada, Gestión de Stakeholders.
-        - Pilar 4: SHINE BEYOND (Trascendencia y Legado). Subcomponentes: Mentoría & Coaching, Innovación y Futuro, Sostenibilidad del Éxito, Transferencia de Conocimiento.
-        Principios: Liderazgo de adentro hacia afuera, autenticidad, bienestar y resultados estratégicos.
-        `;
+        // 0. Fetch Full Taxonomy Tree for Context
+        const taxonomyTree = await prisma.taxonomy.findMany({
+            where: { type: 'Pillar', active: true },
+            include: {
+                children: { // Sub
+                    include: {
+                        children: { // Comp
+                            include: {
+                                children: true // Behavior
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        // Build a simplified context string
+        let taxonomyContext = "ESTRUCTURA METODOLÓGICA VÁLIDA (Debes seleccionar valores EXACTOS de esta lista):\n";
+        taxonomyTree.forEach(p => {
+            taxonomyContext += `\nPILAR: ${p.name}\n`;
+            p.children.forEach(sub => {
+                taxonomyContext += `  - Subcomponente: ${sub.name}\n`;
+                sub.children.forEach(comp => {
+                    taxonomyContext += `    * Competencia: ${comp.name}\n`;
+                    const behaviors = comp.children.map(b => b.name).join(' | ');
+                    taxonomyContext += `      > Conductas: ${behaviors.substring(0, 1000)}...\n`;
+                });
+            });
+        });
 
         const prompt = `
             Eres la INTELIGENCIA ARTIFICIAL MAESTRA de la METODOLOGÍA 4SHINE. Tu razonamiento debe ser de NIVEL EJECUTIVO (C-Level).
-            Analiza el contenido adjunto usando la siguiente GUÍA DE REFERENCIA:
-            ${methodologyReference}
+            Analiza el contenido adjunto.
 
+            ${taxonomyContext}
+            
             ${dynamicContext}
 
             ${context ? `--- INSTRUCCIONES ESPECÍFICAS DE CONTEXTO ---\n${context}\n-------------------------------------------` : ''}
 
             --- REGLAS DE ORO DE ANÁLISIS ---
             0. **IDIOMA OBLIGATORIO**: TODO el contenido generado (summary, observations, relation4Shine, findings, etc.) DEBE estar en ESPAÑOL, incluso si el texto original está en inglés u otro idioma. TRADUCE Y ADAPTA si es necesario.
-            1. SELECCIÓN DE PILAR OBLIGATORIA: DEBES elegir uno de los 4 pilares (Shine In, Shine Out, Shine Up, Shine Beyond) como "primaryPillar". Solo usa "Transversal" si el contenido es 100% administrativo, pero siempre prioriza la vinculación metodológica.
-            2. RESEÑA FIEL: El campo "summary" NO debe ser genérico. Debe ser una reseña/resumen fiel y detallado de lo que realmente dice el archivo. Si es un video, describe la narrativa. Si es un toolkit, describe las herramientas.
-            3. CRITERIO DE EXPERTO: Tus sugerencias de "sub", "competence" y "behavior" deben ser ultra-específicas al contenido analizado.
+            1. SELECCIÓN DE PILAR OBLIGATORIA: Elige uno de los 4 pilares (Shine In, Shine Out, Shine Up, Shine Beyond) que mejor encaje.
+            2. **TAXONOMÍA EXACTA**: Para "sub", "competence" y "behavior", DEBES usar una de las opciones listadas arriba que corresponda al Pilar seleccionado. NO INVENTES nombres. El texto debe coincidir carácter por carácter para que el sistema lo reconozca.
+            3. CRITERIO DE EXPERTO: Si el contenido toca varios puntos, elige el más dominante.
 
             --- MANDATO DE OBSERVACIONES (OBLIGATORIO) ---
-            El campo "observations" DEBE ser extenso (1000 a 2000 caracteres) y seguir esta estructura interna:
-            1. [ANÁLISIS DE IMPACTO]: Explica cómo este contenido específico desactiva creencias limitantes y activa el "brillo" del líder.
-            2. [CONEXIÓN METODOLÓGICA]: Relaciona el contenido con el pilar principal y explica por qué se vincula también con los pilares secundarios sugeridos.
-            3. [GUÍA DEL FACILITADOR]: Da 5 pasos tácticos para que un mentor use este material de forma transformadora.
-            4. [CONDUCTA OBSERVABLE]: Describe cómo se verá el líder una vez que haya integrado este conocimiento.
-
-            --- REGLAS DE COMPLETITUD (100% OBLIGATORIO) ---
-            - Todos los campos del JSON deben estar presentes y completados con datos lógicos.
-            - "type": PDF, Video, Audio, Toolkit, Test, Rúbrica, Workbook, Documento maestro.
-            - "maturity": Básico, En Desarrollo, Avanzado, Maestría.
-            - "primaryPillar": OBLIGATORIO (Shine In, Shine Out, Shine Up, o Shine Beyond).
-            - "secondaryPillars": Array de strings con otros pilares relevantes.
-            - "completeness": Siempre calcular un porcentaje de 0 a 100 basado en tu propio análisis.
-
-            Return ONLY a valid JSON object.
+            El campo "observations" DEBE ser extenso (1000 a 2000 caracteres) y seguir esta estructura:
+            1. [ANÁLISIS DE IMPACTO]: Explica cómo este contenido impacta al líder.
+            2. [CONEXIÓN METODOLÓGICA]: Relaciona el contenido con el pilar.
+            3. [GUÍA DEL FACILITADOR]: 5 pasos tácticos.
+            4. [CONDUCTA OBSERVABLE]: Justifica por qué elegiste la conducta anterior.
 
             JSON STRUCTURE:
             {
               "title": "Título oficial de alto impacto",
-              "summary": "Reseña fiel, técnica y detallada del contenido analizado",
-              "keyConcepts": "Lista de conceptos teóricos o técnicos fundamentales definidos en el texto",
-              "type": "CÓDIGO_TIPO",
-              "primaryPillar": "Pilar Principal Seleccionado",
-              "secondaryPillars": ["Pilar Secundario 1", "Pilar Secundario 2"],
-              "sub": "Subcomponente Específico",
-              "competence": "Competencia Maestra",
-              "behavior": "Conducta Observable específica",
-              "maturity": "Nivel de Madurez",
+              "summary": "Reseña fiel, técnica y detallada",
+              "keyConcepts": "Lista de conceptos teóricos",
+              "type": "PDF, Video, Audio, Toolkit, Test, Plantilla",
+              "primaryPillar": "NOMBRE_EXACTO_DEL_PILAR",
+              "secondaryPillars": ["Pilar Secundario 1"],
+              "sub": "NOMBRE_EXACTO_DEL_SUBCOMPONENTE",
+              "competence": "NOMBRE_EXACTO_DE_LA_COMPETENCIA",
+              "behavior": "NOMBRE_EXACTO_DE_LA_CONDUCTA",
+              "maturity": "Básico, En Desarrollo, Avanzado, Maestría",
               "targetRole": "Rol Objetivo",
-              "duration": "90",
+              "duration": "90 min",
               "intervention": "Conciencia | Práctica | Herramienta | Evaluación",
               "moment": "Inicio | Refuerzo | Profundización | Cierre",
-              "language": "ES",
+              "language": "Spanish (Latam)",
               "format": "Formato Técnico",
-              "completeness": 100,
-              "observations": "TEXTO_DE_ANÁLISIS_PROFUNDO_DENSE_Y_ESTRATÉGICO",
-              "apa": "Si se solicita en contexto o es relevante paper: Cita APA 7",
-              "findings": "Si se solicita en contexto: Hallazgos clave",
-              "methodology": "Si se solicita en contexto: Metodología usada",
-              "relation4Shine": "Si se solicita en contexto: Explicación específica de relación con 4Shine",
-              "pillars": ["Shine In", "Shine Out"], // Si se solicita sugerencia de pilares multiples
-              "competence": "Si es investigación: Competencia técnica abordada",
-              "geographicCoverage": "Si es investigación: Alcance geográfico (Global, LATAM, etc.)",
-              "populationParams": "Si es investigación: Muestra o perfil demográfico participante"
+              "completeness": 90,
+              "observations": "TEXTO_DE_ANÁLISIS_PROFUNDO"
             }
 
             CONTENT TO ANALYZE:
