@@ -143,7 +143,7 @@ export default function ResearchAnalytics() {
     if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="animate-spin text-accent" size={48} /></div>
     if (!data) return <div className="text-center p-12 text-text-muted">No data available</div>
 
-    const PILLARS = ['Shine Within', 'Shine Out', 'Shine Up', 'Shine Beyond']
+    const PILLARS = ['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond']
 
     return (
         <div className="space-y-12 animate-in fade-in duration-500 pb-20">

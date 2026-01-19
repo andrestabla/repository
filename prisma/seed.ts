@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 // DATA SOURCE: Exclusive Taxonomy provided by User
 const rawTaxonomy = [
     {
-        "pilar": "Shine Within",
+        "pilar": "Shine In",
         "subcomponentes": [
             {
                 "nombre": "Autoconfianza y autoliderazgo",

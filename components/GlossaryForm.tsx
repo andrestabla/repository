@@ -128,7 +128,7 @@ export default function GlossaryForm({ initialData, onClose, onSave }: Props) {
                     <div>
                         <label className="block text-[10px] font-black text-accent uppercase tracking-widest pl-1 mb-2">Pilares Relacionados</label>
                         <div className="flex flex-wrap gap-2">
-                            {['Shine Within', 'Shine Out', 'Shine Up', 'Shine Beyond'].map((pillar) => {
+                            {['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond'].map((pillar) => {
                                 const isSelected = formData.pillars?.includes(pillar)
                                 return (
                                     <button
