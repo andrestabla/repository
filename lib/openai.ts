@@ -67,7 +67,7 @@ export class OpenAIService {
 
             --- REGLAS DE ORO ---
             0. **IDIOMA**: SIEMPRE ESPAÑOL.
-            1. **PILARES**: Shine In, Shine Out, Shine Up, Shine Beyond. Prioriza uno.
+            1. **PILARES**: Shine Within, Shine Out, Shine Up, Shine Beyond. Prioriza uno.
             2. **CALIDAD**: Sé ultra-específico. Nada de generalidades.
 
             --- JSON OUTPUT OBLIGATORIO ---
@@ -78,7 +78,7 @@ export class OpenAIService {
               "title": "Título oficial sugerido",
               "summary": "Reseña técnica detallada",
               "type": "PDF | Video | Audio | Toolkit | Test",
-              "primaryPillar": "Shine In | Shine Out | Shine Up | Shine Beyond",
+              "primaryPillar": "Shine Within | Shine Out | Shine Up | Shine Beyond",
               "secondaryPillars": ["Pilar 2"],
               "sub": "Subcomponente",
               "competence": "Competencia",

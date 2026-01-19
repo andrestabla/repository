@@ -13,7 +13,7 @@ const records = [
         findings: "El carácter es esencial y complementario a las competencias. Se identificó el Juicio como la dimensión central que orquesta a las demás.",
         methods: "Estudio multimétodo: grupos focales + encuestas 360° a casi 2000 ejecutivos.",
         rel4shine: "Fundamenta el pilar 'Esencia del Líder' en 4Shine. Valida que el carácter no es 'soft' sino estructural para el desempeño. El 'Juicio' corresponde a nuestra dimensión de Toma de Decisiones Consciente.",
-        pillars: ["Shine In"]
+        pillars: ["Shine Within"]
     },
     {
         title: "2. Entrelazamiento Carácter-Competencia (Sturm, Vera & Crossan, 2017)",
@@ -24,7 +24,7 @@ const records = [
         findings: "Alto entrelazamiento genera performance superior largo plazo. Requiere aprendizaje por experiencia (vivencial).",
         methods: "Teórico-conceptual / Revisión interdisciplinaria.",
         rel4shine: "Sustenta la integración de 'Ser' (Carácter) y 'Hacer' (Competencia) que propone 4Shine. Refuerza que la excelencia técnica sin base ética es insostenible.",
-        pillars: ["Shine In", "Shine Out"]
+        pillars: ["Shine Within", "Shine Out"]
     },
     {
         title: "3. Carácter del Líder y Resultados en Colaboradores (Monzani et al., 2021)",
@@ -35,7 +35,7 @@ const records = [
         findings: "Juicio es central. Juicio y Drive son los puentes clave para impactar el engagement y bienestar del equipo.",
         methods: "Cuantitativo: Análisis de Redes y CFA en 188 díadas líder-colaborador.",
         rel4shine: "Evidencia cómo el liderazgo impacta en el 'Engagement' y resultados del equipo, alineándose con nuestro pilar de 'Liderazgo de Alto Impacto' y bienestar organizacional.",
-        pillars: ["Shine Out", "Shine In"]
+        pillars: ["Shine Out", "Shine Within"]
     },
     {
         title: "4. Revisión Sistemática sobre Personal Branding (Gorbatov, Khapova & Lysova, 2018)",
@@ -79,7 +79,7 @@ const records = [
         findings: "Desarrollar carácter requiere alinear cuerpo, emoción, mente y hábito. Intervenciones como música pueden ejercitar el sistema completo.",
         methods: "Ensayo teórico conceptual transdisciplinario.",
         rel4shine: "Apoya metodología vivencial de 4Shine: el liderazgo no se aprende solo intelectualmente, requiere intervención en conductas, emociones y mentalidad (PABC).",
-        pillars: ["Shine In"]
+        pillars: ["Shine Within"]
     },
     {
         title: "8. Presencia Ejecutiva y Employee Engagement (Chukwuma & Okonkwo, 2023)",
@@ -101,7 +101,7 @@ const records = [
         findings: "El líder virtuoso es inclusivo por naturaleza (derriba barreras de ego). Satisface necesidades de pertenencia y autorrealización.",
         methods: "Revisión conceptual teórica.",
         rel4shine: "Vincula el liderazgo ético con la construcción de Culturas Inclusivas, un resultado esperado de aplicar 4Shine en equipos diversos.",
-        pillars: ["Shine In", "Shine Out"]
+        pillars: ["Shine Within", "Shine Out"]
     },
     {
         title: "10. Soft Skills e Innovación (Ballester-Miquel et al., 2026)",
@@ -134,7 +134,7 @@ const records = [
         findings: "Beneficios tangibles (enfoque, alineación) e intangibles (bajar la guardia, apoyo emocional, reducción de soledad).",
         methods: "Cualitativo: Entrevistas y focus groups a 70 ejecutivos.",
         rel4shine: "Valida científicamente la metodología de Coaching Ejecutivo como herramienta para C-Levels, mejorando autoconciencia y ROI.",
-        pillars: ["Shine In", "Shine Up"]
+        pillars: ["Shine Within", "Shine Up"]
     }
 ]
 

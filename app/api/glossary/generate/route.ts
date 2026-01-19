@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
         const prompt = `
         Define el término "${term}" bajo el marco de la metodología 4Shine.
-        Usa el contexto suministrado de Activos e Investigaciones para dar una definición precisa, académica y alineada con los pilares (Shine In, Out, Up, Beyond).
+        Usa el contexto suministrado de Activos e Investigaciones para dar una definición precisa, académica y alineada con los pilares (Shine Within, Out, Up, Beyond).
         
         REGLAS DE CITACIÓN (CRÍTICO):
         1. Si usas información del "RESEARCH CONTEXT", DEBES citar al autor usando formato APA 7.
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         Responde ÚNICAMENTE con un JSON:
         {
             "definition": "Definición conceptual robusta con citas hipervinculadas (máx 500 caracteres).",
-            "pillars": ["Shine In", "Shine Out"] // Pilares relacionados detectados
+            "pillars": ["Shine Within", "Shine Out"] // Pilares relacionados detectados
         }
         `
 

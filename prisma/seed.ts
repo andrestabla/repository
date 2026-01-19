@@ -19,7 +19,7 @@ async function main() {
     // 2. Taxonomy (Pillars & Subcomponents)
     const taxonomyData = [
         {
-            name: 'Shine In',
+            name: 'Shine Within',
             subcomponents: ['Mentalidad & Mindset', 'Gestión Emocional', 'Propósito & Valores', 'Biohacking & Energía']
         },
         {
@@ -68,7 +68,7 @@ async function main() {
     // 3. Content Items from Prototype (New Dataset)
     const contents = [
         { id: '4S-P-001', title: 'Guía Fundamental de Networking', type: 'PDF', primaryPillar: 'Shine Out', secondaryPillars: [], sub: 'Networking', maturity: 'Básico', status: 'Approved', complete: 100, ip: 'Propio', driveId: 'VALID_ID' },
-        { id: '4S-V-020', title: 'Video: Elevator Pitch TED', type: 'Video', primaryPillar: 'Shine In', secondaryPillars: [], sub: 'Comunicación', maturity: 'Intermedio', status: 'Review', complete: 90, ip: 'Tercero', driveId: 'VALID_ID' },
+        { id: '4S-V-020', title: 'Video: Elevator Pitch TED', type: 'Video', primaryPillar: 'Shine Within', secondaryPillars: [], sub: 'Comunicación', maturity: 'Intermedio', status: 'Review', complete: 90, ip: 'Tercero', driveId: 'VALID_ID' },
         { id: '4S-T-099', title: 'Matriz de Influencia Política', type: 'Herramienta', primaryPillar: 'Shine Up', secondaryPillars: [], sub: 'Influencia', maturity: 'Avanzado', status: 'Draft', complete: 20, ip: 'Completar', driveId: null },
         { id: '4S-P-002', title: 'Checklist de LinkedIn', type: 'PDF', primaryPillar: 'Shine Out', secondaryPillars: [], sub: 'Marca Personal', maturity: 'Básico', status: 'Approved', complete: 100, ip: 'Propio', driveId: 'VALID_ID' },
         { id: '4S-D-105', title: 'Manual Facilitador Módulo 1', type: 'Doc', primaryPillar: 'Transversal', secondaryPillars: [], sub: 'General', maturity: 'N/A', status: 'Draft', complete: 40, ip: 'Propio', driveId: null }
