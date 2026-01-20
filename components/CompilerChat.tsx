@@ -926,13 +926,27 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                             rows={1}
                             disabled={loading}
                         />
-                        <button
-                            onClick={() => handleSend()}
-                            disabled={!input.trim() || loading}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black dark:bg-white text-white dark:text-black rounded-full hover:scale-105 active:scale-95 disabled:opacity-50 transition-all"
-                        >
-                            {loading ? <StopCircle size={18} /> : <Send size={18} />}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setUseDeepSearch(!useDeepSearch)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${useDeepSearch
+                                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                        : 'bg-white dark:bg-black/20 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-blue-500'
+                                    }`}
+                                title={useDeepSearch ? 'Búsqueda Profunda: Activada' : 'Búsqueda Profunda: Desactivada'}
+                            >
+                                <Globe size={16} />
+                                <span className="hidden sm:inline">Web / General</span>
+                            </button>
+                            <button
+                                onClick={() => handleSend()}
+                                disabled={!input.trim() || loading}
+                                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all flex items-center gap-2"
+                            >
+                                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                <span className="hidden sm:inline">Compilar</span>
+                            </button>
+                        </div>
                     </div>
                     <div className="text-center mt-2 text-[10px] text-gray-400 font-medium pb-2">
                         Notebook 4Shine Studio • Model GPT-4o
