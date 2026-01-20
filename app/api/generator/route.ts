@@ -60,14 +60,42 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ result: "⚠️ No hay activos validos ni investigaciones seleccionadas. Por favor selecciona al menos una fuente." })
         }
 
-        // 4. Prepare Context
-        const inventoryContext = assets.map(i =>
-            `[ASSET: ${i.id}] TÍTULO: "${i.title}" (Pilar: ${i.primaryPillar})\nRESUMEN: ${JSON.stringify(i.observations)}`
-        ).join('\n\n')
+        // 4. Prepare Context (With Token Safeguards)
+        const MAX_CHARS_PER_ITEM = 500 // ~125 tokens per item
+        const TOTAL_CTX_BUDGET = 60000 // ~15k tokens (leaving 15k for prompt + output)
 
-        const researchContext = research.map(r =>
-            `[RESEARCH: ${r.id}] TÍTULO: "${r.title}" (URL: ${r.url})\nHALLAZGOS: ${r.findings || r.summary || 'Sin resumen'}`
-        ).join('\n\n')
+        let currentChars = 0
+        const safelyTruncate = (text: any, limit: number) => {
+            const str = String(text || '')
+            if (str.length <= limit) return str
+            return str.substring(0, limit) + '... (truncado)'
+        }
+
+        const buildSafeContext = (items: any[], type: 'ASSET' | 'RESEARCH') => {
+            let contextParts = []
+            for (const item of items) {
+                if (currentChars >= TOTAL_CTX_BUDGET) {
+                    contextParts.push(`\n[SYSTEM]: ... Límite de contexto alcanzado. ${items.length - contextParts.length} items restantes omitidos.`)
+                    break
+                }
+
+                // Construct Item String
+                let content = ""
+                if (type === 'ASSET') {
+                    content = `[ASSET: ${item.id}] TÍTULO: "${item.title}" (Pilar: ${item.primaryPillar})\nRESUMEN: ${safelyTruncate(item.observations, MAX_CHARS_PER_ITEM)}`
+                } else {
+                    const synopsis = item.findings || item.summary || 'Sin resumen'
+                    content = `[RESEARCH: ${item.id}] TÍTULO: "${item.title}" (URL: ${item.url})\nHALLAZGOS: ${safelyTruncate(synopsis, MAX_CHARS_PER_ITEM)}`
+                }
+
+                contextParts.push(content)
+                currentChars += content.length
+            }
+            return contextParts.join('\n\n')
+        }
+
+        const inventoryContext = buildSafeContext(assets, 'ASSET')
+        const researchContext = buildSafeContext(research, 'RESEARCH')
 
         const combinedContext = `
         === INVENTARIO INTERNO (4SHINE) ===
