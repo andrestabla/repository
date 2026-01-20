@@ -9,13 +9,10 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
-        const { term } = await request.json()
+        const { term, instructions } = await request.json()
         if (!term) return NextResponse.json({ error: 'Term required' }, { status: 400 })
 
         // 1. Fetch Context (Assets + Research)
-        // Simple strategy: Fetch standard assets and perhaps search research if full search is available
-        // For now, we reuse the validated assets strategy from OpenAIService but tailored for definition
-
         const validatedAssets = await prisma.contentItem.findMany({
             where: { status: 'Validado' },
             take: 5,
@@ -37,10 +34,18 @@ export async function POST(request: NextRequest) {
         ${researchItems.map(r => `- [ID: ${r.id}] ${r.title}: ${r.summary?.substring(0, 200)} (APA: ${r.apa})`).join('\n')}
         `
 
+        // Add user instructions to prompt if present
+        const instructionContext = instructions ? `
+        INSTRUCCIONES ADICIONALES DEL USUARIO:
+        "${instructions}"
+        (Asegúrate de cumplir estrictamente con estas instrucciones en cuanto a tono, enfoque o contenido).
+        ` : ''
+
         const prompt = `
         Define el término "${term}" bajo el marco de la metodología 4Shine.
         Usa el contexto suministrado de Activos e Investigaciones para dar una definición precisa, académica y alineada con los pilares (Shine Within, Out, Up, Beyond).
-        
+        ${instructionContext}
+
         REGLAS DE CITACIÓN (CRÍTICO):
         1. Si usas información del "RESEARCH CONTEXT", DEBES citar al autor usando formato APA 7.
         2. ADEMÁS, la cita debe ser un hipervínculo en formato Markdown que lleve a la fuente.
