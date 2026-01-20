@@ -1,7 +1,5 @@
-'use client'
-
-import React, { useState } from 'react'
-import { Search, Plus, Book, Trash2, Edit3, Filter, X } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Search, Plus, Book, Trash2, Edit3, Filter, X, Settings, Save, Sparkles } from 'lucide-react'
 import GlossaryForm from './GlossaryForm'
 
 export default function GlossarySPA({ initialItems }: any) {
@@ -10,23 +8,7 @@ export default function GlossarySPA({ initialItems }: any) {
     const [isCreating, setIsCreating] = useState(false)
     const [editingItem, setEditingItem] = useState<any>(null)
     const [viewingItem, setViewingItem] = useState<any>(null)
-
-    const filteredItems = items.filter((item: any) =>
-        item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.definition.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-
-    const handleDelete = async (id: string) => {
-        if (!confirm('¿Eliminar término?')) return
-        try {
-            await fetch(`/api/glossary?id=${id}`, { method: 'DELETE' })
-            setItems(items.filter((i: any) => i.id !== id))
-        } catch (e) { alert('Error eliminando') }
-    }
-
-    const handleSaveComplete = () => {
-        window.location.reload()
-    }
+    const [showSettings, setShowSettings] = useState(false)
 
     // Helper to render markdown links [Label](url)
     const renderWithLinks = (text: string) => {
@@ -48,6 +30,23 @@ export default function GlossarySPA({ initialItems }: any) {
             return part
         })
     }
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('¿Eliminar término?')) return
+        try {
+            await fetch(`/api/glossary?id=${id}`, { method: 'DELETE' })
+            setItems(items.filter((i: any) => i.id !== id))
+        } catch (e) { alert('Error eliminando') }
+    }
+
+    const handleSaveComplete = () => {
+        window.location.reload()
+    }
+
+    const filteredItems = items.filter((item: any) =>
+        item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.definition.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
         <div className="min-h-screen bg-bg text-text-main font-sans selection:bg-accent/30 selection:text-accent pb-20">
@@ -75,6 +74,14 @@ export default function GlossarySPA({ initialItems }: any) {
                         />
                         <Search className="absolute left-3 top-2.5 text-text-muted group-focus-within:text-accent transition-colors" size={16} />
                     </div>
+
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="w-10 h-10 rounded-full bg-bg border-2 border-border hover:border-accent hover:text-accent flex items-center justify-center transition-all"
+                        title="Configuración de IA"
+                    >
+                        <Settings size={18} />
+                    </button>
 
                     <button
                         onClick={() => setIsCreating(true)}
@@ -177,6 +184,10 @@ export default function GlossarySPA({ initialItems }: any) {
                 </div>
             )}
 
+            {/* Settings Modal */}
+            {showSettings && (
+                <GlossarySettingsModal onClose={() => setShowSettings(false)} />
+            )}
 
             {(isCreating || editingItem) && (
                 <GlossaryForm
@@ -185,6 +196,75 @@ export default function GlossarySPA({ initialItems }: any) {
                     onSave={handleSaveComplete}
                 />
             )}
+        </div>
+    )
+}
+
+function GlossarySettingsModal({ onClose }: { onClose: () => void }) {
+    const [instructions, setInstructions] = useState('')
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        fetch('/api/glossary/settings')
+            .then(r => r.json())
+            .then(data => {
+                setInstructions(data.instructions || '')
+                setIsLoading(false)
+            })
+    }, [])
+
+    const handleSave = async () => {
+        await fetch('/api/glossary/settings', {
+            method: 'POST',
+            body: JSON.stringify({ instructions })
+        })
+        onClose()
+    }
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+            <div className="bg-bg w-full max-w-lg rounded-[32px] border-4 border-border shadow-2xl flex flex-col overflow-hidden relative">
+                <div className="h-16 border-b-4 border-border flex items-center justify-between px-8 bg-card-bg">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent">
+                            <Settings size={16} />
+                        </div>
+                        <h2 className="text-sm font-black text-text-main uppercase tracking-widest">
+                            Configuración IA
+                        </h2>
+                    </div>
+                    <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-black/5 flex items-center justify-center text-text-muted transition-colors">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="p-8">
+                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
+                        <label className="block text-[10px] font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <Sparkles size={12} /> Instrucciones Globales (Contexto)
+                        </label>
+                        <textarea
+                            value={instructions}
+                            onChange={e => setInstructions(e.target.value)}
+                            className="w-full h-32 bg-white border border-border rounded-lg p-3 text-xs text-text-main focus:border-accent outline-none resize-none"
+                            placeholder="Ej: Define siempre con 3 párrafos. Usa un tono inspirador..."
+                        />
+                        <p className="text-[10px] text-text-muted mt-2">
+                            Estas instrucciones se aplicarán a <strong>todos</strong> los términos generados a partir de ahora.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="h-20 border-t-4 border-border px-8 flex items-center justify-end bg-card-bg">
+                    <button
+                        onClick={handleSave}
+                        className="bg-accent text-white px-8 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-accent/20"
+                    >
+                        <Save size={16} />
+                        Guardar Configuración
+                    </button>
+                </div>
+            </div>
         </div>
     )
 }

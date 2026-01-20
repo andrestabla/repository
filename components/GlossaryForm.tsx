@@ -24,7 +24,6 @@ export default function GlossaryForm({ initialData, onClose, onSave }: Props) {
         pillars: [],
         ...initialData
     })
-    const [instructions, setInstructions] = useState('')
     const [isGenerating, setIsGenerating] = useState(false)
 
     const handleGenerate = async () => {
@@ -34,10 +33,7 @@ export default function GlossaryForm({ initialData, onClose, onSave }: Props) {
             const res = await fetch('/api/glossary/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    term: formData.term,
-                    instructions // Pass instructions to API
-                })
+                body: JSON.stringify({ term: formData.term })
             })
             const data = await res.json()
             if (data.error) throw new Error(data.error)
@@ -106,30 +102,15 @@ export default function GlossaryForm({ initialData, onClose, onSave }: Props) {
                                 className="flex-1 h-12 bg-bg border-4 border-border rounded-xl px-4 text-lg font-bold text-text-main focus:border-accent outline-none"
                                 placeholder="Ej: Liderazgo Resonante"
                             />
-                        </div>
-                    </div>
-
-                    {/* AI Instructions Field */}
-                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
-                        <label className="block text-[10px] font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-2">
-                            <Sparkles size={12} /> Instrucciones para la IA (Opcional)
-                        </label>
-                        <div className="flex gap-2">
-                            <textarea
-                                value={instructions}
-                                onChange={e => setInstructions(e.target.value)}
-                                className="flex-1 h-20 bg-white border border-border rounded-lg p-3 text-xs text-text-main focus:border-accent outline-none resize-none"
-                                placeholder="Ej: Enfocarse en la gestión de equipos remotos... / Usar tono académico..."
-                            />
                             <button
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !formData.term}
-                                className={`w-32 rounded-lg font-black uppercase tracking-widest text-[10px] flex flex-col items-center justify-center gap-2 transition-all
-                                    ${isGenerating ? 'bg-gray-100 text-gray-400' : 'bg-accent text-white hover:brightness-110 shadow-lg shadow-accent/20'}
+                                className={`px-4 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 transition-all
+                                    ${isGenerating ? 'bg-gray-100 text-gray-400' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'}
                                 `}
                             >
                                 {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                                {isGenerating ? 'Generando...' : 'Generar'}
+                                {isGenerating ? 'Generando...' : 'Generar con IA'}
                             </button>
                         </div>
                     </div>

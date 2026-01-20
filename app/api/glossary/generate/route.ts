@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
-        const { term, instructions } = await request.json()
+        const { term } = await request.json()
         if (!term) return NextResponse.json({ error: 'Term required' }, { status: 400 })
 
         // 1. Fetch Context (Assets + Research)
@@ -26,6 +26,12 @@ export async function POST(request: NextRequest) {
             select: { id: true, title: true, summary: true, findings: true, apa: true }
         })
 
+        // 2. Fetch Global Instructions
+        const settings = await prisma.systemSettings.findUnique({
+            where: { key: 'glossary_ai_instructions' }
+        })
+        const instructions = settings ? (settings.value as any).text : ''
+
         const context = `
         ACTIVE ASSETS CONTEXT:
         ${validatedAssets.map(a => `- ${a.title} (${a.primaryPillar}): ${a.observations?.substring(0, 200)}`).join('\n')}
@@ -36,7 +42,7 @@ export async function POST(request: NextRequest) {
 
         // Add user instructions to prompt if present
         const instructionContext = instructions ? `
-        INSTRUCCIONES ADICIONALES DEL USUARIO:
+        INSTRUCCIONES ADICIONALES DEL USUARIO (GLOBAL CONFIG):
         "${instructions}"
         (Asegúrate de cumplir estrictamente con estas instrucciones en cuanto a tono, enfoque o contenido).
         ` : ''
