@@ -35,8 +35,76 @@ export async function POST(request: NextRequest) {
             useDeepSearch?: boolean
         }
 
-        // ... (existing fetch logic remains unchanged) ...
-        // ... (skip lines 37-81)
+        // 1. Fetch Assets (Inventory)
+        let assets = await prisma.contentItem.findMany({
+            where: { status: 'Validado' },
+            select: { id: true, title: true, primaryPillar: true, observations: true }
+        })
+
+        if (selectedAssetIds && selectedAssetIds.length > 0) {
+            assets = assets.filter(i => selectedAssetIds.includes(i.id))
+        } else {
+            assets = [] // If explicit selection is sent as empty, default to empty.
+        }
+
+        // 2. Fetch Research (External)
+        let research: any[] = []
+        if (selectedResearchIds && selectedResearchIds.length > 0) {
+            research = await prisma.researchSource.findMany({
+                where: { id: { in: selectedResearchIds } },
+                select: { id: true, title: true, findings: true, summary: true, url: true }
+            })
+        }
+
+        // 3. Validation: Must have at least one source (Asset OR Research)
+        if (assets.length === 0 && research.length === 0) {
+            return NextResponse.json({ result: "⚠️ No hay activos validos ni investigaciones seleccionadas. Por favor selecciona al menos una fuente." })
+        }
+
+        // 4. Prepare Context (With Token Safeguards)
+        const MAX_CHARS_PER_ITEM = 500 // ~125 tokens per item
+        const TOTAL_CTX_BUDGET = 60000 // ~15k tokens (leaving 15k for prompt + output)
+
+        let currentChars = 0
+        const safelyTruncate = (text: any, limit: number) => {
+            const str = String(text || '')
+            if (str.length <= limit) return str
+            return str.substring(0, limit) + '... (truncado)'
+        }
+
+        const buildSafeContext = (items: any[], type: 'ASSET' | 'RESEARCH') => {
+            let contextParts = []
+            for (const item of items) {
+                if (currentChars >= TOTAL_CTX_BUDGET) {
+                    contextParts.push(`\n[SYSTEM]: ... Límite de contexto alcanzado. ${items.length - contextParts.length} items restantes omitidos.`)
+                    break
+                }
+
+                // Construct Item String
+                let content = ""
+                if (type === 'ASSET') {
+                    content = `[ASSET: ${item.id}] TÍTULO: "${item.title}" (Pilar: ${item.primaryPillar})\nRESUMEN: ${safelyTruncate(item.observations, MAX_CHARS_PER_ITEM)}`
+                } else {
+                    const synopsis = item.findings || item.summary || 'Sin resumen'
+                    content = `[RESEARCH: ${item.id}] TÍTULO: "${item.title}" (URL: ${item.url})\nHALLAZGOS: ${safelyTruncate(synopsis, MAX_CHARS_PER_ITEM)}`
+                }
+
+                contextParts.push(content)
+                currentChars += content.length
+            }
+            return contextParts.join('\n\n')
+        }
+
+        const inventoryContext = buildSafeContext(assets, 'ASSET')
+        const researchContext = buildSafeContext(research, 'RESEARCH')
+
+        const combinedContext = `
+        === INVENTARIO INTERNO (4SHINE) ===
+        ${inventoryContext || 'Ninguno seleccionado.'}
+
+        === INVESTIGACIÓN EXTERNA ===
+        ${researchContext || 'Ninguna seleccionada.'}
+        `
 
         // 4. API Key Strategy (OpenAI)
         const { OpenAIService } = await import('@/lib/openai')
