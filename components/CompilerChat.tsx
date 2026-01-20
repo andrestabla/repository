@@ -481,6 +481,8 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
 
     // Deep Search Toggle
     const [useDeepSearch, setUseDeepSearch] = useState(false)
+    const [input, setInput] = useState('')
+    const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const toggleSection = (section: string) => {
         const next = new Set(openSections)
