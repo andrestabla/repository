@@ -9,7 +9,6 @@ import {
     Edit2,
     Eye,
     EyeOff,
-    ChevronRight,
     Loader2,
     Plus,
     Box,
@@ -20,6 +19,7 @@ import {
     List
 } from 'lucide-react'
 import TaxonomyGraph from './TaxonomyGraph'
+import TaxonomyDiamondGraph from './TaxonomyDiamondGraph'
 
 type ContentItem = {
     id: string
@@ -59,7 +59,8 @@ export default function TaxonomyManager({
 }) {
     const [data, setData] = useState<TaxonomyItem[]>(initialData)
     const [isLoading, setIsLoading] = useState(false)
-    const [activeTab, setActiveTab] = useState<'list' | 'visual'>('list')
+    const [activeTab, setActiveTab] = useState<'list' | 'visual' | 'diamond'>('diamond')
+    const [graphFocus, setGraphFocus] = useState<'ALL' | 'Shine Within' | 'Shine Out' | 'Shine Up' | 'Shine Beyond'>('ALL')
 
     const getLinkedAssets = (node: TaxonomyItem, level: 'Pillar' | 'Sub' | 'Comp' | 'Behavior') => {
         const invMatches = inventory.filter(item => {
@@ -205,30 +206,69 @@ export default function TaxonomyManager({
                 </div>
             </header>
 
-            <div className="flex gap-4 mb-8">
-                <button
-                    onClick={() => setActiveTab('list')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'list'
-                        ? 'bg-accent text-white shadow-lg shadow-accent/20'
-                        : 'bg-bg border border-border text-text-muted hover:border-accent hover:text-accent'
-                        }`}
-                >
-                    <List size={16} />
-                    Listado Detallado
-                </button>
-                <button
-                    onClick={() => setActiveTab('visual')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'visual'
-                        ? 'bg-accent text-white shadow-lg shadow-accent/20'
-                        : 'bg-bg border border-border text-text-muted hover:border-accent hover:text-accent'
-                        }`}
-                >
-                    <Share2 size={16} />
-                    Esquema Visual
-                </button>
+            <div className="flex justify-between items-center mb-8">
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => setActiveTab('list')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'list'
+                            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                            : 'bg-bg border border-border text-text-muted hover:border-accent hover:text-accent'
+                            }`}
+                    >
+                        <List size={16} />
+                        Listado Detallado
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('diamond')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'diamond'
+                            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                            : 'bg-bg border border-border text-text-muted hover:border-accent hover:text-accent'
+                            }`}
+                    >
+                        <Box size={16} />
+                        Esquema Visual (Diamante)
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('visual')}
+                        className={`hidden flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'visual'
+                            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                            : 'bg-bg border border-border text-text-muted hover:border-accent hover:text-accent'
+                            }`}
+                    >
+                        <Share2 size={16} />
+                        Legacy Graph
+                    </button>
+                </div>
+
+                {/* Graph Focus Selector - Only visible on Diamond Tab */}
+                {activeTab === 'diamond' && (
+                    <div className="flex bg-bg border border-border rounded-xl p-1 gap-1">
+                        {['ALL', 'Shine Within', 'Shine Out', 'Shine Up', 'Shine Beyond'].map(opt => (
+                            <button
+                                key={opt}
+                                onClick={() => setGraphFocus(opt as any)}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${graphFocus === opt
+                                        ? 'bg-text-main text-bg shadow-md'
+                                        : 'text-text-muted hover:text-text-main hover:bg-panel'
+                                    }`}
+                            >
+                                {opt === 'ALL' ? 'General' : opt}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {activeTab === 'visual' ? (
+            {activeTab === 'diamond' ? (
+                <div className="h-[700px] w-full bg-slate-50 border border-border rounded-3xl overflow-hidden relative animate-in fade-in duration-500">
+                    <div className="absolute top-4 left-4 z-10 p-4 pointer-events-none">
+                        <h3 className="text-xl font-black text-text-main uppercase tracking-tighter opacity-20">
+                            {graphFocus === 'ALL' ? 'Visión Sistémica 4Shine' : `Foco de Pilar: ${graphFocus}`}
+                        </h3>
+                    </div>
+                    <TaxonomyDiamondGraph data={data} focus={graphFocus} />
+                </div>
+            ) : activeTab === 'visual' ? (
                 <div className="h-[600px] w-full animate-in fade-in duration-500">
                     <TaxonomyGraph taxonomy={data} />
                 </div>
