@@ -166,8 +166,8 @@ export default function QAView({ role, onRefresh }: Props) {
                                 key={item.id}
                                 onClick={() => setSelectedItem(item)}
                                 className={`p-4 rounded-2xl border cursor-pointer transition-all group flex items-start gap-4 ${selectedItem?.id === item.id
-                                        ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
-                                        : 'bg-bg border-border hover:border-accent/40'
+                                    ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
+                                    : 'bg-bg border-border hover:border-accent/40'
                                     }`}
                             >
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedItem?.id === item.id ? 'bg-white/20' : 'bg-panel'
@@ -204,7 +204,7 @@ export default function QAView({ role, onRefresh }: Props) {
                                     <ShieldCheck size={24} />
                                 </div>
                                 <div>
-                                    <h4 className="text-lg font-black text-white tracking-tight">{selectedItem.title}</h4>
+                                    <h4 className="text-lg font-black text-text-main tracking-tight">{selectedItem.title}</h4>
                                     <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.2em]">{selectedItem.id}</p>
                                 </div>
                             </div>
@@ -226,7 +226,7 @@ export default function QAView({ role, onRefresh }: Props) {
                         </div>
 
                         {/* Split Main Area */}
-                        <div className="flex-1 grid grid-cols-[450px_1fr] overflow-hidden">
+                        <div className="flex-1 grid grid-cols-2 overflow-hidden">
                             {/* Metadata Audit Panel */}
                             <div className="p-8 overflow-y-auto no-scrollbar border-r border-border bg-bg/10 space-y-10">
                                 {/* Checklist Section */}
