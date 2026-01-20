@@ -11,6 +11,7 @@ export async function GET() {
                 title: true,
                 type: true, // Needed for distribution
                 primaryPillar: true,
+                secondaryPillars: true, // Needed for Secondary Radar coverage
                 maturity: true,
                 intervention: true,
                 moment: true,
@@ -27,12 +28,20 @@ export async function GET() {
             return NextResponse.json({ stats: null, message: "No inventory data" })
         }
 
-        // 2. Process Radar: Methodology Coverage (Pillars)
+
+        // 2. Process Radar: Methodology Coverage (Primary Pillars)
         const pillars = ['Shine Within', 'Shine Out', 'Shine Up', 'Shine Beyond']
         const pillarDist = pillars.map(p => ({
             subject: p, // Radar uses 'subject' or 'name'
             A: rawItems.filter(i => i.primaryPillar === p).length,
             fullMark: Math.max(rawItems.length, 10) // Normalize somewhat
+        }))
+
+        // 2b. Process Radar: Secondary Pillars (Support)
+        const secondaryPillarDist = pillars.map(p => ({
+            subject: p,
+            A: rawItems.filter(i => i.secondaryPillars && i.secondaryPillars.includes(p)).length,
+            fullMark: Math.max(rawItems.length, 10)
         }))
 
         // 3. Process Heatmap: Pillar vs Maturity
@@ -129,6 +138,7 @@ export async function GET() {
             stats: {
                 total: rawItems.length,
                 pillarDist,
+                secondaryPillarDist, // New Field
                 maturityMatrix,
                 treeMap: treeMap.children,
                 interventionDist,

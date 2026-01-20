@@ -31,12 +31,12 @@ const CustomizedContent = (props: any) => {
                 }}
             />
             {depth === 1 ? (
-                <text x={x + width / 2} y={y + height / 2 + 7} textAnchor="middle" fill="#fff" fontSize={14}>
+                <text x={x + width / 2} y={y + 20} textAnchor="middle" fill="#fff" fontSize={16} fontWeight="bold" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.3)' }}>
                     {name}
                 </text>
             ) : null}
             {depth > 1 ? (
-                <text x={x + 4} y={y + 18} fill="#fff" fontSize={8} fillOpacity={0.9}>
+                <text x={x + 8} y={y + 20} fill="#fff" fontSize={11} fontWeight={500} fillOpacity={0.9} style={{ textShadow: '0px 1px 1px rgba(0,0,0,0.3)' }}>
                     {name} ({value})
                 </text>
             ) : null}
@@ -75,13 +75,13 @@ export default function InventoryAnalytics() {
                 {/* Add more KPIs if needed */}
             </div>
 
-            {/* SECTION 1: COBERTURA METODOLÓGICA */}
+            {/* SECTION 1: COBERTURA DE PILARES */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* 2.1 Radar: Cobertura por Pilar */}
+                {/* 2.1 Radar: Cobertura Primaria */}
                 <div className="bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
                     <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
                         <Target size={18} className="text-accent" />
-                        Cobertura por Pilar (Radar)
+                        Cobertura Principal (Radar)
                     </h3>
                     <div className="h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -89,17 +89,36 @@ export default function InventoryAnalytics() {
                                 <PolarGrid />
                                 <PolarAngleAxis dataKey="subject" tick={{ fill: '#666', fontSize: 12, fontWeight: 'bold' }} />
                                 <PolarRadiusAxis angle={30} domain={[0, 'auto']} />
-                                <Radar name="Activos" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                                <Radar name="Activos Primarios" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
                                 <Tooltip />
                             </RadarChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className="mt-4 text-xs text-text-muted italic text-center">
-                        Muestra el balance entre los 4 pilares Shine. Un polígono regular indica equilibrio.
-                    </div>
                 </div>
 
-                {/* 2.2 Heatmap: Pilar x Madurez (Using Bar Stacked as proxy for readability or Custom Table) */}
+                {/* 2.2 Radar: Cobertura Secundaria (Apoyo) */}
+                <div className="bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
+                    <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <Layers size={18} className="text-purple-500" />
+                        Cobertura de Apoyo (Secundaria)
+                    </h3>
+                    <div className="h-80 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data.secondaryPillarDist}>
+                                <PolarGrid />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#666', fontSize: 12, fontWeight: 'bold' }} />
+                                <PolarRadiusAxis angle={30} domain={[0, 'auto']} />
+                                <Radar name="Activos de Apoyo" dataKey="A" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
+                                <Tooltip />
+                            </RadarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* SECTION 2: MADUREZ Y TÉCNICA */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* 2.3 Heatmap: Pilar x Madurez */}
                 <div className="bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
                     <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
                         <Layers size={18} className="text-orange-500" />
@@ -119,6 +138,40 @@ export default function InventoryAnalytics() {
                                 <Bar dataKey="Maestría" stackId="a" fill="#FF8042" />
                             </BarChart>
                         </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* 2.4 Distribución Técnica */}
+                <div className="bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
+                    <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <Layers size={18} className="text-pink-500" />
+                        Distribución por Categoría Técnica
+                    </h3>
+                    <div className="h-80 w-full relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data.typeDist}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    nameKey="name"
+                                >
+                                    {data.typeDist?.map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                                <Legend layout="vertical" align="right" verticalAlign="middle" />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none pr-0">
+                            <div className="text-3xl font-black text-text-main">{data.total}</div>
+                            <div className="text-[10px] uppercase font-bold text-text-muted">Activos</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -150,42 +203,7 @@ export default function InventoryAnalytics() {
                 </div>
             </div>
 
-            {/* NEW SECTION: CATEGORÍA TÉCNICA */}
-            <div className="bg-card-bg border border-border rounded-[32px] p-8 shadow-sm">
-                <h3 className="text-sm font-black text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <Layers size={18} className="text-pink-500" />
-                    Distribución por Categoría Técnica
-                </h3>
-                <div className="flex flex-col md:flex-row items-center gap-8">
-                    <div className="h-80 flex-1 w-full relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={data.typeDist}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={100}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    nameKey="name"
-                                >
-                                    {data.typeDist?.map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
-                                <Legend layout="vertical" align="right" verticalAlign="middle" />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        {/* Center Label */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none pr-28">
-                            <div className="text-3xl font-black text-text-main">{data.total}</div>
-                            <div className="text-[10px] uppercase font-bold text-text-muted">Activos</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
             {/* SECTION 2: DISEÑO PEDAGÓGICO */}
             <h2 className="text-xl font-bold mt-10 mb-6 flex items-center gap-2">
