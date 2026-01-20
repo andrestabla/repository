@@ -32,6 +32,7 @@ import HeatmapView from './HeatmapView'
 import QAView from './QAView'
 import AnalyticsView from './AnalyticsView'
 import CompilerChat from './CompilerChat'
+import GapAnalysisView from './GapAnalysisView'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
@@ -167,6 +168,9 @@ export default function MethodologySPA({
                     onRefresh={refreshData}
                     isRefreshing={isRefreshing}
                 />
+            )}
+            {currentView === 'gap-analysis' && (
+                <GapAnalysisView />
             )}
             {currentView === 'gap-analysis' && <HeatmapViewWrapper inventory={inventoryData} taxonomy={initialTaxonomy || []} />}
             {currentView === 'generator' && <CompilerChat assets={inventoryData} research={researchData} />}
