@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState, useEffect } from 'react'
 import { Search, Plus, Book, Trash2, Edit3, Filter, X, Settings, Save, Sparkles } from 'lucide-react'
 import GlossaryForm from './GlossaryForm'
