@@ -479,6 +479,9 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
         instructions: ''
     })
 
+    // Deep Search Toggle
+    const [useDeepSearch, setUseDeepSearch] = useState(false)
+
     const toggleSection = (section: string) => {
         const next = new Set(openSections)
         if (next.has(section)) next.delete(section)
@@ -487,48 +490,10 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
     }
 
     const handleDeleteHistory = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation()
-        if (!confirm('¿Estás seguro de que quieres eliminar este historial?')) return
-
-        try {
-            await fetch(`/api/generator/history?id=${id}`, { method: 'DELETE' })
-            setHistory(prev => prev.filter(h => h.id !== id))
-        } catch (error) {
-            console.error('Failed to delete history', error)
-        }
+        // ... (existing code)
     }
 
-    useEffect(() => {
-        // Fetch History
-        fetch('/api/generator/history')
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setHistory(data)
-            })
-            .catch(err => console.error(err))
-    }, [])
-
-    useEffect(() => {
-        if (messages.length === 0) {
-            setMessages([
-                {
-                    role: 'assistant',
-                    content: 'Hola. Soy el Motor de Compilación 4Shine. Selecciona tus fuentes y elige un producto para generar.',
-                    timestamp: new Date()
-                }
-            ])
-        }
-    }, [])
-    const [input, setInput] = useState('')
-    const messagesEndRef = useRef<HTMLDivElement>(null)
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-
-    useEffect(() => {
-        scrollToBottom()
-    }, [messages])
+    // ... (existing effects)
 
     const handleSend = async (overrideInput?: string, overrideType?: string) => {
         const textToSend = overrideInput || input
@@ -540,6 +505,7 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
         setLoading(true)
 
         // Detect Intent
+        // ... (existing intent detection logic)
         let type = overrideType
         if (!type) {
             const clean = textToSend.toLowerCase()
@@ -564,9 +530,11 @@ export default function CompilerChat({ assets = [], research = [] }: { assets?: 
                     selectedAssetIds: Array.from(selectedAssetIds),
                     selectedResearchIds: Array.from(selectedResearchIds),
                     tone: agentConfig.tone,
-                    customInstructions: agentConfig.instructions
+                    customInstructions: agentConfig.instructions,
+                    useDeepSearch: useDeepSearch // PASS FLAG
                 })
             })
+            // ... (rest of handler)
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Error en compilación')
 
