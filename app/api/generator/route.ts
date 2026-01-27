@@ -42,25 +42,25 @@ export async function POST(request: NextRequest) {
         let taxonomy: any[] = []
 
         if (useDeepSearch) {
-             console.log("[Generator] Deep Search ENABLED: Fetching FULL KNOWLEDGE BASE...")
-             // 1.1 Fetch ALL Valid Assets
-             assets = await prisma.contentItem.findMany({
+            console.log("[Generator] Deep Search ENABLED: Fetching FULL KNOWLEDGE BASE...")
+            // 1.1 Fetch ALL Valid Assets
+            assets = await prisma.contentItem.findMany({
                 where: { status: 'Validado' },
                 select: { id: true, title: true, primaryPillar: true, observations: true }
-             })
-             // 1.2 Fetch ALL Research
-             research = await prisma.researchSource.findMany({
+            })
+            // 1.2 Fetch ALL Research
+            research = await prisma.researchSource.findMany({
                 select: { id: true, title: true, findings: true, summary: true, url: true }
-             })
-             // 1.3 Fetch ALL Glossary
-             glossary = await prisma.glossaryTerm.findMany({
+            })
+            // 1.3 Fetch ALL Glossary
+            glossary = await prisma.glossaryTerm.findMany({
                 select: { term: true, definition: true }
-             })
-             // 1.4 Fetch ALL Taxonomy
-             taxonomy = await prisma.taxonomy.findMany({
+            })
+            // 1.4 Fetch ALL Taxonomy
+            taxonomy = await prisma.taxonomy.findMany({
                 where: { active: true },
                 select: { name: true, type: true, parent: { select: { name: true } } }
-             })
+            })
 
         } else {
             console.log("[Generator] Standard Mode: Fetching specific items...")
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
             if (selectedAssetIds && selectedAssetIds.length > 0) {
                 assets = assets.filter(i => selectedAssetIds.includes(i.id))
             } else {
-                assets = [] 
+                assets = []
             }
 
             // 2. Fetch Research (External)
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         const TOTAL_CTX_BUDGET = 90000 // Increased for Deep Search (~22k tokens)
 
         let currentChars = 0
-        
+
         const safelyTruncate = (text: any, limit: number) => {
             const str = String(text || '')
             if (str.length <= limit) return str
@@ -118,10 +118,10 @@ export async function POST(request: NextRequest) {
                     const synopsis = item.findings || item.summary || 'Sin resumen'
                     content = `[RESEARCH: ${item.id}] TÍTULO: "${item.title}" (URL: ${item.url})\nHALLAZGOS: ${safelyTruncate(synopsis, MAX_CHARS_PER_ITEM)}`
                 } else if (type === 'GLOSSARY') {
-                     content = `[TERM]: ${item.term} | DEF: ${item.definition}`
+                    content = `[TERM]: ${item.term} | DEF: ${item.definition}`
                 } else if (type === 'TAXONOMY') {
-                     const parentInfo = item.parent ? `(Padre: ${item.parent.name})` : '(Raíz)'
-                     content = `[TAX]: ${item.name} (${item.type}) ${parentInfo}`
+                    const parentInfo = item.parent ? `(Padre: ${item.parent.name})` : '(Raíz)'
+                    content = `[TAX]: ${item.name} (${item.type}) ${parentInfo}`
                 }
 
                 contextParts.push(content)
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         const glossaryContext = buildSafeContext(glossary, 'GLOSSARY')
         const inventoryContext = buildSafeContext(assets, 'ASSET')
         const researchContext = buildSafeContext(research, 'RESEARCH')
-        
+
         const combinedContext = `
         === TAXONOMÍA ORGANIZACIONAL ===
         ${taxonomyContext || 'N/A'}
@@ -165,10 +165,13 @@ export async function POST(request: NextRequest) {
         let contextConstraint = ""
         if (useDeepSearch) {
             contextConstraint = `
-             MODO BÚSQUEDA PROFUNDA ACTIVADO:
-             1. Usa el CONTEXTO proporcionado como tu fuente principal y prioritaria.
-             2. SI (y solo si) la respuesta no se encuentra en el contexto, ESTÁS AUTORIZADO a usar tu Conocimiento General, Entrenamiento y Datos Web para responder.
-             3. Si usas información externa, indícalo sutilmente (ej: "Basado en conocimiento general del modelo...").
+             MODO BÚSQUEDA PROFUNDA CIENTÍFICA (DEEP SEARCH):
+             1. **INTEGRACIÓN DE CONOCIMIENTO**: Tu objetivo es responder de la manera más completa posible. Usa el CONTEXTO proporcionado (Glosario, Taxonomía, Investigaciones) como base.
+             2. **MANEJO DE VACÍOS**: Si la respuesta exacta no está en el contexto, O si el usuario pregunta por un término que no existe textualmente (ej: "Presencia Estratégica" vs "Presencia Ejecutiva"):
+                - USA tu conocimiento general para definir el concepto solicitado.
+                - BUSCA y RELACIONA conceptos similares del contexto (ej: "En el glosario figura 'Presencia Ejecutiva', que se relaciona así...").
+                - NO digas "no puedo responder". Rellena los vacíos con tu conocimiento experto, indicando siempre qué parte viene del contexto 4Shine y qué parte es conocimiento general.
+             3. **CITAS**: Si usas información del contexto, cita la fuente (ej: [Glosario], [Taxonomía], [Investigación]).
              `
         } else {
             contextConstraint = `
