@@ -70,6 +70,8 @@ export default function AdminView() {
     // --- LOGS STATE ---
     const [logs, setLogs] = useState<SystemLog[]>([])
     const [loadingLogs, setLoadingLogs] = useState(false)
+    const [autoRefresh, setAutoRefresh] = useState(true)
+    const [selectedUserFilter, setSelectedUserFilter] = useState<string>('all')
 
     // Fetch Users
     useEffect(() => {
@@ -116,7 +118,7 @@ export default function AdminView() {
         }
     }, [activeTab])
 
-    // Fetch Logs
+    // Fetch Logs (Initial Load)
     useEffect(() => {
         if (activeTab === 'logs') {
             setLoadingLogs(true)
@@ -129,6 +131,22 @@ export default function AdminView() {
                 .catch(err => { console.error(err); setLoadingLogs(false) })
         }
     }, [activeTab])
+
+    // Auto-Refresh Logs (Polling)
+    useEffect(() => {
+        if (activeTab !== 'logs' || !autoRefresh) return
+
+        const interval = setInterval(() => {
+            fetch('/api/logs')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) setLogs(data)
+                })
+                .catch(err => console.error('Auto-refresh error:', err))
+        }, 5000) // 5 seconds
+
+        return () => clearInterval(interval)
+    }, [activeTab, autoRefresh])
 
     // --- USER HANDLERS ---
     const handleUpdateUser = async (email: string, updates: Partial<User>) => {
@@ -718,7 +736,58 @@ export default function AdminView() {
             {/* CONTENT: LOGS */}
             {activeTab === 'logs' && (
                 <div className="space-y-4">
-                    <h3 className="text-sm uppercase text-[var(--text-muted)] font-bold mb-4">Logs de Auditoría (Últimos 100)</h3>
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-sm uppercase text-[var(--text-muted)] font-bold">Logs de Auditoría (Últimos 100)</h3>
+
+                        <div className="flex gap-3 items-center">
+                            {/* Auto-Refresh Toggle */}
+                            <div className="flex items-center gap-2 bg-[var(--panel)] border border-[var(--border)] rounded-lg px-3 py-2">
+                                <button
+                                    onClick={() => setAutoRefresh(!autoRefresh)}
+                                    className={`w-10 h-5 rounded-full transition-colors relative ${autoRefresh ? 'bg-[var(--success)]' : 'bg-gray-600'}`}
+                                >
+                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${autoRefresh ? 'left-6' : 'left-1'}`} />
+                                </button>
+                                <span className="text-xs font-semibold text-[var(--text-muted)] flex items-center gap-1">
+                                    {autoRefresh && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+                                    Auto-actualizar
+                                </span>
+                            </div>
+
+                            {/* Manual Refresh */}
+                            <button
+                                onClick={() => {
+                                    setLoadingLogs(true)
+                                    fetch('/api/logs')
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            if (Array.isArray(data)) setLogs(data)
+                                            setLoadingLogs(false)
+                                        })
+                                        .catch(err => { console.error(err); setLoadingLogs(false) })
+                                }}
+                                disabled={loadingLogs}
+                                className="bg-[var(--panel)] border border-[var(--border)] text-[var(--text-main)] px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                🔄 Actualizar
+                            </button>
+
+                            {/* User Filter */}
+                            <select
+                                value={selectedUserFilter}
+                                onChange={(e) => setSelectedUserFilter(e.target.value)}
+                                className="bg-[var(--panel)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-main)] outline-none focus:border-[var(--accent)]"
+                            >
+                                <option value="all">👥 Todos los usuarios</option>
+                                {Array.from(new Set(logs.map(log => log.userEmail))).sort().map(email => (
+                                    <option key={email} value={email}>
+                                        {logs.find(l => l.userEmail === email)?.user?.name || email.split('@')[0]}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
                     <div className="bg-[var(--panel)] border border-[var(--border)] rounded-lg overflow-hidden">
                         <table className="w-full text-sm">
                             <thead className="bg-[#1c2128] text-[var(--text-muted)]">
@@ -732,26 +801,32 @@ export default function AdminView() {
                             </thead>
                             <tbody>
                                 {loadingLogs && <tr><td colSpan={5} className="p-5 text-center text-[var(--text-muted)]">Cargando logs...</td></tr>}
-                                {logs.map(log => (
-                                    <tr key={log.id} className="border-t border-[var(--border)] hover:bg-white/5 text-[11px]">
-                                        <td className="p-3 text-[var(--text-muted)] whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
-                                        <td className="p-3">
-                                            <span className={`px-2 py-0.5 rounded font-bold uppercase tracking-tighter ${log.action.includes('FORCE') ? 'bg-red-900/40 text-red-400 border border-red-800/50' :
-                                                log.action.includes('DELETE') ? 'bg-orange-900/40 text-orange-400' :
-                                                    'bg-blue-900/40 text-blue-400'
-                                                }`}>
-                                                {log.action}
-                                            </span>
-                                        </td>
-                                        <td className="p-3">
-                                            <div className="font-semibold text-[var(--text-main)] truncate max-w-[120px]" title={log.userEmail}>{log.user?.name || log.userEmail.split('@')[0]}</div>
-                                        </td>
-                                        <td className="p-3 text-[var(--text-muted)] max-w-[250px] truncate" title={log.details || ''}>{log.details}</td>
-                                        <td className="p-3 font-mono text-xs text-[var(--accent)]">{log.resourceId}</td>
-                                    </tr>
-                                ))}
-                                {logs.length === 0 && !loadingLogs && (
-                                    <tr><td colSpan={5} className="p-10 text-center italic text-[var(--text-muted)]">No se encontraron registros en la auditoría.</td></tr>
+                                {logs
+                                    .filter(log => selectedUserFilter === 'all' || log.userEmail === selectedUserFilter)
+                                    .map(log => (
+                                        <tr key={log.id} className="border-t border-[var(--border)] hover:bg-white/5 text-[11px]">
+                                            <td className="p-3 text-[var(--text-muted)] whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
+                                            <td className="p-3">
+                                                <span className={`px-2 py-0.5 rounded font-bold uppercase tracking-tighter ${log.action.includes('FORCE') ? 'bg-red-900/40 text-red-400 border border-red-800/50' :
+                                                    log.action.includes('DELETE') ? 'bg-orange-900/40 text-orange-400' :
+                                                        'bg-blue-900/40 text-blue-400'
+                                                    }`}>
+                                                    {log.action}
+                                                </span>
+                                            </td>
+                                            <td className="p-3">
+                                                <div className="font-semibold text-[var(--text-main)] truncate max-w-[120px]" title={log.userEmail}>{log.user?.name || log.userEmail.split('@')[0]}</div>
+                                            </td>
+                                            <td className="p-3 text-[var(--text-muted)] max-w-[250px] truncate" title={log.details || ''}>{log.details}</td>
+                                            <td className="p-3 font-mono text-xs text-[var(--accent)]">{log.resourceId}</td>
+                                        </tr>
+                                    ))}
+                                {logs.filter(log => selectedUserFilter === 'all' || log.userEmail === selectedUserFilter).length === 0 && !loadingLogs && (
+                                    <tr><td colSpan={5} className="p-10 text-center italic text-[var(--text-muted)]">
+                                        {selectedUserFilter === 'all'
+                                            ? 'No se encontraron registros en la auditoría.'
+                                            : 'No hay logs para el usuario seleccionado.'}
+                                    </td></tr>
                                 )}
                             </tbody>
                         </table>
