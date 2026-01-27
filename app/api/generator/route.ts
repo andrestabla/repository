@@ -36,43 +36,73 @@ export async function POST(request: NextRequest) {
         }
 
         // 1. Fetch Assets (Inventory)
-        let assets = await prisma.contentItem.findMany({
-            where: { status: 'Validado' },
-            select: { id: true, title: true, primaryPillar: true, observations: true }
-        })
-
-        if (selectedAssetIds && selectedAssetIds.length > 0) {
-            assets = assets.filter(i => selectedAssetIds.includes(i.id))
-        } else {
-            assets = [] // If explicit selection is sent as empty, default to empty.
-        }
-
-        // 2. Fetch Research (External)
+        let assets: any[] = []
         let research: any[] = []
-        if (selectedResearchIds && selectedResearchIds.length > 0) {
-            research = await prisma.researchSource.findMany({
-                where: { id: { in: selectedResearchIds } },
+        let glossary: any[] = []
+        let taxonomy: any[] = []
+
+        if (useDeepSearch) {
+             console.log("[Generator] Deep Search ENABLED: Fetching FULL KNOWLEDGE BASE...")
+             // 1.1 Fetch ALL Valid Assets
+             assets = await prisma.contentItem.findMany({
+                where: { status: 'Validado' },
+                select: { id: true, title: true, primaryPillar: true, observations: true }
+             })
+             // 1.2 Fetch ALL Research
+             research = await prisma.researchSource.findMany({
                 select: { id: true, title: true, findings: true, summary: true, url: true }
+             })
+             // 1.3 Fetch ALL Glossary
+             glossary = await prisma.glossaryTerm.findMany({
+                select: { term: true, definition: true }
+             })
+             // 1.4 Fetch ALL Taxonomy
+             taxonomy = await prisma.taxonomy.findMany({
+                where: { active: true },
+                select: { name: true, type: true, parent: { select: { name: true } } }
+             })
+
+        } else {
+            console.log("[Generator] Standard Mode: Fetching specific items...")
+            // 1. Standard Fetch (Selected Ids)
+            assets = await prisma.contentItem.findMany({
+                where: { status: 'Validado' },
+                select: { id: true, title: true, primaryPillar: true, observations: true }
             })
+
+            if (selectedAssetIds && selectedAssetIds.length > 0) {
+                assets = assets.filter(i => selectedAssetIds.includes(i.id))
+            } else {
+                assets = [] 
+            }
+
+            // 2. Fetch Research (External)
+            if (selectedResearchIds && selectedResearchIds.length > 0) {
+                research = await prisma.researchSource.findMany({
+                    where: { id: { in: selectedResearchIds } },
+                    select: { id: true, title: true, findings: true, summary: true, url: true }
+                })
+            }
         }
 
         // 3. Validation: Must have at least one source (Asset OR Research)
-        if (assets.length === 0 && research.length === 0) {
+        if (assets.length === 0 && research.length === 0 && !useDeepSearch) {
             return NextResponse.json({ result: "⚠️ No hay activos validos ni investigaciones seleccionadas. Por favor selecciona al menos una fuente." })
         }
 
         // 4. Prepare Context (With Token Safeguards)
-        const MAX_CHARS_PER_ITEM = 500 // ~125 tokens per item
-        const TOTAL_CTX_BUDGET = 60000 // ~15k tokens (leaving 15k for prompt + output)
+        const MAX_CHARS_PER_ITEM = 800 // ~200 tokens per item
+        const TOTAL_CTX_BUDGET = 90000 // Increased for Deep Search (~22k tokens)
 
         let currentChars = 0
+        
         const safelyTruncate = (text: any, limit: number) => {
             const str = String(text || '')
             if (str.length <= limit) return str
             return str.substring(0, limit) + '... (truncado)'
         }
 
-        const buildSafeContext = (items: any[], type: 'ASSET' | 'RESEARCH') => {
+        const buildSafeContext = (items: any[], type: 'ASSET' | 'RESEARCH' | 'GLOSSARY' | 'TAXONOMY') => {
             let contextParts = []
             for (const item of items) {
                 if (currentChars >= TOTAL_CTX_BUDGET) {
@@ -84,9 +114,14 @@ export async function POST(request: NextRequest) {
                 let content = ""
                 if (type === 'ASSET') {
                     content = `[ASSET: ${item.id}] TÍTULO: "${item.title}" (Pilar: ${item.primaryPillar})\nRESUMEN: ${safelyTruncate(item.observations, MAX_CHARS_PER_ITEM)}`
-                } else {
+                } else if (type === 'RESEARCH') {
                     const synopsis = item.findings || item.summary || 'Sin resumen'
                     content = `[RESEARCH: ${item.id}] TÍTULO: "${item.title}" (URL: ${item.url})\nHALLAZGOS: ${safelyTruncate(synopsis, MAX_CHARS_PER_ITEM)}`
+                } else if (type === 'GLOSSARY') {
+                     content = `[TERM]: ${item.term} | DEF: ${item.definition}`
+                } else if (type === 'TAXONOMY') {
+                     const parentInfo = item.parent ? `(Padre: ${item.parent.name})` : '(Raíz)'
+                     content = `[TAX]: ${item.name} (${item.type}) ${parentInfo}`
                 }
 
                 contextParts.push(content)
@@ -95,15 +130,24 @@ export async function POST(request: NextRequest) {
             return contextParts.join('\n\n')
         }
 
+        // Priority Order for Deep Search Context
+        const taxonomyContext = buildSafeContext(taxonomy, 'TAXONOMY')
+        const glossaryContext = buildSafeContext(glossary, 'GLOSSARY')
         const inventoryContext = buildSafeContext(assets, 'ASSET')
         const researchContext = buildSafeContext(research, 'RESEARCH')
-
+        
         const combinedContext = `
-        === INVENTARIO INTERNO (4SHINE) ===
-        ${inventoryContext || 'Ninguno seleccionado.'}
+        === TAXONOMÍA ORGANIZACIONAL ===
+        ${taxonomyContext || 'N/A'}
 
-        === INVESTIGACIÓN EXTERNA ===
-        ${researchContext || 'Ninguna seleccionada.'}
+        === GLOSARIO DE TÉRMINOS ===
+        ${glossaryContext || 'N/A'}
+
+        === INVENTARIO DE ACTIVOS (4SHINE) ===
+        ${inventoryContext || 'Ninguno.'}
+
+        === FUENTES DE INVESTIGACIÓN ===
+        ${researchContext || 'Ninguna.'}
         `
 
         // 4. API Key Strategy (OpenAI)
