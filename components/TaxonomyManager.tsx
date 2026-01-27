@@ -265,6 +265,19 @@ export default function TaxonomyManager({
                             if (el.style.color?.includes('oklch')) el.style.color = '#000000'
                             if (el.style.borderColor?.includes('oklch')) el.style.borderColor = '#e5e7eb'
                         })
+
+                        // Override CSS variables that use oklch
+                        const style = clonedDoc.createElement('style')
+                        style.textContent = `
+                            * {
+                                --bg-main: #ffffff !important;
+                                --text-main: #000000 !important;
+                                --text-muted: #6b7280 !important;
+                                --border: #e5e7eb !important;
+                                --accent: #3b82f6 !important;
+                            }
+                        `
+                        clonedDoc.head.appendChild(style)
                     }
                 })
 
@@ -359,6 +372,19 @@ export default function TaxonomyManager({
                             if (el.style.color?.includes('oklch')) el.style.color = '#000000'
                             if (el.style.borderColor?.includes('oklch')) el.style.borderColor = '#e5e7eb'
                         })
+
+                        // Override CSS variables that use oklch
+                        const style = clonedDoc.createElement('style')
+                        style.textContent = `
+                            * {
+                                --bg-main: #ffffff !important;
+                                --text-main: #000000 !important;
+                                --text-muted: #6b7280 !important;
+                                --border: #e5e7eb !important;
+                                --accent: #3b82f6 !important;
+                            }
+                        `
+                        clonedDoc.head.appendChild(style)
                     }
                 })
 
