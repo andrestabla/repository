@@ -8,6 +8,53 @@ import { authOptions } from "@/lib/auth"
 // Allow longer timeout for generation
 export const maxDuration = 60
 
+// Platform Architecture Knowledge Base
+function getPlatformArchitecture(): string {
+    return `
+=== ARQUITECTURA DE LA PLATAFORMA 4SHINE ===
+
+La plataforma 4Shine es un sistema de gestión de conocimiento metodológico con los siguientes módulos:
+
+1. **INVENTARIO DE ACTIVOS** (/inventario)
+   - Repositorio central de activos metodológicos validados
+   - Cada activo está vinculado a Pilares, Subcomponentes, Competencias y Conductas
+   - Estados: Borrador, Revisión, Validado
+   - Niveles de Madurez: Básico, En Desarrollo, Avanzado, Maestría
+
+2. **INVESTIGACIÓN** (/research)
+   - Fuentes científicas y evidencia externa
+   - Vinculadas a Pilares y Competencias
+   - Incluye hallazgos, metodologías, y poblaciones de estudio
+
+3. **TAXONOMÍA** (/taxonomy)
+   - Arquitectura estructural del framework 4Shine
+   - Jerarquía: Pilares (L1) → Subcomponentes (L2) → Competencias (L3) → Conductas (L4)
+   - Los 4 Pilares principales son: Shine Within, Shine Out, Shine Up, Shine Beyond
+
+4. **GLOSARIO** (/glossary)
+   - Diccionario de términos clave del framework
+   - Definiciones académicas y operacionales
+
+5. **ANALÍTICA** (/analitica)
+   - Visualizaciones de datos y métricas de cobertura
+   - Análisis de brechas (Gap Analysis)
+
+6. **COMPILADOR** (/generator)
+   - Motor de generación de contenido basado en IA
+   - Puede crear Dossiers, Matrices, Podcasts, Videos, etc.
+   - Acceso a todo el conocimiento de la plataforma
+
+7. **CONTROL DE CALIDAD** (/qa)
+   - Módulo de auditoría y validación (solo Auditores/Admins)
+
+ESTRUCTURA DE DATOS:
+- ContentItem: Activos del inventario con metadatos (pilar, sub, competencia, conducta, nivel, estado)
+- ResearchSource: Fuentes de investigación externa
+- Taxonomy: Nodos jerárquicos de la arquitectura
+- GlossaryTerm: Términos y definiciones
+    `
+}
+
 type CompilationType =
     | 'dossier'
     | 'matrix'
@@ -41,6 +88,16 @@ export async function POST(request: NextRequest) {
         let glossary: any[] = []
         let taxonomy: any[] = []
 
+        // ALWAYS fetch Glossary and Taxonomy for universal context
+        console.log("[Generator] Fetching Universal Context (Glossary + Taxonomy)...")
+        glossary = await prisma.glossaryTerm.findMany({
+            select: { term: true, definition: true }
+        })
+        taxonomy = await prisma.taxonomy.findMany({
+            where: { active: true },
+            select: { name: true, type: true, parent: { select: { name: true } } }
+        })
+
         if (useDeepSearch) {
             console.log("[Generator] Deep Search ENABLED: Fetching FULL KNOWLEDGE BASE...")
             // 1.1 Fetch ALL Valid Assets
@@ -52,16 +109,6 @@ export async function POST(request: NextRequest) {
             research = await prisma.researchSource.findMany({
                 select: { id: true, title: true, findings: true, summary: true, url: true }
             })
-            // 1.3 Fetch ALL Glossary
-            glossary = await prisma.glossaryTerm.findMany({
-                select: { term: true, definition: true }
-            })
-            // 1.4 Fetch ALL Taxonomy
-            taxonomy = await prisma.taxonomy.findMany({
-                where: { active: true },
-                select: { name: true, type: true, parent: { select: { name: true } } }
-            })
-
         } else {
             console.log("[Generator] Standard Mode: Fetching specific items...")
             // 1. Standard Fetch (Selected Ids)
@@ -136,7 +183,11 @@ export async function POST(request: NextRequest) {
         const inventoryContext = buildSafeContext(assets, 'ASSET')
         const researchContext = buildSafeContext(research, 'RESEARCH')
 
+        const platformArchitecture = getPlatformArchitecture()
+
         const combinedContext = `
+        ${platformArchitecture}
+
         === TAXONOMÍA ORGANIZACIONAL ===
         ${taxonomyContext || 'N/A'}
 
@@ -157,22 +208,24 @@ export async function POST(request: NextRequest) {
         let prompt = ""
 
         // INJECT CUSTOM SETTINGS
-        let agentPersona = "Actúa como CONSULTOR EXPERTO"
-        if (tone) agentPersona += ` con un tono ${tone.toUpperCase()}`
-        if (customInstructions) agentPersona += `. INSTRUCCIONES ADICIONALES: ${customInstructions}`
+        let agentPersona = "Actúa como CONSULTOR EXPERTO en el framework 4Shine. Tus respuestas deben ser AMPLIAS, ACADÉMICAS y DETALLADAS, citando fuentes cuando sea posible."
+        if (tone) agentPersona += ` Usa un tono ${tone.toUpperCase()}.`
+        if (customInstructions) agentPersona += ` INSTRUCCIONES ADICIONALES: ${customInstructions}`
 
         // DEEP SEARCH / OPEN CONTEXT MODIFIER
         let contextConstraint = ""
         if (useDeepSearch) {
             contextConstraint = `
              MODO BÚSQUEDA PROFUNDA CIENTÍFICA (DEEP SEARCH):
-             1. **INTEGRACIÓN DE CONOCIMIENTO**: Tu objetivo es responder de la manera más completa posible. Usa el CONTEXTO proporcionado (Glosario, Taxonomía, Investigaciones) como base.
-             2. **MANEJO DE VACÍOS**: Si la respuesta exacta no está en el contexto, O si el usuario pregunta por un término que no existe textualmente (ej: "Presencia Estratégica" vs "Presencia Ejecutiva"):
+             1. **CONOCIMIENTO DE LA PLATAFORMA**: Tienes acceso completo a la arquitectura de la plataforma 4Shine (ver sección ARQUITECTURA). Puedes responder preguntas sobre la estructura, URLs, módulos y funcionalidades.
+             2. **INTEGRACIÓN DE CONOCIMIENTO**: Tu objetivo es responder de la manera más completa posible. Usa el CONTEXTO proporcionado (Arquitectura, Glosario, Taxonomía, Investigaciones) como base.
+             3. **MANEJO DE VACÍOS**: Si la respuesta exacta no está en el contexto, O si el usuario pregunta por un término que no existe textualmente:
                 - USA tu conocimiento general para definir el concepto solicitado.
                 - BUSCA y RELACIONA conceptos similares del contexto (ej: "En el glosario figura 'Presencia Ejecutiva', que se relaciona así...").
                 - NO digas "no puedo responder". Rellena los vacíos con tu conocimiento experto, indicando siempre qué parte viene del contexto 4Shine y qué parte es conocimiento general.
-             3. **CITAS**: Si usas información del contexto, cita la fuente (ej: [Glosario], [Taxonomía], [Investigación]).
-             `
+             4. **CITAS**: Si usas información del contexto, cita la fuente (ej: [Glosario], [Taxonomía], [Investigación], [Arquitectura]).
+             5. **TONO ACADÉMICO**: Responde de manera amplia, detallada y académica. Evita respuestas superficiales.
+              `
         } else {
             contextConstraint = `
              MODO CONTEXTO ESTRICTO:
