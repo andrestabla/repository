@@ -45,10 +45,83 @@ export default function GlossarySPA({ initialItems }: any) {
         window.location.reload()
     }
 
-    const filteredItems = items.filter((item: any) =>
-        item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.definition.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    // Helper: Remove accents and normalize text
+    const normalizeText = (text: string): string => {
+        return text
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+    }
+
+    // Helper: Calculate Levenshtein distance for fuzzy matching
+    const levenshtein = (a: string, b: string): number => {
+        const matrix: number[][] = []
+        for (let i = 0; i <= b.length; i++) {
+            matrix[i] = [i]
+        }
+        for (let j = 0; j <= a.length; j++) {
+            matrix[0][j] = j
+        }
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1]
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1
+                    )
+                }
+            }
+        }
+        return matrix[b.length][a.length]
+    }
+
+    // Helper: Calculate relevance score
+    const calculateRelevance = (item: any, query: string): number => {
+        const normalizedQuery = normalizeText(query)
+        const normalizedTerm = normalizeText(item.term)
+        const normalizedDef = normalizeText(item.definition)
+
+        let score = 0
+
+        // Exact match in term
+        if (normalizedTerm === normalizedQuery) score += 100
+
+        // Starts with query
+        else if (normalizedTerm.startsWith(normalizedQuery)) score += 80
+
+        // Contains as whole word in term
+        else if (new RegExp(`\\b${normalizedQuery}\\b`).test(normalizedTerm)) score += 60
+
+        // Contains anywhere in term
+        else if (normalizedTerm.includes(normalizedQuery)) score += 40
+
+        // Contains in definition
+        if (normalizedDef.includes(normalizedQuery)) score += 20
+
+        // Fuzzy match (if distance <= 2)
+        const distance = levenshtein(normalizedQuery, normalizedTerm)
+        if (distance <= 2 && distance > 0) score += (20 - distance * 5)
+
+        // Pillar match
+        if (item.pillars?.some((p: string) =>
+            normalizeText(p).includes(normalizedQuery)
+        )) score += 15
+
+        return score
+    }
+
+    const filteredItems = searchTerm.trim() === ''
+        ? items
+        : items
+            .map((item: any) => ({
+                ...item,
+                relevance: calculateRelevance(item, searchTerm)
+            }))
+            .filter((item: any) => item.relevance > 0)
+            .sort((a: any, b: any) => b.relevance - a.relevance)
 
     return (
         <div className="min-h-screen bg-bg text-text-main font-sans selection:bg-accent/30 selection:text-accent pb-20">
