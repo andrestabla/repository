@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
+import * as XLSX from 'xlsx'
 import {
     Folder,
     FileText,
@@ -183,61 +184,72 @@ export default function TaxonomyManager({
     const exportAsPNG = async () => {
         setIsLoading(true)
         try {
-            const svgElement = document.querySelector('.taxonomy-view-container svg') as SVGElement
-            if (!svgElement) {
-                alert('No se pudo encontrar el gráfico SVG')
+            const container = document.querySelector('.taxonomy-view-container') as HTMLElement
+            if (!container) {
+                alert('No se pudo encontrar el contenedor')
                 setIsLoading(false)
                 return
             }
 
-            // Get SVG dimensions
-            const bbox = svgElement.getBoundingClientRect()
-            const svgData = new XMLSerializer().serializeToString(svgElement)
+            // Check if we're in diamond view (SVG) or list view (HTML)
+            const svgElement = container.querySelector('svg') as SVGElement
 
-            // Create canvas
-            const canvas = document.createElement('canvas')
-            const ctx = canvas.getContext('2d')
-            if (!ctx) {
-                alert('Error al crear canvas')
-                setIsLoading(false)
-                return
-            }
+            if (svgElement && activeTab === 'diamond') {
+                // SVG Export (Diamond view)
+                const bbox = svgElement.getBoundingClientRect()
+                const svgData = new XMLSerializer().serializeToString(svgElement)
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+                if (!ctx) {
+                    alert('Error al crear canvas')
+                    setIsLoading(false)
+                    return
+                }
 
-            // Set canvas size (2x for high quality)
-            canvas.width = bbox.width * 2
-            canvas.height = bbox.height * 2
-            ctx.scale(2, 2)
+                canvas.width = bbox.width * 2
+                canvas.height = bbox.height * 2
+                ctx.scale(2, 2)
 
-            // Create image from SVG
-            const img = new Image()
-            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
-            const url = URL.createObjectURL(svgBlob)
+                const img = new Image()
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+                const url = URL.createObjectURL(svgBlob)
 
-            img.onload = () => {
-                // Fill white background
-                ctx.fillStyle = '#ffffff'
-                ctx.fillRect(0, 0, bbox.width, bbox.height)
+                img.onload = () => {
+                    ctx.fillStyle = '#ffffff'
+                    ctx.fillRect(0, 0, bbox.width, bbox.height)
+                    ctx.drawImage(img, 0, 0, bbox.width, bbox.height)
+                    URL.revokeObjectURL(url)
 
-                // Draw SVG
-                ctx.drawImage(img, 0, 0, bbox.width, bbox.height)
-                URL.revokeObjectURL(url)
+                    const link = document.createElement('a')
+                    link.download = `taxonomia-${graphFocus}-${Date.now()}.png`
+                    link.href = canvas.toDataURL('image/png')
+                    link.click()
+                    setIsLoading(false)
+                }
 
-                // Download
+                img.onerror = (err) => {
+                    console.error('Error loading SVG:', err)
+                    alert('Error al cargar el gráfico SVG')
+                    URL.revokeObjectURL(url)
+                    setIsLoading(false)
+                }
+
+                img.src = url
+            } else {
+                // HTML Export (List view)
+                const canvas = await html2canvas(container, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                })
+
                 const link = document.createElement('a')
-                link.download = `taxonomia-${graphFocus}-${Date.now()}.png`
+                link.download = `taxonomia-listado-${Date.now()}.png`
                 link.href = canvas.toDataURL('image/png')
                 link.click()
                 setIsLoading(false)
             }
-
-            img.onerror = (err) => {
-                console.error('Error loading SVG:', err)
-                alert('Error al cargar el gráfico SVG')
-                URL.revokeObjectURL(url)
-                setIsLoading(false)
-            }
-
-            img.src = url
         } catch (error: any) {
             console.error('Error exporting PNG:', error)
             alert(`Error al exportar PNG: ${error.message || 'Error desconocido'}`)
@@ -248,74 +260,166 @@ export default function TaxonomyManager({
     const exportAsPDF = async () => {
         setIsLoading(true)
         try {
-            const svgElement = document.querySelector('.taxonomy-view-container svg') as SVGElement
-            if (!svgElement) {
-                alert('No se pudo encontrar el gráfico SVG')
+            const container = document.querySelector('.taxonomy-view-container') as HTMLElement
+            if (!container) {
+                alert('No se pudo encontrar el contenedor')
                 setIsLoading(false)
                 return
             }
 
-            // Get SVG dimensions
-            const bbox = svgElement.getBoundingClientRect()
-            const svgData = new XMLSerializer().serializeToString(svgElement)
+            const svgElement = container.querySelector('svg') as SVGElement
+            let canvas: HTMLCanvasElement
 
-            // Create canvas
-            const canvas = document.createElement('canvas')
-            const ctx = canvas.getContext('2d')
-            if (!ctx) {
-                alert('Error al crear canvas')
-                setIsLoading(false)
-                return
-            }
+            if (svgElement && activeTab === 'diamond') {
+                // SVG Export (Diamond view)
+                const bbox = svgElement.getBoundingClientRect()
+                const svgData = new XMLSerializer().serializeToString(svgElement)
+                canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+                if (!ctx) {
+                    alert('Error al crear canvas')
+                    setIsLoading(false)
+                    return
+                }
 
-            // Set canvas size (2x for high quality)
-            canvas.width = bbox.width * 2
-            canvas.height = bbox.height * 2
-            ctx.scale(2, 2)
+                canvas.width = bbox.width * 2
+                canvas.height = bbox.height * 2
+                ctx.scale(2, 2)
 
-            // Create image from SVG
-            const img = new Image()
-            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
-            const url = URL.createObjectURL(svgBlob)
+                const img = new Image()
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+                const url = URL.createObjectURL(svgBlob)
 
-            img.onload = () => {
-                // Fill white background
-                ctx.fillStyle = '#ffffff'
-                ctx.fillRect(0, 0, bbox.width, bbox.height)
+                img.onload = () => {
+                    ctx.fillStyle = '#ffffff'
+                    ctx.fillRect(0, 0, bbox.width, bbox.height)
+                    ctx.drawImage(img, 0, 0, bbox.width, bbox.height)
+                    URL.revokeObjectURL(url)
 
-                // Draw SVG
-                ctx.drawImage(img, 0, 0, bbox.width, bbox.height)
-                URL.revokeObjectURL(url)
+                    const imgData = canvas.toDataURL('image/png')
+                    const pdf = new jsPDF('landscape', 'mm', 'a4')
+                    const imgWidth = 297
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-                // Create PDF
+                    if (imgHeight > 210) {
+                        const scaleFactor = 210 / imgHeight
+                        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth * scaleFactor, 210)
+                    } else {
+                        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+                    }
+
+                    pdf.save(`taxonomia-${graphFocus}-${Date.now()}.pdf`)
+                    setIsLoading(false)
+                }
+
+                img.onerror = (err) => {
+                    console.error('Error loading SVG:', err)
+                    alert('Error al cargar el gráfico SVG')
+                    URL.revokeObjectURL(url)
+                    setIsLoading(false)
+                }
+
+                img.src = url
+            } else {
+                // HTML Export (List view)
+                canvas = await html2canvas(container, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                })
+
                 const imgData = canvas.toDataURL('image/png')
                 const pdf = new jsPDF('landscape', 'mm', 'a4')
-                const imgWidth = 297 // A4 landscape width in mm
+                const imgWidth = 297
                 const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-                // If image is taller than one page, scale it down
-                if (imgHeight > 210) { // A4 landscape height
+                if (imgHeight > 210) {
                     const scaleFactor = 210 / imgHeight
                     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth * scaleFactor, 210)
                 } else {
                     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
                 }
 
-                pdf.save(`taxonomia-${graphFocus}-${Date.now()}.pdf`)
+                pdf.save(`taxonomia-listado-${Date.now()}.pdf`)
                 setIsLoading(false)
             }
-
-            img.onerror = (err) => {
-                console.error('Error loading SVG:', err)
-                alert('Error al cargar el gráfico SVG')
-                URL.revokeObjectURL(url)
-                setIsLoading(false)
-            }
-
-            img.src = url
         } catch (error: any) {
             console.error('Error exporting PDF:', error)
             alert(`Error al exportar PDF: ${error.message || 'Error desconocido'}`)
+            setIsLoading(false)
+        }
+    }
+
+    const exportAsExcel = () => {
+        setIsLoading(true)
+        try {
+            const excelData: any[] = []
+
+            data
+                .filter(item => item.type === 'Pillar' && item.parentId === null)
+                .sort((a, b) => a.order - b.order)
+                .forEach(pillar => {
+                    const components = data.filter(c => c.parentId === pillar.id && c.type === 'Component')
+
+                    if (components.length === 0) {
+                        excelData.push({
+                            'Pilar': pillar.name,
+                            'Componente': '',
+                            'Competencia': '',
+                            'Comportamiento': '',
+                            'Activo': pillar.active ? 'Sí' : 'No'
+                        })
+                    } else {
+                        components.forEach(comp => {
+                            const competences = data.filter(co => co.parentId === comp.id && co.type === 'Competence')
+
+                            if (competences.length === 0) {
+                                excelData.push({
+                                    'Pilar': pillar.name,
+                                    'Componente': comp.name,
+                                    'Competencia': '',
+                                    'Comportamiento': '',
+                                    'Activo': comp.active ? 'Sí' : 'No'
+                                })
+                            } else {
+                                competences.forEach(competence => {
+                                    const behaviors = data.filter(b => b.parentId === competence.id && b.type === 'Behavior')
+
+                                    if (behaviors.length === 0) {
+                                        excelData.push({
+                                            'Pilar': pillar.name,
+                                            'Componente': comp.name,
+                                            'Competencia': competence.name,
+                                            'Comportamiento': '',
+                                            'Activo': competence.active ? 'Sí' : 'No'
+                                        })
+                                    } else {
+                                        behaviors.forEach(behavior => {
+                                            excelData.push({
+                                                'Pilar': pillar.name,
+                                                'Componente': comp.name,
+                                                'Competencia': competence.name,
+                                                'Comportamiento': behavior.name,
+                                                'Activo': behavior.active ? 'Sí' : 'No'
+                                            })
+                                        })
+                                    }
+                                })
+                            }
+                        })
+                    }
+                })
+
+            const ws = XLSX.utils.json_to_sheet(excelData)
+            const wb = XLSX.utils.book_new()
+            XLSX.utils.book_append_sheet(wb, ws, 'Taxonomía 4Shine')
+
+            XLSX.writeFile(wb, `taxonomia-4shine-${Date.now()}.xlsx`)
+            setIsLoading(false)
+        } catch (error: any) {
+            console.error('Error exporting Excel:', error)
+            alert(`Error al exportar Excel: ${error.message || 'Error desconocido'}`)
             setIsLoading(false)
         }
     }
@@ -366,6 +470,15 @@ export default function TaxonomyManager({
                     >
                         <Download size={14} />
                         PDF
+                    </button>
+                    <button
+                        onClick={exportAsExcel}
+                        disabled={isLoading}
+                        className="bg-panel border border-border text-text-muted hover:text-green-500 hover:border-green-500 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Descargar como Excel"
+                    >
+                        <Download size={14} />
+                        EXCEL
                     </button>
                 </div>
             </header>
