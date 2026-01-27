@@ -68,6 +68,21 @@ export default function TaxonomyManager({
     const [showGaps, setShowGaps] = useState(false)
     const [graphFocus, setGraphFocus] = useState<'ALL' | 'Shine Within' | 'Shine Out' | 'Shine Up' | 'Shine Beyond'>('ALL')
 
+    // Flatten tree structure for exports
+    const flattenTree = (nodes: TaxonomyItem[]): TaxonomyItem[] => {
+        const result: TaxonomyItem[] = []
+        const flatten = (items: TaxonomyItem[]) => {
+            items.forEach(item => {
+                result.push(item)
+                if (item.children && item.children.length > 0) {
+                    flatten(item.children)
+                }
+            })
+        }
+        flatten(nodes)
+        return result
+    }
+
     const getLinkedAssets = (node: TaxonomyItem, level: 'Pillar' | 'Sub' | 'Comp' | 'Behavior') => {
         const invMatches = inventory.filter(item => {
             if (level === 'Pillar') return item.primaryPillar === node.name
@@ -374,21 +389,24 @@ export default function TaxonomyManager({
         try {
             const excelData: any[] = []
 
+            // Flatten the tree structure to get all nodes
+            const flattenedData = flattenTree(data)
+
             // Debug logging
             console.log('Export Debug:', {
-                totalItems: data.length,
-                pillars: data.filter(i => i.type === 'Pillar').length,
-                components: data.filter(i => i.type === 'Component').length,
-                competences: data.filter(i => i.type === 'Competence').length,
-                behaviors: data.filter(i => i.type === 'Behavior').length
+                totalItems: flattenedData.length,
+                pillars: flattenedData.filter(i => i.type === 'Pillar').length,
+                components: flattenedData.filter(i => i.type === 'Component').length,
+                competences: flattenedData.filter(i => i.type === 'Competence').length,
+                behaviors: flattenedData.filter(i => i.type === 'Behavior').length
             })
 
-            data
+            flattenedData
                 .filter(item => item.type === 'Pillar' && item.parentId === null)
                 .sort((a, b) => a.order - b.order)
                 .forEach(pillar => {
                     const pillarAssets = getLinkedAssets(pillar, 'Pillar')
-                    const components = data.filter(c => c.parentId === pillar.id && c.type === 'Component')
+                    const components = flattenedData.filter(c => c.parentId === pillar.id && c.type === 'Component')
                         .sort((a, b) => a.order - b.order)
 
                     if (components.length === 0) {
@@ -404,7 +422,7 @@ export default function TaxonomyManager({
                     } else {
                         components.forEach(comp => {
                             const compAssets = getLinkedAssets(comp, 'Sub')
-                            const competences = data.filter(co => co.parentId === comp.id && co.type === 'Competence')
+                            const competences = flattenedData.filter(co => co.parentId === comp.id && co.type === 'Competence')
                                 .sort((a, b) => a.order - b.order)
 
                             if (competences.length === 0) {
@@ -420,7 +438,7 @@ export default function TaxonomyManager({
                             } else {
                                 competences.forEach(competence => {
                                     const competenceAssets = getLinkedAssets(competence, 'Comp')
-                                    const behaviors = data.filter(b => b.parentId === competence.id && b.type === 'Behavior')
+                                    const behaviors = flattenedData.filter(b => b.parentId === competence.id && b.type === 'Behavior')
                                         .sort((a, b) => a.order - b.order)
 
                                     if (behaviors.length === 0) {
