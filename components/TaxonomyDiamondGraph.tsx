@@ -12,12 +12,23 @@ type TaxonomyItem = {
     children?: TaxonomyItem[]
 }
 
+type ContentItem = {
+    id: string
+    title: string
+    primaryPillar: string
+    sub?: string | null
+    competence?: string | null
+    behavior?: string | null
+}
+
 type Props = {
     data: TaxonomyItem[]
     focus: 'ALL' | 'Shine Within' | 'Shine Out' | 'Shine Up' | 'Shine Beyond'
+    inventory?: ContentItem[]
+    showGaps?: boolean
 }
 
-export default function TaxonomyDiamondGraph({ data, focus }: Props) {
+export default function TaxonomyDiamondGraph({ data, focus, inventory = [], showGaps = false }: Props) {
     const svgRef = useRef<SVGSVGElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
@@ -74,6 +85,21 @@ export default function TaxonomyDiamondGraph({ data, focus }: Props) {
             { name: 'Shine Beyond', color: '#f59e0b', angle: 180 } // Left
         ]
 
+        // Helper to check coverage
+        const checkCoverage = (nodeName: string, level: 'Pillar' | 'Sub' | 'Comp' | 'Beh') => {
+            if (!showGaps) return true // If not showing gaps, treat as covered (normal color)
+
+            // For logic simplicity, just check existence of at least one item
+            const hasItem = inventory.some(item => {
+                if (level === 'Pillar') return item.primaryPillar === nodeName
+                if (level === 'Sub') return item.sub === nodeName
+                if (level === 'Comp') return item.competence === nodeName
+                if (level === 'Beh') return item.behavior === nodeName
+                return false
+            })
+            return hasItem
+        }
+
         // --- HIERARCHY PROCESSING ---
         // We need to flatten the tree into nodes with polar coordinates (angle, radius)
 
@@ -124,13 +150,22 @@ export default function TaxonomyDiamondGraph({ data, focus }: Props) {
 
             const baseAngle = p.angle
             const sectorWidth = focus === 'ALL' ? 90 : 360 // Use full circle if focused? Maybe just keep it simple first.
+            const isCovered = checkCoverage(p.name, 'Pillar')
+            const nodeColor = showGaps ? (isCovered ? '#cbd5e1' : '#ef4444') : p.color // Dim if covered, Red if gap
+
             const pNode = {
                 ...pillarNode,
                 x: getXY(baseAngle, R_PILLAR).x,
                 y: getXY(baseAngle, R_PILLAR).y,
-                color: p.color,
+                color: showGaps && !isCovered ? '#ef4444' : p.color, // Keep original color if covered to maintain context? Or dim? Let's keep original for covered pillars as anchors.
+                // Actually, if showing gaps, we want to highlight RED.
+                // Let's settle on: Gaps = RED. Covered = Normal (or slightly dimmed).
+                // For Pillars, usually there is always content? Not necessarily.
+                // But pillars are structural.
+
                 level: 'Pillar',
-                baseAngle
+                baseAngle,
+                isGap: !isCovered
             }
             nodes.push(pNode)
 
@@ -145,13 +180,15 @@ export default function TaxonomyDiamondGraph({ data, focus }: Props) {
                     // Angle
                     const subAngle = startA + (step * (j + 1))
                     const subPos = getXY(subAngle, R_SUB)
+                    const subCovered = checkCoverage(sub.name, 'Sub')
                     const sNode = {
                         ...sub,
                         x: subPos.x,
                         y: subPos.y,
-                        color: p.color, // Inherit
+                        color: showGaps ? (subCovered ? `${p.color}40` : '#ef4444') : p.color, // 40 alpha for dimmed
                         level: 'Sub',
-                        baseAngle: subAngle
+                        baseAngle: subAngle,
+                        isGap: !subCovered
                     }
                     nodes.push(sNode)
                     links.push({ source: pNode, target: sNode })
@@ -167,13 +204,15 @@ export default function TaxonomyDiamondGraph({ data, focus }: Props) {
                         comps.forEach((comp, k) => {
                             const compAngle = subStart + (subStep * (k + 1))
                             const compPos = getXY(compAngle, R_COMP)
+                            const compCovered = checkCoverage(comp.name, 'Comp')
                             const cNode = {
                                 ...comp,
                                 x: compPos.x,
                                 y: compPos.y,
-                                color: p.color,
+                                color: showGaps ? (compCovered ? `${p.color}40` : '#ef4444') : p.color,
                                 level: 'Comp',
-                                baseAngle: compAngle
+                                baseAngle: compAngle,
+                                isGap: !compCovered
                             }
                             nodes.push(cNode)
                             links.push({ source: sNode, target: cNode })
@@ -188,13 +227,15 @@ export default function TaxonomyDiamondGraph({ data, focus }: Props) {
                                 behs.forEach((beh, l) => {
                                     const behAngle = behStart + (behStep * (l + 1))
                                     const behPos = getXY(behAngle, R_BEH)
+                                    const behCovered = checkCoverage(beh.name, 'Beh')
                                     const bNode = {
                                         ...beh,
                                         x: behPos.x,
                                         y: behPos.y,
-                                        color: p.color,
+                                        color: showGaps ? (behCovered ? `${p.color}20` : '#ef4444') : p.color,
                                         level: 'Beh',
-                                        baseAngle: behAngle
+                                        baseAngle: behAngle,
+                                        isGap: !behCovered
                                     }
                                     nodes.push(bNode)
                                     links.push({ source: cNode, target: bNode })
@@ -280,8 +321,18 @@ export default function TaxonomyDiamondGraph({ data, focus }: Props) {
                 el.append('circle')
                     .attr('r', size)
                     .attr('fill', d.color) // Inherit pillar color
-                    .attr('stroke', '#fff')
-                    .attr('stroke-width', 1)
+                    .attr('stroke', d.isGap ? '#ef4444' : '#fff')
+                    .attr('stroke-width', d.isGap ? 2 : 1)
+
+                if (d.isGap && showGaps) {
+                    // Add update pulsing effect or ring for gaps?
+                    el.append('circle')
+                        .attr('r', size + 3)
+                        .attr('fill', 'none')
+                        .attr('stroke', '#ef4444')
+                        .attr('stroke-opacity', 0.5)
+                        .attr('stroke-width', 1)
+                }
             }
 
             // Labels
@@ -303,7 +354,7 @@ export default function TaxonomyDiamondGraph({ data, focus }: Props) {
             }
         })
 
-    }, [data, dimensions, focus])
+    }, [data, dimensions, focus, showGaps, inventory])
 
     return (
         <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-white/50">
