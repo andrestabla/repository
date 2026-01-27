@@ -191,15 +191,18 @@ export default function TaxonomyManager({
             const canvas = await html2canvas(element, {
                 backgroundColor: '#ffffff',
                 scale: 2,
-                logging: false
+                logging: true,
+                useCORS: true,
+                allowTaint: true,
+                foreignObjectRendering: true
             })
             const link = document.createElement('a')
             link.download = `taxonomia-${graphFocus}-${Date.now()}.png`
             link.href = canvas.toDataURL('image/png')
             link.click()
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error exporting PNG:', error)
-            alert('Error al exportar PNG')
+            alert(`Error al exportar PNG: ${error.message || 'Error desconocido'}`)
         } finally {
             setIsLoading(false)
         }
@@ -216,7 +219,10 @@ export default function TaxonomyManager({
             const canvas = await html2canvas(element, {
                 backgroundColor: '#ffffff',
                 scale: 2,
-                logging: false
+                logging: true,
+                useCORS: true,
+                allowTaint: true,
+                foreignObjectRendering: true
             })
             const imgData = canvas.toDataURL('image/png')
             const pdf = new jsPDF('landscape', 'mm', 'a4')
@@ -232,9 +238,9 @@ export default function TaxonomyManager({
             }
 
             pdf.save(`taxonomia-${graphFocus}-${Date.now()}.pdf`)
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error exporting PDF:', error)
-            alert('Error al exportar PDF')
+            alert(`Error al exportar PDF: ${error.message || 'Error desconocido'}`)
         } finally {
             setIsLoading(false)
         }
