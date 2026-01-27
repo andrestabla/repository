@@ -31,6 +31,7 @@ type Props = {
 export default function TaxonomyDiamondGraph({ data, focus, inventory = [], showGaps = false }: Props) {
     const svgRef = useRef<SVGSVGElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const tooltipRef = useRef<HTMLDivElement>(null)
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
 
     useEffect(() => {
@@ -299,6 +300,33 @@ export default function TaxonomyDiamondGraph({ data, focus, inventory = [], show
             .append('g')
             .attr('transform', d => `translate(${d.x},${d.y})`)
             .attr('class', 'node cursor-pointer group')
+            .on('mouseenter', function (event, d) {
+                // Show tooltip
+                const tooltip = d3.select(tooltipRef.current)
+                if (tooltip.node()) {
+                    tooltip
+                        .style('opacity', '1')
+                        .style('left', `${event.pageX + 10}px`)
+                        .style('top', `${event.pageY - 10}px`)
+                        .html(`
+                            <div class="font-bold text-sm mb-1" style="color: ${d.color}">${d.name}</div>
+                            <div class="text-[10px] text-text-muted uppercase tracking-wider mb-2">${d.level === 'Pillar' ? 'Pilar' : d.level === 'Sub' ? 'Subcomponente' : d.level === 'Comp' ? 'Competencia' : 'Conducta'}</div>
+                            ${d.level === 'Pillar' ? `<div class="text-xs text-text-main">Eje principal del framework 4Shine</div>` : ''}
+                            ${d.isGap && showGaps ? '<div class="text-xs text-danger mt-2 font-bold">⚠️ Sin contenido vinculado</div>' : ''}
+                        `)
+                }
+                // Highlight node
+                d3.select(this).select('circle, rect').attr('stroke-width', 3)
+            })
+            .on('mouseleave', function (event, d) {
+                // Hide tooltip
+                const tooltip = d3.select(tooltipRef.current)
+                if (tooltip.node()) {
+                    tooltip.style('opacity', '0')
+                }
+                // Reset highlight
+                d3.select(this).select('circle, rect').attr('stroke-width', d.level === 'Pillar' ? 2 : (d.isGap ? 2 : 1))
+            })
 
         // Node Shapes
         nodeGroup.each(function (d) {
@@ -359,6 +387,11 @@ export default function TaxonomyDiamondGraph({ data, focus, inventory = [], show
     return (
         <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-white/50">
             <svg ref={svgRef} width="100%" height="100%" className="cursor-grab active:cursor-grabbing"></svg>
+            <div
+                ref={tooltipRef}
+                className="absolute pointer-events-none bg-panel border-2 border-border rounded-xl p-3 shadow-2xl transition-opacity duration-200 z-50 max-w-xs"
+                style={{ opacity: 0 }}
+            ></div>
             <div className="absolute bottom-4 right-4 text-[10px] text-text-muted opacity-50 font-mono">
                 D3 Rendered · {focus} Mode
             </div>
