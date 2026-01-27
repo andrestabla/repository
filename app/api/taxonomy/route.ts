@@ -54,7 +54,7 @@ export async function PATCH(req: Request) {
 export async function PUT(req: Request) {
     try {
         // 1. Define Base Pillars (Level 1)
-        const basePillars = ['Shine In', 'Shine Out', 'Shine Up', 'Shine Beyond']
+        const basePillars = ['Shine Within', 'Shine Out', 'Shine Up', 'Shine Beyond']
         let stats = { added: 0, exist: 0, deleted: 0 }
 
         // Ensure Level 1 Exists (And ONLY these exist)
@@ -108,9 +108,9 @@ export async function PUT(req: Request) {
             const pillar = await prisma.taxonomy.findFirst({ where: { name: item.primaryPillar, type: 'Pillar' } })
             if (!pillar) continue
 
-            // Level 2: Subcomponent (from 'sub')
+            // Level 2: Component (from 'sub')
             if (item.sub) {
-                const subNode = await syncNode(item.sub, 'Subcomponent', pillar.id, 1)
+                const subNode = await syncNode(item.sub, 'Component', pillar.id, 1)
 
                 // Level 3: Competence (from 'competence')
                 // Only if sub exists
