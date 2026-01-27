@@ -241,7 +241,16 @@ export default function TaxonomyManager({
                     backgroundColor: '#ffffff',
                     scale: 2,
                     logging: false,
-                    useCORS: true
+                    useCORS: true,
+                    onclone: (clonedDoc) => {
+                        // Fix oklch colors that cause parsing errors
+                        const elements = clonedDoc.querySelectorAll('*')
+                        elements.forEach((el: any) => {
+                            if (el.style.backgroundColor?.includes('oklch')) el.style.backgroundColor = '#ffffff'
+                            if (el.style.color?.includes('oklch')) el.style.color = '#000000'
+                            if (el.style.borderColor?.includes('oklch')) el.style.borderColor = '#e5e7eb'
+                        })
+                    }
                 })
 
                 const link = document.createElement('a')
@@ -326,7 +335,16 @@ export default function TaxonomyManager({
                     backgroundColor: '#ffffff',
                     scale: 2,
                     logging: false,
-                    useCORS: true
+                    useCORS: true,
+                    onclone: (clonedDoc) => {
+                        // Fix oklch colors that cause parsing errors
+                        const elements = clonedDoc.querySelectorAll('*')
+                        elements.forEach((el: any) => {
+                            if (el.style.backgroundColor?.includes('oklch')) el.style.backgroundColor = '#ffffff'
+                            if (el.style.color?.includes('oklch')) el.style.color = '#000000'
+                            if (el.style.borderColor?.includes('oklch')) el.style.borderColor = '#e5e7eb'
+                        })
+                    }
                 })
 
                 const imgData = canvas.toDataURL('image/png')
@@ -356,11 +374,22 @@ export default function TaxonomyManager({
         try {
             const excelData: any[] = []
 
+            // Debug logging
+            console.log('Export Debug:', {
+                totalItems: data.length,
+                pillars: data.filter(i => i.type === 'Pillar').length,
+                components: data.filter(i => i.type === 'Component').length,
+                competences: data.filter(i => i.type === 'Competence').length,
+                behaviors: data.filter(i => i.type === 'Behavior').length
+            })
+
             data
                 .filter(item => item.type === 'Pillar' && item.parentId === null)
                 .sort((a, b) => a.order - b.order)
                 .forEach(pillar => {
+                    const pillarAssets = getLinkedAssets(pillar, 'Pillar')
                     const components = data.filter(c => c.parentId === pillar.id && c.type === 'Component')
+                        .sort((a, b) => a.order - b.order)
 
                     if (components.length === 0) {
                         excelData.push({
@@ -368,11 +397,15 @@ export default function TaxonomyManager({
                             'Componente': '',
                             'Competencia': '',
                             'Comportamiento': '',
-                            'Activo': pillar.active ? 'Sí' : 'No'
+                            'Activo': pillar.active ? 'Sí' : 'No',
+                            'Fuentes Vinculadas': pillarAssets.length,
+                            'Títulos de Fuentes': pillarAssets.map(a => a.title).join('; ')
                         })
                     } else {
                         components.forEach(comp => {
+                            const compAssets = getLinkedAssets(comp, 'Sub')
                             const competences = data.filter(co => co.parentId === comp.id && co.type === 'Competence')
+                                .sort((a, b) => a.order - b.order)
 
                             if (competences.length === 0) {
                                 excelData.push({
@@ -380,11 +413,15 @@ export default function TaxonomyManager({
                                     'Componente': comp.name,
                                     'Competencia': '',
                                     'Comportamiento': '',
-                                    'Activo': comp.active ? 'Sí' : 'No'
+                                    'Activo': comp.active ? 'Sí' : 'No',
+                                    'Fuentes Vinculadas': compAssets.length,
+                                    'Títulos de Fuentes': compAssets.map(a => a.title).join('; ')
                                 })
                             } else {
                                 competences.forEach(competence => {
+                                    const competenceAssets = getLinkedAssets(competence, 'Comp')
                                     const behaviors = data.filter(b => b.parentId === competence.id && b.type === 'Behavior')
+                                        .sort((a, b) => a.order - b.order)
 
                                     if (behaviors.length === 0) {
                                         excelData.push({
@@ -392,16 +429,21 @@ export default function TaxonomyManager({
                                             'Componente': comp.name,
                                             'Competencia': competence.name,
                                             'Comportamiento': '',
-                                            'Activo': competence.active ? 'Sí' : 'No'
+                                            'Activo': competence.active ? 'Sí' : 'No',
+                                            'Fuentes Vinculadas': competenceAssets.length,
+                                            'Títulos de Fuentes': competenceAssets.map(a => a.title).join('; ')
                                         })
                                     } else {
                                         behaviors.forEach(behavior => {
+                                            const behaviorAssets = getLinkedAssets(behavior, 'Behavior')
                                             excelData.push({
                                                 'Pilar': pillar.name,
                                                 'Componente': comp.name,
                                                 'Competencia': competence.name,
                                                 'Comportamiento': behavior.name,
-                                                'Activo': behavior.active ? 'Sí' : 'No'
+                                                'Activo': behavior.active ? 'Sí' : 'No',
+                                                'Fuentes Vinculadas': behaviorAssets.length,
+                                                'Títulos de Fuentes': behaviorAssets.map(a => a.title).join('; ')
                                             })
                                         })
                                     }
@@ -411,7 +453,21 @@ export default function TaxonomyManager({
                     }
                 })
 
+            console.log('Excel rows generated:', excelData.length)
+
             const ws = XLSX.utils.json_to_sheet(excelData)
+
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 20 }, // Pilar
+                { wch: 30 }, // Componente
+                { wch: 35 }, // Competencia
+                { wch: 40 }, // Comportamiento
+                { wch: 10 }, // Activo
+                { wch: 15 }, // Fuentes Vinculadas
+                { wch: 60 }  // Títulos de Fuentes
+            ]
+
             const wb = XLSX.utils.book_new()
             XLSX.utils.book_append_sheet(wb, ws, 'Taxonomía 4Shine')
 
