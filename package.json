@@ -16,6 +16,8 @@
     "cytoscape-dagre": "^2.5.0",
     "d3-scale": "^4.0.2",
     "googleapis": "^170.0.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.0.0",
     "lucide-react": "^0.562.0",
     "mermaid": "^11.12.2",
     "next": "16.1.1",

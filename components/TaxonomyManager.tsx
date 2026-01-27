@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 import {
     Folder,
     FileText,
@@ -17,7 +19,8 @@ import {
     BookOpen,
     Share2,
     List,
-    AlertCircle
+    AlertCircle,
+    Download
 } from 'lucide-react'
 import TaxonomyGraph from './TaxonomyGraph'
 import TaxonomyDiamondGraph from './TaxonomyDiamondGraph'
@@ -177,6 +180,66 @@ export default function TaxonomyManager({
         }
     }
 
+    const exportAsPNG = async () => {
+        setIsLoading(true)
+        try {
+            const element = document.querySelector('.taxonomy-view-container') as HTMLElement
+            if (!element) {
+                alert('No se pudo capturar la vista')
+                return
+            }
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                logging: false
+            })
+            const link = document.createElement('a')
+            link.download = `taxonomia-${graphFocus}-${Date.now()}.png`
+            link.href = canvas.toDataURL('image/png')
+            link.click()
+        } catch (error) {
+            console.error('Error exporting PNG:', error)
+            alert('Error al exportar PNG')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const exportAsPDF = async () => {
+        setIsLoading(true)
+        try {
+            const element = document.querySelector('.taxonomy-view-container') as HTMLElement
+            if (!element) {
+                alert('No se pudo capturar la vista')
+                return
+            }
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                logging: false
+            })
+            const imgData = canvas.toDataURL('image/png')
+            const pdf = new jsPDF('landscape', 'mm', 'a4')
+            const imgWidth = 297 // A4 landscape width in mm
+            const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+            // If image is taller than one page, scale it down
+            if (imgHeight > 210) { // A4 landscape height
+                const scaleFactor = 210 / imgHeight
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth * scaleFactor, 210)
+            } else {
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+            }
+
+            pdf.save(`taxonomia-${graphFocus}-${Date.now()}.pdf`)
+        } catch (error) {
+            console.error('Error exporting PDF:', error)
+            alert('Error al exportar PDF')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     return (
         <div className="bg-panel border border-border rounded-3xl p-8 shadow-sm text-left">
             <header className="flex justify-between items-center mb-10 border-b border-border pb-6">
@@ -204,6 +267,25 @@ export default function TaxonomyManager({
                     >
                         <Plus size={16} />
                         Agregar Pilar
+                    </button>
+                    <div className="w-px bg-border mx-1"></div>
+                    <button
+                        onClick={exportAsPNG}
+                        disabled={isLoading}
+                        className="bg-panel border border-border text-text-muted hover:text-blue-500 hover:border-blue-500 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Descargar como PNG"
+                    >
+                        <Download size={14} />
+                        PNG
+                    </button>
+                    <button
+                        onClick={exportAsPDF}
+                        disabled={isLoading}
+                        className="bg-panel border border-border text-text-muted hover:text-red-500 hover:border-red-500 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Descargar como PDF"
+                    >
+                        <Download size={14} />
+                        PDF
                     </button>
                 </div>
             </header>
@@ -262,7 +344,7 @@ export default function TaxonomyManager({
             </div>
 
             {activeTab === 'diamond' ? (
-                <div className="h-[700px] w-full bg-slate-50 border border-border rounded-3xl overflow-hidden relative animate-in fade-in duration-500">
+                <div className="taxonomy-view-container h-[700px] w-full bg-slate-50 border border-border rounded-3xl overflow-hidden relative animate-in fade-in duration-500">
                     <div className="absolute top-4 left-4 z-10 p-4 pointer-events-none">
                         <h3 className="text-xl font-black text-text-main uppercase tracking-tighter opacity-20">
                             {graphFocus === 'ALL' ? 'Visión Sistémica 4Shine' : `Foco de Pilar: ${graphFocus}`}
@@ -275,7 +357,7 @@ export default function TaxonomyManager({
                     <TaxonomyGraph taxonomy={data} />
                 </div>
             ) : (
-                <div className="grid gap-6 animate-in fade-in duration-500">
+                <div className="taxonomy-view-container grid gap-6 animate-in fade-in duration-500 bg-white p-6 rounded-3xl">
                     {data.map(pillar => {
                         const pAssets = getLinkedAssets(pillar, 'Pillar')
                         const isPGap = pAssets.length === 0
