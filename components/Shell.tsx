@@ -4,12 +4,12 @@ import React, { useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { Terminal, RefreshCw } from 'lucide-react'
 import { signIn } from "next-auth/react"
+import { usePathname } from 'next/navigation'
 
 export default function Shell({ children, session }: { children: React.ReactNode, session: any }) {
     const [collapsed, setCollapsed] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-    const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+    const pathname = usePathname()
     const isPublicRoute = pathname.startsWith('/public')
 
     // Simplified Login View if no session 
