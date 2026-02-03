@@ -6,11 +6,11 @@ export class GeminiService {
     static async analyzeContent(text: string, context?: string) {
         if (!text || text.length < 50) return null
 
-        // Upgrading to Pro models for higher reasoning and better observations
+        // Using Gemini 2.0+ models only
         const modelsToTry = [
-            "gemini-2.0-flash", // Preferred for speed/reasoning balance
-            "gemini-2.5-flash", // Latest experimental
-            "gemini-1.5-flash-latest" // Fallback
+            "gemini-2.0-flash-exp", // Experimental with latest features
+            "gemini-2.0-flash",     // Stable 2.0 version
+            "gemini-2.5-flash"      // Latest experimental (if available)
         ]
 
         let apiKey = await SystemSettingsService.getGeminiApiKey()
@@ -355,8 +355,8 @@ export class GeminiService {
 
         const modelsToTry = [
             "gemini-2.0-flash-exp", // Best for vision
-            "gemini-2.0-flash",
-            "gemini-1.5-flash-latest"
+            "gemini-2.0-flash",     // Stable 2.0 version
+            "gemini-2.5-flash"      // Latest experimental (if available)
         ]
 
         let lastError = null
