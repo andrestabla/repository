@@ -9,9 +9,12 @@ export default function Shell({ children, session }: { children: React.ReactNode
     const [collapsed, setCollapsed] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+    const isPublicRoute = pathname.startsWith('/public')
+
     // Simplified Login View if no session 
     // (Note: MethodologySPA previously handled this internally, but now Shell wraps everything)
-    if (!session) {
+    if (!session && !isPublicRoute) {
         return (
             <div className="fixed inset-0 bg-bg flex items-center justify-center transition-colors">
                 <div className="text-center p-12 bg-panel border border-border rounded-2xl shadow-2xl max-w-sm w-full mx-4">
@@ -33,44 +36,52 @@ export default function Shell({ children, session }: { children: React.ReactNode
         )
     }
 
+    if (isPublicRoute) {
+        return (
+            <main className="flex-1 overflow-auto bg-bg h-screen w-screen">
+                {children}
+            </main>
+        )
+    }
+
     return (
         <div className="flex h-screen overflow-hidden bg-bg text-text-main font-ui">
             {/* Mobile Header */}
             <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-panel border-b border-border flex items-center justify-between px-4 z-40">
-               <div className="flex items-center gap-3">
-                   <button 
-                       onClick={() => setMobileMenuOpen(true)}
-                       className="p-2 -ml-2 text-text-muted hover:text-accent transition-colors"
-                   >
-                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                           <line x1="3" y1="12" x2="21" y2="12"></line>
-                           <line x1="3" y1="6" x2="21" y2="6"></line>
-                           <line x1="3" y1="18" x2="21" y2="18"></line>
-                       </svg>
-                   </button>
-                   <span className="font-bold text-lg">4Shine</span>
-               </div>
-               {session?.user?.image && (
-                   <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border border-border" />
-               )}
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setMobileMenuOpen(true)}
+                        className="p-2 -ml-2 text-text-muted hover:text-accent transition-colors"
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <span className="font-bold text-lg">4Shine</span>
+                </div>
+                {session?.user?.image && (
+                    <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border border-border" />
+                )}
             </header>
 
             {/* Mobile Sidebar Backdrop */}
             {mobileMenuOpen && (
-                <div 
+                <div
                     className="md:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm animate-in fade-in duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                 />
             )}
 
-            <Sidebar 
-                session={session} 
-                collapsed={collapsed} 
+            <Sidebar
+                session={session}
+                collapsed={collapsed}
                 setCollapsed={setCollapsed}
                 mobileMenuOpen={mobileMenuOpen}
                 setMobileMenuOpen={setMobileMenuOpen}
             />
-            
+
             <main className="flex-1 overflow-auto bg-bg relative transition-all duration-300 md:pt-0 pt-16">
                 {children}
             </main>
