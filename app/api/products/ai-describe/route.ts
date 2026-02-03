@@ -24,8 +24,14 @@ export async function POST(request: NextRequest) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
 
         const prompt = `
-        Actúa como un CONSULTOR EXPERTO en Estrategia Organizacional y Metodología 4Shine.
-        Tu tarea es generar metadatos profesionales para un nuevo "Producto Estratégico" que se cargará en el sistema.
+        Actúa como un CONSULTOR EXPERTO Senior en Estrategia Organizacional, Desarrollo de Talento y la Metodología 4Shine. 
+        Tu tarea es generar metadatos de ALTA PRECISIÓN y DETALLE para un nuevo "Producto Estratégico" que se integrará en el ecosistema de consultoría.
+
+        CONTEXTO METODOLÓGICO (4Shine):
+        - Shine Within: Autoliderazgo, propósito, bienestar y mentalidad.
+        - Shine Out: Relaciones, comunicación, marca personal e impacto externo.
+        - Shine Up: Liderazgo de equipos, gestión, networking y escalamiento.
+        - Shine Beyond: Visión global, legado, innovación y trascendencia.
 
         INPUT:
         - Título del Producto: "${title}"
@@ -33,14 +39,15 @@ export async function POST(request: NextRequest) {
 
         OUTPUT (JSON ONLY):
         Genera un objeto JSON con los siguientes campos:
-        1. "description": Una descripción atractiva, profesional y ejecutiva de lo que probablemente contiene este documento basándote en su título. (Máximo 300 caracteres).
-        2. "tags": Un array de 3 a 5 etiquetas (tags) cortas y relevantes para búsqueda (ej: "Liderazgo", "Mentoring", "Plantilla").
-        3. "category": Una categoría sugerida (ej: "Herramientas", "Reportes", "Material Didáctico", "Grabaciones").
+        1. "description": Una descripción detallada (mínimo 2-3 párrafos cortos o una estructura de puntos clara), profesional, precisa y con terminología ejecutiva. Debe explicar el valor estratégico del documento, a quién va dirigido y qué objetivos busca cumplir. (Aprox. 600-800 caracteres).
+        2. "tags": Un array de 5 a 8 etiquetas (tags) estratégicas y técnicas que faciliten la indexación semántica (ej: "Liderazgo Situacional", "OKR Tracking", "Soft Skills Development").
+        3. "category": Una categoría técnica específica (ej: "Framework Estratégico", "Dashboard de Seguimiento", "Guía de Implementación Metodológica").
 
-        Reglas:
-        - Tono: Corporativo, Inspirador, Ejecutivo.
+        REGLAS DE ORO:
+        - Tono: Altamente profesional, consultivo, nítido y sofisticado.
         - Idioma: Español.
-        - NO inventes datos específicos, sé general pero profesional si el título es ambiguo.
+        - Precisión: Si el título es específico, profundiza en esa temática. Si es general, infiere el valor estratégico basándote en estándares de la industria y la metodología 4Shine.
+        - NO uses frases vacías como "Documento esencial para...". Usa frases de valor como "Provee un marco analítico para la optimización de...".
         `
 
         const result = await model.generateContent({
