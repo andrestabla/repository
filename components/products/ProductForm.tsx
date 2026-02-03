@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from 'react'
-import { X, Sparkles, Loader2, Save } from 'lucide-react'
+import { X, Sparkles, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface ProductFormProps {
@@ -19,11 +19,13 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
     // Form State
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
-    const [type, setType] = useState('PDF')
+    const [type, setType] = useState('Documento')
+    const [sourceType, setSourceType] = useState<'drive' | 'embed'>('drive')
     const [driveLink, setDriveLink] = useState('')
+    const [embedCode, setEmbedCode] = useState('')
     const [category, setCategory] = useState('')
     const [tags, setTags] = useState<string[]>([])
-    const [pillar, setPillar] = useState('Shine Within')
+    const [pillar, setPillar] = useState('Todos')
 
     if (!isOpen) return null
 
@@ -62,7 +64,14 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title, description, type, driveLink, category, tags, pillar
+                    title,
+                    description,
+                    type,
+                    category,
+                    tags,
+                    pillar,
+                    driveLink: sourceType === 'drive' ? driveLink : undefined,
+                    embedCode: sourceType === 'embed' ? embedCode : undefined
                 })
             })
 
@@ -72,6 +81,7 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
             setTitle('')
             setDescription('')
             setDriveLink('')
+            setEmbedCode('')
             setTags([])
             onSuccess()
             onClose()
@@ -85,24 +95,25 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="bg-slate-900 w-full max-w-2xl rounded-2xl border border-slate-700 shadow-2xl p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="bg-panel w-full max-w-2xl rounded-2xl border border-border shadow-2xl p-8 relative animate-in fade-in zoom-in-95 duration-200">
 
                 {/* Close Button */}
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white">
-                    <X />
+                <button onClick={onClose} className="absolute top-6 right-6 text-text-muted hover:text-text-main transition-colors">
+                    <X size={20} />
                 </button>
 
-                <h2 className="text-2xl font-bold text-white mb-6">Nuevo Producto Estratégico</h2>
+                <h2 className="text-2xl font-black text-text-main mb-1 tracking-tight">Nuevo Producto Estratégico</h2>
+                <p className="text-sm text-text-muted mb-6">Completa la información para registrar un nuevo entregable.</p>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
 
                     {/* Title */}
                     <div>
-                        <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Título del Documento</label>
+                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Título del Documento</label>
                         <input
                             type="text"
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all placeholder:text-text-muted/50 font-medium"
                             placeholder="Ej: Playbook de Liderazgo 2026"
                             value={title}
                             onChange={e => setTitle(e.target.value)}
@@ -110,17 +121,44 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                         />
                     </div>
 
-                    {/* Drive Link */}
+                    {/* Source Selection Tabs */}
                     <div>
-                        <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Link de Google Drive</label>
-                        <input
-                            type="url"
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            placeholder="https://drive.google.com/file/d/..."
-                            value={driveLink}
-                            onChange={e => setDriveLink(e.target.value)}
-                            required
-                        />
+                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-2">Fuente del Contenido</label>
+                        <div className="flex bg-bg p-1 rounded-xl border border-border mb-3 w-fit">
+                            <button
+                                type="button"
+                                onClick={() => setSourceType('drive')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${sourceType === 'drive' ? 'bg-panel shadow-sm text-text-main border border-border/50' : 'text-text-muted hover:text-text-main'}`}
+                            >
+                                Google Drive
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSourceType('embed')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${sourceType === 'embed' ? 'bg-panel shadow-sm text-text-main border border-border/50' : 'text-text-muted hover:text-text-main'}`}
+                            >
+                                Código Embed HTML
+                            </button>
+                        </div>
+
+                        {sourceType === 'drive' ? (
+                            <input
+                                type="url"
+                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none"
+                                placeholder="https://drive.google.com/file/d/..."
+                                value={driveLink}
+                                onChange={e => setDriveLink(e.target.value)}
+                                required={sourceType === 'drive'}
+                            />
+                        ) : (
+                            <textarea
+                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none min-h-[80px] font-mono text-xs"
+                                placeholder="<iframe src='...' ...></iframe>"
+                                value={embedCode}
+                                onChange={e => setEmbedCode(e.target.value)}
+                                required={sourceType === 'embed'}
+                            />
+                        )}
                     </div>
 
                     {/* Magic AI Button Row */}
@@ -129,18 +167,18 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                             type="button"
                             onClick={handleMagicDescribe}
                             disabled={aiLoading || !title}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white text-xs font-bold hover:shadow-lg hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 transition-all"
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg text-white text-[10px] font-black tracking-wide hover:shadow-lg hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 transition-all uppercase"
                         >
-                            {aiLoading ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                            {aiLoading ? "ANALIZANDO..." : "GENERAR DESCRIPCIÓN CON IA"}
+                            {aiLoading ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                            {aiLoading ? "Analizando..." : "Generar Descripción con IA"}
                         </button>
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Descripción</label>
+                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Descripción</label>
                         <textarea
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none min-h-[100px]"
+                            className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none min-h-[100px]"
                             placeholder="Descripción del contenido..."
                             value={description}
                             onChange={e => setDescription(e.target.value)}
@@ -150,26 +188,27 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                     {/* Row 2 */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Tipo</label>
+                            <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Tipo</label>
                             <select
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none"
+                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main outline-none focus:ring-2 focus:ring-accent appearance-none"
                                 value={type}
                                 onChange={e => setType(e.target.value)}
                             >
-                                <option value="PDF">Documento PDF</option>
-                                <option value="Video">Video / Grabación</option>
-                                <option value="Presentation">Presentación (Slides)</option>
-                                <option value="Spreadsheet">Hoja de Cálculo</option>
-                                <option value="Doc">Documento de Texto</option>
+                                <option value="Documento">Documento</option>
+                                <option value="Esquema">Esquema</option>
+                                <option value="Video">Video</option>
+                                <option value="Audio">Audio</option>
+                                <option value="Herramienta">Herramienta</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Pilar</label>
+                            <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Pilar</label>
                             <select
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none"
+                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main outline-none focus:ring-2 focus:ring-accent appearance-none"
                                 value={pillar}
                                 onChange={e => setPillar(e.target.value)}
                             >
+                                <option value="Todos">Todos</option>
                                 <option value="Shine Within">Shine Within</option>
                                 <option value="Shine Out">Shine Out</option>
                                 <option value="Shine Up">Shine Up</option>
@@ -180,25 +219,25 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
 
                     {/* Tags */}
                     <div>
-                        <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Tags (Separados por coma)</label>
+                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Tags (Separados por coma)</label>
                         <input
                             type="text"
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none"
                             placeholder="Ej: Liderazgo, Q1, Reporte"
                             value={tags.join(', ')}
                             onChange={e => setTags(e.target.value.split(',').map(t => t.trim()))}
                         />
                     </div>
 
-                    <div className="pt-4 border-t border-slate-700 flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-5 py-3 text-slate-400 font-bold hover:text-white">Cancelar</button>
+                    <div className="pt-6 border-t border-border flex justify-end gap-3 mt-2">
+                        <button type="button" onClick={onClose} className="px-5 py-3 text-text-muted font-bold hover:text-text-main text-xs uppercase tracking-wide transition-colors">Cancelar</button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center gap-2"
+                            className="px-6 py-3 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl flex items-center gap-2 text-xs uppercase tracking-wide shadow-lg shadow-accent/20 transition-all hover:scale-105"
                         >
-                            {loading && <Loader2 className="animate-spin" />}
-                            GUARDAR PRODUCTO
+                            {loading && <Loader2 className="animate-spin" size={16} />}
+                            Guardar Producto
                         </button>
                     </div>
 

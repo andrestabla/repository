@@ -13,7 +13,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     try {
         const { id } = await params
         const body = await request.json()
-        const { title, description, type, driveLink, category, tags, pillar } = body
+        const { title, description, type, driveLink, embedCode, category, tags, pillar } = body
 
         // Re-extract drive ID if link changed
         const driveId = extractDriveId(driveLink)
@@ -26,6 +26,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 type,
                 driveLink,
                 driveId,
+                embedCode,
                 category,
                 tags,
                 pillar

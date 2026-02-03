@@ -11,13 +11,13 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
     const router = useRouter()
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
-    const [selectedType, setSelectedType] = useState('ALL')
+    const [selectedType, setSelectedType] = useState('Todos')
 
     const filteredProducts = initialProducts.filter(p => {
         const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
 
-        const matchesType = selectedType === 'ALL' || p.type === selectedType
+        const matchesType = selectedType === 'Todos' || p.type === selectedType
 
         return matchesSearch && matchesType
     })
@@ -27,25 +27,25 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
     }
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-8">
+        <div className="min-h-screen bg-bg text-text-main p-8 transition-colors duration-300">
 
             {/* Header Section */}
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-300">
+                    <h1 className="text-3xl font-black text-text-main tracking-tight">
                         Productos Estratégicos
                     </h1>
-                    <p className="text-slate-400 mt-2">
+                    <p className="text-text-muted mt-2 font-medium">
                         Repositorio de entregables y recursos del Sistema 4Shine®.
                     </p>
                 </div>
 
                 <button
                     onClick={() => setIsFormOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-900/40 hover:scale-105"
+                    className="flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl transition-all shadow-lg shadow-accent/30 hover:scale-105 uppercase text-xs tracking-wider"
                 >
-                    <Plus size={20} />
-                    NUEVO PRODUCTO
+                    <Plus size={18} />
+                    Nuevo Producto
                 </button>
             </div>
 
@@ -54,11 +54,11 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
 
                 {/* Search */}
                 <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
                     <input
                         type="text"
                         placeholder="Buscar por título o etiqueta..."
-                        className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-600"
+                        className="w-full pl-12 pr-4 py-3 bg-panel border border-border rounded-xl focus:ring-2 focus:ring-accent outline-none transition-all placeholder:text-text-muted/50 text-text-main shadow-sm"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
@@ -66,16 +66,18 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
 
                 {/* Type Filter */}
                 <div className="relative min-w-[200px]">
-                    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                     <select
-                        className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl outline-none appearance-none"
+                        className="w-full pl-11 pr-4 py-3 bg-panel border border-border rounded-xl outline-none focus:ring-2 focus:ring-accent appearance-none text-text-main shadow-sm font-medium"
                         value={selectedType}
                         onChange={e => setSelectedType(e.target.value)}
                     >
-                        <option value="ALL">Todos los Tipos</option>
-                        <option value="PDF">Documentos (PDF)</option>
+                        <option value="Todos">Todos los Tipos</option>
+                        <option value="Documento">Documentos</option>
+                        <option value="Esquema">Esquemas</option>
                         <option value="Video">Videos</option>
-                        <option value="Presentation">Presentaciones</option>
+                        <option value="Audio">Audios</option>
+                        <option value="Herramienta">Herramientas</option>
                     </select>
                 </div>
 
@@ -90,11 +92,12 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
 
             {/* Empty State */}
             {filteredProducts.length === 0 && (
-                <div className="text-center py-20">
-                    <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-600">
-                        <Search size={32} />
+                <div className="text-center py-24 bg-panel rounded-3xl border border-border mt-8">
+                    <div className="w-20 h-20 bg-bg rounded-full flex items-center justify-center mx-auto mb-6 text-text-muted">
+                        <Search size={32} opacity={0.5} />
                     </div>
-                    <h3 className="text-slate-500 font-medium">No se encontraron productos</h3>
+                    <h3 className="text-text-main font-bold text-lg mb-1">No se encontraron productos</h3>
+                    <p className="text-text-muted text-sm">Intenta ajustar tu búsqueda o crea un nuevo producto.</p>
                 </div>
             )}
 

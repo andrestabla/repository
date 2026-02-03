@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { title, description, type, driveLink, category, tags, pillar } = body
+        const { title, description, type, driveLink, embedCode, category, tags, pillar } = body
 
         // Auto-extract Drive ID if not provided but link is
         const driveId = extractDriveId(driveLink)
@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
                 description,
                 type,
                 driveLink,
+                embedCode,
                 driveId,
                 category,
                 tags: tags || [],
