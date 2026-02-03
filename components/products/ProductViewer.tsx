@@ -119,6 +119,8 @@ export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, 
     let contentUrl = ''
     if (currentDriveId) {
         contentUrl = DriveUtils.getEmbedUrl(currentDriveId, currentDriveLink || '')
+    } else if (currentDriveLink) {
+        contentUrl = currentDriveLink
     }
 
     return (

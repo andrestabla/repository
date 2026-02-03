@@ -183,7 +183,7 @@ model StrategicProduct {
   title       String
   description String?  // @db.Text not supported in basic postgres prisma unless using specific provider features, but String in Prisma maps to text in Postgres usually or we can rely on default
   type        String   // PDF, Presentation, Video, Spreadsheet, Doc
-  driveLink   String   // URL de Google Drive o externa
+  driveLink   String?  // URL de Google Drive o externa (opcional si hay embedCode)
   embedCode   String?  // Código HTML para embedders (YouTube, Vimeo, etc.)
   driveId     String?  // ID extraído para embed
   category    String?  // Categoría personalizada o tag
@@ -204,7 +204,7 @@ model StrategicProduct {
 model StrategicProductVersion {
   id            String           @id @default(cuid())
   versionNumber Int
-  driveLink     String
+  driveLink     String?
   driveId       String?
   embedCode     String?          @db.Text
   notes         String?          @db.Text

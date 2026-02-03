@@ -24,7 +24,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [type, setType] = useState('Documento')
-    const [sourceType, setSourceType] = useState<'drive' | 'embed'>('drive')
+    const [sourceType, setSourceType] = useState<'drive' | 'embed' | 'url'>('drive')
     const [driveLink, setDriveLink] = useState('')
     const [embedCode, setEmbedCode] = useState('')
     const [category, setCategory] = useState('')
@@ -42,7 +42,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
             setType(initialProduct.type || 'Documento')
             setDriveLink(initialProduct.driveLink || '')
             setEmbedCode(initialProduct.embedCode || '')
-            setSourceType(initialProduct.embedCode ? 'embed' : 'drive')
+            setSourceType(initialProduct.embedCode ? 'embed' : (initialProduct.driveId ? 'drive' : 'url'))
             setCategory(initialProduct.category || '')
             setTags(initialProduct.tags || [])
             setPillar(initialProduct.pillar || 'Todos')
@@ -126,7 +126,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
                     category,
                     tags,
                     pillar,
-                    driveLink: sourceType === 'drive' ? driveLink : undefined,
+                    driveLink: (sourceType === 'drive' || sourceType === 'url') ? driveLink : undefined,
                     embedCode: sourceType === 'embed' ? embedCode : undefined,
                     isNewVersion: initialProduct ? isNewVersion : false
                 })
@@ -194,10 +194,17 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
                             >
                                 Código Embed HTML
                             </button>
+                            <button
+                                type="button"
+                                onClick={() => setSourceType('url')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${sourceType === 'url' ? 'bg-panel shadow-sm text-text-main border border-border/50' : 'text-text-muted hover:text-text-main'}`}
+                            >
+                                Enlace Directo
+                            </button>
                         </div>
 
                         {sourceType === 'drive' ? (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <input
                                     type="url"
                                     className="flex-1 bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none"
@@ -212,7 +219,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
                                         else if (inferred === 'Hoja de Cálculo') setType('Herramienta')
                                         else if (inferred === 'Documento') setType('Documento')
                                     }}
-                                    required={sourceType === 'drive'}
+                                    required
                                 />
                                 <button
                                     type="button"
@@ -223,14 +230,30 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
                                     Explorar
                                 </button>
                             </div>
+                        ) : sourceType === 'url' ? (
+                            <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                <input
+                                    type="url"
+                                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none"
+                                    placeholder="https://ejemplo.com/recurso"
+                                    value={driveLink}
+                                    onChange={e => setDriveLink(e.target.value)}
+                                    required
+                                />
+                                <p className="text-[10px] text-text-muted mt-2 ml-1">
+                                    Cualquier sitio web que permita ser embebido se mostrará en el visor.
+                                </p>
+                            </div>
                         ) : (
-                            <textarea
-                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none min-h-[80px] font-mono text-xs"
-                                placeholder="<iframe src='...' ...></iframe>"
-                                value={embedCode}
-                                onChange={e => setEmbedCode(e.target.value)}
-                                required={sourceType === 'embed'}
-                            />
+                            <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                <textarea
+                                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none min-h-[80px] font-mono text-xs"
+                                    placeholder="<iframe src='...' ...></iframe>"
+                                    value={embedCode}
+                                    onChange={e => setEmbedCode(e.target.value)}
+                                    required
+                                />
+                            </div>
                         )}
                     </div>
 
