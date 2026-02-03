@@ -55,7 +55,7 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
             const res = await fetch('/api/products/ai-describe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, type })
+                body: JSON.stringify({ title, type, driveLink: sourceType === 'drive' ? driveLink : undefined })
             })
             const data = await res.json()
 
