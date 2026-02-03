@@ -1,7 +1,7 @@
 
 "use client"
 
-import { FileText, Video, Mic, Layout, Eye, Tag, Link as LinkIcon, Box } from 'lucide-react'
+import { FileText, Video, Mic, Layout, Eye, Tag, Link as LinkIcon, Box, Edit2, Trash2, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 import { ProductViewer } from './ProductViewer'
 
@@ -19,8 +19,15 @@ export interface Product {
     updatedAt: string | Date;
 }
 
-export function ProductCard({ product }: { product: Product }) {
+interface ProductCardProps {
+    product: Product;
+    onEdit: (product: Product) => void;
+    onDelete: (id: string) => void;
+}
+
+export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
     const [isViewerOpen, setIsViewerOpen] = useState(false)
+    const [showActions, setShowActions] = useState(false)
 
     const getIcon = (type: string) => {
         const t = type.toLowerCase()
@@ -40,11 +47,45 @@ export function ProductCard({ product }: { product: Product }) {
                     <div className="p-3 bg-bg rounded-xl border border-border group-hover:scale-110 transition-transform duration-300 group-hover:bg-accent/10">
                         {getIcon(product.type)}
                     </div>
-                    {product.category && (
-                        <span className="px-2.5 py-1 text-[10px] uppercase font-black tracking-widest bg-bg text-text-muted border border-border rounded-lg group-hover:border-accent/20 group-hover:text-accent transition-colors">
-                            {product.category}
-                        </span>
-                    )}
+
+                    <div className="flex items-center gap-2">
+                        {product.category && (
+                            <span className="px-2.5 py-1 text-[10px] uppercase font-black tracking-widest bg-bg text-text-muted border border-border rounded-lg group-hover:border-accent/20 group-hover:text-accent transition-colors">
+                                {product.category}
+                            </span>
+                        )}
+
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowActions(!showActions)}
+                                className="p-1.5 hover:bg-bg rounded-lg text-text-muted hover:text-text-main transition-colors"
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+
+                            {showActions && (
+                                <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
+                                    <div className="absolute right-0 mt-2 w-32 bg-panel border border-border rounded-xl shadow-xl z-20 py-2 animate-in fade-in zoom-in-95 duration-200">
+                                        <button
+                                            onClick={() => { onEdit(product); setShowActions(false); }}
+                                            className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-bold text-text-main hover:bg-bg hover:text-accent transition-colors"
+                                        >
+                                            <Edit2 size={12} />
+                                            Editar
+                                        </button>
+                                        <button
+                                            onClick={() => { if (confirm('¿Eliminar producto?')) onDelete(product.id); setShowActions(false); }}
+                                            className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-bold text-red-500 hover:bg-red-50 transition-colors"
+                                        >
+                                            <Trash2 size={12} />
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Content */}
@@ -88,6 +129,7 @@ export function ProductCard({ product }: { product: Product }) {
 
             {/* Viewer Modal */}
             <ProductViewer
+                id={product.id}
                 isOpen={isViewerOpen}
                 onClose={() => setIsViewerOpen(false)}
                 title={product.title}

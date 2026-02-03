@@ -197,4 +197,15 @@ model StrategicProduct {
   
   // Relaciones opcionales
   pillar      String? 
+  comments    StrategicProductComment[]
+}
+
+model StrategicProductComment {
+  id        String           @id @default(cuid())
+  content   String           @db.Text
+  productId String
+  product   StrategicProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userEmail String
+  userName  String?
+  createdAt DateTime         @default(now())
 }

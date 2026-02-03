@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 export function ProductsView({ initialProducts }: { initialProducts: Product[] }) {
     const router = useRouter()
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined)
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedType, setSelectedType] = useState('Todos')
 
@@ -24,6 +25,26 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
 
     const handleSuccess = () => {
         router.refresh()
+        setIsFormOpen(false)
+        setEditingProduct(undefined)
+    }
+
+    const handleEdit = (product: Product) => {
+        setEditingProduct(product)
+        setIsFormOpen(true)
+    }
+
+    const handleDelete = async (id: string) => {
+        try {
+            const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
+            if (res.ok) {
+                router.refresh()
+            } else {
+                alert("Error al eliminar el producto.")
+            }
+        } catch (error) {
+            console.error("Delete Error:", error)
+        }
     }
 
     return (
@@ -41,7 +62,7 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
                 </div>
 
                 <button
-                    onClick={() => setIsFormOpen(true)}
+                    onClick={() => { setEditingProduct(undefined); setIsFormOpen(true); }}
                     className="flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl transition-all shadow-lg shadow-accent/30 hover:scale-105 uppercase text-xs tracking-wider"
                 >
                     <Plus size={18} />
@@ -86,7 +107,12 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
             {/* Grid */}
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard
+                        key={product.id}
+                        product={product}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                    />
                 ))}
             </div>
 
@@ -104,8 +130,9 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
             {/* Form Modal */}
             <ProductForm
                 isOpen={isFormOpen}
-                onClose={() => setIsFormOpen(false)}
+                onClose={() => { setIsFormOpen(false); setEditingProduct(undefined); }}
                 onSuccess={handleSuccess}
+                initialProduct={editingProduct}
             />
 
         </div>

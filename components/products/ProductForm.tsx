@@ -1,19 +1,21 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Sparkles, Loader2, Link as LinkIcon, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { DriveUtils } from '@/lib/google'
 import { DriveExplorerModal } from './DriveExplorerModal'
+import { Product } from './ProductCard'
 
 interface ProductFormProps {
     isOpen: boolean
     onClose: () => void
     onSuccess: () => void
+    initialProduct?: Product
 }
 
-export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
+export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: ProductFormProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [aiLoading, setAiLoading] = useState(false)
@@ -30,6 +32,36 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
     const [pillar, setPillar] = useState('Todos')
 
     const [isDriveExplorerOpen, setIsDriveExplorerOpen] = useState(false)
+
+    // Populate form on edit mode
+    useEffect(() => {
+        if (initialProduct && isOpen) {
+            setTitle(initialProduct.title || '')
+            setDescription(initialProduct.description || '')
+            setType(initialProduct.type || 'Documento')
+            setDriveLink(initialProduct.driveLink || '')
+            setEmbedCode(initialProduct.embedCode || '')
+            setSourceType(initialProduct.embedCode ? 'embed' : 'drive')
+            setCategory(initialProduct.category || '')
+            setTags(initialProduct.tags || [])
+            setPillar(initialProduct.pillar || 'Todos')
+        } else if (!isOpen) {
+            // Reset when closing
+            resetForm()
+        }
+    }, [initialProduct, isOpen])
+
+    const resetForm = () => {
+        setTitle('')
+        setDescription('')
+        setType('Documento')
+        setDriveLink('')
+        setEmbedCode('')
+        setSourceType('drive')
+        setCategory('')
+        setTags([])
+        setPillar('Todos')
+    }
 
     const handleDriveSelect = (file: any) => {
         const url = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`
@@ -77,9 +109,12 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
         e.preventDefault()
         setLoading(true)
 
+        const method = initialProduct ? 'PUT' : 'POST'
+        const url = initialProduct ? `/api/products/${initialProduct.id}` : '/api/products'
+
         try {
-            const res = await fetch('/api/products', {
-                method: 'POST',
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     title,
@@ -93,14 +128,8 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                 })
             })
 
-            if (!res.ok) throw new Error('Failed to create')
+            if (!res.ok) throw new Error('Failed to save')
 
-            // Reset and close
-            setTitle('')
-            setDescription('')
-            setDriveLink('')
-            setEmbedCode('')
-            setTags([])
             onSuccess()
             onClose()
             router.refresh()
@@ -121,8 +150,12 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                     <X size={20} />
                 </button>
 
-                <h2 className="text-2xl font-black text-text-main mb-1 tracking-tight">Nuevo Producto Estratégico</h2>
-                <p className="text-sm text-text-muted mb-6">Completa la información para registrar un nuevo entregable.</p>
+                <h2 className="text-2xl font-black text-text-main mb-1 tracking-tight">
+                    {initialProduct ? 'Editar Producto Estratégico' : 'Nuevo Producto Estratégico'}
+                </h2>
+                <p className="text-sm text-text-muted mb-6">
+                    {initialProduct ? 'Actualiza la información de este entregable.' : 'Completa la información para registrar un nuevo entregable.'}
+                </p>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 
@@ -273,7 +306,7 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                             className="px-6 py-3 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl flex items-center gap-2 text-xs uppercase tracking-wide shadow-lg shadow-accent/20 transition-all hover:scale-105"
                         >
                             {loading && <Loader2 className="animate-spin" size={16} />}
-                            Guardar Producto
+                            {initialProduct ? 'Actualizar Producto' : 'Guardar Producto'}
                         </button>
                     </div>
 
