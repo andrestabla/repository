@@ -3,9 +3,11 @@
 
 import { X } from 'lucide-react'
 import { useEffect } from 'react'
+import { DriveUtils } from '@/lib/google'
 
 interface ProductViewerProps {
     driveId: string | null;
+    driveLink?: string; // Original URL to help determine optimal embed
     embedCode: string | null;
     title: string;
     type: string;
@@ -13,7 +15,7 @@ interface ProductViewerProps {
     onClose: () => void;
 }
 
-export function ProductViewer({ driveId, embedCode, title, type, isOpen, onClose }: ProductViewerProps) {
+export function ProductViewer({ driveId, driveLink, embedCode, title, type, isOpen, onClose }: ProductViewerProps) {
 
     // Prevent scrolling when modal is open
     useEffect(() => {
@@ -26,6 +28,12 @@ export function ProductViewer({ driveId, embedCode, title, type, isOpen, onClose
     }, [isOpen])
 
     if (!isOpen) return null
+
+    // Determine content URL
+    let contentUrl = ''
+    if (driveId) {
+        contentUrl = DriveUtils.getEmbedUrl(driveId, driveLink || '')
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -52,9 +60,9 @@ export function ProductViewer({ driveId, embedCode, title, type, isOpen, onClose
                             className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:border-0"
                             dangerouslySetInnerHTML={{ __html: embedCode }}
                         />
-                    ) : driveId ? (
+                    ) : contentUrl ? (
                         <iframe
-                            src={`https://drive.google.com/file/d/${driveId}/preview`}
+                            src={contentUrl}
                             className="absolute inset-0 w-full h-full border-0"
                             allow="autoplay"
                             title={title}

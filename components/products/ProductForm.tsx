@@ -2,8 +2,9 @@
 "use client"
 
 import { useState } from 'react'
-import { X, Sparkles, Loader2 } from 'lucide-react'
+import { X, Sparkles, Loader2, Link as LinkIcon, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { DriveUtils } from '@/lib/google'
 
 interface ProductFormProps {
     isOpen: boolean
@@ -147,7 +148,15 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                                 className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none"
                                 placeholder="https://drive.google.com/file/d/..."
                                 value={driveLink}
-                                onChange={e => setDriveLink(e.target.value)}
+                                onChange={e => {
+                                    const val = e.target.value
+                                    setDriveLink(val)
+                                    // Auto-detect type
+                                    const inferred = DriveUtils.inferType(val)
+                                    if (inferred === 'Presentación') setType('Esquema')
+                                    else if (inferred === 'Hoja de Cálculo') setType('Herramienta')
+                                    else if (inferred === 'Documento') setType('Documento')
+                                }}
                                 required={sourceType === 'drive'}
                             />
                         ) : (

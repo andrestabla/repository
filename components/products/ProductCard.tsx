@@ -10,6 +10,7 @@ export interface Product {
     title: string;
     description: string | null;
     type: string;
+    driveLink: string;
     driveId: string | null;
     embedCode: string | null;
     category: string | null;
@@ -92,6 +93,7 @@ export function ProductCard({ product }: { product: Product }) {
                 title={product.title}
                 type={product.type}
                 driveId={product.driveId}
+                driveLink={product.driveLink}
                 embedCode={product.embedCode}
             />
         </>

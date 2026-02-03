@@ -2,12 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
-// Helper to extract Drive ID
-function extractDriveId(url: string): string | null {
-    const regex = /[-\w]{25,}/;
-    const match = url.match(regex);
-    return match ? match[0] : null;
-}
+import { DriveUtils } from '@/lib/google'
 
 export async function GET(request: NextRequest) {
     try {
@@ -34,7 +29,7 @@ export async function POST(request: NextRequest) {
         const { title, description, type, driveLink, embedCode, category, tags, pillar } = body
 
         // Auto-extract Drive ID if not provided but link is
-        const driveId = extractDriveId(driveLink)
+        const driveId = DriveUtils.extractId(driveLink)
 
         const newProduct = await prisma.strategicProduct.create({
             data: {
