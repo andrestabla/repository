@@ -136,6 +136,7 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
                 onClose={() => setIsViewerOpen(false)}
                 title={product.title}
                 type={product.type}
+                description={product.description}
                 driveId={product.driveId}
                 driveLink={product.driveLink}
                 embedCode={product.embedCode}

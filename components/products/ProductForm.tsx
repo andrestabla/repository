@@ -99,6 +99,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
             if (data.description) setDescription(data.description)
             if (data.category && !category) setCategory(data.category)
             if (data.tags && data.tags.length > 0) setTags(data.tags)
+            if (data.pillar && (pillar === 'Todos' || !pillar)) setPillar(data.pillar)
 
         } catch (error) {
             console.error(error)

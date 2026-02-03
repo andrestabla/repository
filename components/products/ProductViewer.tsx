@@ -19,6 +19,7 @@ interface ProductViewerProps {
     driveId: string | null;
     driveLink: string | null;
     embedCode: string | null;
+    description: string | null;
     title: string;
     type: string;
     isOpen: boolean;
@@ -35,7 +36,7 @@ interface ProductVersion {
     createdAt: string | Date;
 }
 
-export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, isOpen, onClose }: ProductViewerProps) {
+export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, description, isOpen, onClose }: ProductViewerProps) {
     const { data: session } = useSession()
     const [comments, setComments] = useState<Comment[]>([])
     const [newComment, setNewComment] = useState('')
@@ -209,9 +210,19 @@ export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, 
                     <div className="p-6 border-b border-border bg-bg/30">
                         <h3 className="text-sm font-black text-text-main flex items-center gap-2 uppercase tracking-wider">
                             <MessageSquare size={16} className="text-accent" />
-                            Comentarios e Hilos
+                            Información y Feedback
                         </h3>
                     </div>
+
+                    {/* Product Description */}
+                    {description && (
+                        <div className="p-6 border-b border-border bg-bg/10">
+                            <p className="text-xs font-bold text-text-muted uppercase tracking-widest mb-2 opacity-50">Descripción del Producto</p>
+                            <p className="text-sm text-text-main leading-relaxed italic">
+                                "{description}"
+                            </p>
+                        </div>
+                    )}
 
                     {/* Comments List */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
@@ -276,6 +287,6 @@ export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, 
                 </div>
 
             </div>
-        </div>
+        </div >
     )
 }
