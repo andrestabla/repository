@@ -99,7 +99,7 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                        {product.tags.slice(0, 3).map(tag => (
+                        {product.tags?.slice(0, 3).map(tag => (
                             <div key={tag} className="flex items-center text-[10px] font-bold text-text-muted bg-bg px-2 py-1 rounded-md border border-border/50">
                                 <Tag size={10} className="mr-1 opacity-50" />
                                 {tag}

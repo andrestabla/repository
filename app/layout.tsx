@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   description: 'Sistema de registro y generación de metodología 4Shine.',
 }
 
+import { Providers } from '@/components/Providers'
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -24,10 +26,12 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased h-screen overflow-hidden`}>
-        <Shell session={session}>
-          {children}
-          <Toaster richColors position="bottom-right" />
-        </Shell>
+        <Providers>
+          <Shell session={session}>
+            {children}
+            <Toaster richColors position="bottom-right" />
+          </Shell>
+        </Providers>
       </body>
     </html>
   )
