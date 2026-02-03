@@ -64,7 +64,7 @@ Esta sección contiene todos los activos validados de la metodología 4Shine, or
                     md += `- **ID:** ${asset.id}\n`
                     if (asset.competence) md += `- **Competencia:** ${asset.competence}\n`
                     if (asset.behavior) md += `- **Conducta:** ${asset.behavior}\n`
-                    if (asset.maturityLevel) md += `- **Nivel de Madurez:** ${asset.maturityLevel}\n`
+                    if (asset.maturity) md += `- **Nivel de Madurez:** ${asset.maturity}\n`
 
                     md += `\n**CONTENIDO / OBSERVACIONES:**\n`
                     // Clean content to avoid markdown breaking issues if any
@@ -80,8 +80,7 @@ Esta sección contiene todos los activos validados de la metodología 4Shine, or
 
         for (const res of research) {
             md += `### [INVESTIGACIÓN] ${res.title}\n`
-            if (res.year) md += `- **Año:** ${res.year}\n`
-            if (res.author) md += `- **Autor:** ${res.author}\n`
+            if (res.apa) md += `- **Citation (APA):** ${res.apa}\n`
             if (res.url) md += `- **URL:** ${res.url}\n`
 
             md += `\n**RESUMEN / HALLAZGOS:**\n`
