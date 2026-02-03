@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { X, Sparkles, Loader2, Link as LinkIcon, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { DriveUtils } from '@/lib/google'
+import { useEffect } from 'react'
+import { useDrivePicker } from '@/hooks/useDrivePicker'
 
 interface ProductFormProps {
     isOpen: boolean
@@ -27,6 +29,23 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
     const [category, setCategory] = useState('')
     const [tags, setTags] = useState<string[]>([])
     const [pillar, setPillar] = useState('Todos')
+
+    const { loadScripts, openPicker } = useDrivePicker()
+
+    useEffect(() => {
+        if (isOpen) loadScripts()
+    }, [isOpen, loadScripts])
+
+    const handleDriveSelect = (file: any) => {
+        setDriveLink(file.url)
+        if (!title) setTitle(file.name)
+
+        // Auto-detect type from file metadata if possible, or fallback to URL inference
+        const inferred = DriveUtils.inferType(file.url)
+        if (inferred === 'Presentación') setType('Esquema')
+        else if (inferred === 'Hoja de Cálculo') setType('Herramienta')
+        else if (inferred === 'Documento') setType('Documento')
+    }
 
     if (!isOpen) return null
 
@@ -143,22 +162,32 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                         </div>
 
                         {sourceType === 'drive' ? (
-                            <input
-                                type="url"
-                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none"
-                                placeholder="https://drive.google.com/file/d/..."
-                                value={driveLink}
-                                onChange={e => {
-                                    const val = e.target.value
-                                    setDriveLink(val)
-                                    // Auto-detect type
-                                    const inferred = DriveUtils.inferType(val)
-                                    if (inferred === 'Presentación') setType('Esquema')
-                                    else if (inferred === 'Hoja de Cálculo') setType('Herramienta')
-                                    else if (inferred === 'Documento') setType('Documento')
-                                }}
-                                required={sourceType === 'drive'}
-                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="url"
+                                    className="flex-1 bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none"
+                                    placeholder="https://drive.google.com/file/d/..."
+                                    value={driveLink}
+                                    onChange={e => {
+                                        const val = e.target.value
+                                        setDriveLink(val)
+                                        // Auto-detect type
+                                        const inferred = DriveUtils.inferType(val)
+                                        if (inferred === 'Presentación') setType('Esquema')
+                                        else if (inferred === 'Hoja de Cálculo') setType('Herramienta')
+                                        else if (inferred === 'Documento') setType('Documento')
+                                    }}
+                                    required={sourceType === 'drive'}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => openPicker(handleDriveSelect)}
+                                    className="px-4 py-3 bg-bg border border-border rounded-xl text-text-muted hover:text-text-main hover:border-accent transition-all flex items-center gap-2 text-xs font-bold"
+                                >
+                                    <LinkIcon size={14} />
+                                    Explorar
+                                </button>
+                            </div>
                         ) : (
                             <textarea
                                 className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none min-h-[80px] font-mono text-xs"
