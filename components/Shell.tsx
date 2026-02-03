@@ -10,7 +10,7 @@ export default function Shell({ children, session }: { children: React.ReactNode
     const [collapsed, setCollapsed] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const pathname = usePathname()
-    const isPublicRoute = pathname.startsWith('/public')
+    const isPublicRoute = pathname?.startsWith('/share') || pathname?.startsWith('/public') // Keeping public just in case, but share is primary
 
     // Simplified Login View if no session 
     // (Note: MethodologySPA previously handled this internally, but now Shell wraps everything)
