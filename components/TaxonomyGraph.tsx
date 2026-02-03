@@ -220,7 +220,7 @@ export default function TaxonomyGraph({ taxonomy }: { taxonomy: TaxonomyItem[] }
                 <div className="font-black uppercase tracking-widest text-text-muted mb-3 opacity-70">Leyenda</div>
                 <div className="space-y-2">
                     <LegendItem color="bg-purple-600" label="Pilar (N1)" icon="hexagon" />
-                    <LegendItem color="bg-blue-500" label="Subcomponente (N2)" />
+                    <LegendItem color="bg-blue-500" label="Componente (N2)" />
                     <LegendItem color="bg-emerald-500" label="Competencia (N3)" />
                     <LegendItem color="bg-amber-500" label="Conducta (N4)" />
                 </div>

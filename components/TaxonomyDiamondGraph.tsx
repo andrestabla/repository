@@ -310,7 +310,7 @@ export default function TaxonomyDiamondGraph({ data, focus, inventory = [], show
                         .style('top', `${event.pageY - 10}px`)
                         .html(`
                             <div class="font-bold text-sm mb-1" style="color: ${d.color}">${d.name}</div>
-                            <div class="text-[10px] text-text-muted uppercase tracking-wider mb-2">${d.level === 'Pillar' ? 'Pilar' : d.level === 'Sub' ? 'Subcomponente' : d.level === 'Comp' ? 'Competencia' : 'Conducta'}</div>
+                            <div class="text-[10px] text-text-muted uppercase tracking-wider mb-2">${d.level === 'Pillar' ? 'Pilar' : d.level === 'Sub' ? 'Componente' : d.level === 'Comp' ? 'Competencia' : 'Conducta'}</div>
                             ${d.level === 'Pillar' ? `<div class="text-xs text-text-main">Eje principal del framework 4Shine</div>` : ''}
                             ${d.isGap && showGaps ? '<div class="text-xs text-danger mt-2 font-bold">⚠️ Sin contenido vinculado</div>' : ''}
                         `)

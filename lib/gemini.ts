@@ -65,7 +65,7 @@ export class GeminiService {
         taxonomyTree.forEach(p => {
             taxonomyContext += `\nPILAR: ${p.name}\n`;
             p.children.forEach(sub => {
-                taxonomyContext += `  - Subcomponente: ${sub.name}\n`;
+                taxonomyContext += `  - Componente: ${sub.name}\n`;
                 sub.children.forEach(comp => {
                     taxonomyContext += `    * Competencia: ${comp.name}\n`;
                     const behaviors = comp.children.map(b => b.name).join(' | ');
@@ -86,7 +86,7 @@ export class GeminiService {
 
             --- REGLAS DE ORO DE ANÁLISIS ---
             0. **IDIOMA OBLIGATORIO**: TODO el contenido generado (summary, observations, relation4Shine, findings, etc.) DEBE estar en ESPAÑOL, incluso si el texto original está en inglés u otro idioma. TRADUCE Y ADAPTA si es necesario.
-            1. SELECCIÓN DE PILAR OBLIGATORIA: Elige uno de los 4 pilares (Shine In, Shine Out, Shine Up, Shine Beyond) que mejor encaje.
+            1. SELECCIÓN DE PILAR OBLIGATORIA: Elige uno de los 4 pilares (Shine Within, Shine Out, Shine Up, Shine Beyond) que mejor encaje.
             2. **TAXONOMÍA EXACTA**: Para "sub", "competence" y "behavior", DEBES usar una de las opciones listadas arriba que corresponda al Pilar seleccionado. NO INVENTES nombres. El texto debe coincidir carácter por carácter para que el sistema lo reconozca.
             3. CRITERIO DE EXPERTO: Si el contenido toca varios puntos, elige el más dominante.
 
@@ -291,7 +291,7 @@ export class GeminiService {
         taxonomyTree.forEach(p => {
             taxonomyContext += `\nPILAR: ${p.name}\n`;
             p.children.forEach(sub => {
-                taxonomyContext += `  - Subcomponente: ${sub.name}\n`;
+                taxonomyContext += `  - Componente: ${sub.name}\n`;
                 sub.children.forEach(comp => {
                     taxonomyContext += `    * Competencia: ${comp.name}\n`;
                     const behaviors = comp.children.map(b => b.name).join(' | ');
@@ -312,7 +312,7 @@ export class GeminiService {
 
             --- REGLAS DE ORO DE ANÁLISIS ---
             0. **IDIOMA OBLIGATORIO**: TODO el contenido generado (summary, observations, relation4Shine, findings, etc.) DEBE estar en ESPAÑOL, incluso si el texto original está en inglés u otro idioma. TRADUCE Y ADAPTA si es necesario.
-            1. SELECCIÓN DE PILAR OBLIGATORIA: Elige uno de los 4 pilares (Shine In, Shine Out, Shine Up, Shine Beyond) que mejor encaje.
+            1. SELECCIÓN DE PILAR OBLIGATORIA: Elige uno de los 4 pilares (Shine Within, Shine Out, Shine Up, Shine Beyond) que mejor encaje.
             2. **TAXONOMÍA EXACTA**: Para "sub", "competence" y "behavior", DEBES usar una de las opciones listadas arriba que corresponda al Pilar seleccionado. NO INVENTES nombres. El texto debe coincidir carácter por carácter para que el sistema lo reconozca.
             3. CRITERIO DE EXPERTO: Si el contenido toca varios puntos, elige el más dominante.
             4. **ANÁLISIS DE IMAGEN**: Describe el contenido visual, identifica elementos clave, texto visible, diagramas, gráficos, y cualquier información relevante para la metodología 4Shine.

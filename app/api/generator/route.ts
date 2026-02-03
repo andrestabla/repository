@@ -17,7 +17,7 @@ La plataforma 4Shine es un sistema de gestión de conocimiento metodológico con
 
 1. **INVENTARIO DE ACTIVOS** (/inventario)
    - Repositorio central de activos metodológicos validados
-   - Cada activo está vinculado a Pilares, Subcomponentes, Competencias y Conductas
+   - Cada activo está vinculado a Pilares, Componentes, Competencias y Conductas
    - Estados: Borrador, Revisión, Validado
    - Niveles de Madurez: Básico, En Desarrollo, Avanzado, Maestría
 
@@ -28,7 +28,7 @@ La plataforma 4Shine es un sistema de gestión de conocimiento metodológico con
 
 3. **TAXONOMÍA** (/taxonomy)
    - Arquitectura estructural del framework 4Shine
-   - Jerarquía: Pilares (L1) → Subcomponentes (L2) → Competencias (L3) → Conductas (L4)
+   - Jerarquía: Pilares (L1) → Componentes (L2) → Competencias (L3) → Conductas (L4)
    - Los 4 Pilares principales son: Shine Within, Shine Out, Shine Up, Shine Beyond
 
 4. **GLOSARIO** (/glossary)

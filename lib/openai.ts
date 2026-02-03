@@ -80,7 +80,7 @@ export class OpenAIService {
               "type": "PDF | Video | Audio | Toolkit | Test",
               "primaryPillar": "Shine Within | Shine Out | Shine Up | Shine Beyond",
               "secondaryPillars": ["Pilar 2"],
-              "sub": "Subcomponente",
+              "sub": "Componente",
               "competence": "Competencia",
               "behavior": "Conducta Observable",
               "maturity": "Básico | En Desarrollo | Avanzado | Maestría",

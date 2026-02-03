@@ -50,7 +50,7 @@ async function fetchTaxonomyContext() {
     taxonomyTree.forEach(p => {
         taxonomyContext += `\nPILAR: ${p.name}\n`;
         p.children.forEach(sub => {
-            taxonomyContext += `  - Subcomponente: ${sub.name}\n`;
+            taxonomyContext += `  - Componente: ${sub.name}\n`;
             sub.children.forEach(comp => {
                 taxonomyContext += `    * Competencia: ${comp.name}\n`;
                 const behaviors = comp.children.map(b => b.name).join(' | ');

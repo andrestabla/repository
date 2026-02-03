@@ -636,7 +636,7 @@ export default function ContentForm({ initialData, onClose, onSave, readOnly = f
                                     <FormMultiSelect label="Pilares de Apoyo (Secundarios)" value={formData.secondaryPillars} onChange={(v: string[]) => updateField('secondaryPillars', v)} options={pillarOptions} readOnly={readOnly} />
 
                                     <FormSelect
-                                        label="Subcomponente"
+                                        label="Componente"
                                         value={formData.sub}
                                         onChange={(v: string) => {
                                             updateField('sub', v)

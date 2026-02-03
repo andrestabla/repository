@@ -681,7 +681,7 @@ export default function TaxonomyManager({
                                                 onClick={() => handleAddNode(pillar.id, 'Component')}
                                                 className="bg-panel border border-border text-text-muted px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest hover:border-accent hover:text-accent transition-all flex items-center gap-2"
                                             >
-                                                <PlusCircle size={14} /> Subcomponente
+                                                <PlusCircle size={14} /> Componente
                                             </button>
                                         </div>
                                     </div>
@@ -700,7 +700,7 @@ export default function TaxonomyManager({
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-6 h-6 rounded bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px] font-bold">L2</div>
                                                             <span className="font-bold text-sm text-text-main">{level2.name}</span>
-                                                            <span className="text-[10px] text-text-muted uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-1.5 rounded">Subcomponente</span>
+                                                            <span className="text-[10px] text-text-muted uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-1.5 rounded">Componente</span>
                                                         </div>
                                                         <div className="flex gap-1">
                                                             <IconButton icon={<Edit2 size={12} />} onClick={() => handleEditName(level2.id, level2.name)} />

@@ -522,7 +522,7 @@ function InventoryView({ data, role, onRefresh, isRefreshing }: { data: ContentI
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
                                 <DataPointCard icon={<LayoutDashboard size={18} />} label="Pilar Principal" value={(selectedItem as any).primaryPillar || ''} />
-                                <DataPointCard icon={<Grid3X3 size={18} />} label="Subcomponente" value={selectedItem.sub || ''} />
+                                <DataPointCard icon={<Grid3X3 size={18} />} label="Componente" value={selectedItem.sub || ''} />
                                 <DataPointCard icon={<Monitor size={18} />} label="Nivel Madurez" value={selectedItem.maturity || ''} />
                                 <DataPointCard icon={<ShieldCheck size={18} />} label="Estado de Calidad" value={selectedItem.status || ''} />
                             </div>

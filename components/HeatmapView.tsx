@@ -37,7 +37,7 @@ export default function HeatmapView({ subcomponents, maturityLevels, heatmap }: 
                             <tr className="bg-panel/80 backdrop-blur-sm border-b border-border">
                                 <th className="p-6 text-left text-[11px] font-black text-text-muted uppercase tracking-[0.2em] border-r border-border min-w-[240px]">
                                     <div className="flex items-center gap-2">
-                                        Subcomponente <ChevronDown size={12} className="opacity-50" />
+                                        Componente <ChevronDown size={12} className="opacity-50" />
                                     </div>
                                 </th>
                                 {maturityLevels.map(lvl => (

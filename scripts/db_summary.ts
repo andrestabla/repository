@@ -24,7 +24,7 @@ async function main() {
     pillars.forEach(p => {
         const subs = p.children.length
         const comps = p.children.reduce((acc, c) => acc + (c.children?.length || 0), 0)
-        console.log(`   - ${p.name}: ${subs} Subcomponentes, ${comps} Competencias`)
+        console.log(`   - ${p.name}: ${subs} Componentes, ${comps} Competencias`)
     })
     console.log('')
 

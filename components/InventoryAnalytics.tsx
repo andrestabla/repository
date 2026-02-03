@@ -197,7 +197,7 @@ export default function InventoryAnalytics() {
                     </ResponsiveContainer>
                 </div>
                 <div className="mt-4 text-xs text-text-muted text-center max-w-2xl mx-auto">
-                    Este mapa muestra la densidad de activos por Subcomponente (Cajas Grandes) y Competencias (Cajas Pequeñas).
+                    Este mapa muestra la densidad de activos por Componente (Cajas Grandes) y Competencias (Cajas Pequeñas).
                     <br />
                     <strong>Tamaño</strong> = Cantidad de Activos. <strong>Color</strong> = Pilar Principal.
                 </div>
