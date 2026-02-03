@@ -9,14 +9,19 @@ export default async function ProductsPage() {
 
     // Fetch initial data on server
     const initialProducts = await prisma.strategicProduct.findMany({
-        orderBy: { updatedAt: 'desc' }
+        orderBy: { updatedAt: 'desc' },
+        include: { versions: true }
     })
 
-    // Serialize dates if necessary (Next.js server components handle Date objects well now, but good to be safe for client)
+    // Serialize dates if necessary
     const serialized = initialProducts.map(p => ({
         ...p,
         updatedAt: p.updatedAt.toISOString(),
-        createdAt: p.createdAt.toISOString()
+        createdAt: p.createdAt.toISOString(),
+        versions: p.versions.map(v => ({
+            ...v,
+            createdAt: v.createdAt.toISOString()
+        }))
     }))
 
     return <ProductsView initialProducts={serialized} />

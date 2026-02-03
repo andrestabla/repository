@@ -197,7 +197,22 @@ model StrategicProduct {
   
   // Relaciones opcionales
   pillar      String? 
+  versions    StrategicProductVersion[]
   comments    StrategicProductComment[]
+}
+
+model StrategicProductVersion {
+  id            String           @id @default(cuid())
+  versionNumber Int
+  driveLink     String
+  driveId       String?
+  embedCode     String?          @db.Text
+  notes         String?          @db.Text
+  
+  productId     String
+  product       StrategicProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime         @default(now())
 }
 
 model StrategicProductComment {

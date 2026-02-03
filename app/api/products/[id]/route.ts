@@ -8,7 +8,29 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     try {
         const { id } = await params
         const body = await request.json()
-        const { title, description, type, driveLink, embedCode, category, tags, pillar } = body
+        const { title, description, type, driveLink, embedCode, category, tags, pillar, isNewVersion } = body
+
+        // If isNewVersion is true, archive current state before updating
+        if (isNewVersion) {
+            const currentProduct = await prisma.strategicProduct.findUnique({
+                where: { id },
+                include: { versions: { orderBy: { versionNumber: 'desc' }, take: 1 } }
+            })
+
+            if (currentProduct) {
+                const nextNumber = (currentProduct.versions[0]?.versionNumber || 0) + 1
+                await prisma.strategicProductVersion.create({
+                    data: {
+                        versionNumber: nextNumber,
+                        driveLink: currentProduct.driveLink,
+                        driveId: currentProduct.driveId,
+                        embedCode: currentProduct.embedCode,
+                        notes: currentProduct.description,
+                        productId: id
+                    }
+                })
+            }
+        }
 
         // Re-extract drive ID if link changed
         const driveId = DriveUtils.extractId(driveLink)
@@ -30,6 +52,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
         return NextResponse.json(updatedProduct)
     } catch (error: any) {
+        console.error('Update Product Error:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }

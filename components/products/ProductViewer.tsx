@@ -25,6 +25,16 @@ interface ProductViewerProps {
     onClose: () => void;
 }
 
+interface ProductVersion {
+    id: string;
+    versionNumber: number;
+    driveLink: string;
+    driveId: string | null;
+    embedCode: string | null;
+    notes: string | null;
+    createdAt: string | Date;
+}
+
 export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, isOpen, onClose }: ProductViewerProps) {
     const { data: session } = useSession()
     const [comments, setComments] = useState<Comment[]>([])
@@ -32,13 +42,20 @@ export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, 
     const [isPosting, setIsPosting] = useState(false)
     const [isLoadingComments, setIsLoadingComments] = useState(false)
 
+    // Versions State
+    const [versions, setVersions] = useState<ProductVersion[]>([])
+    const [selectedVersion, setSelectedVersion] = useState<ProductVersion | null>(null)
+    const [isLoadingVersions, setIsLoadingVersions] = useState(false)
+
     // Detener scroll
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden'
             fetchComments()
+            fetchVersions()
         } else {
             document.body.style.overflow = 'unset'
+            setSelectedVersion(null)
         }
         return () => { document.body.style.overflow = 'unset' }
     }, [isOpen, id])
@@ -53,6 +70,19 @@ export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, 
             console.error('Error fetching comments:', error)
         } finally {
             setIsLoadingComments(false)
+        }
+    }
+
+    const fetchVersions = async () => {
+        setIsLoadingVersions(true)
+        try {
+            const res = await fetch(`/api/products/${id}/versions`)
+            const data = await res.json()
+            setVersions(data)
+        } catch (error) {
+            console.error('Error fetching versions:', error)
+        } finally {
+            setIsLoadingVersions(false)
         }
     }
 
@@ -81,10 +111,14 @@ export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, 
 
     if (!isOpen) return null
 
-    // Determine content URL
+    // Determine content source
+    const currentDriveId = selectedVersion ? selectedVersion.driveId : driveId
+    const currentDriveLink = selectedVersion ? selectedVersion.driveLink : driveLink
+    const currentEmbedCode = selectedVersion ? selectedVersion.embedCode : embedCode
+
     let contentUrl = ''
-    if (driveId) {
-        contentUrl = DriveUtils.getEmbedUrl(driveId, driveLink || '')
+    if (currentDriveId) {
+        contentUrl = DriveUtils.getEmbedUrl(currentDriveId, currentDriveLink || '')
     }
 
     return (
@@ -103,7 +137,30 @@ export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, 
                     <div className="h-6 w-[1px] bg-border mx-2" />
                     <div>
                         <h2 className="text-lg font-black text-text-main line-clamp-1 leading-none">{title}</h2>
-                        <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest leading-none mt-1 inline-block">{type}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest leading-none inline-block">{type}</span>
+
+                            {/* Version Selector */}
+                            {(versions.length > 0 || isLoadingVersions) && (
+                                <div className="flex items-center gap-1 ml-4 bg-bg border border-border rounded-lg px-2 py-0.5">
+                                    <span className="text-[9px] font-black text-text-muted uppercase">Ver:</span>
+                                    <select
+                                        className="bg-transparent text-[10px] font-black text-accent border-0 p-0 outline-none cursor-pointer"
+                                        value={selectedVersion?.id || 'current'}
+                                        onChange={(e) => {
+                                            const val = e.target.value
+                                            if (val === 'current') setSelectedVersion(null)
+                                            else setSelectedVersion(versions.find(v => v.id === val) || null)
+                                        }}
+                                    >
+                                        <option value="current">Versión Actual (Latest)</option>
+                                        {versions.map(v => (
+                                            <option key={v.id} value={v.id}>Versión {v.versionNumber}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -121,10 +178,10 @@ export function ProductViewer({ id, driveId, driveLink, embedCode, title, type, 
                 {/* Visualizer (Left) */}
                 <div className="flex-1 bg-gray-100/50 dark:bg-black/40 relative overflow-hidden group">
                     <div className="absolute inset-4 bg-white dark:bg-panel rounded-2xl shadow-xl border border-border overflow-hidden">
-                        {embedCode ? (
+                        {currentEmbedCode ? (
                             <div
                                 className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:border-0"
-                                dangerouslySetInnerHTML={{ __html: embedCode }}
+                                dangerouslySetInnerHTML={{ __html: currentEmbedCode }}
                             />
                         ) : contentUrl ? (
                             <iframe

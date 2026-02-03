@@ -30,6 +30,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
     const [category, setCategory] = useState('')
     const [tags, setTags] = useState<string[]>([])
     const [pillar, setPillar] = useState('Todos')
+    const [isNewVersion, setIsNewVersion] = useState(false)
 
     const [isDriveExplorerOpen, setIsDriveExplorerOpen] = useState(false)
 
@@ -45,6 +46,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
             setCategory(initialProduct.category || '')
             setTags(initialProduct.tags || [])
             setPillar(initialProduct.pillar || 'Todos')
+            setIsNewVersion(false)
         } else if (!isOpen) {
             // Reset when closing
             resetForm()
@@ -61,6 +63,7 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
         setCategory('')
         setTags([])
         setPillar('Todos')
+        setIsNewVersion(false)
     }
 
     const handleDriveSelect = (file: any) => {
@@ -124,7 +127,8 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
                     tags,
                     pillar,
                     driveLink: sourceType === 'drive' ? driveLink : undefined,
-                    embedCode: sourceType === 'embed' ? embedCode : undefined
+                    embedCode: sourceType === 'embed' ? embedCode : undefined,
+                    isNewVersion: initialProduct ? isNewVersion : false
                 })
             })
 
@@ -297,6 +301,21 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
                             onChange={e => setTags(e.target.value.split(',').map(t => t.trim()))}
                         />
                     </div>
+
+                    {initialProduct && (
+                        <div className="flex items-center gap-2 p-3 bg-bg border border-border rounded-xl">
+                            <input
+                                type="checkbox"
+                                id="isNewVersion"
+                                checked={isNewVersion}
+                                onChange={e => setIsNewVersion(e.target.checked)}
+                                className="w-4 h-4 rounded border-border text-accent focus:ring-accent"
+                            />
+                            <label htmlFor="isNewVersion" className="text-xs font-bold text-text-main cursor-pointer select-none">
+                                Guardar como una nueva versión (v{(initialProduct as any).versions?.length + 1 || '?'} )
+                            </label>
+                        </div>
+                    )}
 
                     <div className="pt-6 border-t border-border flex justify-end gap-3 mt-2">
                         <button type="button" onClick={onClose} className="px-5 py-3 text-text-muted font-bold hover:text-text-main text-xs uppercase tracking-wide transition-colors">Cancelar</button>
