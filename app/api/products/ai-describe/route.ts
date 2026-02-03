@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         }
 
         let apiKey = await SystemSettingsService.getGeminiApiKey()
-        if (!apiKey) apiKey = process.env.GEMINI_API_KEY
+        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
 
         if (!apiKey) {
             return NextResponse.json({ error: "Gemini API Key not configured" }, { status: 500 })
