@@ -1,0 +1,97 @@
+Pilar	Componente	Competencia	Conductas observables (El líder…)	Observaciones
+Shine Within	Autoconfianza y autoliderazgo	Autoeficacia y seguridad	Afronta desafíos con seguridad en sus capacidades sin caer en la arrogancia, lo que motiva al equipo a perseguir metas exigentes.	
+Shine Within	Autoconfianza y autoliderazgo	Autoeficacia y seguridad	Muestra consistencia entre lo que dice y hace, generando credibilidad y confianza en los colaboradores	
+Shine Within	Autoconfianza y autoliderazgo	Gestión de creencias (mindset)	Identifica activamente sus creencias limitantes (ej. "no soy bueno en esto") y las reescribe hacia un lenguaje transformador y empoderante (ej. "estoy aprendiendo a dominar esto").	
+Shine Within	Autoconfianza y autoliderazgo	Gestión de creencias (mindset)	Sustituye preguntas de víctima (¿Por qué a mí?) por preguntas de protagonista (¿Qué puedo aprender de esto? ¿Cómo puedo aportar valor?).	
+Shine Within	Autoconfianza y autoliderazgo	Responsabilidad radical (accountability)	Pasa de poner excusas a tomar decisiones; reconoce que tiene el control de su vida y responsabilidad sobre sus resultados.	
+Shine Within	Autoconfianza y autoliderazgo	Responsabilidad radical (accountability)	No culpa a factores externos; asume la propiedad de sus errores y busca soluciones proactivas.	
+Shine Within	Inteligencia emocional y regulación (self-regulation)	Autoconciencia emocional	Monitorea sus estados de ánimo en tiempo real y reconoce cómo estos afectan su toma de decisiones y a las personas a su alrededor.	
+Shine Within	Inteligencia emocional y regulación (self-regulation)	Autoconciencia emocional	Identifica sus "detonantes" emocionales (ej. sentirse cuestionado) antes de que provoquen una reacción impulsiva.	
+Shine Within	Inteligencia emocional y regulación (self-regulation)	Regulación emocional	Aplica la pausa estratégica (Método STOP: Parar, Pensar, Observar, Proceder) antes de reaccionar ante una crisis.	
+Shine Within	Inteligencia emocional y regulación (self-regulation)	Regulación emocional	Utiliza "anclas de serenidad" (respiración consciente, objetos físicos o mantras) para volver a su centro en momentos de estrés.	
+Shine Within	Inteligencia emocional y regulación (self-regulation)	Regulación emocional	Gestiona la frustración manteniendo la calma, proyectando estabilidad al equipo.	
+Shine Within	Inteligencia emocional y regulación (self-regulation)	Gestión de la energía	Prioriza su descanso y desconexión para mantener la claridad mental, entendiendo que el agotamiento afecta la calidad de sus decisiones.	
+Shine Within	Inteligencia emocional y regulación (self-regulation)	Gestión de la energía	Incorpora rutinas de bienestar físico y mental para recargar su "batería" de liderazgo.	
+Shine Within	Propósito y valores (integridad)	Claridad de propósito (Ikigai)	Define y articula un "para qué" claro que conecta su trabajo diario con un impacto mayor (ej. "Estoy aquí para empoderar a otros").	
+Shine Within	Propósito y valores (integridad)	Claridad de propósito (Ikigai)	Utiliza su propósito como filtro para la toma de decisiones difíciles, asegurando que sus acciones honren su intención de vida.	
+Shine Within	Propósito y valores (integridad)	Integridad y coherencia	Hace lo que dice.  Sus acciones privadas y públicas son congruentes con los valores que predica.	
+Shine Within	Propósito y valores (integridad)	Integridad y coherencia	Cumple sus promesas y compromisos, generando un entorno de confianza y previsibilidad.	
+Shine Within	Propósito y valores (integridad)	Integridad y coherencia	Defiende sus principios éticos incluso bajo presión o ante la posibilidad de ganancias a corto plazo.	
+Shine Within	Propósito y valores (integridad)	Autenticidad	Se muestra genuino, sin adoptar "máscaras" corporativas; tiene la valentía de ser él mismo mientras lidera.	
+Shine Within	Propósito y valores (integridad)	Autenticidad	Es transparente sobre sus intenciones y valores, lo que facilita la conexión humana con su equipo.	
+Shine Within	Aprendizaje y reflexión (self-awareness)	Práctica reflexiva	Dedica tiempo agendado para la auto-observación y el análisis de su desempeño (ej. llevar un diario o bitácora emocional).	
+Shine Within	Aprendizaje y reflexión (self-awareness)	Práctica reflexiva	Se hace preguntas poderosas sobre su identidad y futuro (¿En quién me quiero convertir? ¿Qué puedo ofrecer?).	
+Shine Within	Aprendizaje y reflexión (self-awareness)	Apertura al feedback	Solicita retroalimentación constructiva de pares, superiores y subordinados para identificar puntos ciegos.	
+Shine Within	Aprendizaje y reflexión (self-awareness)	Apertura al feedback	Recibe la crítica sin ponerse a la defensiva, utilizándola como insumo para su crecimiento personal.	
+Shine Within	Aprendizaje y reflexión (self-awareness)	Mentalidad de crecimiento	Ve los errores y fracasos no como definiciones de su valía, sino como oportunidades de aprendizaje y mejora.	
+Shine Within	Aprendizaje y reflexión (self-awareness)	Mentalidad de crecimiento	Está dispuesto a desaprender hábitos viejos y adquirir nuevas competencias para adaptarse a nuevos desafíos.	
+Shine Within	Gestión de energía y bienestar (biohacking)	Regulación somática y fisiológica	Aplica técnicas de respiración consciente antes de situaciones de alta presión.	
+Shine Within	Toma de decisiones y resolución de problemas	Compostura	Mantiene la serenidad en situaciones de crisis, proyectando confianza y evitando que el pánico paralice al equipo.	
+Shine Within	Toma de decisiones y resolución de problemas	Compostura	Controla los impulsos y evita reacciones defensivas, permitiendo que otros piensen con claridad y ejecuten tareas críticas.	
+Shine Within	Gestión de energía y bienestar (biohacking)	Regulación somática y fisiológica	Gestiona sus ritmos circadianos y descanso para asegurar un rendimiento cognitivo óptimo.	
+Shine Within	Identidad de liderazgo (identity ownership)	Re-alineación Cognitiva	Reescribe narrativas internas de duda ("ocupo el cargo") por narrativas de propiedad ("merezco el cargo").	
+Shine Within	Identidad de liderazgo (identity ownership)	Re-alineación Cognitiva	Integra sus valores personales con su rol profesional sin sentir que está "actuando".	
+Shine Out	Comunicación de impacto	Claridad e inspiración	Expresa objetivos y la visión de futuro de forma clara, evitando la ambigüedad sobre qué se espera y por qué es importante.	
+Shine Out	Comunicación de impacto	Claridad e inspiración	Utiliza un tono entusiasta, historias o metáforas para alinear al equipo bajo un propósito común y motivador.	
+Shine Out	Comunicación de impacto	Escucha Activa y Empática	Presta atención plena (mindfulness) cuando un colaborador habla, parafraseando para confirmar entendimiento y validando las aportaciones.	
+Shine Out	Comunicación de impacto	Escucha Activa y Empática	Se "pone en los zapatos" de sus colegas para construir relaciones de confianza y seguridad psicológica.	
+Shine Out	Comunicación de impacto	Adaptabilidad Comunicativa	 "Lee" a su audiencia y ajusta su estilo y lenguaje (ej. técnico vs. estratégico) según el interlocutor.	
+Shine Out	Comunicación de impacto	Adaptabilidad Comunicativa	Identifica señales no verbales en los demás y modifica el ritmo o enfoque de su mensaje para mantener la sintonía y asegurar que el mensaje sea aceptado.	
+Shine Out	Influencia positiva	Construcción de confianza (Trust)	Comparte información relevante de manera oportuna y honesta (transparencia), incluso las malas noticias.	
+Shine Out	Influencia positiva	Construcción de confianza (Trust)	Admite abiertamente cuando "no sabe" algo y trata a todos con respeto, eliminando el miedo a represalias por reportar problemas.	
+Shine Out	Influencia positiva	Influencia ética y persuasión	Utiliza la persuasión racional (datos/hechos) y el ejemplo personal ("walk the talk") en lugar de la manipulación o la amenaza.	
+Shine Out	Influencia positiva	Influencia ética y persuasión	Apela a valores e ideales compartidos para generar una voluntad genuina de colaboración en el equipo.	
+Shine Out	Influencia positiva	Reconocimiento y feedback	Reconoce públicamente los logros y da crédito explícito a los colaboradores por sus contribuciones, fomentando el orgullo colectivo.	
+Shine Out	Influencia positiva	Reconocimiento y feedback	Brinda feedback privado, específico y centrado en la conducta (no en la persona) para corregir el rumbo y desarrollar talento.	
+Shine Out	Presencia digital e híbrida	Influencia asíncrona y virtual	Proyecta la misma "gravitas" y calidez en videoconferencias que en persona.	
+Shine Out	Presencia digital e híbrida	Influencia asíncrona y virtual	Gestiona su reputación y narrativa en plataformas digitales (LinkedIn) de forma estratégica, no solo social.	
+Shine Out	Competencia conversacional (ontológica)	Ingeniería del lenguaje (promesas y pedidos)	Hace pedidos impecables (con condiciones de satisfacción y tiempos claros) para evitar retrabajos.	
+Shine Out	Competencia conversacional (ontológica)	Ingeniería del lenguaje (promesas y pedidos)	Gestiona sus promesas: si no puede cumplir, revoca o renegocia a tiempo, manteniendo la confianza.	
+Shine Up	Networking estratégico	Conectividad interna y externa	Conecta activamente a su equipo con otras áreas para derribar silos y fomentar la colaboración interdepartamental.	
+Shine Up	Networking estratégico	Conectividad interna y externa	Participa en eventos de la industria y mantiene vínculos con stakeholders externos (clientes, proveedores) para detectar tendencias.	
+Shine Up	Networking estratégico	Gestión de relaciones (relationship management)	Actúa como un "tejedor" de relaciones, facilitando el acceso a recursos y conocimientos críticos para el equipo a través de su red de contactos.	
+Shine Up	Networking estratégico	Gestión de relaciones (relationship management)	Utiliza su capital social para apoyar a su equipo y abrir puertas a nuevas oportunidades de negocio o desarrollo.	
+Shine Up	Networking estratégico	Visibilidad estratégica	Se posiciona no solo como experto técnico, sino como un referente que aporta valor en comités y espacios de decisión.	
+Shine Up	Networking estratégico	Visibilidad estratégica	Construye relaciones basadas en la reciprocidad y el valor mutuo, no solo en la necesidad inmediata (transaccional).	
+Shine Up	Visión de futuro y estrategia	Pensamiento estratégico	Analiza tendencias macroeconómicas, tecnológicas y de la industria para anticipar cómo afectarán el entorno interno y externo de la empresa.	
+Shine Up	Visión de futuro y estrategia	Pensamiento estratégico	No se limita a "apagar fuegos" a corto plazo; dedica tiempo de calidad a la planificación y a las iniciativas de largo alcance.	
+Shine Up	Visión de futuro y estrategia	Visión compartida (visioning)	Articula un escenario futuro aspiracional de manera vívida (ej. "ser referentes regionales en 5 años") logrando que el equipo haga propia esa visión (shared vision).	
+Shine Up	Visión de futuro y estrategia	Visión compartida (visioning)	Comunica el "por qué" detrás de las metas, dando un fuerte sentido de finalidad y propósito al trabajo diario.	
+Shine Up	Visión de futuro y estrategia	Alineación de metas (execution)	Traduce la visión abstracta en objetivos SMART (específicos, medibles, alcanzables, relevantes y temporales) y planes de acción concretos	
+Shine Up	Visión de futuro y estrategia	Alineación de metas (execution)	Asegura la "línea de vista": explica claramente cómo las tareas cotidianas y las metas de corto plazo contribuyen a la estrategia general.	
+Shine Up	Toma de decisiones y resolución de problemas	Decisión bajo incertidumbre	Reúne datos rápidamente y consulta expertos, pero toma decisiones oportunas incluso con información incompleta, evitando la "parálisis por análisis".	
+Shine Up	Toma de decisiones y resolución de problemas	Decisión bajo incertidumbre	Asume la responsabilidad de las consecuencias de sus decisiones, sean aciertos o errores, sin buscar culpables externos	
+Shine Up	Toma de decisiones y resolución de problemas	Resolución de causa raíz	No se queda en la corrección de síntomas superficiales; investiga a fondo para identificar y resolver la causa raíz de los problemas basándose en evidencias y datos.	
+Shine Up	Toma de decisiones y resolución de problemas	Resolución de causa raíz	Aplica el pensamiento crítico para cuestionar suposiciones y reducir sesgos antes de decidir	
+Shine Up	Adaptabilidad e innovación	Agilidad y adaptabilidad	Revisa y ajusta las estrategias establecidas si surgen cambios tecnológicos o regulatorios, demostrando disposición a abandonar ideas que ya no funcionan.	
+Shine Up	Adaptabilidad e innovación	Agilidad y adaptabilidad	Fomenta una cultura donde el cambio se ve como oportunidad y no como amenaza.	
+Shine Up	Adaptabilidad e innovación	Estimulación intelectual (innovación)	Cuestiona el "así es como siempre se ha hecho", desafiando el statu quo y animando al equipo a proponer nuevas formas de trabajar.	
+Shine Up	Adaptabilidad e innovación	Estimulación intelectual (innovación)	Instituye proyectos piloto o pruebas de concepto para testear soluciones en entornos controlados antes de escalarlas.	
+Shine Up	Adaptabilidad e innovación	Gestión del error constructivo	Respalda al equipo cuando un experimento bien intencionado falla, enfocándose en extraer aprendizajes ("fail forward") en lugar de castigar el error.	
+Shine Up	Adaptabilidad e innovación	Gestión del error constructivo	Elimina el "factor miedo", empoderando a los empleados para asumir riesgos calculados en la búsqueda de innovación.	
+Shine Up	Inteligencia política y contextual	Lectura de poder y patrocinio	Identifica y cultiva activamente sponsors que hablen de él/ella en mesas de decisión.	
+Shine Up	Inteligencia política y contextual	Lectura de poder y patrocinio	Mapea las dinámicas de poder informales en la organización para destrabar proyectos.	
+Shine Up	Agilidad tecnológica (tech-savviness)	Liderazgo en la industria 5.0	Promueve la adopción de nuevas herramientas digitales sin perder el enfoque en el bienestar del equipo.	
+Shine Up	Agilidad tecnológica (tech-savviness)	Liderazgo en la industria 5.0	Traduce conceptos tecnológicos complejos a decisiones de negocio estratégicas.	
+Shine Beyond	Desarrollo de otros líderes (mentoring & coaching)	Mentoría y sucesión	Identifica activamente el talento interno y dedica tiempo a formar a sus sucesores para garantizar la continuidad del liderazgo (construcción de pipeline).	
+Shine Beyond	Desarrollo de otros líderes (mentoring & coaching)	Mentoría y sucesión	Comparte conocimientos y experiencias sin reservas, actuando como guía para acelerar el aprendizaje de líderes emergentes.	
+Shine Beyond	Desarrollo de otros líderes (mentoring & coaching)	Empoderamiento (empowerment)	Comparte el poder delegando autoridad real para la toma de decisiones importantes, no solo tareas operativas, fomentando la autonomía.	
+Shine Beyond	Desarrollo de otros líderes (mentoring & coaching)	Empoderamiento (empowerment)	Elimina el micro-management; define el "qué" pero permite al equipo decidir el "cómo", demostrando confianza plena en sus capacidades.	
+Shine Beyond	Desarrollo de otros líderes (mentoring & coaching)	Desafío para el crecimiento	Asigna proyectos desafiantes (stretch assignments) que obligan a los colaboradores a salir de su zona de confort para desarrollar nuevas habilidades.	
+Shine Beyond	Desarrollo de otros líderes (mentoring & coaching)	Desafío para el crecimiento	Utiliza el coaching para ayudar a los colaboradores a encontrar sus propias soluciones en lugar de dárselas resueltas.	
+Shine Beyond	Impacto social y humano	Ética y responsabilidad social	Integra consideraciones éticas y de impacto comunitario en la toma de decisiones financieras y estratégicas, priorizando el bien común sobre la ganancia a corto plazo.	
+Shine Beyond	Impacto social y humano	Ética y responsabilidad social	Impulsa iniciativas que aporten valor social (sostenibilidad, diversidad, inclusión) y modela la integridad en todas sus acciones.	
+Shine Beyond	Impacto social y humano	Liderazgo de servicio (stewardship)	Actúa como un administrador (trustee) de los recursos y las personas, priorizando las necesidades de los colaboradores y la comunidad por encima del interés propio.	
+Shine Beyond	Impacto social y humano	Liderazgo de servicio (stewardship)	Fomenta un clima de seguridad psicológica donde el bienestar emocional y físico del equipo es una prioridad tangible.	
+Shine Beyond	Impacto social y humano	Inclusión y equidad	Promueve activamente la diversidad y crea un entorno inclusivo donde se valoran diferentes perspectivas y antecedentes.	
+Shine Beyond	Impacto social y humano	Inclusión y equidad	Trata a todos con justicia e imparcialidad, asegurando equidad en oportunidades y reconocimiento.	
+Shine Beyond	Legado personal y trascendencia	Institucionalización de cultura	Establece rituales, historias y prácticas que anclan los valores y la visión en el ADN de la organización, asegurando que perduren más allá de su mandato.	
+Shine Beyond	Legado personal y trascendencia	Institucionalización de cultura	Documenta lecciones aprendidas y crea sistemas para que el conocimiento crítico (know-how) permanezca en la empresa.	
+Shine Beyond	Legado personal y trascendencia	Reconocimiento y humildad	Pone los focos sobre su equipo: cuando hay éxito, se aparta para que su equipo brille ("stand back"); cuando hay fracaso, asume la responsabilidad.	
+Shine Beyond	Legado personal y trascendencia	Reconocimiento y humildad	Celebra genuinamente los hitos personales y profesionales de los demás, construyendo una cultura de gratitud y apreciación.	
+Shine Beyond	Legado personal y trascendencia	Conexión con el propósito (meaning)	Ayuda a cada miembro del equipo a descubrir su propio propósito y a conectarlo con la misión de la organización (alineación de propósito).	
+Shine Beyond	Legado personal y trascendencia	Conexión con el propósito (meaning)	Transforma el trabajo rutinario en una misión significativa, recordando constantemente el impacto positivo que el equipo tiene en el mundo.	
+Shine Beyond	Inteligencia cultural e inclusiva	Gestión de la diversidad cognitiva	Forma deliberadamente equipos con diversidad de pensamiento y antecedentes.	
+Shine Beyond	Inteligencia cultural e inclusiva	Gestión de la diversidad cognitiva	Detecta y mitiga sesgos inconscientes en la contratación y promoción de talento.	
+Shine Beyond	Liderazgo regenerativo	Conciencia sistémica y comunitaria	Conecta los objetivos de negocio con necesidades reales de la comunidad o el medio ambiente.	
+Shine Beyond	Liderazgo regenerativo	Conciencia sistémica y comunitaria	Actúa como un "tejedor" de relaciones externas que traen valor social a la empresa.
