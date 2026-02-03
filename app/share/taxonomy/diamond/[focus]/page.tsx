@@ -4,8 +4,8 @@ import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
-export default async function Page({ params }: { params: { focus: string } }) {
-    const { focus } = params
+export default async function Page({ params }: { params: Promise<{ focus: string }> }) {
+    const { focus } = await params
 
     // Mapping focus slug to internal focus name
     const focusMap: Record<string, string> = {
