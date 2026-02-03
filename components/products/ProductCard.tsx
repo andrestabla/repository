@@ -10,12 +10,13 @@ export interface Product {
     title: string;
     description: string | null;
     type: string;
-    driveLink: string;
+    driveLink: string | null;
     driveId: string | null;
     embedCode: string | null;
     category: string | null;
     tags: string[];
     pillar: string | null;
+    aiSummary?: string | null;
     updatedAt: string | Date;
     versions?: any[];
 }

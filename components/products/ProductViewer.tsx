@@ -17,7 +17,7 @@ interface Comment {
 interface ProductViewerProps {
     id: string;
     driveId: string | null;
-    driveLink?: string;
+    driveLink: string | null;
     embedCode: string | null;
     title: string;
     type: string;
