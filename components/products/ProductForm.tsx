@@ -5,8 +5,7 @@ import { useState } from 'react'
 import { X, Sparkles, Loader2, Link as LinkIcon, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { DriveUtils } from '@/lib/google'
-import { useEffect } from 'react'
-import { useDrivePicker } from '@/hooks/useDrivePicker'
+import { DriveExplorerModal } from './DriveExplorerModal'
 
 interface ProductFormProps {
     isOpen: boolean
@@ -30,21 +29,20 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
     const [tags, setTags] = useState<string[]>([])
     const [pillar, setPillar] = useState('Todos')
 
-    const { loadScripts, openPicker } = useDrivePicker()
-
-    useEffect(() => {
-        if (isOpen) loadScripts()
-    }, [isOpen, loadScripts])
+    const [isDriveExplorerOpen, setIsDriveExplorerOpen] = useState(false)
 
     const handleDriveSelect = (file: any) => {
-        setDriveLink(file.url)
+        const url = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`
+        setDriveLink(url)
         if (!title) setTitle(file.name)
 
-        // Auto-detect type from file metadata if possible, or fallback to URL inference
-        const inferred = DriveUtils.inferType(file.url)
+        // Auto-detect type
+        const inferred = DriveUtils.inferType(url)
         if (inferred === 'Presentación') setType('Esquema')
         else if (inferred === 'Hoja de Cálculo') setType('Herramienta')
         else if (inferred === 'Documento') setType('Documento')
+
+        setIsDriveExplorerOpen(false)
     }
 
     if (!isOpen) return null
@@ -181,7 +179,7 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => openPicker(handleDriveSelect)}
+                                    onClick={() => setIsDriveExplorerOpen(true)}
                                     className="px-4 py-3 bg-bg border border-border rounded-xl text-text-muted hover:text-text-main hover:border-accent transition-all flex items-center gap-2 text-xs font-bold"
                                 >
                                     <LinkIcon size={14} />
@@ -280,6 +278,12 @@ export function ProductForm({ isOpen, onClose, onSuccess }: ProductFormProps) {
                     </div>
 
                 </form>
+
+                <DriveExplorerModal
+                    isOpen={isDriveExplorerOpen}
+                    onClose={() => setIsDriveExplorerOpen(false)}
+                    onSelect={handleDriveSelect}
+                />
             </div>
         </div>
     )
