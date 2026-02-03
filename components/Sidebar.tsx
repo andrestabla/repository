@@ -88,10 +88,17 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
     }
 
     // Initialize theme on mount
+    // Initialize theme on mount
     useEffect(() => {
-        const stored = localStorage.getItem('theme') || 'light'
-        if (stored === 'dark') document.documentElement.classList.add('dark')
-        else document.documentElement.classList.remove('dark')
+        // Force light mode default if not set
+        const stored = localStorage.getItem('theme')
+        if (stored === 'dark') {
+            document.documentElement.classList.add('dark')
+        } else {
+            // Default to light
+            document.documentElement.classList.remove('dark')
+            localStorage.setItem('theme', 'light')
+        }
     }, [])
 
     const handleNavClick = () => {
