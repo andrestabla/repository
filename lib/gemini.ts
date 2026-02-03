@@ -232,4 +232,176 @@ export class GeminiService {
 
         return this.generateFromUri(upload.uri, upload.mimeType)
     }
+
+    static async analyzeImage(imagePath: string, mimeType: string, context?: string) {
+        const fs = require('fs')
+
+        if (!fs.existsSync(imagePath)) {
+            throw new Error(`Image file not found: ${imagePath}`)
+        }
+
+        let apiKey = await SystemSettingsService.getGeminiApiKey()
+        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
+        if (!apiKey) throw new Error("GEMINI_API_KEY no configurada.")
+
+        // 1. Fetch Dynamic Context (RAG) - Same as analyzeContent
+        const validatedSamples = await prisma.contentItem.findMany({
+            where: { status: 'Validado' },
+            take: 5,
+            select: {
+                title: true,
+                primaryPillar: true,
+                secondaryPillars: true,
+                sub: true,
+                competence: true,
+                behavior: true,
+                observations: true
+            }
+        })
+
+        const dynamicContext = validatedSamples.length > 0
+            ? "\nEJEMPLOS DE ACTIVOS VALIDADOS (Referencia de Estilo y Nivel):\n" +
+            validatedSamples.map(s => `
+            - Título: ${s.title}
+            - Pilar: ${s.primaryPillar} (${(s.secondaryPillars as string[]).join(', ')})
+            - Sub: ${s.sub} | Competencia: ${s.competence}
+            - Conducta: ${s.behavior}
+            - Observación Clave: ${s.observations?.substring(0, 300)}...
+            `).join('\n')
+            : "";
+
+        // 2. Fetch Full Taxonomy Tree for Context
+        const taxonomyTree = await prisma.taxonomy.findMany({
+            where: { type: 'Pillar', active: true },
+            include: {
+                children: { // Sub
+                    include: {
+                        children: { // Comp
+                            include: {
+                                children: true // Behavior
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        // Build taxonomy context string
+        let taxonomyContext = "ESTRUCTURA METODOLÓGICA VÁLIDA (Debes seleccionar valores EXACTOS de esta lista):\n";
+        taxonomyTree.forEach(p => {
+            taxonomyContext += `\nPILAR: ${p.name}\n`;
+            p.children.forEach(sub => {
+                taxonomyContext += `  - Subcomponente: ${sub.name}\n`;
+                sub.children.forEach(comp => {
+                    taxonomyContext += `    * Competencia: ${comp.name}\n`;
+                    const behaviors = comp.children.map(b => b.name).join(' | ');
+                    taxonomyContext += `      > Conductas: ${behaviors.substring(0, 1000)}...\n`;
+                });
+            });
+        });
+
+        const prompt = `
+            Eres la INTELIGENCIA ARTIFICIAL MAESTRA de la METODOLOGÍA 4SHINE. Tu razonamiento debe ser de NIVEL EJECUTIVO (C-Level).
+            Analiza la IMAGEN adjunta.
+
+            ${taxonomyContext}
+            
+            ${dynamicContext}
+
+            ${context ? `--- INSTRUCCIONES ESPECÍFICAS DE CONTEXTO ---\n${context}\n-------------------------------------------` : ''}
+
+            --- REGLAS DE ORO DE ANÁLISIS ---
+            0. **IDIOMA OBLIGATORIO**: TODO el contenido generado (summary, observations, relation4Shine, findings, etc.) DEBE estar en ESPAÑOL, incluso si el texto original está en inglés u otro idioma. TRADUCE Y ADAPTA si es necesario.
+            1. SELECCIÓN DE PILAR OBLIGATORIA: Elige uno de los 4 pilares (Shine In, Shine Out, Shine Up, Shine Beyond) que mejor encaje.
+            2. **TAXONOMÍA EXACTA**: Para "sub", "competence" y "behavior", DEBES usar una de las opciones listadas arriba que corresponda al Pilar seleccionado. NO INVENTES nombres. El texto debe coincidir carácter por carácter para que el sistema lo reconozca.
+            3. CRITERIO DE EXPERTO: Si el contenido toca varios puntos, elige el más dominante.
+            4. **ANÁLISIS DE IMAGEN**: Describe el contenido visual, identifica elementos clave, texto visible, diagramas, gráficos, y cualquier información relevante para la metodología 4Shine.
+
+            --- MANDATO DE OBSERVACIONES (OBLIGATORIO) ---
+            El campo "observations" DEBE ser extenso (1000 a 2000 caracteres) y seguir esta estructura:
+            1. [DESCRIPCIÓN VISUAL]: Describe detalladamente qué se ve en la imagen.
+            2. [ANÁLISIS DE IMPACTO]: Explica cómo este contenido visual impacta al líder.
+            3. [CONEXIÓN METODOLÓGICA]: Relaciona el contenido con el pilar.
+            4. [GUÍA DEL FACILITADOR]: 5 pasos tácticos para usar este recurso visual.
+            5. [CONDUCTA OBSERVABLE]: Justifica por qué elegiste la conducta anterior.
+
+            JSON STRUCTURE:
+            {
+              "title": "Título descriptivo de la imagen",
+              "summary": "Descripción detallada del contenido visual",
+              "keyConcepts": "Conceptos clave identificados en la imagen",
+              "type": "PDF",
+              "primaryPillar": "NOMBRE_EXACTO_DEL_PILAR",
+              "secondaryPillars": ["Pilar Secundario 1"],
+              "sub": "NOMBRE_EXACTO_DEL_SUBCOMPONENTE",
+              "competence": "NOMBRE_EXACTO_DE_LA_COMPETENCIA",
+              "behavior": "NOMBRE_EXACTO_DE_LA_CONDUCTA",
+              "maturity": "Básico, En Desarrollo, Avanzado, Maestría",
+              "targetRole": "Rol Objetivo",
+              "intervention": "Conciencia | Práctica | Herramienta | Evaluación",
+              "moment": "Inicio | Refuerzo | Profundización | Cierre",
+              "language": "Spanish (Latam)",
+              "format": "PNG, JPG, JPEG...",
+              "completeness": 85,
+              "observations": "TEXTO_DE_ANÁLISIS_PROFUNDO_CON_DESCRIPCIÓN_VISUAL"
+            }
+
+            Analiza la imagen y proporciona un análisis completo en formato JSON.
+        `
+
+        // Read image file and convert to base64
+        const imageBuffer = fs.readFileSync(imagePath)
+        const base64Image = imageBuffer.toString('base64')
+
+        const modelsToTry = [
+            "gemini-2.0-flash-exp", // Best for vision
+            "gemini-2.0-flash",
+            "gemini-1.5-flash-latest"
+        ]
+
+        let lastError = null
+
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`[Gemini] Image Analysis attempting: ${modelName}...`)
+                const genAI = new GoogleGenerativeAI(apiKey!)
+                const model = genAI.getGenerativeModel({
+                    model: modelName,
+                    generationConfig: {
+                        temperature: 0.3,
+                        maxOutputTokens: 2500,
+                    }
+                })
+
+                const result = await model.generateContent([
+                    {
+                        inlineData: {
+                            data: base64Image,
+                            mimeType: mimeType
+                        }
+                    },
+                    { text: prompt }
+                ])
+
+                const response = await result.response
+                const textResponse = response.text()
+
+                const jsonText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim()
+                const parsed = JSON.parse(jsonText)
+
+                // Final check to prevent lazy output
+                if (parsed.observations.length < 200) {
+                    throw new Error("Respuesta de IA insuficiente bajo criterio de calidad.");
+                }
+
+                return parsed
+            } catch (error: any) {
+                lastError = error
+                console.error(`[Gemini] Image analysis failed on ${modelName}:`, error.message)
+                continue
+            }
+        }
+
+        throw new Error(`[Gemini All Models Failed] Último error: ${lastError?.message || lastError}`)
+    }
 }

@@ -67,6 +67,27 @@ export async function POST(request: NextRequest) {
                 } finally {
                     if (fs.existsSync(localFile.path)) fs.unlinkSync(localFile.path)
                 }
+            } else if (mimeType.startsWith('image/')) {
+                console.log(`[Analyze] Processing Image: ${mimeType}`)
+                const { downloadDriveFile } = require('@/lib/drive')
+                const { GeminiService } = require('@/lib/gemini')
+                const fs = require('fs')
+
+                const localFile = await downloadDriveFile(driveId)
+                try {
+                    // Analyze image with Gemini Vision
+                    const metadata = await GeminiService.analyzeImage(localFile.path, localFile.mimeType, type === 'Investigación' ? `MODO: ANÁLISIS DE FUENTE ACADÉMICA / INVESTIGACIÓN... (Completa 4Shine info)` : '')
+
+                    let suggestedId = null
+                    if (metadata?.type) {
+                        const { IdGeneratorService } = require('@/lib/id-generator')
+                        suggestedId = await IdGeneratorService.generateId(metadata.type)
+                    }
+
+                    return NextResponse.json({ success: true, data: metadata, suggestedId })
+                } finally {
+                    if (fs.existsSync(localFile.path)) fs.unlinkSync(localFile.path)
+                }
             } else {
                 text = await getFileContent(driveId)
             }
