@@ -9,9 +9,9 @@ function extractDriveId(url: string): string | null {
     return match ? match[0] : null;
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = params.id
+        const { id } = await params
         const body = await request.json()
         const { title, description, type, driveLink, category, tags, pillar } = body
 
@@ -38,9 +38,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = params.id
+        const { id } = await params
         await prisma.strategicProduct.delete({
             where: { id }
         })
