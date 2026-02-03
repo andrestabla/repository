@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
             // 1.1 Fetch ALL Valid Assets
             assets = await prisma.contentItem.findMany({
                 where: { status: 'Validado' },
-                select: { id: true, title: true, primaryPillar: true, observations: true }
+                select: { id: true, title: true, primaryPillar: true, sub: true, observations: true }
             })
             // 1.2 Fetch ALL Research
             research = await prisma.researchSource.findMany({
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
             // 1. Standard Fetch (Selected Ids)
             assets = await prisma.contentItem.findMany({
                 where: { status: 'Validado' },
-                select: { id: true, title: true, primaryPillar: true, observations: true }
+                select: { id: true, title: true, primaryPillar: true, sub: true, observations: true }
             })
 
             if (selectedAssetIds && selectedAssetIds.length > 0) {
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
                 // Construct Item String
                 let content = ""
                 if (type === 'ASSET') {
-                    content = `[ASSET: ${item.id}] TÍTULO: "${item.title}" (Pilar: ${item.primaryPillar})\nRESUMEN: ${safelyTruncate(item.observations, MAX_CHARS_PER_ITEM)}`
+                    content = `[ASSET: ${item.id}] TÍTULO: "${item.title}" (Pilar: ${item.primaryPillar}, Componente: ${item.sub || 'N/A'})\nRESUMEN: ${safelyTruncate(item.observations, MAX_CHARS_PER_ITEM)}`
                 } else if (type === 'RESEARCH') {
                     const synopsis = item.findings || item.summary || 'Sin resumen'
                     content = `[RESEARCH: ${item.id}] TÍTULO: "${item.title}" (URL: ${item.url})\nHALLAZGOS: ${safelyTruncate(synopsis, MAX_CHARS_PER_ITEM)}`
