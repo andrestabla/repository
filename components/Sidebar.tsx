@@ -18,7 +18,8 @@ import {
     ChevronLeft,
     ChevronRight,
     LogOut,
-    Package
+    Package,
+    FileText
 } from 'lucide-react'
 import { signOut } from "next-auth/react"
 
@@ -157,6 +158,7 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
 
                 <NavHeader label="OPERACIÓN" collapsed={collapsed} />
                 <NavBtn id="products" label="Productos" icon={<Package size={18} />} active={pathname.startsWith('/productos')} href="/productos" collapsed={collapsed} onClick={handleNavClick} />
+                <NavBtn id="workbooks" label="Workbooks" icon={<FileText size={18} />} active={pathname.startsWith('/workbooks')} href="/workbooks" collapsed={collapsed} onClick={handleNavClick} />
                 <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={pathname.startsWith('/analitica')} href="/analitica" collapsed={collapsed} onClick={handleNavClick} />
                 <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={pathname === '/inventario' || pathname === '/'} href="/inventario" collapsed={collapsed} onClick={handleNavClick} />
                 <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={pathname.startsWith('/research')} href="/research" collapsed={collapsed} onClick={handleNavClick} />

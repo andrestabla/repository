@@ -224,3 +224,21 @@ model StrategicProductComment {
   userName  String?
   createdAt DateTime         @default(now())
 }
+
+model Workbook {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  
+  // Educational Metadata
+  metadata    Json?    // Stores: objectives, audience, duration, difficulty, prerequisites, takeaways
+  
+  status      String   @default("Borrador") // Borrador, Revisión, Publicado
+  
+  // Content Source
+  driveId     String?
+  content     String?  @db.Text // Extracted or AI generated content
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

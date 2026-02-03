@@ -404,4 +404,59 @@ export class GeminiService {
 
         throw new Error(`[Gemini All Models Failed] Último error: ${lastError?.message || lastError}`)
     }
+
+    static async analyzeWorkbook(text: string) {
+        if (!text || text.length < 50) return null
+
+        let apiKey = await SystemSettingsService.getGeminiApiKey()
+        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
+        if (!apiKey) throw new Error("GEMINI_API_KEY no configurada.")
+
+        const prompt = `
+            Eres un EXPERTO EN DISEÑO INSTRUCCIONAL y PEDAGOGÍA CORPORATIVA (4Shine Methodology).
+            Tu tarea es analizar el documento adjunto y extraer la estructura pedagógica clave para crear un "Workbook" de alto impacto.
+
+            --- INSTRUCCIONES DE ANÁLISIS ---
+            1. **Objetivos de Aprendizaje**: Identifica qué logrará el usuario al terminar este workbook. Redáctalos como verbos de acción (ej: "Dominar...", "Identificar...").
+            2. **Audiencia Objetivo**: Deduce para quién fue escrito (Líderes, Managers, Contribuidores Individuales, etc.).
+            3. **Duración y Dificultad**: Estima el tiempo de estudio y nivel basándote en la complejidad y longitud.
+            4. **Prerrequisitos**: ¿Qué debe saber antes?
+            5. **Key Takeaways**: Los 3-5 puntos clave más valiosos.
+
+            JSON STRUCTURE (STRICT):
+            {
+              "title": "Título sugerido (si no es claro en el texto)",
+              "description": "Breve descripción comercial del workbook (2-3 líneas)",
+              "metadata": {
+                  "objectives": ["Objetivo 1", "Objetivo 2", "Objetivo 3"],
+                  "audience": "Audiencia Específica",
+                  "duration": "Ej: 60 min",
+                  "difficulty": "Básico | Intermedio | Avanzado",
+                  "prerequisites": "Texto descriptivo o 'Ninguno'",
+                  "takeaways": ["Punto clave 1", "Punto clave 2", "Punto clave 3"]
+              },
+              "content": "Resumen ejecutivo o extracción de las secciones principales (Markdown soportado)"
+            }
+
+            CONTENT TO ANALYZE:
+             ${text.substring(0, 40000)}
+        `
+
+        const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-pro"]
+
+        for (const modelName of modelsToTry) {
+            try {
+                const genAI = new GoogleGenerativeAI(apiKey!)
+                const model = genAI.getGenerativeModel({ model: modelName })
+                const result = await model.generateContent(prompt)
+                const textResponse = result.response.text()
+                const jsonText = textResponse.replace(/^```json/gm, '').replace(/^```/gm, '').replace(/```/g, '').trim()
+                return JSON.parse(jsonText)
+            } catch (e) {
+                console.error(`[Workbook Analysis] Failed on ${modelName}`, e)
+                continue
+            }
+        }
+        throw new Error("Failed to analyze workbook with AI models.")
+    }
 }

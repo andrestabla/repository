@@ -1,0 +1,55 @@
+
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { getFileContent } from '@/lib/drive'
+
+export const dynamic = 'force-dynamic'
+export const maxDuration = 300 // 5 minutes
+
+export async function POST(request: NextRequest) {
+    // Auth Check
+    const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    try {
+        const { driveId, text: manualText } = await request.json()
+
+        if (!driveId && !manualText) {
+            return NextResponse.json({ error: 'Drive ID or Text required' }, { status: 400 })
+        }
+
+        console.log(`[Workbook Analyze] Processing...`)
+
+        let textToAnalyze = ''
+
+        if (driveId) {
+            const { google } = require('googleapis')
+            const { SystemSettingsService } = require('@/lib/settings')
+            const config = await SystemSettingsService.getDriveConfig()
+            const credentials = JSON.parse(config.serviceAccountJson)
+            const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/drive'] })
+
+            // Reuse getFileContent if possible, or simple fetch
+            // But we need to handle PDF/Docs. getFileContent in lib/drive handles exports.
+            try {
+                textToAnalyze = await getFileContent(driveId)
+            } catch (e: any) {
+                console.error("Error fetching drive content", e)
+                return NextResponse.json({ error: `Eror leyendo Drive: ${e.message}` }, { status: 500 })
+            }
+        } else {
+            textToAnalyze = manualText
+        }
+
+        // Analyze
+        const { GeminiService } = await import('@/lib/gemini')
+        const analysis = await GeminiService.analyzeWorkbook(textToAnalyze)
+
+        return NextResponse.json({ success: true, data: analysis })
+
+    } catch (error: any) {
+        console.error('[Workbook Analyze Error]', error)
+        return NextResponse.json({ error: error?.message || 'Internal Server Error' }, { status: 500 })
+    }
+}
