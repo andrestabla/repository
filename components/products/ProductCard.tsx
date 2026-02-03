@@ -17,6 +17,7 @@ export interface Product {
     tags: string[];
     pillar: string | null;
     updatedAt: string | Date;
+    versions?: any[];
 }
 
 interface ProductCardProps {
