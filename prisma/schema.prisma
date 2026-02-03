@@ -177,3 +177,23 @@ enum Role {
   AUDITOR
   ADMIN
 }
+
+model StrategicProduct {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  // @db.Text not supported in basic postgres prisma unless using specific provider features, but String in Prisma maps to text in Postgres usually or we can rely on default
+  type        String   // PDF, Presentation, Video, Spreadsheet, Doc
+  driveLink   String   // URL de Google Drive o externa
+  driveId     String?  // ID extraído para embed
+  category    String?  // Categoría personalizada o tag
+  tags        String[] @default([])
+  
+  // Metadatos de IA
+  aiSummary   String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relaciones opcionales
+  pillar      String? 
+}
