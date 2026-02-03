@@ -258,6 +258,18 @@ export function ProductForm({ isOpen, onClose, onSuccess, initialProduct }: Prod
                         )}
                     </div>
 
+                    {/* Categoría */}
+                    <div>
+                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Categoría / Etiqueta Superior</label>
+                        <input
+                            type="text"
+                            className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main focus:ring-2 focus:ring-accent outline-none font-medium"
+                            placeholder="Ej: Desarrollo Organizacional, Estrategia..."
+                            value={category}
+                            onChange={e => setCategory(e.target.value)}
+                        />
+                    </div>
+
                     {/* Magic AI Button Row */}
                     <div className="flex justify-end">
                         <button
