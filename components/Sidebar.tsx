@@ -207,7 +207,7 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
                         </div>
                     )}
                     {!collapsed && (
-                        <button onClick={() => signOut()} className="text-text-muted hover:text-danger transition-colors">
+                        <button onClick={() => signOut({ callbackUrl: 'https://repository-livid.vercel.app/' })} className="text-text-muted hover:text-danger transition-colors">
                             <LogOut size={14} />
                         </button>
                     )}
