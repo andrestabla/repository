@@ -1,22 +1,7 @@
-import prisma from '@/lib/prisma'
-import MethodologySPA from '@/components/MethodologySPA'
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { redirect } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
-export default async function Page() {
-  const session = await getServerSession(authOptions)
-
-  // Fetch initial data from Neon DB
-  const contents = await prisma.contentItem.findMany({
-    orderBy: { id: 'asc' }
-  })
-
-  const taxonomy = await prisma.taxonomy.findMany({
-    orderBy: { name: 'asc' }
-  })
-
-  // Pass data to the Client Component
-  return <MethodologySPA initialData={contents as any} initialTaxonomy={taxonomy as any} session={session as any} />
+export default function Page() {
+  redirect('/dashboard')
 }

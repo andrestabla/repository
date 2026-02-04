@@ -36,9 +36,8 @@ export default withAuth(
 
             // 3. Check permission
             if (!userModules.includes(requiredModule)) {
-                // Unauthorized: Redirect to home or 403
-                // Using URL rewrite to show 404 or just redirecting to root is safer
-                return NextResponse.redirect(new URL('/', req.url))
+                // Unauthorized: Redirect to Dashboard
+                return NextResponse.redirect(new URL('/dashboard', req.url))
             }
         }
 

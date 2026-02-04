@@ -162,6 +162,8 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
                     </>
                 )}
 
+                <NavBtn id="dashboard" label="Panel de Control" icon={<LayoutDashboard size={18} />} active={pathname === '/dashboard'} href="/dashboard" collapsed={collapsed} onClick={handleNavClick} />
+
                 <NavHeader label="OPERACIÓN" collapsed={collapsed} />
                 {canAccess('products') && <NavBtn id="products" label="Productos" icon={<Package size={18} />} active={pathname.startsWith('/productos')} href="/productos" collapsed={collapsed} onClick={handleNavClick} />}
                 {canAccess('workbooks') && <NavBtn id="workbooks" label="Workbooks" icon={<FileText size={18} />} active={pathname.startsWith('/workbooks')} href="/workbooks" collapsed={collapsed} onClick={handleNavClick} />}
