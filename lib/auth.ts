@@ -34,7 +34,32 @@ export const authOptions: NextAuthOptions = {
                 // Let's allow for now to avoid complete lockout if it's a minor DB hiccup
             }
         },
-        async session({ session }) {
+        async jwt({ token, user, trigger, session }) {
+            // Initial sign in
+            if (user && user.email) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { email: user.email }
+                })
+                if (dbUser) {
+                    token.role = String(dbUser.role).toLowerCase()
+                    token.allowedModules = (dbUser as any).allowedModules || []
+                }
+            }
+
+            // Refetch on later access
+            if (!user && token.email) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { email: token.email }
+                })
+                if (dbUser) {
+                    token.role = String(dbUser.role).toLowerCase()
+                    token.allowedModules = (dbUser as any).allowedModules || []
+                }
+            }
+
+            return token
+        },
+        async session({ session, token }) {
             try {
                 if (session.user?.email) {
                     const dbUser = await prisma.user.findUnique({
