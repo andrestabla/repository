@@ -8,7 +8,22 @@ type User = {
     name: string | null
     isActive: boolean
     createdAt: string
+    allowedModules: string[]
 }
+
+const AVAILABLE_MODULES = [
+    { id: 'inventory', label: 'Inventario' },
+    { id: 'products', label: 'Productos' },
+    { id: 'workbooks', label: 'Workbooks' },
+    { id: 'analytics', label: 'Analítica' },
+    { id: 'research', label: 'Investigación' },
+    { id: 'qa', label: 'Calidad (QA)' },
+    { id: 'taxonomy', label: 'Taxonomía' },
+    { id: 'glossary', label: 'Glosario' },
+    { id: 'gap-analysis', label: 'Heatmap' },
+    { id: 'releases', label: 'Versiones' },
+    { id: 'generator', label: 'Compilador' }
+]
 
 type EmailConfig = {
     smtpHost: string
@@ -47,6 +62,8 @@ export default function AdminView() {
     const [users, setUsers] = useState<User[]>([])
     const [loadingUsers, setLoadingUsers] = useState(true)
     const [refreshUsers, setRefreshUsers] = useState(0)
+    const [permissionsModalOpen, setPermissionsModalOpen] = useState(false)
+    const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<User | null>(null)
 
     // Form inputs (Users)
     const [newEmail, setNewEmail] = useState('')
@@ -354,6 +371,7 @@ export default function AdminView() {
                                     <th className="p-3 text-left">Usuario</th>
                                     <th className="p-3 text-left">Estado</th>
                                     <th className="p-3 text-left">Rol</th>
+                                    <th className="p-3 text-left">Permisos</th>
                                     <th className="p-3 text-left">Fecha Registro</th>
                                     <th className="p-3 text-right">Acciones</th>
                                 </tr>
@@ -391,6 +409,15 @@ export default function AdminView() {
                                                 <option value="auditor">AUDITOR</option>
                                             </select>
                                         </td>
+                                        <td className="p-3">
+                                            <button
+                                                onClick={() => { setSelectedUserForPermissions(u); setPermissionsModalOpen(true); }}
+                                                className="flex items-center gap-1.5 px-2 py-1 bg-bg border border-[var(--border)] rounded text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--accent)] transition-all"
+                                            >
+                                                <span>🔑</span>
+                                                <span className="hidden xl:inline">{u.allowedModules?.length || 0} Módulos</span>
+                                            </button>
+                                        </td>
                                         <td className="p-3 text-[var(--text-muted)] text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
                                         <td className="p-3 text-right">
                                             {u.email !== 'andrestablarico@gmail.com' && (
@@ -402,6 +429,80 @@ export default function AdminView() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Permissions Modal */}
+                    {permissionsModalOpen && selectedUserForPermissions && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                            <div className="bg-[#161b22] border border-[var(--border)] rounded-xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                                <h3 className="text-lg font-bold text-[var(--text-main)] mb-1">Permisos de Acceso</h3>
+                                <p className="text-xs text-[var(--text-muted)] mb-6">
+                                    Configura los módulos disponibles para <span className="text-[var(--accent)]">{selectedUserForPermissions.email}</span>.
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-3 mb-6 max-h-[300px] overflow-y-auto">
+                                    {AVAILABLE_MODULES.map(mod => {
+                                        const isChecked = (selectedUserForPermissions.allowedModules || []).includes(mod.id)
+                                        return (
+                                            <button
+                                                key={mod.id}
+                                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all text-left ${isChecked
+                                                        ? 'bg-[var(--accent)]/10 border-[var(--accent)]'
+                                                        : 'bg-bg border-[var(--border)] hover:border-[var(--text-muted)]'
+                                                    }`}
+                                                onClick={() => {
+                                                    const current = selectedUserForPermissions.allowedModules || []
+                                                    const newModules = isChecked
+                                                        ? current.filter(m => m !== mod.id)
+                                                        : [...current, mod.id]
+                                                    setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: newModules })
+                                                }}
+                                            >
+                                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isChecked ? 'bg-[var(--accent)] border-[var(--accent)]' : 'border-[var(--text-muted)]'
+                                                    }`}>
+                                                    {isChecked && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                                </div>
+                                                <span className={`text-xs font-bold ${isChecked ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>
+                                                    {mod.label}
+                                                </span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
+                                    <div className="flex-1 flex gap-2">
+                                        <button
+                                            onClick={() => setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: AVAILABLE_MODULES.map(m => m.id) })}
+                                            className="text-[10px] text-[var(--accent)] hover:underline font-bold"
+                                        >
+                                            Todos
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: [] })}
+                                            className="text-[10px] text-[var(--text-muted)] hover:underline font-bold"
+                                        >
+                                            Ninguno
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={() => setPermissionsModalOpen(false)}
+                                        className="px-4 py-2 text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            handleUpdateUser(selectedUserForPermissions.email, { allowedModules: selectedUserForPermissions.allowedModules })
+                                            setPermissionsModalOpen(false)
+                                        }}
+                                        className="px-6 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-[var(--accent)]/20"
+                                    >
+                                        Guardar Permisos
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 

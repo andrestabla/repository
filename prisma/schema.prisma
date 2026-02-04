@@ -123,6 +123,7 @@ model User {
   updatedAt DateTime    @updatedAt
   isActive  Boolean     @default(true)
   role      Role        @default(CURADOR)
+  allowedModules String[] @default([]) // List of module IDs: products, workbooks, analytics, etc.
   logs      SystemLog[]
 }
 

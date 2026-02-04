@@ -44,6 +44,7 @@ export const authOptions: NextAuthOptions = {
                     if (dbUser) {
                         (session.user as any).role = String(dbUser.role).toLowerCase()
                             ; (session.user as any).isActive = (dbUser as any).isActive ?? true
+                            ; (session.user as any).allowedModules = (dbUser as any).allowedModules ?? []
                     } else if (session.user.email === 'andrestablarico@gmail.com') {
                         (session.user as any).role = 'admin'
                             ; (session.user as any).isActive = true

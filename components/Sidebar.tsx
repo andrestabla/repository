@@ -82,6 +82,12 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
     const userRole = session?.user?.role?.toLowerCase() || 'curador'
     const userName = session?.user?.name || 'Usuario'
     const userAvatar = session?.user?.image
+    const allowedModules = (session?.user as any)?.allowedModules || []
+
+    const canAccess = (moduleId: string) => {
+        if (userRole === 'admin') return true
+        return allowedModules.includes(moduleId)
+    }
 
     const toggleTheme = () => {
         const isDark = document.documentElement.classList.toggle('dark')
@@ -157,24 +163,24 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
                 )}
 
                 <NavHeader label="OPERACIÓN" collapsed={collapsed} />
-                <NavBtn id="products" label="Productos" icon={<Package size={18} />} active={pathname.startsWith('/productos')} href="/productos" collapsed={collapsed} onClick={handleNavClick} />
-                <NavBtn id="workbooks" label="Workbooks" icon={<FileText size={18} />} active={pathname.startsWith('/workbooks')} href="/workbooks" collapsed={collapsed} onClick={handleNavClick} />
-                <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={pathname.startsWith('/analitica')} href="/analitica" collapsed={collapsed} onClick={handleNavClick} />
-                <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={pathname === '/inventario' || pathname === '/'} href="/inventario" collapsed={collapsed} onClick={handleNavClick} />
-                <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={pathname.startsWith('/research')} href="/research" collapsed={collapsed} onClick={handleNavClick} />
+                {canAccess('products') && <NavBtn id="products" label="Productos" icon={<Package size={18} />} active={pathname.startsWith('/productos')} href="/productos" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('workbooks') && <NavBtn id="workbooks" label="Workbooks" icon={<FileText size={18} />} active={pathname.startsWith('/workbooks')} href="/workbooks" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('analytics') && <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={pathname.startsWith('/analitica')} href="/analitica" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('inventory') && <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={pathname === '/inventario' || pathname === '/'} href="/inventario" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('research') && <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={pathname.startsWith('/research')} href="/research" collapsed={collapsed} onClick={handleNavClick} />}
 
-                {(userRole === 'admin' || userRole === 'auditor') && (
+                {canAccess('qa') && (
                     <NavBtn id="qa" label="Calidad (QA)" icon={<ShieldCheck size={18} />} active={currentView === 'qa'} href="/qa" collapsed={collapsed} onClick={handleNavClick} />
                 )}
 
                 <div className="h-4" />
 
                 <NavHeader label="ARQUITECTURA" collapsed={collapsed} />
-                <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} href="/taxonomy" collapsed={collapsed} onClick={handleNavClick} />
-                <NavBtn id="glossary" label="Glosario" icon={<Book size={18} />} active={currentView === 'glossary'} href="/glossary" collapsed={collapsed} onClick={handleNavClick} />
-                <NavBtn id="gaps" label="Heatmap" icon={<Grid3X3 size={18} />} active={currentView === 'gap-analysis'} href="/gap-analysis" collapsed={collapsed} onClick={handleNavClick} />
-                <NavBtn id="releases" label="Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} href="/releases" collapsed={collapsed} onClick={handleNavClick} />
-                <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} href="/generator" collapsed={collapsed} onClick={handleNavClick} />
+                {canAccess('taxonomy') && <NavBtn id="taxonomy" label="Taxonomía" icon={<TreePine size={18} />} active={currentView === 'taxonomy'} href="/taxonomy" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('glossary') && <NavBtn id="glossary" label="Glosario" icon={<Book size={18} />} active={currentView === 'glossary'} href="/glossary" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('gap-analysis') && <NavBtn id="gaps" label="Heatmap" icon={<Grid3X3 size={18} />} active={currentView === 'gap-analysis'} href="/gap-analysis" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('releases') && <NavBtn id="releases" label="Versiones" icon={<Tag size={18} />} active={currentView === 'releases'} href="/releases" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('generator') && <NavBtn id="generator" label="Compilador" icon={<Zap size={18} />} active={currentView === 'generator'} href="/generator" collapsed={collapsed} onClick={handleNavClick} />}
             </nav>
 
             {/* Footer */}

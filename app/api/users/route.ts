@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     if (!await isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     try {
         const body = await req.json()
-        const { email, role, name, isActive } = body
+        const { email, role, name, isActive, allowedModules } = body
 
         if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
@@ -32,13 +32,15 @@ export async function POST(req: Request) {
             update: {
                 role: formattedRole as any,
                 name,
-                isActive: isActive !== undefined ? isActive : undefined
+                isActive: isActive !== undefined ? isActive : undefined,
+                allowedModules
             },
             create: {
                 email,
                 role: formattedRole as any || 'CURADOR',
                 name,
-                isActive: isActive !== undefined ? isActive : true
+                isActive: isActive !== undefined ? isActive : true,
+                allowedModules: allowedModules || []
             }
         })
         return NextResponse.json(user)
@@ -52,7 +54,7 @@ export async function PATCH(req: Request) {
     if (!await isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     try {
         const body = await req.json()
-        const { email, role, isActive, name } = body
+        const { email, role, isActive, name, allowedModules } = body
 
         if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
@@ -68,7 +70,8 @@ export async function PATCH(req: Request) {
             data: {
                 role: formattedRole as any,
                 isActive,
-                name
+                name,
+                allowedModules
             }
         })
         return NextResponse.json(user)
