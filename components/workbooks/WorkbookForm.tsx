@@ -280,6 +280,7 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                                     >
                                         <option value="General">General</option>
                                         <option value="Workbook1">Workbook 1 — Metas & PDI</option>
+                                        <option value="Workbook2">Workbook 2 — Autoconfianza</option>
                                     </select>
                                 </div>
                                 <div>

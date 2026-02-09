@@ -530,5 +530,297 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
 </html>
             `;
     }
+  },
+  'Workbook2': {
+    id: 'Workbook2',
+    name: 'Workbook 2 — Autoconfianza',
+    prompt: `
+            Eres un EXPERTO EN PSICOLOGÍA DEL RENDIMIENTO y COACHING EJECUTIVO.
+            Analiza la sesión y extrae la información para el "Workbook 2 - Autoconfianza".
+            
+            ESPECIFICACIONES DEL JSON:
+            {
+                "success": true,
+                "metadata": {
+                    "emocionesHoy": "Lista de emociones frecuentes mencionadas",
+                    "emocionAnhelo": "Qué busca vs qué evita el líder",
+                    "frasesLimitantes": "Lenguaje del crítico interno detectado",
+                    "lenguajeTransformador": "Cómo debería hablarse el líder",
+                    "autodefinicion10": "Descripción de identidad en pocas palabras",
+                    "asociacionesExito": "Qué significa el éxito emocionalmente",
+                    "creencias": [
+                        { "limitante": "...", "pasado": "Yo pensaba que...", "nueva": "..." }
+                    ],
+                    "perdidasCreencia": "Costos de mantener las creencias limitantes",
+                    "beneficiosNuevas": "Ganancias de las nuevas creencias",
+                    "dofa": {
+                        "fortalezas": "...",
+                        "debilidades": "...",
+                        "oportunidades": "...",
+                        "amenazas": "..."
+                    },
+                    "perderSiNoActuo": "Costo de la inacción",
+                    "decisionPoderosa": "La gran decisión tomada en la sesión",
+                    "comoCambioVida": "Impacto esperado de esa decisión",
+                    "preguntasLider": {
+                        "foco": "Energía centrada en...",
+                        "significado": "Interpretación de los retos",
+                        "accion": "Próximo paso concreto"
+                    }
+                }
+            }
+        `,
+    exportTemplate: (workbook: any) => {
+      const m = workbook.metadata || {};
+
+      return `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>${workbook.title} — Autoconfianza</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-light: #e0e7ff; 
+      --accent-glow: rgba(99, 102, 241, 0.15);
+      --radius: 16px;
+      --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; font-family: var(--font-stack); background-color: var(--bg);
+      color: var(--text-main); line-height: 1.6; padding-bottom: 100px;
+    }
+    .layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1100px; margin: 20px auto; gap: 24px; padding: 0 20px; }
+    @media (max-width: 900px) { .layout { display: block; padding: 0 16px; margin-top: 110px; } }
+    .mobile-nav-wrapper { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 90; border-bottom: 1px solid var(--card-border); padding: 10px 0 0 0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    @media (max-width: 900px) { .mobile-nav-wrapper { display: block; } }
+    .mobile-header { padding: 0 16px 10px; }
+    .mobile-header h1 { font-size: 18px; margin: 0; color: var(--text-main); }
+    .mobile-nav-scroller { display: flex; overflow-x: auto; padding: 0 16px 10px; gap: 10px; scrollbar-width: none; }
+    .mobile-nav-scroller::-webkit-scrollbar { display: none; }
+    .nav-pill { white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-muted); background: #f1f5f9; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all 0.2s; }
+    .nav-pill.active { background: var(--text-main); color: white; }
+    .sidebar { position: sticky; top: 20px; height: fit-content; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .sidebar { display: none; } }
+    .nav-link { display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .nav-link:hover { background: #f1f5f9; color: var(--text-main); }
+    .nav-link.active { background: var(--accent-light); color: var(--accent); border-left: 3px solid var(--accent); font-weight: 600; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    @media (max-width: 600px) { .card { padding: 20px; } }
+    h1 { font-size: 26px; font-weight: 800; margin-top: 0; color: var(--text-main); letter-spacing: -0.5px;}
+    h2 { font-size: 18px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; margin-bottom: 16px; margin-top: 0;}
+    p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    .note { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 12px; font-size: 13px; color: #1e40af; margin-bottom: 15px; }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+    input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
+    textarea { resize: vertical; min-height: 100px; }
+    .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; min-width: 650px; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; }
+    th { background: #f8fafc; color: var(--text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; }
+    td input, td textarea { background: transparent; border: 1px solid transparent; padding: 6px; }
+    td input:focus, td textarea:focus { background: white; border-color: var(--accent); }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width:700px){ .two-cols{ grid-template-columns: 1fr; } }
+    .dofa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    @media(max-width:700px){ .dofa-grid{ grid-template-columns: 1fr; } }
+    .dofa-item { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid var(--card-border); }
+    .dofa-item.positive { border-top: 3px solid #10b981; }
+    .dofa-item.negative { border-top: 3px solid #ef4444; }
+    .action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 8px 10px; border-radius: 100px; display: flex; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; max-width: 90%; }
+    .action-bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .action-bar button:hover { color: white; background: rgba(255,255,255,0.1); }
+    .action-bar button.primary { background: var(--accent); color: white; }
+    #toast { visibility: hidden; min-width: 250px; background-color: var(--text-main); color: #fff; text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed; z-index: 101; left: 50%; top: 20px; transform: translateX(-50%); font-weight: 500; font-size: 14px; opacity: 0; transition: all 0.3s; }
+    #toast.show { visibility: visible; opacity: 1; top: 50px; }
+    .tag { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-right: 5px; margin-bottom: 5px;}
+    .tag-green { background: #d1fae5; color: #065f46; }
+    .tag-yellow { background: #fef3c7; color: #92400e; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    @media print { body { background: white; padding: 0; } .sidebar, .action-bar, .mobile-nav-wrapper { display: none; } .layout { display: block; margin: 0; } .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div id="toast">✅ Guardado</div>
+  <div class="mobile-nav-wrapper">
+    <div class="mobile-header">
+      <span style="color:var(--accent); font-size:11px; font-weight:800; text-transform:uppercase;">Módulo 2</span>
+      <h1>${workbook.title}</h1>
+    </div>
+    <nav class="mobile-nav-scroller">
+      <a href="#sec-emociones" class="nav-pill active">1. Emociones</a>
+      <a href="#sec-identidad" class="nav-pill">2. Identidad</a>
+      <a href="#sec-creencias" class="nav-pill">3. Creencias</a>
+      <a href="#sec-dofa" class="nav-pill">4. DOFA</a>
+      <a href="#sec-estandar" class="nav-pill">5. Estándares</a>
+    </nav>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div style="margin-bottom: 10px; padding: 0 12px;">
+        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Contenido</span>
+      </div>
+      <a href="#sec-emociones" class="nav-link active">1. Emociones y Foco</a>
+      <a href="#sec-identidad" class="nav-link">2. Autodefinición</a>
+      <a href="#sec-creencias" class="nav-link">3. Transformar Creencias</a>
+      <a href="#sec-dofa" class="nav-link">4. DOFA Personal</a>
+      <a href="#sec-estandar" class="nav-link">5. Elevar Estándares</a>
+    </aside>
+
+    <main class="main-content">
+      <section id="sec-emociones" class="card">
+        <span style="color:var(--accent); font-weight:700; font-size:12px;">Paso 1</span>
+        <h1>Emociones & Foco</h1>
+        <p class="subtitle">Identificar lo que sientes reduce su intensidad y te devuelve el control.</p>
+        <div class="two-cols">
+          <div>
+            <label>Emociones Frecuentes</label>
+            <textarea id="emocionesHoy">${m.emocionesHoy || ''}</textarea>
+          </div>
+          <div>
+            <label>Anhelo vs. Evitación</label>
+            <textarea id="emocionAnhelo">${m.emocionAnhelo || ''}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-identidad" class="card">
+        <h2>2. Autodefinición (Lenguaje)</h2>
+        <div class="note">Cambiar "Tengo que..." por "¿Cómo puedo...?" cambia tu cerebro de modo supervivencia a modo creativo.</div>
+        <div class="two-cols">
+          <div>
+            <label>Frases Limitantes</label>
+            <textarea id="frasesLimitantes">${m.frasesLimitantes || ''}</textarea>
+          </div>
+          <div>
+            <label>Lenguaje Transformador</label>
+            <textarea id="lenguajeTransformador">${m.lenguajeTransformador || ''}</textarea>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <label>Tu Identidad en 10 Palabras</label>
+          <input type="text" id="autodefinicion10" value="${m.autodefinicion10 || ''}">
+        </div>
+      </section>
+
+      <section id="sec-creencias" class="card">
+        <h2>3. Transformación de Creencias</h2>
+        <div style="margin-bottom:20px;">
+          <label>¿Qué es el "Éxito" para ti?</label>
+          <textarea id="asociacionesExito" rows="2">${m.asociacionesExito || ''}</textarea>
+        </div>
+        <label>Matriz de Reprogramación</label>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr><th width="30%">Creencia Limitante</th><th width="20%">En Pasado</th><th>Nueva Creencia</th></tr>
+            </thead>
+            <tbody>
+              ${(m.creencias || []).map((c: any) => `
+                <tr>
+                  <td><textarea>${c.limitante || ''}</textarea></td>
+                  <td><textarea>${c.pasado || ''}</textarea></td>
+                  <td><textarea>${c.nueva || ''}</textarea></td>
+                </tr>
+              `).join('')}
+              ${(!m.creencias || m.creencias.length < 2) ? '<tr><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td></tr>' : ''}
+            </tbody>
+          </table>
+        </div>
+        <div class="two-cols">
+          <div>
+            <label>Costo</label>
+            <textarea id="perdidasCreencia">${m.perdidasCreencia || ''}</textarea>
+          </div>
+          <div>
+            <label>Beneficio Futuro</label>
+            <textarea id="beneficiosNuevas">${m.beneficiosNuevas || ''}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-dofa" class="card">
+        <h2>4. DOFA Personal</h2>
+        <div class="dofa-grid">
+          <div class="dofa-item positive">
+            <label style="color:#059669;">Fortalezas</label>
+            <textarea id="fortalezas" style="background:transparent; border:none; padding:0;">${m.dofa?.fortalezas || ''}</textarea>
+          </div>
+          <div class="dofa-item negative">
+            <label style="color:#dc2626;">Debilidades</label>
+            <textarea id="debilidades" style="background:transparent; border:none; padding:0;">${m.dofa?.debilidades || ''}</textarea>
+          </div>
+          <div class="dofa-item positive">
+            <label style="color:#059669;">Oportunidades</label>
+            <textarea id="oportunidades" style="background:transparent; border:none; padding:0;">${m.dofa?.oportunidades || ''}</textarea>
+          </div>
+          <div class="dofa-item negative">
+            <label style="color:#dc2626;">Amenazas</label>
+            <textarea id="amenazas" style="background:transparent; border:none; padding:0;">${m.dofa?.amenazas || ''}</textarea>
+          </div>
+        </div>
+        <div style="margin-top:15px;">
+          <label>Costo de inacción</label>
+          <input type="text" id="perderSiNoActuo" value="${m.perderSiNoActuo || ''}">
+        </div>
+      </section>
+
+      <section id="sec-estandar" class="card">
+        <h2>5. Elevar Estándares</h2>
+        <div class="two-cols" style="margin-bottom:20px;">
+          <div>
+            <label>Decisión Poderosa de Hoy</label>
+            <textarea id="decisionPoderosa">${m.decisionPoderosa || ''}</textarea>
+          </div>
+          <div>
+            <label>Impacto en mi vida</label>
+            <textarea id="comoCambioVida">${m.comoCambioVida || ''}</textarea>
+          </div>
+        </div>
+        <label>Las 3 Preguntas del Líder</label>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th width="30%">Pregunta</th><th>Tu Respuesta Hoy</th></tr></thead>
+            <tbody>
+              <tr><td><strong>1. ¿Foco?</strong></td><td><input type="text" value="${m.preguntasLider?.foco || ''}"></td></tr>
+              <tr><td><strong>2. ¿Significado?</strong></td><td><input type="text" value="${m.preguntasLider?.significado || ''}"></td></tr>
+              <tr><td><strong>3. ¿Acción?</strong></td><td><input type="text" value="${m.preguntasLider?.accion || ''}"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="action-bar">
+    <button class="primary" id="saveBtn">Guardar</button>
+    <button id="loadBtn">Cargar</button>
+    <button id="exportBtn">Exportar</button>
+    <button id="printBtn">Imprimir / PDF</button>
+    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
+  </div>
+
+  <script>
+    document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+  </script>
+</body>
+</html>
+            `;
+    }
   }
 };
