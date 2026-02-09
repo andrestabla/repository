@@ -822,5 +822,282 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
 </html>
             `;
     }
+  },
+  'Workbook3': {
+    id: 'Workbook3',
+    name: 'Workbook 3 — Comunicación',
+    prompt: `
+            Eres un EXPERTO EN COMUNICACIÓN ESTRATÉGICA y STORYTELLING.
+            Analiza la sesión y extrae la información para el "Workbook 3 - Comunicación".
+            
+            ESPECIFICACIONES DEL JSON DE SALIDA:
+            {
+                "success": true,
+                "metadata": {
+                    "objetivo": "Objetivo principal de la comunicación",
+                    "contexto": "Escenario o audiencia clave",
+                    "insumos": {
+                        "problema": "El dolor que resuelves",
+                        "audiencia": "A quién te diriges",
+                        "diferencial": "Tu propuesta única de valor",
+                        "prueba": "Dato o evidencia de éxito"
+                    },
+                    "speech": {
+                        "quienEres": "Presentación memorable",
+                        "queHaces": "Resultado que entregas",
+                        "porQueImporta": "Tu diferencial + dato",
+                        "hook": "Llamado a la acción o pregunta final"
+                    },
+                    "elevatorCompleto": "Discurso fluido de 60 segundos",
+                    "version15": "Versión súper corta",
+                    "tono": "Tono sugerido (Ejecutivo, Inspirador, etc.)",
+                    "logrosProf": "Lista de hitos profesionales",
+                    "logrosPers": "Lista de hitos personales",
+                    "historia": "Estructura STAR (Situación, Tarea, Acción, Resultado)",
+                    "cta": "Call to action específico",
+                    "mensajes": "Ideas fuerza que deben quedar en la mente"
+                }
+            }
+        `,
+    exportTemplate: (workbook: any) => {
+      const m = workbook.metadata || {};
+
+      return `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>${workbook.title} — Comunicación</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #0891b2; 
+      --accent-light: #cffafe; 
+      --accent-glow: rgba(8, 145, 178, 0.15);
+      --radius: 16px;
+      --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; font-family: var(--font-stack); background-color: var(--bg);
+      color: var(--text-main); line-height: 1.6; padding-bottom: 100px;
+    }
+    .layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1100px; margin: 20px auto; gap: 24px; padding: 0 20px; }
+    @media (max-width: 900px) { .layout { display: block; padding: 0 16px; margin-top: 110px; } }
+    .mobile-nav-wrapper { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 90; border-bottom: 1px solid var(--card-border); padding: 10px 0 0 0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    @media (max-width: 900px) { .mobile-nav-wrapper { display: block; } }
+    .mobile-header { padding: 0 16px 10px; }
+    .mobile-header h1 { font-size: 18px; margin: 0; color: var(--text-main); }
+    .mobile-nav-scroller { display: flex; overflow-x: auto; padding: 0 16px 10px; gap: 10px; scrollbar-width: none; }
+    .mobile-nav-scroller::-webkit-scrollbar { display: none; }
+    .nav-pill { white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-muted); background: #f1f5f9; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all 0.2s; }
+    .nav-pill.active { background: var(--text-main); color: white; }
+    .sidebar { position: sticky; top: 20px; height: fit-content; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .sidebar { display: none; } }
+    .nav-link { display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .nav-link:hover { background: #f1f5f9; color: var(--text-main); }
+    .nav-link.active { background: var(--accent-light); color: var(--accent); border-left: 3px solid var(--accent); font-weight: 600; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    @media (max-width: 600px) { .card { padding: 20px; } }
+    h1 { font-size: 26px; font-weight: 800; margin-top: 0; color: var(--text-main); letter-spacing: -0.5px;}
+    h2 { font-size: 18px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; margin-bottom: 16px; margin-top: 0;}
+    p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    .highlight-box { background: #ecfeff; border: 1px solid #cffafe; border-radius: 12px; padding: 20px; margin-top: 20px; }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+    input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
+    textarea { resize: vertical; min-height: 100px; }
+    .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; vertical-align: top; }
+    th { background: #f8fafc; color: var(--text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; }
+    td input, td textarea { background: transparent; border: 1px solid transparent; padding: 6px; }
+    td input:focus, td textarea:focus { background: white; border-color: var(--accent); }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width:700px){ .two-cols{ grid-template-columns: 1fr; } }
+    .action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 8px 10px; border-radius: 100px; display: flex; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; max-width: 90%; }
+    .action-bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .action-bar button:hover { color: white; background: rgba(255,255,255,0.1); }
+    .action-bar button.primary { background: var(--accent); color: white; }
+    #toast { visibility: hidden; min-width: 250px; background-color: var(--text-main); color: #fff; text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed; z-index: 101; left: 50%; top: 20px; transform: translateX(-50%); font-weight: 500; font-size: 14px; opacity: 0; transition: all 0.3s; }
+    #toast.show { visibility: visible; opacity: 1; top: 50px; }
+    .tag { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-right: 5px; margin-bottom: 5px;}
+    .tag-green { background: #d1fae5; color: #065f46; }
+    .tag-yellow { background: #fef3c7; color: #92400e; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    @media print { body { background: white; padding: 0; } .sidebar, .action-bar, .mobile-nav-wrapper { display: none; } .layout { display: block; margin: 0; } .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div id="toast">✅ Guardado</div>
+  <div class="mobile-nav-wrapper">
+    <div class="mobile-header">
+      <span style="color:var(--accent); font-size:11px; font-weight:800; text-transform:uppercase;">Módulo 3</span>
+      <h1>${workbook.title}</h1>
+    </div>
+    <nav class="mobile-nav-scroller">
+      <a href="#sec-obj" class="nav-pill active">1. Objetivo</a>
+      <a href="#sec-insumos" class="nav-pill">2. Insumos</a>
+      <a href="#sec-estructura" class="nav-pill">3. Estructura</a>
+      <a href="#sec-logros" class="nav-pill">4. Logros</a>
+      <a href="#sec-cierre" class="nav-pill">5. Cierre</a>
+    </nav>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div style="margin-bottom: 10px; padding: 0 12px;">
+        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Índice</span>
+      </div>
+      <a href="#sec-obj" class="nav-link active">1. Objetivo</a>
+      <a href="#sec-insumos" class="nav-link">2. Insumos Clave</a>
+      <a href="#sec-estructura" class="nav-link">3. Elevator Speech</a>
+      <a href="#sec-logros" class="nav-link">4. Logros & Story</a>
+      <a href="#sec-cierre" class="nav-link">5. CTA & Cierre</a>
+    </aside>
+
+    <main class="main-content">
+      <section id="sec-obj" class="card">
+        <span style="color:var(--accent); font-weight:700; font-size:12px;">Paso 1</span>
+        <h1>Definición de Intención</h1>
+        <p class="subtitle">¿Qué quieres lograr con esta conversación?</p>
+        <div class="two-cols">
+          <div>
+            <label>Objetivo Principal</label>
+            <input type="text" id="objetivo" value="${m.objetivo || ''}">
+          </div>
+          <div>
+            <label>Contexto de uso</label>
+            <input type="text" id="contexto" value="${m.contexto || ''}">
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-insumos" class="card">
+        <h2>2. Los 3 Pilares del Mensaje</h2>
+        <div class="two-cols">
+          <div>
+            <label>¿Qué problema resuelves?</label>
+            <textarea id="problema">${m.insumos?.problema || ''}</textarea>
+          </div>
+          <div>
+            <label>¿Para quién?</label>
+            <textarea id="audiencia">${m.insumos?.audiencia || ''}</textarea>
+          </div>
+          <div>
+            <label>Tu Diferencial</label>
+            <textarea id="diferencial">${m.insumos?.diferencial || ''}</textarea>
+          </div>
+          <div>
+            <label>La Prueba (1 Dato)</label>
+            <textarea id="prueba">${m.insumos?.prueba || ''}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-estructura" class="card">
+        <h2>3. Constructor del Elevator Speech</h2>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th width="20%">Parte</th><th>Tu Redacción</th><th width="25%">Tip</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Quién eres</strong></td>
+                <td><textarea id="quienEres">${m.speech?.quienEres || ''}</textarea></td>
+                <td style="color:var(--text-muted); font-size:13px;">Usa un detalle memorable.</td>
+              </tr>
+              <tr>
+                <td><strong>2. Qué haces</strong></td>
+                <td><textarea id="queHaces">${m.speech?.queHaces || ''}</textarea></td>
+                <td style="color:var(--text-muted); font-size:13px;">Enfócate en el resultado.</td>
+              </tr>
+              <tr>
+                <td><strong>3. Por qué importa</strong></td>
+                <td><textarea id="porQueImporta">${m.speech?.porQueImporta || ''}</textarea></td>
+                <td style="color:var(--text-muted); font-size:13px;">Aquí va tu dato de prueba.</td>
+              </tr>
+              <tr>
+                <td><strong>4. Hook/Cierre</strong></td>
+                <td><textarea id="hook">${m.speech?.hook || ''}</textarea></td>
+                <td style="color:var(--text-muted); font-size:13px;">Invita a la acción.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="highlight-box">
+          <label style="color:var(--accent); font-size:13px;">🌟 Tu Versión Final (30-60s)</label>
+          <textarea id="elevatorCompleto" style="border:none; background:transparent; font-size:16px; min-height:120px;">${m.elevatorCompleto || ''}</textarea>
+        </div>
+        <div class="two-cols" style="margin-top:20px;">
+          <div>
+            <label>Versión Ultra-Corta (15s)</label>
+            <textarea id="version15">${m.version15 || ''}</textarea>
+          </div>
+          <div>
+            <label>Tono Deseado</label>
+            <input type="text" id="tono" value="${m.tono || ''}">
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-logros" class="card">
+        <h2>4. Banco de Logros</h2>
+        <div class="two-cols">
+          <div>
+            <label>Top 5 Logros Profesionales</label>
+            <textarea id="logrosProf">${m.logrosProf || ''}</textarea>
+          </div>
+          <div>
+            <label>Top 5 Logros Personales</label>
+            <textarea id="logrosPers">${m.logrosPers || ''}</textarea>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <label>Micro-Historia (Método STAR)</label>
+          <textarea id="historia">${m.historia || ''}</textarea>
+        </div>
+      </section>
+
+      <section id="sec-cierre" class="card">
+        <h2>5. Cierre & CTA</h2>
+        <div class="two-cols">
+          <div>
+            <label>Call to Action (CTA)</label>
+            <input type="text" id="cta" value="${m.cta || ''}">
+          </div>
+          <div>
+            <label>Mensajes Clave (Repetir)</label>
+            <textarea id="mensajes">${m.mensajes || ''}</textarea>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="action-bar">
+    <button class="primary" id="saveBtn">Guardar</button>
+    <button id="loadBtn">Cargar</button>
+    <button id="exportBtn">Exportar</button>
+    <button id="printBtn">Imprimir / PDF</button>
+    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
+  </div>
+
+  <script>
+    document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+  </script>
+</body>
+</html>
+            `;
+    }
   }
 };
