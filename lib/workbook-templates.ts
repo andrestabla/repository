@@ -1981,5 +1981,341 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
 </html>
     `;
     }
+  },
+  'Workbook7': {
+    id: 'Workbook7',
+    name: 'Workbook 7 — Autenticidad II',
+    prompt: `
+            Eres un EXPERTO EN ESTRATEGIA DE NEGOCIO, VISIBILIDAD y MONETIZACIÓN para líderes.
+            Analiza la sesión y extrae la información para el "Workbook 7 - Autenticidad II (Visibilidad & Monetización)".
+            
+            ESPECIFICACIONES DEL JSON DE SALIDA:
+            {
+                "success": true,
+                "metadata": {
+                    "ecosistemaPersonal": "Comunidades, hobbies, voluntariado",
+                    "ecosistemaProfesional": "Gremios, eventos del sector",
+                    "ecosistemaCorporativo": "Comités internos, stakeholders",
+                    "ecosistemaExterno": "LinkedIn, podcasts, medios",
+                    "mensajeCentral": "Mensaje principal de marca",
+                    "temasPilares": "3 temas pilares de contenido",
+                    "v1c": "Canal 1", "v1a": "Acción 1", "v1f": "Frecuencia 1",
+                    "v2c": "Canal 2", "v2a": "Acción 2", "v2f": "Frecuencia 2",
+                    "of1r": "Promesa Nivel Básico", "of1$": "Precio Nivel Básico",
+                    "of2r": "Promesa Nivel Intermedio", "of2$": "Precio Nivel Intermedio",
+                    "of3r": "Promesa Nivel Premium", "of3$": "Precio Nivel Premium",
+                    "pruebasSociales": "Testimonios, logos, casos",
+                    "ruta": "Modelo Principal (Corporativo, Consultora, etc.)",
+                    "metaIngreso": "Meta de ingreso monetaria",
+                    "palancas": "Palancas de crecimiento",
+                    "p30a1": "Acciones 30 días", "p30r": "Meta 30 días",
+                    "p60a1": "Acciones 60 días", "p60r": "Meta 60 días",
+                    "p90a1": "Acciones 90 días", "p90r": "Meta 90 días",
+                    "kpiVis": "KPIs de Visibilidad",
+                    "kpiIng": "KPIs de Negocio"
+                }
+            }
+        `,
+    exportTemplate: (workbook: any) => {
+      const m = workbook.metadata || {};
+
+      return `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>${workbook.title} — Visibilidad & Monetización</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #7c3aed; 
+      --accent-light: #ede9fe; 
+      --accent-glow: rgba(124, 58, 237, 0.15);
+      --radius: 16px;
+      --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; font-family: var(--font-stack); background-color: var(--bg);
+      color: var(--text-main); line-height: 1.6; padding-bottom: 100px;
+    }
+    .layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1100px; margin: 20px auto; gap: 24px; padding: 0 20px; }
+    @media (max-width: 900px) { .layout { display: block; padding: 0 16px; margin-top: 110px; } }
+    .mobile-nav-wrapper { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 90; border-bottom: 1px solid var(--card-border); padding: 10px 0 0 0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    @media (max-width: 900px) { .mobile-nav-wrapper { display: block; } }
+    .mobile-header { padding: 0 16px 10px; }
+    .mobile-header h1 { font-size: 18px; margin: 0; color: var(--text-main); }
+    .mobile-nav-scroller { display: flex; overflow-x: auto; padding: 0 16px 10px; gap: 10px; scrollbar-width: none; }
+    .mobile-nav-scroller::-webkit-scrollbar { display: none; }
+    .nav-pill { white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-muted); background: #f1f5f9; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all 0.2s; }
+    .nav-pill.active { background: var(--text-main); color: white; }
+    .sidebar { position: sticky; top: 20px; height: fit-content; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .sidebar { display: none; } }
+    .nav-link { display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .nav-link:hover { background: #f1f5f9; color: var(--text-main); }
+    .nav-link.active { background: var(--accent-light); color: var(--accent); border-left: 3px solid var(--accent); font-weight: 600; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    @media (max-width: 600px) { .card { padding: 20px; } }
+    h1 { font-size: 26px; font-weight: 800; margin-top: 0; color: var(--text-main); letter-spacing: -0.5px;}
+    h2 { font-size: 18px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; margin-bottom: 16px; margin-top: 0;}
+    p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+    input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
+    textarea { resize: vertical; min-height: 100px; }
+    .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; vertical-align: top; }
+    th { background: #f8fafc; color: var(--text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; }
+    td input, td textarea, td select { background: transparent; border: 1px solid transparent; padding: 6px; }
+    td input:focus, td textarea:focus, td select:focus { background: white; border-color: var(--accent); }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width:700px){ .two-cols{ grid-template-columns: 1fr; } }
+    .action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 8px 10px; border-radius: 100px; display: flex; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; max-width: 90%; }
+    .action-bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .action-bar button:hover { color: white; background: rgba(255,255,255,0.1); }
+    .action-bar button.primary { background: var(--accent); color: white; }
+    #toast { visibility: hidden; min-width: 250px; background-color: var(--text-main); color: #fff; text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed; z-index: 101; left: 50%; top: 20px; transform: translateX(-50%); font-weight: 500; font-size: 14px; opacity: 0; transition: all 0.3s; }
+    #toast.show { visibility: visible; opacity: 1; top: 50px; }
+    .tag { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-right: 5px; margin-bottom: 5px;}
+    .tag-green { background: #d1fae5; color: #065f46; }
+    .tag-yellow { background: #fef3c7; color: #92400e; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    @media print { body { background: white; padding: 0; } .sidebar, .action-bar, .mobile-nav-wrapper { display: none; } .layout { display: block; margin: 0; } .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div id="toast">✅ Guardado</div>
+  <div class="mobile-nav-wrapper">
+    <div class="mobile-header">
+      <span style="color:var(--accent); font-size:11px; font-weight:800; text-transform:uppercase;">Módulo 6</span>
+      <h1>${workbook.title}</h1>
+    </div>
+    <nav class="mobile-nav-scroller">
+      <a href="#sec-ecosistemas" class="nav-pill active">1. Ecosistemas</a>
+      <a href="#sec-visibilidad" class="nav-pill">2. Visibilidad</a>
+      <a href="#sec-oferta" class="nav-pill">3. Oferta</a>
+      <a href="#sec-monetizacion" class="nav-pill">4. Monetización</a>
+      <a href="#sec-plan" class="nav-pill">5. Plan 30-60-90</a>
+    </nav>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div style="margin-bottom: 10px; padding: 0 12px;">
+        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Contenido</span>
+      </div>
+      <a href="#sec-ecosistemas" class="nav-link active">1. Ecosistemas</a>
+      <a href="#sec-visibilidad" class="nav-link">2. Visibilidad</a>
+      <a href="#sec-oferta" class="nav-link">3. Oferta de Valor</a>
+      <a href="#sec-monetizacion" class="nav-link">4. Monetización</a>
+      <a href="#sec-plan" class="nav-link">5. Plan 30-60-90</a>
+      <a href="#sec-kpi" class="nav-link">6. Indicadores</a>
+
+      <div style="margin-top:20px; padding:15px; border-top:1px solid var(--card-border);">
+        <label>Estado de Ejecución</label>
+        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+          <span class="tag tag-green">En Marcha</span>
+          <span class="tag tag-yellow">Planeando</span>
+          <span class="tag tag-red">Inactivo</span>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.3;">
+          Recuerda: Visibilidad sin oferta es solo ruido.
+        </p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <section id="sec-ecosistemas" class="card">
+        <span style="color:var(--accent); font-weight:700; font-size:12px;">Paso 1</span>
+        <h1>Ecosistemas</h1>
+        <p class="subtitle">¿Dónde debe vivir tu marca? Identifica tus territorios.</p>
+        <div class="two-cols">
+          <div>
+            <label>Ecosistema Personal</label>
+            <textarea>${m.ecosistemaPersonal || ''}</textarea>
+          </div>
+          <div>
+            <label>Ecosistema Profesional</label>
+            <textarea>${m.ecosistemaProfesional || ''}</textarea>
+          </div>
+          <div>
+            <label>Ecosistema Corporativo</label>
+            <textarea>${m.ecosistemaCorporativo || ''}</textarea>
+          </div>
+          <div>
+            <label>Ecosistema Digital/Externo</label>
+            <textarea>${m.ecosistemaExterno || ''}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-visibilidad" class="card">
+        <h2>2. Estrategia de Visibilidad</h2>
+        <p class="subtitle">Presencia con propósito, no solo "likes".</p>
+        <div class="two-cols">
+          <div>
+            <label>Mensaje Central</label>
+            <textarea>${m.mensajeCentral || ''}</textarea>
+          </div>
+          <div>
+            <label>3 Temas Pilares</label>
+            <textarea>${m.temasPilares || ''}</textarea>
+          </div>
+        </div>
+        <label style="margin-top:20px;">Plan de Canales</label>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th width="25%">Canal</th>
+                <th>Acción Concreta</th>
+                <th width="20%">Frecuencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" value="${m.v1c || ''}"></td>
+                <td><input type="text" value="${m.v1a || ''}"></td>
+                <td><input type="text" value="${m.v1f || ''}"></td>
+              </tr>
+              <tr>
+                <td><input type="text" value="${m.v2c || ''}"></td>
+                <td><input type="text" value="${m.v2a || ''}"></td>
+                <td><input type="text" value="${m.v2f || ''}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sec-oferta" class="card">
+        <h2>3. Tu Menú de Valor</h2>
+        <p class="subtitle">Empaqueta tu conocimiento en ofertas claras.</p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th width="20%">Nivel</th>
+                <th>Promesa / Resultado</th>
+                <th width="20%">Precio/Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Básica</strong></td>
+                <td><textarea rows="2">${m.of1r || ''}</textarea></td>
+                <td><input type="text" value="${m.of1$ || ''}"></td>
+              </tr>
+              <tr>
+                <td><strong>Intermedia</strong></td>
+                <td><textarea rows="2">${m.of2r || ''}</textarea></td>
+                <td><input type="text" value="${m.of2$ || ''}"></td>
+              </tr>
+              <tr>
+                <td><strong>Premium</strong></td>
+                <td><textarea rows="2">${m.of3r || ''}</textarea></td>
+                <td><input type="text" value="${m.of3$ || ''}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:20px;">
+          <label>Prueba Social (Tu respaldo)</label>
+          <textarea>${m.pruebasSociales || ''}</textarea>
+        </div>
+      </section>
+
+      <section id="sec-monetizacion" class="card">
+        <h2>4. Ruta de Monetización</h2>
+        <div class="two-cols">
+          <div>
+            <label>Modelo Principal</label>
+            <input type="text" value="${m.ruta || ''}">
+          </div>
+          <div>
+            <label>Meta de Ingreso</label>
+            <input type="text" value="${m.metaIngreso || ''}">
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <label>Palancas de Crecimiento</label>
+          <textarea>${m.palancas || ''}</textarea>
+        </div>
+      </section>
+
+      <section id="sec-plan" class="card">
+        <h2>5. Plan de Ejecución (30-60-90)</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th width="15%">Fase</th>
+                <th>Foco / Acciones Clave</th>
+                <th width="25%">Meta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>30 Días</strong></td>
+                <td><textarea rows="2">${m.p30a1 || ''}</textarea></td>
+                <td><textarea rows="2">${m.p30r || ''}</textarea></td>
+              </tr>
+              <tr>
+                <td><strong>60 Días</strong></td>
+                <td><textarea rows="2">${m.p60a1 || ''}</textarea></td>
+                <td><textarea rows="2">${m.p60r || ''}</textarea></td>
+              </tr>
+              <tr>
+                <td><strong>90 Días</strong></td>
+                <td><textarea rows="2">${m.p90a1 || ''}</textarea></td>
+                <td><textarea rows="2">${m.p90r || ''}</textarea></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sec-kpi" class="card">
+        <h2>6. Tablero de Control</h2>
+        <div class="two-cols">
+          <div>
+            <label>KPIs de Visibilidad</label>
+            <input type="text" value="${m.kpiVis || ''}">
+          </div>
+          <div>
+            <label>KPIs de Negocio</label>
+            <input type="text" value="${m.kpiIng || ''}">
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="action-bar">
+    <button class="primary" id="saveBtn">Guardar</button>
+    <button id="loadBtn">Cargar</button>
+    <button id="exportBtn">Exportar</button>
+    <button id="printBtn">Imprimir / PDF</button>
+    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
+  </div>
+
+  <script>
+    document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+  </script>
+</body>
+</html>
+    `;
+    }
   }
 };
