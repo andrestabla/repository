@@ -1097,7 +1097,572 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
   </script>
 </body>
 </html>
-            `;
+        `;
+    }
+  },
+  'Workbook4': {
+    id: 'Workbook4',
+    name: 'Workbook 4 — Networking',
+    prompt: `
+            Eres un EXPERTO EN ESTRATEGIA DE RELACIONES y NETWORKING DE ALTO NIVEL.
+            Analiza la sesión y extrae la información para el "Workbook 4 - Networking".
+            
+            ESPECIFICACIONES DEL JSON DE SALIDA:
+            {
+                "success": true,
+                "metadata": {
+                    "hab1": "Habilidad #1 seleccionada",
+                    "accionHab1": "Acción para la habilidad #1",
+                    "hab2": "Habilidad #2 seleccionada",
+                    "accionHab2": "Acción para la habilidad #2",
+                    "miedo1": "Análisis del peor escenario",
+                    "miedo2": "Racionalización del miedo",
+                    "orgPersona": "Persona clave interna",
+                    "orgAccion": "Acción de contacto interna",
+                    "cliPersona": "Persona clave externa/cliente",
+                    "cliAccion": "Acción de contacto externa",
+                    "socPersona": "Persona del círculo social",
+                    "socAccion": "Acción de contacto social",
+                    "metaRel": "Metas de networking del líder",
+                    "valorRel": "Oferta de valor del líder",
+                    "contacts": [
+                        { "name": "...", "role": "...", "power": 1, "interest": 3 }
+                    ],
+                    "activation": [
+                        { "contact": "...", "interest": "...", "value": "...", "frequency": "..." }
+                    ]
+                }
+            }
+        `,
+    exportTemplate: (workbook: any) => {
+      const m = workbook.metadata || {};
+      const contacts = m.contacts || [];
+      const activation = m.activation || [];
+
+      return `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>${workbook.title} — Networking</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+
+  <style>
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #059669;
+      --accent-light: #d1fae5;
+      --accent-glow: rgba(5, 150, 105, 0.15);
+      --radius: 16px;
+      --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; font-family: var(--font-stack); background-color: var(--bg);
+      color: var(--text-main); line-height: 1.6; padding-bottom: 100px;
+    }
+    .layout { display: grid; grid - template - columns: 240px 1fr; max - width: 1100px; margin: 20px auto; gap: 24px; padding: 0 20px; }
+@media(max - width: 900px) { .layout { display: block; padding: 0 16px; margin - top: 110px; } }
+    .mobile - nav - wrapper { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop - filter: blur(10px); z - index: 90; border - bottom: 1px solid var(--card - border); padding: 10px 0 0 0; box - shadow: 0 4px 12px rgba(0, 0, 0, 0.03); }
+@media(max - width: 900px) { .mobile - nav - wrapper { display: block; } }
+    .mobile - header { padding: 0 16px 10px; }
+    .mobile - header h1 { font - size: 18px; margin: 0; color: var(--text - main); }
+    .mobile - nav - scroller { display: flex; overflow - x: auto; padding: 0 16px 10px; gap: 10px; scrollbar - width: none; }
+    .mobile - nav - scroller:: -webkit - scrollbar { display: none; }
+    .nav - pill { white - space: nowrap; font - size: 13px; font - weight: 600; color: var(--text - muted); background: #f1f5f9; padding: 6px 14px; border - radius: 20px; text - decoration: none; transition: all 0.2s; }
+    .nav - pill.active { background: var(--text - main); color: white; }
+    .sidebar { position: sticky; top: 20px; height: fit - content; background: var(--card - bg); border: 1px solid var(--card - border); border - radius: var(--radius); padding: 20px; display: flex; flex - direction: column; gap: 6px; box - shadow: var(--shadow); }
+@media(max - width: 900px) { .sidebar { display: none; } }
+    .nav - link { display: flex; align - items: center; gap: 10px; color: var(--text - muted); text - decoration: none; padding: 10px 12px; border - radius: 8px; font - size: 14px; font - weight: 500; transition: all 0.2s; }
+    .nav - link:hover { background: #f1f5f9; color: var(--text - main); }
+    .nav - link.active { background: var(--accent - light); color: var(--accent); border - left: 3px solid var(--accent); font - weight: 600; }
+    .card { background: var(--card - bg); border: 1px solid var(--card - border); border - radius: var(--radius); padding: 30px; margin - bottom: 24px; box - shadow: var(--shadow); }
+@media(max - width: 600px) { .card { padding: 20px; } }
+    h1 { font - size: 26px; font - weight: 800; margin - top: 0; color: var(--text - main); letter - spacing: -0.5px; }
+    h2 { font - size: 18px; border - bottom: 1px solid var(--card - border); padding - bottom: 12px; margin - bottom: 16px; margin - top: 0; }
+p.subtitle { color: var(--text - muted); font - size: 14px; margin - bottom: 20px; line - height: 1.5; }
+    .chip - container { display: flex; flex - wrap: wrap; gap: 8px; margin - bottom: 15px; }
+    .chip { font - size: 12px; background: #f1f5f9; padding: 4px 10px; border - radius: 20px; color: var(--text - muted); font - weight: 600; }
+    label { display: block; font - size: 12px; font - weight: 700; text - transform: uppercase; letter - spacing: 0.5px; color: var(--text - muted); margin - bottom: 6px; }
+input, textarea, select { width: 100 %; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text - main); padding: 12px 14px; border - radius: 10px; font - family: inherit; font - size: 15px; transition: all 0.2s; -webkit - appearance: none; }
+input: focus, textarea: focus, select:focus { outline: none; border - color: var(--accent); background: white; box - shadow: 0 0 0 3px var(--accent - glow); }
+    textarea { resize: vertical; min - height: 100px; }
+    .table - responsive { overflow - x: auto; border - radius: 10px; border: 1px solid var(--card - border); background: white; margin - bottom: 15px; }
+    table { width: 100 %; border - collapse: collapse; min - width: 700px; }
+th, td { padding: 14px; text - align: left; border - bottom: 1px solid var(--card - border); font - size: 14px; vertical - align: top; }
+    th { background: #f8fafc; color: var(--text - muted); font - weight: 700; font - size: 11px; text - transform: uppercase; }
+    td input, td textarea, td select { background: transparent; border: 1px solid transparent; padding: 6px; }
+    td input: focus, td textarea: focus, td select:focus { background: white; border - color: var(--accent); }
+    .two - cols { display: grid; grid - template - columns: 1fr 1fr; gap: 20px; }
+@media(max - width: 700px) { .two - cols{ grid - template - columns: 1fr; } }
+    .action - bar { position: fixed; bottom: 20px; left: 50 %; transform: translateX(-50 %); background: #1e293b; padding: 8px 10px; border - radius: 100px; display: flex; gap: 8px; box - shadow: 0 10px 25px rgba(0, 0, 0, 0.2); z - index: 100; max - width: 90 %; }
+    .action - bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border - radius: 20px; font - size: 13px; font - weight: 600; cursor: pointer; }
+    .action - bar button:hover { color: white; background: rgba(255, 255, 255, 0.1); }
+    .action - bar button.primary { background: var(--accent); color: white; }
+#toast { visibility: hidden; min - width: 250px; background - color: var(--text - main); color: #fff; text - align: center; border - radius: 50px; padding: 12px 24px; position: fixed; z - index: 101; left: 50 %; top: 20px; transform: translateX(-50 %); font - weight: 500; font - size: 14px; opacity: 0; transition: all 0.3s; }
+#toast.show { visibility: visible; opacity: 1; top: 50px; }
+@media print { body { background: white; padding: 0; } .sidebar, .action - bar, .mobile - nav - wrapper { display: none; } .layout { display: block; margin: 0; } .card { box - shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
+</style>
+  </head>
+  < body >
+  <div id="toast" >✅ Guardado </div>
+    < div class="mobile-nav-wrapper" >
+      <div class="mobile-header" >
+        <span style="color:var(--accent); font-size:11px; font-weight:800; text-transform:uppercase;" > Módulo 4 </span>
+          < h1 > ${workbook.title} </h1>
+            </div>
+            < nav class="mobile-nav-scroller" >
+              <a href="#sec-skills" class="nav-pill active" > 1. Habilidades </a>
+                < a href = "#sec-miedos" class="nav-pill" > 2. Miedos </a>
+                  < a href = "#sec-acciones" class="nav-pill" > 3. Acciones </a>
+                    < a href = "#sec-estrategia" class="nav-pill" > 4. Estrategia </a>
+                      < a href = "#sec-mapa" class="nav-pill" > 5. Mapa A / B / C </a>
+                        </nav>
+                        </div>
+
+                        < div class="layout" >
+                          <aside class="sidebar" >
+                            <div style="margin-bottom: 10px; padding: 0 12px;" >
+                              <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:800;" > Contenido </span>
+                                </div>
+                                < a href = "#sec-skills" class="nav-link active" > 1. Habilidades Clave </a>
+                                  < a href = "#sec-miedos" class="nav-link" > 2. Superar Miedos </a>
+                                    < a href = "#sec-acciones" class="nav-link" > 3. Acciones 7 Días </a>
+                                      < a href = "#sec-estrategia" class="nav-link" > 4. Estrategia </a>
+                                        < a href = "#sec-mapa" class="nav-link" > 5. Mapa Prioridades </a>
+                                          < a href = "#sec-plan" class="nav-link" > 6. Activación </a>
+                                            </aside>
+
+                                            < main class="main-content" >
+                                              <section id="sec-skills" class="card" >
+                                                <span style="color:var(--accent); font-weight:700; font-size:12px;" > Paso 1 </span>
+                                                  < h1 > Habilidades de Conexión </h1>
+                                                    < p class="subtitle" > Selecciona 2 áreas para fortalecer esta semana.</p>
+                                                      < div class="chip-container" >
+                                                        <span class="chip" > Escucha Activa < /span><span class="chip">Storytelling</span > <span class="chip" > Rapport < /span><span class="chip">Persuasión</span >
+                                                          </div>
+                                                          < div class="two-cols" >
+                                                            <div>
+                                                            <label>Habilidad #1 </label>
+                                                              < input type = "text" value = "${m.hab1 || ''}" >
+                                                                <textarea style="margin-top:10px;" > ${m.accionHab1 || ''} </textarea>
+                                                                  </div>
+                                                                  < div >
+                                                                  <label>Habilidad #2 </label>
+                                                                    < input type = "text" value = "${m.hab2 || ''}" >
+                                                                      <textarea style="margin-top:10px;" > ${m.accionHab2 || ''} </textarea>
+                                                                        </div>
+                                                                        </div>
+                                                                        </section>
+
+                                                                        < section id = "sec-miedos" class="card" >
+                                                                          <h2>2. Superando la Barrera(Miedo) </h2>
+                                                                            < div class="two-cols" >
+                                                                              <div>
+                                                                              <label>¿Qué es lo peor que puede pasar ? </label>
+                                                                                < textarea > ${m.miedo1 || ''} </textarea>
+                                                                                  </div>
+                                                                                  < div >
+                                                                                  <label>¿Qué pensarán realmente ? </label>
+                                                                                    < textarea > ${m.miedo2 || ''} </textarea>
+                                                                                      </div>
+                                                                                      </div>
+                                                                                      </section>
+
+                                                                                      < section id = "sec-acciones" class="card" >
+                                                                                        <h2>3. Activación Inmediata </h2>
+                                                                                          < div class="table-responsive" >
+                                                                                            <table>
+                                                                                            <thead><tr><th width="30%" > Categoría < /th><th>Persona</th > <th>Acción < /th></tr > </thead>
+                                                                                              < tbody >
+                                                                                              <tr><td><strong>Organización Interna < /strong></td > <td><input type="text" value = "${m.orgPersona || ''}" > </td><td><input type="text" value="${m.orgAccion || ''}"></td > </tr>
+                                                                                                < tr > <td><strong>Cliente / Externo < /strong></td > <td><input type="text" value = "${m.cliPersona || ''}" > </td><td><input type="text" value="${m.cliAccion || ''}"></td > </tr>
+                                                                                                  < tr > <td><strong>Círculo Social < /strong></td > <td><input type="text" value = "${m.socPersona || ''}" > </td><td><input type="text" value="${m.socAccion || ''}"></td > </tr>
+                                                                                                    </tbody>
+                                                                                                    </table>
+                                                                                                    </div>
+                                                                                                    </section>
+
+                                                                                                    < section id = "sec-estrategia" class="card" >
+                                                                                                      <h2>4. Estrategia de Valor </h2>
+                                                                                                        < div class="two-cols" >
+                                                                                                          <div>
+                                                                                                          <label>Mis Metas de Networking </label>
+                                                                                                            < textarea rows = "3" > ${m.metaRel || ''} </textarea>
+                                                                                                              </div>
+                                                                                                              < div >
+                                                                                                              <label>Mi Oferta de Valor </label>
+                                                                                                                < textarea rows = "3" > ${m.valorRel || ''} </textarea>
+                                                                                                                  </div>
+                                                                                                                  </div>
+                                                                                                                  </section>
+
+                                                                                                                  < section id = "sec-mapa" class="card" >
+                                                                                                                    <h2>5. Mapa de Prioridades(A / B / C) </h2>
+                                                                                                                      < div class="table-responsive" >
+                                                                                                                        <table>
+                                                                                                                        <thead><tr><th>Nombre < /th><th>Rol</th > <th>Poder < /th><th>Interés</th > </tr></thead >
+                                                                                                                        <tbody>
+                                                                                                                        ${contacts.map((c: any) => `
+                <tr>
+                  <td><input type="text" value="${c.name || ''}"></td>
+                  <td><input type="text" value="${c.role || ''}"></td>
+                  <td><input type="text" value="${c.power || ''}" style="text-align:center;"></td>
+                  <td><input type="text" value="${c.interest || ''}" style="text-align:center;"></td>
+                </tr>
+              `).join('')
+        }
+              ${(!contacts || contacts.length < 3) ? '<tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>'.repeat(3 - (contacts?.length || 0)) : ''}
+</tbody>
+  </table>
+  </div>
+  </section>
+
+  < section id = "sec-plan" class="card" >
+    <h2>6. Plan de Activación </h2>
+      < div class="table-responsive" >
+        <table>
+        <thead><tr><th width="20%" > Contacto < /th><th>Interés</th > <th>Valor < /th><th>Frecuencia</th > </tr></thead >
+          <tbody>
+          ${activation.map((a: any) => `
+                <tr>
+                  <td><input type="text" value="${a.contact || ''}"></td>
+                  <td><textarea rows="1">${a.interest || ''}</textarea></td>
+                  <td><textarea rows="1">${a.value || ''}</textarea></td>
+                  <td><input type="text" value="${a.frequency || ''}"></td>
+                </tr>
+              `).join('')
+        }
+              ${(!activation || activation.length < 2) ? '<tr><td><input type="text"></td><td><textarea rows="1"></textarea></td><td><textarea rows="1"></textarea></td><td><input type="text"></td></tr>'.repeat(2 - (activation?.length || 0)) : ''}
+</tbody>
+  </table>
+  </div>
+  </section>
+  </main>
+  </div>
+
+  < div class="action-bar" >
+    <button class="primary" id = "saveBtn" > Guardar </button>
+      < button id = "loadBtn" > Cargar </button>
+        < button id = "exportBtn" > Exportar </button>
+          < button id = "printBtn" > Imprimir / PDF </button>
+            < button id = "clearBtn" style = "color:#fca5a5;" > Limpiar </button>
+              </div>
+
+              <script>
+document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+</script>
+  </body>
+  </html>
+    `;
+    }
+  },
+  'Workbook5': {
+    id: 'Workbook5',
+    name: 'Workbook 5 — Serenidad',
+    prompt: `
+            Eres un EXPERTO EN GESTIÓN EMOCIONAL y PSICOLOGÍA DEL LIDERAZGO.
+            Analiza la sesión y extrae la información para el "Workbook 5 - Serenidad".
+            
+            ESPECIFICACIONES DEL JSON DE SALIDA:
+            {
+                "success": true,
+                "metadata": {
+                    "emo1": "Nombre de la emoción 1",
+                    "emo1i": 5,
+                    "emo1n": "Sensación o necesidad de la emoción 1",
+                    "emo2": "Nombre de la emoción 2",
+                    "emo2i": 5,
+                    "emo2n": "Sensación o necesidad de la emoción 2",
+                    "triggers": "Lista de detonantes principales",
+                    "patron": "Descripción del patrón de reacción automática",
+                    "r1s": "Situación + Pensamiento Automático",
+                    "r1r": "Reencuadre (Nueva Pregunta)",
+                    "r1e": "Emoción Original",
+                    "r1a": "Nueva Acción",
+                    "ancla1": "Ancla Física (Cuerpo)",
+                    "ancla2": "Ancla Mental",
+                    "preguntas": "Protocolo de decisión o preguntas clave",
+                    "h1": "Micro-hábito 1",
+                    "h1t": "Señal para el hábito 1",
+                    "h1d": "Duración del hábito 1",
+                    "h1r": "Recompensa del hábito 1",
+                    "h2": "Micro-hábito 2",
+                    "h2t": "Señal para el hábito 2",
+                    "h2d": "Duración del hábito 2",
+                    "h2r": "Recompensa del hábito 2"
+                }
+            }
+        `,
+    exportTemplate: (workbook: any) => {
+      const m = workbook.metadata || {};
+
+      return `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>${workbook.title} — Serenidad</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #0ea5e9; 
+      --accent-light: #e0f2fe; 
+      --accent-glow: rgba(14, 165, 233, 0.15);
+      --radius: 16px;
+      --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; font-family: var(--font-stack); background-color: var(--bg);
+      color: var(--text-main); line-height: 1.6; padding-bottom: 100px;
+    }
+    .layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1100px; margin: 20px auto; gap: 24px; padding: 0 20px; }
+    @media (max-width: 900px) { .layout { display: block; padding: 0 16px; margin-top: 110px; } }
+    .mobile-nav-wrapper { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 90; border-bottom: 1px solid var(--card-border); padding: 10px 0 0 0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    @media (max-width: 900px) { .mobile-nav-wrapper { display: block; } }
+    .mobile-header { padding: 0 16px 10px; }
+    .mobile-header h1 { font-size: 18px; margin: 0; color: var(--text-main); }
+    .mobile-nav-scroller { display: flex; overflow-x: auto; padding: 0 16px 10px; gap: 10px; scrollbar-width: none; }
+    .mobile-nav-scroller::-webkit-scrollbar { display: none; }
+    .nav-pill { white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-muted); background: #f1f5f9; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all 0.2s; }
+    .nav-pill.active { background: var(--text-main); color: white; }
+    .sidebar { position: sticky; top: 20px; height: fit-content; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .sidebar { display: none; } }
+    .nav-link { display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .nav-link:hover { background: #f1f5f9; color: var(--text-main); }
+    .nav-link.active { background: var(--accent-light); color: var(--accent); border-left: 3px solid var(--accent); font-weight: 600; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    @media (max-width: 600px) { .card { padding: 20px; } }
+    h1 { font-size: 26px; font-weight: 800; margin-top: 0; color: var(--text-main); letter-spacing: -0.5px;}
+    h2 { font-size: 18px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; margin-bottom: 16px; margin-top: 0;}
+    p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    .note { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 12px; font-size: 13px; color: #1e40af; margin-bottom: 15px; }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+    input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
+    textarea { resize: vertical; min-height: 100px; }
+    .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; vertical-align: top; }
+    th { background: #f8fafc; color: var(--text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; }
+    td input, td textarea { background: transparent; border: 1px solid transparent; padding: 6px; }
+    td input:focus, td textarea:focus { background: white; border-color: var(--accent); }
+    input[type=range] { -webkit-appearance: none; height: 6px; background: #e2e8f0; border: none; padding: 0; margin-top: 10px; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: white; border: 2px solid var(--accent); margin-top: -6px; cursor: pointer; }
+    input[type=range]::-webkit-slider-runnable-track { height: 6px; background: #e2e8f0; border-radius: 3px; }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width:700px){ .two-cols{ grid-template-columns: 1fr; } }
+    .action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 8px 10px; border-radius: 100px; display: flex; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; max-width: 90%; }
+    .action-bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .action-bar button:hover { color: white; background: rgba(255,255,255,0.1); }
+    .action-bar button.primary { background: var(--accent); color: white; }
+    #toast { visibility: hidden; min-width: 250px; background-color: var(--text-main); color: #fff; text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed; z-index: 101; left: 50%; top: 20px; transform: translateX(-50%); font-weight: 500; font-size: 14px; opacity: 0; transition: all 0.3s; }
+    #toast.show { visibility: visible; opacity: 1; top: 50px; }
+    @media print { body { background: white; padding: 0; } .sidebar, .action-bar, .mobile-nav-wrapper { display: none; } .layout { display: block; margin: 0; } .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div id="toast">✅ Guardado</div>
+  <div class="mobile-nav-wrapper">
+    <div class="mobile-header">
+      <span style="color:var(--accent); font-size:11px; font-weight:800; text-transform:uppercase;">Módulo 5</span>
+      <h1>${workbook.title}</h1>
+    </div>
+    <nav class="mobile-nav-scroller">
+      <a href="#sec-termo" class="nav-pill active">1. Termómetro</a>
+      <a href="#sec-triggers" class="nav-pill">2. Triggers</a>
+      <a href="#sec-reframe" class="nav-pill">3. Reencuadre</a>
+      <a href="#sec-anclas" class="nav-pill">4. Anclas</a>
+      <a href="#sec-habitos" class="nav-pill">5. Hábitos</a>
+    </nav>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div style="margin-bottom: 10px; padding: 0 12px;">
+        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Contenido</span>
+      </div>
+      <a href="#sec-termo" class="nav-link active">1. Termómetro Emocional</a>
+      <a href="#sec-triggers" class="nav-link">2. Triggers</a>
+      <a href="#sec-reframe" class="nav-link">3. Reencuadre</a>
+      <a href="#sec-anclas" class="nav-link">4. Rutinas (Anclas)</a>
+      <a href="#sec-habitos" class="nav-link">5. Plan 7 Días</a>
+
+      <div style="margin-top:20px; padding:15px; border-top:1px solid var(--card-border);">
+        <label>Kit Express (2 min)</label>
+        <div style="font-size:13px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
+          <span>💨 <strong>Respira 4-6</strong></span>
+          <span>🏷️ <strong>Nombra:</strong> "Siento..."</span>
+          <span>🎯 <strong>Acción:</strong> 1 paso</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <section id="sec-termo" class="card">
+        <span style="color:var(--accent); font-weight:700; font-size:12px;">Paso 1</span>
+        <h1>Termómetro Emocional</h1>
+        <p class="subtitle">Identifica la emoción y su intensidad para gestionarla.</p>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th width="20%">Emoción</th>
+                <th width="30%">Intensidad (0-10)</th>
+                <th>Sensación / Necesidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" value="${m.emo1 || ''}"></td>
+                <td style="padding: 10px 20px;">
+                  <input type="range" min="0" max="10" value="${m.emo1i || 5}" oninput="updateVal('v1', this.value)">
+                  <span id="v1" style="font-size:12px; font-weight:700; color:var(--accent); float:right;">${m.emo1i || 5}</span>
+                </td>
+                <td><input type="text" value="${m.emo1n || ''}"></td>
+              </tr>
+              <tr>
+                <td><input type="text" value="${m.emo2 || ''}"></td>
+                <td style="padding: 10px 20px;">
+                  <input type="range" min="0" max="10" value="${m.emo2i || 5}" oninput="updateVal('v2', this.value)">
+                  <span id="v2" style="font-size:12px; font-weight:700; color:var(--accent); float:right;">${m.emo2i || 5}</span>
+                </td>
+                <td><input type="text" value="${m.emo2n || ''}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sec-triggers" class="card">
+        <h2>2. Triggers (Detonantes)</h2>
+        <p class="subtitle">¿Qué situaciones disparan tu reacción automática?</p>
+        <div class="two-cols">
+          <div>
+            <label>Mis 3 Triggers Principales</label>
+            <textarea>${m.triggers || ''}</textarea>
+          </div>
+          <div>
+            <label>Mi Patrón de Reacción</label>
+            <textarea>${m.patron || ''}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-reframe" class="card">
+        <h2>3. Reencuadre Cognitivo</h2>
+        <p class="subtitle">Cambia la interpretación para cambiar la emoción.</p>
+        <div style="background:#f0f9ff; padding:20px; border-radius:12px; border:1px solid #bae6fd; margin-bottom:20px;">
+          <div class="two-cols">
+            <div>
+              <label>Situación + Pensamiento Automático</label>
+              <textarea rows="3">${m.r1s || ''}</textarea>
+            </div>
+            <div>
+              <label>Reencuadre (Nueva Pregunta)</label>
+              <textarea rows="3">${m.r1r || ''}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="two-cols">
+          <div>
+            <label>Emoción Original</label>
+            <input type="text" value="${m.r1e || ''}">
+          </div>
+          <div>
+            <label>Nueva Acción</label>
+            <input type="text" value="${m.r1a || ''}">
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-anclas" class="card">
+        <h2>4. Rutinas (Anclas de Calma)</h2>
+        <p class="subtitle">Protege tu energía con hábitos simples.</p>
+        <div class="two-cols">
+          <div>
+            <label>Ancla Física (Cuerpo)</label>
+            <input type="text" value="${m.ancla1 || ''}">
+          </div>
+          <div>
+            <label>Ancla Mental</label>
+            <input type="text" value="${m.ancla2 || ''}">
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <label>Protocolo de Decisión (Bajo Presión)</label>
+          <textarea>${m.preguntas || ''}</textarea>
+        </div>
+      </section>
+
+      <section id="sec-habitos" class="card">
+        <h2>5. Plan de 7 Días</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th width="30%">Micro-hábito</th>
+                <th>Señal (Cuándo)</th>
+                <th>Duración</th>
+                <th>Recompensa</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" value="${m.h1 || ''}"></td>
+                <td><input type="text" value="${m.h1t || ''}"></td>
+                <td><input type="text" value="${m.h1d || ''}"></td>
+                <td><input type="text" value="${m.h1r || ''}"></td>
+              </tr>
+              <tr>
+                <td><input type="text" value="${m.h2 || ''}"></td>
+                <td><input type="text" value="${m.h2t || ''}"></td>
+                <td><input type="text" value="${m.h2d || ''}"></td>
+                <td><input type="text" value="${m.h2r || ''}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="action-bar">
+    <button class="primary" id="saveBtn">Guardar</button>
+    <button id="loadBtn">Cargar</button>
+    <button id="exportBtn">Exportar</button>
+    <button id="printBtn">Imprimir / PDF</button>
+    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
+  </div>
+
+  <script>
+    function updateVal(id, val) {
+      document.getElementById(id).textContent = val;
+    }
+    document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+  </script>
+</body>
+</html>
+    `;
     }
   }
 };

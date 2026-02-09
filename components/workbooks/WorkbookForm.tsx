@@ -282,6 +282,8 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                                         <option value="Workbook1">Workbook 1 — Metas & PDI</option>
                                         <option value="Workbook2">Workbook 2 — Autoconfianza</option>
                                         <option value="Workbook3">Workbook 3 — Comunicación</option>
+                                        <option value="Workbook4">Workbook 4 — Networking</option>
+                                        <option value="Workbook5">Workbook 5 — Serenidad</option>
                                     </select>
                                 </div>
                                 <div>
