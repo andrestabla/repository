@@ -44,8 +44,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Analyze
-        const { GeminiService } = await import('@/lib/gemini')
-        const analysis = await GeminiService.analyzeWorkbook(textToAnalyze, workbookType)
+        // Use OpenAI as requested
+        const { OpenAIService } = await import('@/lib/openai')
+        const analysis = await OpenAIService.analyzeWorkbook(textToAnalyze, workbookType)
 
         return NextResponse.json({ success: true, data: analysis })
 

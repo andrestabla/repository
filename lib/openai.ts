@@ -119,4 +119,65 @@ export class OpenAIService {
             throw error
         }
     }
+
+    static async analyzeWorkbook(text: string, workbookType?: string) {
+        let apiKey = await SystemSettingsService.getOpenAIApiKey()
+        if (!apiKey) apiKey = process.env.OPENAI_API_KEY || null
+        if (!apiKey) throw new Error("OPENAI_API_KEY no configurada.")
+
+        let specializedInstructions = ""
+        if (workbookType) {
+            try {
+                const { WORKBOOK_TEMPLATES } = require('./workbook-templates')
+                if (WORKBOOK_TEMPLATES[workbookType]) {
+                    specializedInstructions = `
+                        --- INSTRUCCIONES ESPECÍFICAS PARA EL TIPO: ${WORKBOOK_TEMPLATES[workbookType].name} ---
+                        ${WORKBOOK_TEMPLATES[workbookType].prompt}
+                        --------------------------------------------------------------------------------
+                    `
+                }
+            } catch (e) {
+                console.warn("[OpenAI] Could not load specialized template prompt", e)
+            }
+        }
+
+        const prompt = `
+            Eres el experto en Inteligencia Artificial del sistema 4Shine.
+            Tu tarea es analizar el texto de una sesión de mentoría y estructurarlo para un Workbook.
+
+            REGLAS:
+            1. Idioma: Español.
+            2. Formato: Devuelve un objeto JSON válido.
+            3. Precisión: Extrae información específica, no generalidades.
+
+            ${specializedInstructions}
+
+            Si no hay instrucciones específicas arriba, extrae un resumen general, 3 objetivos de aprendizaje y 5 conclusiones clave.
+
+            TEXTO DE LA SESIÓN:
+            ${text.substring(0, 50000)}
+
+            Responde únicamente con el JSON.
+        `
+
+        const openai = new OpenAI({ apiKey })
+
+        try {
+            console.log(`[OpenAI] Analyzing workbook with GPT-4o...`)
+            const completion = await openai.chat.completions.create({
+                messages: [{ role: "user", content: prompt }],
+                model: "gpt-4o",
+                temperature: 0.3,
+                response_format: { type: "json_object" }
+            })
+
+            const content = completion.choices[0].message.content
+            if (!content) throw new Error("OpenAI returned empty content")
+
+            return JSON.parse(content)
+        } catch (error: any) {
+            console.error(`[OpenAI] Workbook analysis failed:`, error.message)
+            throw error
+        }
+    }
 }
