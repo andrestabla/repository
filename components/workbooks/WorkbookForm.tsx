@@ -284,6 +284,7 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                                         <option value="Workbook3">Workbook 3 — Comunicación</option>
                                         <option value="Workbook4">Workbook 4 — Networking</option>
                                         <option value="Workbook5">Workbook 5 — Serenidad</option>
+                                        <option value="Workbook6">Workbook 6 — Autenticidad I</option>
                                     </select>
                                 </div>
                                 <div>
