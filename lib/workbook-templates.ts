@@ -1,16 +1,16 @@
 
 export interface WorkbookTemplate {
-    id: string;
-    name: string;
-    prompt: string;
-    exportTemplate: (workbook: any) => string;
+  id: string;
+  name: string;
+  prompt: string;
+  exportTemplate: (workbook: any) => string;
 }
 
 export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
-    'Workbook1': {
-        id: 'Workbook1',
-        name: 'Workbook 1 — Metas & PDI',
-        prompt: `
+  'Workbook1': {
+    id: 'Workbook1',
+    name: 'Workbook 1 — Metas & PDI',
+    prompt: `
             Eres un EXPERTO EN DISEÑO INSTRUCCIONAL y PEDAGOGÍA CORPORATIVA (4Shine Methodology).
             Analiza la transcripción de la sesión de mentoría y extrae la información para el "Workbook 1 - Metas & PDI".
             
@@ -43,112 +43,492 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
 
             IMPORTANTE: Si falta información, infiérela basándote en el tono de la conversación o deja valores coherentes por defecto.
         `,
-        exportTemplate: (workbook: any) => {
-            const m = workbook.metadata || {};
-            const wheelAreas = [
-                "Salud & bienestar", "Finanzas", "Relaciones", "Familia",
-                "Trabajo", "Filantropía", "Espiritualidad", "Hobbies"
-            ];
+    exportTemplate: (workbook: any) => {
+      const m = workbook.metadata || {};
 
-            // Replicating the user's provided HTML structure but with workbook data
-            return `
-                <!doctype html>
-                <html lang="es">
-                <head>
-                  <meta charset="utf-8" />
-                  <title>${workbook.title}</title>
-                  <style>
-                    /* Reused styles from user prompt */
-                    :root{
-                      --bg:#0b0c10; --card:#12141b; --text:#eef2ff; --muted:#b8c0ff;
-                      --accent:#ffd166; --accent2:#7bdff2; --line:rgba(255,255,255,.1);
-                      --radius:18px; --max:1000px;
-                    }
-                    body{ font-family: sans-serif; background: var(--bg); color: var(--text); line-height:1.4; padding:20px; }
-                    .wrap{ max-width:var(--max); margin:0 auto; }
-                    .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-bottom:20px; }
-                    h1, h2{ margin-top:0; color:var(--accent); }
-                    .badge{ display:inline-block; padding:4px 12px; background:rgba(255,255,255,.1); border-radius:999px; font-size:12px; margin-bottom:10px; }
-                    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-                    .table{ width:100%; border-collapse:collapse; margin-top:10px; }
-                    .table th, .table td{ border:1px solid var(--line); padding:10px; text-align:left; font-size:13px; }
-                    .wheel-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; }
-                    .wheel-item{ background:rgba(0,0,0,.2); padding:10px; border-radius:10px; text-align:center; }
-                    .wheel-item span{ display:block; font-size:18px; font-weight:bold; color:var(--accent2); }
-                  </style>
-                </head>
-                <body>
-                  <div class="wrap">
-                    <header class="card">
-                      <span class="badge">Workbook 1 — Metas & PDI</span>
-                      <h1>${workbook.title}</h1>
-                      <p>${workbook.description || ''}</p>
-                    </header>
+      // Map the internal storage to the HTML IDs
+      const flatData: any = {
+        exitoFrase: m.exitoFrase || "",
+        exitoEvidencia: m.exitoEvidencia || "",
+        smartMeta: m.smartMeta || "",
+        smart_s: m.smartCheck?.s || "",
+        smart_m: m.smartCheck?.m || "",
+        smart_a: m.smartCheck?.a || "",
+        smart_r: m.smartCheck?.r || "",
+        smart_t: m.smartCheck?.t || "",
+        plan_1_rol: m.planCarrera?.year1?.definition || "",
+        plan_1_kpi: m.planCarrera?.year1?.evidence || "",
+        plan_3_rol: m.planCarrera?.year3?.definition || "",
+        plan_3_kpi: m.planCarrera?.year3?.evidence || "",
+        plan_5_rol: m.planCarrera?.year5?.definition || "",
+        plan_5_kpi: m.planCarrera?.year5?.evidence || "",
+        acciones90: m.acciones90 || "",
+        ritual: m.ritual || "",
+        wheel: m.wheel || [50, 50, 50, 50, 50, 50, 50, 50]
+      };
 
-                    <section class="card">
-                      <h2>1) Definición de Éxito</h2>
-                      <p><strong>Frase:</strong> ${m.exitoFrase || 'N/A'}</p>
-                      <p><strong>Evidencias:</strong> ${m.exitoEvidencia || 'N/A'}</p>
-                    </section>
+      // Map gaps (up to 2 for this UI)
+      if (m.gaps && m.gaps.length > 0) {
+        flatData.gap_1_skill = m.gaps[0].skill;
+        flatData.gap_1_lvl = m.gaps[0].level;
+        flatData.gap_1_act = m.gaps[0].action;
+      }
+      if (m.gaps && m.gaps.length > 1) {
+        flatData.gap_2_skill = m.gaps[1].skill;
+        flatData.gap_2_lvl = m.gaps[1].level;
+        flatData.gap_2_act = m.gaps[1].action;
+      }
 
-                    <section class="card">
-                      <h2>2) Rueda del Éxito</h2>
-                      <div class="wheel-grid">
-                        ${(m.wheel || []).map((val: number, i: number) => `
-                          <div class="wheel-item">
-                            <small>${wheelAreas[i]}</small>
-                            <span>${val}%</span>
-                          </div>
-                        `).join('')}
-                      </div>
-                    </section>
+      // Map pdei (up to 2 for this UI)
+      if (m.pdei && m.pdei.length > 0) {
+        flatData.pdei_1_meta = m.pdei[0].meta;
+        flatData.pdei_1_act = m.pdei[0].action;
+        flatData.pdei_1_date = m.pdei[0].date;
+        flatData.pdei_1_cel = m.pdei[0].celebration;
+      }
+      if (m.pdei && m.pdei.length > 1) {
+        flatData.pdei_2_meta = m.pdei[1].meta;
+        flatData.pdei_2_act = m.pdei[1].action;
+        flatData.pdei_2_date = m.pdei[1].date;
+        flatData.pdei_2_cel = m.pdei[1].celebration;
+      }
 
-                    <section class="card">
-                      <h2>3) Metas SMART</h2>
-                      <p><strong>Meta:</strong> ${m.metaSmart || 'N/A'}</p>
-                      <table class="table">
-                        <tr><th>Específico</th><td>${m.smartCheck?.s || ''}</td></tr>
-                        <tr><th>Medible</th><td>${m.smartCheck?.m || ''}</td></tr>
-                        <tr><th>Alcanzable</th><td>${m.smartCheck?.a || ''}</td></tr>
-                        <tr><th>Relevante</th><td>${m.smartCheck?.r || ''}</td></tr>
-                        <tr><th>Tiempo</th><td>${m.smartCheck?.t || ''}</td></tr>
-                      </table>
-                    </section>
+      return `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>${workbook.title} — Metas & PDI</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-                    <section class="card">
-                      <h2>4) Plan de Carrera</h2>
-                      <table class="table">
-                        <tr><th>Horizonte</th><th>Definición</th><th>Indicadores</th></tr>
-                        <tr><td>1 Año</td><td>${m.planCarrera?.year1?.definition || ''}</td><td>${m.planCarrera?.year1?.evidence || ''}</td></tr>
-                        <tr><td>3 Años</td><td>${m.planCarrera?.year3?.definition || ''}</td><td>${m.planCarrera?.year3?.evidence || ''}</td></tr>
-                        <tr><td>5 Años</td><td>${m.planCarrera?.year5?.definition || ''}</td><td>${m.planCarrera?.year5?.evidence || ''}</td></tr>
-                      </table>
-                    </section>
-
-                    <section class="card">
-                      <h2>5) GAP Analysis</h2>
-                      <table class="table">
-                        <tr><th>Habilidad</th><th>Nivel</th><th>Acción</th></tr>
-                        ${(m.gaps || []).map((g: any) => `
-                          <tr><td>${g.skill}</td><td>${g.level}/5</td><td>${g.action}</td></tr>
-                        `).join('')}
-                      </table>
-                    </section>
-
-                    <section class="card">
-                      <h2>6) PDEI</h2>
-                      <table class="table">
-                        <tr><th>Meta</th><th>Acción</th><th>Fecha</th></tr>
-                        ${(m.pdei || []).map((p: any) => `
-                          <tr><td>${p.meta}</td><td>${p.action}</td><td>${p.date}</td></tr>
-                        `).join('')}
-                      </table>
-                    </section>
-                  </div>
-                  <script>window.print();</script>
-                </body>
-                </html>
-            `;
-        }
+  <style>
+    :root{
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #f59e0b;
+      --accent-light: #fffbeb; 
+      --accent-glow: rgba(245, 158, 11, 0.15);
+      --success: #10b981;
+      --radius: 16px;
+      --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: var(--font-stack);
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 100px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      max-width: 1100px;
+      margin: 20px auto;
+      gap: 24px;
+      padding: 0 20px;
+    }
+    @media (max-width: 900px) {
+      .layout { display: block; padding: 0 16px; margin-top: 100px; }
+    }
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      height: fit-content;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: var(--shadow);
+    }
+    .mobile-nav-wrapper { display: none; }
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .mobile-nav-wrapper {
+        display: block; position: fixed; top: 0; left: 0; right: 0;
+        background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+        z-index: 90; border-bottom: 1px solid var(--card-border);
+        padding: 10px 0 0 0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      }
+      .mobile-header { padding: 0 16px 10px; display: flex; justify-content: space-between; align-items: center; }
+      .mobile-header h1 { font-size: 18px; margin: 0; color: var(--text-main); }
+      .mobile-nav-scroller { display: flex; overflow-x: auto; padding: 0 16px 10px; gap: 12px; scrollbar-width: none; }
+      .mobile-nav-scroller::-webkit-scrollbar { display: none; }
+      .nav-pill { white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-muted); background: #f1f5f9; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all 0.2s; }
+      .nav-pill.active { background: var(--text-main); color: white; }
+    }
+    .nav-link {
+      display: flex; align-items: center; gap: 10px;
+      color: var(--text-muted); text-decoration: none;
+      padding: 10px 12px; border-radius: 8px;
+      font-size: 14px; font-weight: 500; transition: all 0.2s;
+    }
+    .nav-link:hover { background: #f1f5f9; color: var(--text-main); }
+    .nav-link.active { background: var(--accent-light); color: #d97706; border-left: 3px solid var(--accent); font-weight: 600; }
+    .card {
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius);
+      padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow);
+    }
+    @media (max-width: 600px) { .card { padding: 20px; } }
+    h1, h2 { margin-top: 0; color: var(--text-main); letter-spacing: -0.02em; }
+    h1 { font-size: 26px; font-weight: 800; }
+    h2 { font-size: 18px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
+    p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+    input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
+    textarea { resize: vertical; min-height: 100px; }
+    .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background-image: linear-gradient(to right, white, white), linear-gradient(to right, white, white), linear-gradient(to right, rgba(0,0,0,0.05), rgba(255,255,255,0)), linear-gradient(to left, rgba(0,0,0,0.05), rgba(255,255,255,0)); background-position: left center, right center, left center, right center; background-repeat: no-repeat; background-color: white; background-size: 20px 100%, 20px 100%, 10px 100%, 10px 100%; background-attachment: local, local, scroll, scroll; }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; }
+    th { background: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+    tr:last-child td { border-bottom: none; }
+    td input { background: transparent; border: 1px solid transparent; padding: 4px; border-radius: 4px; }
+    td input:focus { background: white; border-color: var(--accent); }
+    .wheel-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
+    @media(max-width:700px){ .wheel-container{ grid-template-columns: 1fr; } }
+    .slider-group { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+    .slider-label { flex: 1; font-size: 13px; font-weight: 500; color: var(--text-main); }
+    input[type=range] { flex: 1.5; height: 6px; background: #e2e8f0; border: none; padding: 0; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: white; border: 2px solid var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: -7px; }
+    input[type=range]::-webkit-slider-runnable-track { height: 6px; background: #e2e8f0; border-radius: 3px; }
+    .slider-val { width: 36px; text-align: right; font-weight: 700; color: var(--accent); font-size: 13px; }
+    .action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 8px 10px; border-radius: 100px; display: flex; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; width: max-content; max-width: 90%; }
+    .action-bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .action-bar button:hover { color: white; background: rgba(255,255,255,0.1); }
+    .action-bar button.primary { background: var(--accent); color: white; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4); }
+    #toast { visibility: hidden; min-width: 250px; background-color: var(--text-main); color: #fff; text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed; z-index: 101; left: 50%; top: 20px; transform: translateX(-50%); font-weight: 500; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); opacity: 0; transition: all 0.3s; }
+    #toast.show { visibility: visible; opacity: 1; top: 40px; }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width:700px){ .two-cols{ grid-template-columns: 1fr; } }
+    @media print { body { background: white; padding: 0; } .sidebar, .action-bar, .mobile-nav-wrapper { display: none !important; } .layout { display: block; margin: 0; } .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div id="toast">✅ Guardado correctamente</div>
+  <div class="mobile-nav-wrapper">
+    <div class="mobile-header">
+      <h1>${workbook.title}</h1>
+      <span style="font-size:12px; color:var(--accent); font-weight:700;">PRO</span>
+    </div>
+    <nav class="mobile-nav-scroller">
+      <a href="#sec-intro" class="nav-pill active">1. Intro</a>
+      <a href="#sec-wheel" class="nav-pill">2. Rueda</a>
+      <a href="#sec-smart" class="nav-pill">3. SMART</a>
+      <a href="#sec-plan" class="nav-pill">4. Carrera</a>
+      <a href="#sec-gap" class="nav-pill">5. GAP</a>
+      <a href="#sec-pdei" class="nav-pill">6. PDEI</a>
+      <a href="#sec-90dias" class="nav-pill">7. 90 Días</a>
+    </nav>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div style="margin-bottom: 10px; padding: 0 12px;">
+        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:800; letter-spacing:1px;">Mapa Estratégico</span>
+      </div>
+      <a href="#sec-intro" class="nav-link active">1. Definición de Éxito</a>
+      <a href="#sec-wheel" class="nav-link">2. Rueda de la Vida</a>
+      <a href="#sec-smart" class="nav-link">3. Objetivos SMART</a>
+      <a href="#sec-plan" class="nav-link">4. Plan de Carrera</a>
+      <a href="#sec-gap" class="nav-link">5. Brechas (GAP)</a>
+      <a href="#sec-pdei" class="nav-link">6. PDEI</a>
+      <a href="#sec-90dias" class="nav-link">7. Plan 90 Días</a>
+    </aside>
+
+    <main class="main-content">
+      <section id="sec-intro" class="card">
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
+          <div>
+            <span style="color:var(--accent); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">Workbook 1 — Metas & PDI</span>
+            <h1>${workbook.title}</h1>
+            <p class="subtitle">${workbook.description || 'Traduce tu visión en un plan táctico. Sin distracciones.'}</p>
+          </div>
+        </div>
+        <div class="two-cols">
+            <div>
+              <label>Tu definición de éxito (1 frase)</label>
+              <textarea id="exitoFrase" rows="2" placeholder="Ej: Crecer con propósito y equilibrio..."></textarea>
+            </div>
+            <div>
+              <label>Evidencia Observable</label>
+              <textarea id="exitoEvidencia" rows="2" placeholder="Ej: Promoción, Ahorro de X monto..."></textarea>
+            </div>
+        </div>
+      </section>
+
+      <section id="sec-wheel" class="card">
+        <h2>2. Diagnóstico (Rueda)</h2>
+        <p class="subtitle">Desliza para ajustar tu nivel actual (0-100%).</p>
+        <div class="wheel-container">
+          <div class="sliders-box" id="sliderContainer"></div>
+          <div style="position:relative; height:300px; width:100%;">
+            <canvas id="wheelChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-smart" class="card">
+        <h2>3. Objetivo SMART</h2>
+        <label>Declaración de Meta (Presente)</label>
+        <textarea id="smartMeta" placeholder="Para Dic 2026, yo he logrado..."></textarea>
+        <div style="margin-top:24px;">
+          <label>Checklist de Calidad</label>
+          <div class="table-responsive">
+            <table>
+              <tr><th width="50">S</th><td><input type="text" id="smart_s" placeholder="Específico..."></td></tr>
+              <tr><th>M</th><td><input type="text" id="smart_m" placeholder="Medible (KPI)..."></td></tr>
+              <tr><th>A</th><td><input type="text" id="smart_a" placeholder="Alcanzable..."></td></tr>
+              <tr><th>R</th><td><input type="text" id="smart_r" placeholder="Relevante..."></td></tr>
+              <tr><th>T</th><td><input type="text" id="smart_t" placeholder="Tiempo..."></td></tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-plan" class="card">
+        <h2>4. Visión 1-3-5 Años</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr><th width="80">Año</th><th>Rol / Éxito</th><th>KPIs</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="font-weight:700;">1 Año</td><td><input type="text" id="plan_1_rol" placeholder="Foco inmediato"></td><td><input type="text" id="plan_1_kpi"></td></tr>
+              <tr><td style="font-weight:700;">3 Años</td><td><input type="text" id="plan_3_rol" placeholder="Consolidación"></td><td><input type="text" id="plan_3_kpi"></td></tr>
+              <tr><td style="font-weight:700;">5 Años</td><td><input type="text" id="plan_5_rol" placeholder="Legado"></td><td><input type="text" id="plan_5_kpi"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sec-gap" class="card">
+        <h2>5. Brechas (GAP)</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr><th>Habilidad Faltante</th><th width="60">Nvl</th><th>Acción</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><input type="text" id="gap_1_skill" placeholder="Ej: Inglés"></td><td><input type="number" id="gap_1_lvl"></td><td><input type="text" id="gap_1_act"></td></tr>
+              <tr><td><input type="text" id="gap_2_skill"></td><td><input type="number" id="gap_2_lvl"></td><td><input type="text" id="gap_2_act"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sec-pdei" class="card">
+        <h2>6. Plan de Desarrollo</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr><th>Qué aprender</th><th>Cómo (Acción)</th><th width="110">Fecha</th><th>Premio</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" id="pdei_1_meta" placeholder="Skill"></td>
+                <td><input type="text" id="pdei_1_act" placeholder="Curso/Libro"></td>
+                <td><input type="date" id="pdei_1_date"></td>
+                <td><input type="text" id="pdei_1_cel" placeholder="Cena"></td>
+              </tr>
+              <tr>
+                <td><input type="text" id="pdei_2_meta"></td>
+                <td><input type="text" id="pdei_2_act"></td>
+                <td><input type="date" id="pdei_2_date"></td>
+                <td><input type="text" id="pdei_2_cel"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sec-90dias" class="card">
+        <h2>7. Ejecución (90 Días)</h2>
+        <div class="two-cols">
+          <div>
+            <label>5 Acciones Críticas</label>
+            <textarea id="acciones90" placeholder="1. ...&#10;2. ..."></textarea>
+          </div>
+          <div>
+            <label>Ritual Semanal</label>
+            <textarea id="ritual" placeholder="Día y hora de revisión..."></textarea>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="action-bar">
+    <button class="primary" id="saveBtn">Guardar</button>
+    <button id="loadBtn">Cargar</button>
+    <button id="exportBtn">JSON</button>
+    <button id="printBtn">Imprimir / PDF</button>
+    <button id="clearBtn" style="color:#fca5a5;">Borrar</button>
+  </div>
+
+  <script>
+    const areas = ["Salud", "Finanzas", "Relaciones", "Familia", "Trabajo", "Contribución", "Espíritu", "Diversión"];
+    const initialDataFromDB = ${JSON.stringify(flatData)};
+    
+    const ctx = document.getElementById('wheelChart').getContext('2d');
+    const wheelChart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: areas,
+        datasets: [{
+          label: 'Nivel',
+          data: initialDataFromDB.wheel || Array(8).fill(50),
+          backgroundColor: 'rgba(245, 158, 11, 0.25)',
+          borderColor: '#f59e0b',
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#d97706',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        scales: {
+          r: {
+            angleLines: { color: '#e2e8f0' },
+            grid: { color: '#e2e8f0' },
+            pointLabels: { color: '#475569', font: { size: 11, weight: '600', family: 'Inter' } },
+            ticks: { display: false, backdropColor: 'transparent' }
+          }
+        },
+        plugins: { legend: { display: false } },
+        maintainAspectRatio: false
+      }
+    });
+
+    const sliderContainer = document.getElementById('sliderContainer');
+    areas.forEach((area, index) => {
+      const val = (initialDataFromDB.wheel && initialDataFromDB.wheel[index]) || 50;
+      const html = \`
+        <div class="slider-group">
+          <span class="slider-label">\${area}</span>
+          <input type="range" min="0" max="100" value="\${val}" 
+                 id="wheel_\${index}" data-index="\${index}" class="wheel-slider">
+          <span class="slider-val" id="val_\${index}">\${val}%</span>
+        </div>
+      \`;
+      sliderContainer.insertAdjacentHTML('beforeend', html);
+    });
+
+    document.querySelectorAll('.wheel-slider').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = e.target.dataset.index;
+        const val = e.target.value;
+        document.getElementById(\`val_\${idx}\`).textContent = val + '%';
+        wheelChart.data.datasets[0].data[idx] = val;
+        wheelChart.update();
+      });
+    });
+
+    const STORAGE_KEY = 'workbook_light_v1';
+    const toast = document.getElementById("toast");
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.className = "show";
+      setTimeout(() => { toast.className = ""; }, 3000);
+    }
+
+    function getAllData() {
+      const data = {};
+      document.querySelectorAll('input:not(.wheel-slider), textarea, select').forEach(el => {
+        if(el.id) data[el.id] = el.value;
+      });
+      data.wheel = wheelChart.data.datasets[0].data;
+      return data;
+    }
+
+    function setAllData(data) {
+      for (const [key, value] of Object.entries(data)) {
+        if (key === 'wheel') continue;
+        const el = document.getElementById(key);
+        if (el) el.value = value;
+      }
+      if(data.wheel && Array.isArray(data.wheel)){
+        wheelChart.data.datasets[0].data = data.wheel;
+        wheelChart.update();
+        data.wheel.forEach((val, idx) => {
+          const slider = document.getElementById(\`wheel_\${idx}\`);
+          const label = document.getElementById(\`val_\${idx}\`);
+          if(slider) slider.value = val;
+          if(label) label.textContent = val + '%';
+        });
+      }
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getAllData()));
+      showToast("💾 Guardado localmente");
+    });
+
+    document.getElementById('loadBtn').addEventListener('click', () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if(saved) {
+        setAllData(JSON.parse(saved));
+        showToast("📂 Datos cargados");
+      } else {
+        showToast("⚠️ No hay datos previos");
+      }
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if(confirm("¿Limpiar todo el formulario?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      }
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getAllData(), null, 2));
+      const el = document.createElement('a');
+      el.setAttribute("href", dataStr);
+      el.setAttribute("download", "workbook_metas.json");
+      document.body.appendChild(el);
+      el.click();
+      el.remove();
+    });
+
+    document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+
+    window.addEventListener('load', () => {
+      setAllData(initialDataFromDB);
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if(entry.isIntersecting){
+            const id = entry.target.id;
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const dLink = document.querySelector(\`.nav-link[href="#\${id}"]\`);
+            if(dLink) dLink.classList.add('active');
+            document.querySelectorAll('.nav-pill').forEach(l => l.classList.remove('active'));
+            const mLink = document.querySelector(\`.nav-pill[href="#\${id}"]\`);
+            if(mLink) {
+              mLink.classList.add('active');
+              mLink.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+          }
+        });
+      }, { threshold: 0.3 });
+      document.querySelectorAll('section').forEach(section => observer.observe(section));
+    });
+  </script>
+</body>
+</html>
+            `;
+    }
+  }
 };
