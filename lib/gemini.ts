@@ -405,23 +405,43 @@ export class GeminiService {
         throw new Error(`[Gemini All Models Failed] Último error: ${lastError?.message || lastError}`)
     }
 
-    static async analyzeWorkbook(text: string) {
+    static async analyzeWorkbook(text: string, workbookType?: string) {
         if (!text || text.length < 50) return null
 
         let apiKey = await SystemSettingsService.getGeminiApiKey()
         if (!apiKey) apiKey = process.env.GEMINI_API_KEY || null
         if (!apiKey) throw new Error("GEMINI_API_KEY no configurada.")
 
+        // Load specialized prompt if available
+        let specializedInstructions = ""
+        if (workbookType) {
+            try {
+                const { WORKBOOK_TEMPLATES } = require('./workbook-templates')
+                if (WORKBOOK_TEMPLATES[workbookType]) {
+                    specializedInstructions = `
+                        --- INSTRUCCIONES ESPECÍFICAS PARA EL TIPO: ${WORKBOOK_TEMPLATES[workbookType].name} ---
+                        ${WORKBOOK_TEMPLATES[workbookType].prompt}
+                        --------------------------------------------------------------------------------
+                    `
+                }
+            } catch (e) {
+                console.warn("[Gemini] Could not load specialized template prompt", e)
+            }
+        }
+
         const prompt = `
             Eres un EXPERTO EN DISEÑO INSTRUCCIONAL y PEDAGOGÍA CORPORATIVA (4Shine Methodology).
             Tu tarea es analizar el documento adjunto y extraer la estructura pedagógica clave para crear un "Workbook" de alto impacto.
 
-            --- INSTRUCCIONES DE ANÁLISIS ---
+            ${specializedInstructions}
+
+            --- INSTRUCCIONES DE ANÁLISIS GENERALES ---
             1. **Objetivos de Aprendizaje**: Identifica qué logrará el usuario al terminar este workbook. Redáctalos como verbos de acción (ej: "Dominar...", "Identificar...").
             2. **Audiencia Objetivo**: Deduce para quién fue escrito (Líderes, Managers, Contribuidores Individuales, etc.).
             3. **Duración y Dificultad**: Estima el tiempo de estudio y nivel basándote en la complejidad y longitud.
             4. **Prerrequisitos**: ¿Qué debe saber antes?
             5. **Key Takeaways**: Los 3-5 puntos clave más valiosos.
+            6. **Contenido**: Si es para un tipo específico (como Metas & PDI), asegúrate de estructurar el contenido para ese fin.
 
             JSON STRUCTURE (STRICT):
             {
@@ -434,6 +454,7 @@ export class GeminiService {
                   "difficulty": "Básico | Intermedio | Avanzado",
                   "prerequisites": "Texto descriptivo o 'Ninguno'",
                   "takeaways": ["Punto clave 1", "Punto clave 2", "Punto clave 3"]
+                  // SI ES UN WORKBOOK ESPECÍFICO, PUEDES AÑADIR CAMPOS EXTRAS AQUÍ SI SON NECESARIOS
               },
               "content": "Resumen ejecutivo o extracción de las secciones principales (Markdown soportado)"
             }

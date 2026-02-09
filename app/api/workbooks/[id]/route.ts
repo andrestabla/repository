@@ -29,7 +29,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         const body = await request.json()
 
         // Allowed fields to update
-        const { title, description, metadata, status, content } = body
+        const { title, description, metadata, status, content, type } = body
 
         const workbook = await prisma.workbook.update({
             where: { id },
@@ -38,8 +38,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                 description,
                 metadata, // JSON update
                 status,
-                content
-            }
+                content,
+                type
+            } as any
         })
 
         return NextResponse.json(workbook)

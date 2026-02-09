@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { title, description, driveId } = body
+        const { title, description, driveId, type } = body
 
         // Create the workbook
         const workbook = await prisma.workbook.create({
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
                 title,
                 description,
                 driveId,
+                type,
                 status: 'Borrador',
                 metadata: {
                     objectives: [],
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
                     prerequisites: '',
                     takeaways: []
                 }
-            }
+            } as any
         })
 
         // TODO: Trigger async AI analysis if driveId is present

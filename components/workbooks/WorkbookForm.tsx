@@ -25,6 +25,7 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [status, setStatus] = useState('Borrador')
+    const [type, setType] = useState('General')
 
     // Source
     const [driveId, setDriveId] = useState('')
@@ -39,12 +40,14 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
     // Lists
     const [objectives, setObjectives] = useState<string[]>([''])
     const [takeaways, setTakeaways] = useState<string[]>([''])
+    const [extraMetadata, setExtraMetadata] = useState<any>({})
 
     useEffect(() => {
         if (initialWorkbook && isOpen) {
             setTitle(initialWorkbook.title)
             setDescription(initialWorkbook.description || '')
             setStatus(initialWorkbook.status)
+            setType(initialWorkbook.type || 'General')
             setDriveId(initialWorkbook.driveId || '')
             setDriveLink(initialWorkbook.driveId ? `https://drive.google.com/file/d/${initialWorkbook.driveId}/view` : '')
 
@@ -56,6 +59,10 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
             setPrerequisites(meta?.prerequisites || '')
             setObjectives(meta?.objectives && meta.objectives.length > 0 ? meta.objectives : [''])
             setTakeaways(meta?.takeaways && meta.takeaways.length > 0 ? meta.takeaways : [''])
+
+            // Store everything else in extraMetadata
+            const { objectives: _, takeaways: __, audience: ___, duration: ____, difficulty: _____, prerequisites: ______, ...rest } = meta || {}
+            setExtraMetadata(rest)
         } else if (!isOpen) {
             resetForm()
         }
@@ -65,6 +72,7 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
         setTitle('')
         setDescription('')
         setStatus('Borrador')
+        setType('General')
         setDriveId('')
         setDriveLink('')
         setAudience('')
@@ -73,6 +81,7 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
         setPrerequisites('')
         setObjectives([''])
         setTakeaways([''])
+        setExtraMetadata({})
     }
 
     const handleDriveSelect = (file: any) => {
@@ -106,7 +115,7 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
             const res = await fetch('/api/workbooks/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ driveId })
+                body: JSON.stringify({ driveId, workbookType: type })
             })
             const { data, error } = await res.json()
             if (error) throw new Error(error)
@@ -121,6 +130,10 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                 if (data.metadata.prerequisites) setPrerequisites(data.metadata.prerequisites)
                 if (data.metadata.objectives) setObjectives(data.metadata.objectives)
                 if (data.metadata.takeaways) setTakeaways(data.metadata.takeaways)
+
+                // Preserve all other specialized fields
+                const { audience: _, duration: __, difficulty: ___, prerequisites: ____, objectives: _____, takeaways: ______, ...rest } = data.metadata
+                setExtraMetadata(rest)
             }
 
         } catch (error) {
@@ -146,14 +159,16 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                     title,
                     description,
                     status,
+                    type,
                     driveId,
                     metadata: {
+                        ...extraMetadata,
                         objectives: objectives.filter(o => o.trim()),
+                        takeaways: takeaways.filter(o => o.trim()),
                         audience,
                         duration,
                         difficulty,
-                        prerequisites,
-                        takeaways: takeaways.filter(t => t.trim())
+                        prerequisites
                     }
                 })
             })
@@ -255,17 +270,30 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                                     required
                                 />
                             </div>
-                            <div>
-                                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Estado</label>
-                                <select
-                                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main outline-none focus:ring-2 focus:ring-accent"
-                                    value={status}
-                                    onChange={e => setStatus(e.target.value)}
-                                >
-                                    <option value="Borrador">Borrador</option>
-                                    <option value="Revisión">Revisión</option>
-                                    <option value="Publicado">Publicado</option>
-                                </select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Tipo de Workbook</label>
+                                    <select
+                                        className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main outline-none focus:ring-2 focus:ring-accent text-sm font-bold"
+                                        value={type}
+                                        onChange={e => setType(e.target.value)}
+                                    >
+                                        <option value="General">General</option>
+                                        <option value="Workbook1">Workbook 1 — Metas & PDI</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Estado</label>
+                                    <select
+                                        className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text-main outline-none focus:ring-2 focus:ring-accent text-sm"
+                                        value={status}
+                                        onChange={e => setStatus(e.target.value)}
+                                    >
+                                        <option value="Borrador">Borrador</option>
+                                        <option value="Revisión">Revisión</option>
+                                        <option value="Publicado">Publicado</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div>

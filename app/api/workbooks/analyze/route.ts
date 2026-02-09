@@ -13,13 +13,14 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
-        const { driveId, text: manualText } = await request.json()
+        const body = await request.json()
+        const { driveId, text: manualText, workbookType } = body
 
         if (!driveId && !manualText) {
             return NextResponse.json({ error: 'Drive ID or Text required' }, { status: 400 })
         }
 
-        console.log(`[Workbook Analyze] Processing...`)
+        console.log(`[Workbook Analyze] Processing type: ${workbookType || 'General'}...`)
 
         let textToAnalyze = ''
 
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
 
         // Analyze
         const { GeminiService } = await import('@/lib/gemini')
-        const analysis = await GeminiService.analyzeWorkbook(textToAnalyze)
+        const analysis = await GeminiService.analyzeWorkbook(textToAnalyze, workbookType)
 
         return NextResponse.json({ success: true, data: analysis })
 

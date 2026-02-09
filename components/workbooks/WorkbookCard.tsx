@@ -9,6 +9,7 @@ export interface Workbook {
     title: string
     description?: string | null
     status: string
+    type?: string | null
     metadata: {
         objectives?: string[]
         audience?: string
@@ -49,10 +50,17 @@ export function WorkbookCard({ workbook, onEdit, onDelete }: WorkbookCardProps) 
                     <Book className="text-accent" />
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-1 text-[10px] uppercase font-black tracking-widest border rounded-lg transition-colors ${getStatusColor(workbook.status)}`}>
-                        {workbook.status}
-                    </span>
+                <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-2">
+                        {workbook.type && workbook.type !== 'General' && (
+                            <span className="px-2 py-0.5 bg-accent/10 text-accent text-[9px] font-black uppercase tracking-tighter border border-accent/20 rounded-md">
+                                {workbook.type}
+                            </span>
+                        )}
+                        <span className={`px-2.5 py-1 text-[10px] uppercase font-black tracking-widest border rounded-lg transition-colors ${getStatusColor(workbook.status)}`}>
+                            {workbook.status}
+                        </span>
+                    </div>
 
                     <div className="relative">
                         <button

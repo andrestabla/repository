@@ -235,6 +235,7 @@ model Workbook {
   metadata    Json?    // Stores: objectives, audience, duration, difficulty, prerequisites, takeaways
   
   status      String   @default("Borrador") // Borrador, Revisión, Publicado
+  type        String?  // Tipo de Workbook: Workbook1, Workbook2, etc.
   
   // Content Source
   driveId     String?
