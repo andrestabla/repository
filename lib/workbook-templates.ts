@@ -11,42 +11,43 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     id: 'Workbook1',
     name: 'Workbook 1 — Metas & PDI',
     prompt: `
-            Eres un EXPERTO EN DISEÑO INSTRUCCIONAL y PEDAGOGÍA CORPORATIVA (4Shine Methodology).
-            Tu objetivo es generar un análisis PROFUNDO, DETALLADO y ALTAMENTE DESCRIPTIVO. 
-            Analiza la transcripción de la sesión de mentoría y extrae la información para el "Workbook 1 - Metas & PDI".
+            Eres un CONSULTOR DE ESTRATEGIA de élite y EXPERTO EN DISEÑO INSTRUCCIONAL (4Shine Methodology).
+            Tu objetivo es generar un análisis ESTRATÉGICO, EXHAUSTIVO y ALTAMENTE ACCIONABLE. 
+            Analiza cada matiz de la sesión de mentoría para el "Workbook 1 - Metas & PDI".
             
             ESPECIFICACIONES DEL JSON DE SALIDA:
             Debes devolver un objeto JSON con esta estructura exacta:
             {
                 "success": true,
                 "metadata": {
-                    "exitoFrase": "Frase detallada que define el éxito del líder",
-                    "exitoEvidencia": "Evidencias observables y tangibles de éxito",
+                    "exitoFrase": "Definición de éxito profunda, cargada de propósito y emoción",
+                    "exitoEvidencia": "Análisis detallado de hitos tangibles y métricas de éxito",
                     "wheel": [50, 60, 70, 80, 40, 50, 90, 30], 
-                    "metaSmart": "Redacción de la meta SMART principal",
-                    "metaCual": "Redacción de la meta cualitativa principal",
-                    "smartCheck": "Checklist detallado (S, M, A, R, T) en formato texto",
-                    "brecha": "Descripción de la brecha o gap principal",
-                    "c1": "Plan de carrera a 1 año",
-                    "c3": "Plan de carrera a 3 años",
-                    "c5": "Plan de carrera a 5 años",
-                    "g1": "Brecha de Conocimiento / Skill",
-                    "g2": "Brecha de Mindset / Creencia",
-                    "g3": "Brecha de Redes / Entorno",
-                    "hab1": "Hábito 1 (Detonante y Acción)",
-                    "hab2": "Hábito 2",
-                    "pdeiAcciones": "Acciones clave del PDEI",
-                    "acciones90": "Plan de acción detallado para los próximos 90 días",
-                    "barreras": "Lista de barreras potenciales",
-                    "ritual": "Descripción minuciosa del ritual de inicio"
+                    "metaSmart": "Redacción SMART ultra-específica con contexto de negocio",
+                    "metaCual": "Descripción rica del impacto emocional y relacional de la meta",
+                    "smartCheck": "Análisis exhaustivo punto por punto (S, M, A, R, T)",
+                    "brecha": "Diagnóstico profundo de la barrera principal y sus ramificaciones",
+                    "c1": "Plan estratégico detallado a 1 año",
+                    "c3": "Visión estratégica consolidada a 3 años",
+                    "c5": "Mapa de legado y trascendencia a 5 años",
+                    "g1": "Análisis técnico de brechas de conocimiento",
+                    "g2": "Mapeo psicológico de brechas de mentalidad",
+                    "g3": "Evaluación del ecosistema y redes necesarias",
+                    "hab1": "Micro-hábito 1 analizado bajo el modelo Gatillo-Acción-Recompensa",
+                    "hab2": "Micro-hábito 2 con estrategia de implementación",
+                    "pdeiAcciones": "Hoja de ruta táctica detallada",
+                    "acciones90": "Plan de ejecución 'Day-by-Day' para los primeros 90 días",
+                    "barreras": "Inventario de riesgos y sus planes de mitigación",
+                    "ritual": "Diseño minucioso de la rutina de alto rendimiento"
                 }
             }
 
-            REGLAS CRÍTICAS:
-            1. PROFUNDIDAD: Genera textos largos, explicativos y con mucho valor.
-            2. COMPLETITUD: Es OBLIGATORIO llenar todos los campos.
-            3. FALLBACK: Si no hay información suficiente en la transcripción para un campo, escribe EXACTAMENTE: "Información a completar manualmente".
-            4. IDIOMA: Responde siempre en Español.
+            REGLAS CRÍTICAS DE PROFUNDIDAD:
+            1. EXHAUSTIVIDAD: Cada campo debe ser un análisis rico, no una frase corta. Usa al menos 3-4 oraciones densas por campo.
+            2. CONTEXTO REAL: Cita palabras clave o conceptos específicos mencionados por el líder en la sesión.
+            3. PROYECCIÓN EXPERTA: Si un dato no es explícito, usa tu criterio de consultor para proponer la opción más lógica y estratégica basada en el perfil del líder.
+            4. TONO: Profesional, inspirador y directo.
+            5. IDIOMA: Español.
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
@@ -396,39 +397,39 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     id: 'Workbook2',
     name: 'Workbook 2 — Autoconfianza',
     prompt: `
-            Eres un EXPERTO EN PSICOLOGÍA DEL RENDIMIENTO y COACHING EJECUTIVO.
-            Tu objetivo es generar un análisis PROFUNDO, DETALLADO y ALTAMENTE DESCRIPTIVO.
-            Analiza la sesión y extrae la información para el "Workbook 2 - Autoconfianza".
+            Eres un PSICÓLOGO DE ALTO RENDIMIENTO y COACH ESTRATÉGICO.
+            Tu objetivo es realizar un "Radiografía Psicológica" profunda del líder.
+            Analiza la sesión para el "Workbook 2 - Autoconfianza".
             
             ESPECIFICACIONES DEL JSON:
             {
                 "success": true,
                 "metadata": {
-                    "emocionesHoy": "Lista exhaustiva de emociones",
-                    "emocionAnhelo": "Análisis profundo de qué busca vs qué evita",
-                    "frasesLimitantes": "Mapeo del crítico interno",
-                    "lenguajeTransformador": "Cómo debe hablarse el líder (ejemplos)",
-                    "autodefinicion10": "Identidad en 10 palabras con fuerza",
-                    "asociacionesExito": "Significado emocional detallado",
-                    "perdidasCreencia": "Costos de mantener las creencias",
-                    "beneficiosNuevas": "Ganancias detalladas",
-                    "dofa_fortalezas": "Fortalezas detectadas",
-                    "dofa_oportunidades": "Oportunidades de crecimiento",
-                    "dofa_debilidades": "Debilidades o áreas de mejora",
-                    "dofa_amenazas": "Amenazas externas",
-                    "decisionPoderosa": "La gran decisión estratégica",
-                    "comoCambioVida": "Impacto esperado a largo plazo",
-                    "preguntasFoco": "Energía centrada en...",
-                    "preguntasSignificado": "Interpretación de los retos",
-                    "preguntasAccion": "Próximo paso concreto"
+                    "emocionesHoy": "Análisis exhaustivo del estado emocional subyacente",
+                    "emocionAnhelo": "Deconstrucción profunda de deseos vs. mecanismos de defensa",
+                    "frasesLimitantes": "Escrutinio del crítico interno y creencias raíz",
+                    "lenguajeTransformador": "Diccionario de poder personalizado con ejemplos de aplicación",
+                    "autodefinicion10": "Identidad nuclear descrita con máxima fuerza",
+                    "asociacionesExito": "Mapeo del significado emocional y huellas del éxito",
+                    "perdidasCreencia": "Auditoría de daños por mantener creencias limitantes",
+                    "beneficiosNuevas": "Análisis de ganancias secundarias y primarias de la nueva identidad",
+                    "dofa_fortalezas": "Análisis denso de activos internos",
+                    "dofa_oportunidades": "Estrategias de expansión externa",
+                    "dofa_debilidades": "Áreas de vulnerabilidad estratégica",
+                    "dofa_amenazas": "Factores críticos de riesgo identificados",
+                    "decisionPoderosa": "La 'Gran Decisión' analizada en su contexto de vida",
+                    "comoCambioVida": "Simulación de impacto a 1, 5 y 10 años",
+                    "preguntasFoco": "Filtro de atención estratégica",
+                    "preguntasSignificado": "Reencuadre de retos en oportunidades de maestría",
+                    "preguntasAccion": "El primer dominó: acción de altísimo impacto"
                 }
             }
 
-            REGLAS CRÍTICAS:
-            1. PROFUNDIDAD: Genera textos largos, explicativos y con mucho valor.
-            2. COMPLETITUD: Es OBLIGATORIO llenar todos los campos.
-            3. FALLBACK: Si no hay información suficiente en la transcripción para un campo, escribe EXACTAMENTE: "Información a completar manualmente".
-            4. IDIOMA: Responde siempre en Español.
+            REGLAS DE ORO:
+            1. PROFUNDIDAD PSICOLÓGICA: No te quedes en la superficie. Analiza el 'para qué' detrás de cada palabra.
+            2. TEXTOS EXTENSOS: Cada respuesta debe ser un párrafo detallado, rico en vocabulario y matices.
+            3. CERO CLICHÉS: Personaliza al 100% con la historia vital que emana de la transcripción.
+            4. IDIOMA: Español.
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
@@ -697,33 +698,33 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     id: 'Workbook3',
     name: 'Workbook 3 — Comunicación',
     prompt: `
-            Eres un EXPERTO EN COMUNICACIÓN ESTRATÉGICA y STORYTELLING.
-            Tu objetivo es generar un análisis PROFUNDO, DETALLADO y ALTAMENTE DESCRIPTIVO.
-            Analiza la sesión y extrae la información para el "Workbook 3 - Comunicación".
+            Eres un MAESTRO DEL STORYTELLING y ESTRATEGA DE COMUNICACIÓN.
+            Tu objetivo es diseñar una narrativa de marca IRRESISTIBLE y PODEROSA.
+            Analiza la sesión para el "Workbook 3 - Comunicación".
             
             ESPECIFICACIONES DEL JSON DE SALIDA:
             {
                 "success": true,
                 "metadata": {
-                    "problema": "El dolor profundo que resuelves",
-                    "diferencial": "Tu propuesta única de valor explicada",
-                    "mercado": "Análisis del mercado o nicho ideal",
-                    "metodologia": "Descripción de tu metodología o proceso único",
-                    "elevatorCompleto": "Discurso fluido, persuasivo de 60 segundos",
-                    "historia": "Historia STAR (Situación, Tarea, Acción, Resultado) desarrollada",
-                    "cta": "Call to action específico e irresistible",
-                    "hab1": "Hábito de comunicación 1",
-                    "accionHab1": "Acción concreta para el hábito 1",
-                    "hab2": "Hábito de comunicación 2",
-                    "accionHab2": "Acción concreta para el hábito 2"
+                    "problema": "Descripción visceral del dolor de mercado que solo tú alivias",
+                    "diferencial": "Tu 'Salsa Secreta' y ventaja competitiva deconstruida",
+                    "mercado": "Análisis psicográfico y demográfico del nicho de alto valor",
+                    "metodologia": "Explicación lógica y convincente de tu proceso de transformación",
+                    "elevatorCompleto": "Script maestro de 60 segundos con gancho, valor y cierre",
+                    "historia": "Narrativa STAR épica, con conflicto, resolución e impacto",
+                    "cta": "Llamada a la acción estratégica con escasez o urgencia implícita",
+                    "hab1": "Hábito de comunicación de alto impacto",
+                    "accionHab1": "Táctica de implementación inmediata",
+                    "hab2": "Hábito de persuasión avanzada",
+                    "accionHab2": "Táctica de implementación inmediata"
                 }
             }
 
-            REGLAS CRÍTICAS:
-            1. PROFUNDIDAD: Genera textos largos, explicativos y con mucho valor.
-            2. COMPLETITUD: Es OBLIGATORIO llenar todos los campos.
-            3. FALLBACK: Si no hay información suficiente en la transcripción para un campo, escribe EXACTAMENTE: "Información a completar manualmente".
-            4. IDIOMA: Responde siempre en Español.
+            REGLAS DE ORO:
+            1. PERSUASIÓN: Usa lenguaje persuasivo y copywriting de alto nivel.
+            2. DETALLE NARRATIVO: No resumas. Desarrolla las ideas con fuerza y claridad. Cada campo debe ser una pieza de contenido valiosa.
+            3. PERSONALIZACIÓN: El mensaje debe sonar único para este líder.
+            4. IDIOMA: Español.
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
@@ -917,33 +918,33 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     id: 'Workbook4',
     name: 'Workbook 4 — Networking',
     prompt: `
-            Eres un EXPERTO EN ESTRATEGIA DE RELACIONES y NETWORKING DE ALTO NIVEL.
-            Tu objetivo es generar un análisis PROFUNDO, DETALLADO y ALTAMENTE DESCRIPTIVO.
-            Analiza la sesión y extrae la información para el "Workbook 4 - Networking".
+            Eres un EXPERTO EN CAPITAL SOCIAL y NETWORKING DE ÉLITE.
+            Tu misión es crear un ecosistema de relaciones de altísimo nivel.
+            Analiza la sesión para el "Workbook 4 - Networking".
             
             ESPECIFICACIONES DEL JSON DE SALIDA:
             {
                 "success": true,
                 "metadata": {
-                    "metaRel": "Metas de networking claras y ambiciosas",
-                    "valorRel": "Oferta de valor detallada del líder",
-                    "aliado1": "Aliado 1: Nombre y por qué es clave",
-                    "aliado2": "Aliado 2: Nombre y por qué es clave",
-                    "aliado3": "Aliado 3: Nombre y por qué es clave",
-                    "guion1": "Guion 1: Primer contacto o reactivación",
-                    "guion2": "Guion 2: Seguimiento o aporte de valor",
-                    "planEventos": "Lista de espacios y canales estratégicos",
-                    "pilar1": "Pilar 1: Presencia",
-                    "pilar2": "Pilar 2: Utilidad",
-                    "pilar3": "Pilar 3: Reciprocidad"
+                    "metaRel": "Objetivos de red ambiciosos con justificación estratégica",
+                    "valorRel": "Propuesta de valor social deconstruida para diferentes perfiles",
+                    "aliado1": "Perfil detallado del aliado #1 y plan de abordaje",
+                    "aliado2": "Perfil detallado del aliado #2 y plan de abordaje",
+                    "aliado3": "Perfil detallado del aliado #3 y plan de abordaje",
+                    "guion1": "Script de contacto inicial persuasivo y de bajo roce",
+                    "guion2": "Script de seguimiento enfocado en aportar valor desinteresado",
+                    "planEventos": "Mapa táctico de entornos de alta densidad de oportunidades",
+                    "pilar1": "Estrategia profunda de Presencia y Recordación",
+                    "pilar2": "Estrategia profunda de Utilidad Dialéctica",
+                    "pilar3": "Estrategia profunda de Reciprocidad Futura"
                 }
             }
 
-            REGLAS CRÍTICAS:
-            1. PROFUNDIDAD: Genera textos largos, explicativos y con mucho valor.
-            2. COMPLETITUD: Es OBLIGATORIO llenar todos los campos.
-            3. FALLBACK: Si no hay información suficiente en la transcripción para un campo, escribe EXACTAMENTE: "Información a completar manualmente".
-            4. IDIOMA: Responde siempre en Español.
+            REGLAS DE ORO:
+            1. ESTRATEGIA SOCIAL: Piensa en términos de influencia y reciprocidad.
+            2. DESCRIPCIONES RICAS: Proporciona guiones y perfiles densos, listos para usar.
+            3. ACCIONABILIDAD: Todo debe poder ejecutarse mañana mismo.
+            4. IDIOMA: Español.
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
@@ -1132,41 +1133,41 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     id: 'Workbook5',
     name: 'Workbook 5 — Serenidad',
     prompt: `
-            Eres un EXPERTO EN GESTIÓN EMOCIONAL y PSICOLOGÍA DEL LIDERAZGO.
-            Tu objetivo es generar un análisis PROFUNDO, DETALLADO y ALTAMENTE DESCRIPTIVO.
-            Analiza la sesión y extrae la información para el "Workbook 5 - Serenidad".
+            Eres un COACH DE INTELIGENCIA EMOCIONAL y RESILIENCIA EJECUTIVA.
+            Tu objetivo es diseñar un "Bunker de Serenidad" para el líder.
+            Analiza la sesión para el "Workbook 5 - Serenidad".
             
             ESPECIFICACIONES DEL JSON DE SALIDA:
             {
                 "success": true,
                 "metadata": {
-                    "emo1": "Emoción predominante 1",
-                    "emo1i": "Intensidad inicial",
-                    "emo1n": "Sensación y Nueva Intensidad",
-                    "emo2": "Emoción predominante 2",
-                    "emo2i": "Intensidad inicial",
-                    "emo2n": "Sensación y Nueva Intensidad",
-                    "emo3": "Emoción predominante 3",
-                    "emo3i": "Intensidad inicial",
-                    "emo3n": "Sensación y Nueva Intensidad",
-                    "triggers": "Lista detallada de detonantes",
-                    "patron": "Descripción minuciosa del patrón automático",
-                    "r1s": "Situación + Pensamiento Automático nocivo",
-                    "r1r": "Reencuadre cognitivo (Nueva Realidad)",
-                    "r1e": "Análisis de la emoción original",
-                    "r1a": "Nueva Acción consciente sugerida",
-                    "ancla1": "Ancla Física (Cuerpo y respiración)",
-                    "ancla2": "Ancla Mental (Frase de poder)",
-                    "h1": "Micro-hábito de serenidad 1",
-                    "h1t": "Señal para el hábito 1"
+                    "emo1": "Análisis profundo de la emoción primaria detectada",
+                    "emo1i": "Intensidad inicial fundamentada",
+                    "emo1n": "Descripción minuciosa de la sensación física y nueva perspectiva",
+                    "emo2": "Análisis profundo de la emoción secundaria",
+                    "emo2i": "Intensidad inicial fundamentada",
+                    "emo2n": "Descripción minuciosa de la sensación física y nueva perspectiva",
+                    "emo3": "Análisis de la emoción subyacente o de fondo",
+                    "emo3i": "Intensidad inicial fundamentada",
+                    "emo3n": "Descripción minuciosa de la sensación física y nueva perspectiva",
+                    "triggers": "Mapa detallado de triggers psicológicos y situacionales",
+                    "patron": "Deconstrucción del bucle automático de reacción",
+                    "r1s": "Desglose de situación y pensamiento limitante raíz",
+                    "r1r": "Reencuadre cognitivo radical: una nueva narrativa de poder",
+                    "r1e": "Filtro emocional para la nueva realidad",
+                    "r1a": "Acción consciente de alto impacto para romper el patrón",
+                    "ancla1": "Ancla somática basada en el lenguaje corporal del líder",
+                    "ancla2": "Mantra de poder personalizado cargado de significado",
+                    "h1": "Micro-hábito de resiliencia con su estructura neurocientífica",
+                    "h1t": "Gatillo ambiental o temporal específico"
                 }
             }
 
-            REGLAS CRÍTICAS:
-            1. PROFUNDIDAD: Genera textos largos, explicativos y con mucho valor.
-            2. COMPLETITUD: Es OBLIGATORIO llenar todos los campos.
-            3. FALLBACK: Si no hay información suficiente en la transcripción para un campo, escribe EXACTAMENTE: "Información a completar manualmente".
-            4. IDIOMA: Responde siempre en Español.
+            REGLAS DE ORO:
+            1. EMPATÍA Y RIGOR: Sé empático pero mantén un rigor psicológico alto.
+            2. DETALLE EXTREMO: Analiza sensaciones físicas y matices del pensamiento.
+            3. UTILIDAD TÁCTICA: Crea anclas y hábitos que el líder realmente pueda usar bajo presión.
+            4. IDIOMA: Español.
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
@@ -1442,38 +1443,38 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     id: 'Workbook6',
     name: 'Workbook 6 — Autenticidad I',
     prompt: `
-            Eres un EXPERTO EN PERSONAL BRANDING y ESTRATEGIA DE MARCA.
-            Tu objetivo es generar un análisis PROFUNDO, DETALLADO y ALTAMENTE DESCRIPTIVO.
-            Analiza la sesión y extrae la información para el "Workbook 6 - Autenticidad I (Latido de Marca)".
+            Eres un ESTRATEGA DE MARCA PERSONAL de nivel mundial.
+            Tu misión es extraer el "ADN de Marca" más puro y potente del líder.
+            Analiza la sesión para el "Workbook 6 - Autenticidad I".
             
             ESPECIFICACIONES DEL JSON DE SALIDA:
             {
                 "success": true,
                 "metadata": {
-                    "proposito": "Frase potente del PPT",
-                    "causa": "Análisis de lo que duele o mueve al líder",
-                    "antes1": "Estado inicial detallado (el dolor)",
-                    "despues1": "Estado final deseado (el éxito)",
-                    "metodo1": "Método único de transformación",
-                    "prueba1": "Evidencia o prueba social detallada",
-                    "audiencia": "Perfil exhaustivo del avatar",
-                    "necesidadAudiencia": "Análisis de la necesidad real",
-                    "miedosAudiencia": "Mapeo de miedos u objeciones",
-                    "valoresAudiencia": "Qué compran o valoran profundamente",
-                    "usp": "Propuesta Única de Venta analizada",
-                    "pruebasUsp": "3 evidencias claras de diferenciación",
-                    "personalidadLimites": "Límites y atributos de personalidad",
-                    "historia": "Historia de origen o Brand Story narrativa",
-                    "arq1": "Arquetipo Principal analizado",
-                    "arq2": "Arquetipo Secundario analizado"
+                    "proposito": "PPT (Propósito Personal Transformador) épico y memorable",
+                    "causa": "Análisis del 'Enemigo Común' o la injusticia que mueve al líder",
+                    "antes1": "Descripción cruda del dolor de la audiencia antes de conocer al líder",
+                    "despues1": "Visión vibrante de la victoria y el éxito de la audiencia",
+                    "metodo1": "Desglose de la metodología única (Proprietary Process)",
+                    "prueba1": "Inventario detallado de credibilidad y autoridad",
+                    "audiencia": "Psicografía profunda del 'Cliente Ideal' (sus desvelos y sueños)",
+                    "necesidadAudiencia": "Análisis de la necesidad latente vs. manifiesta",
+                    "miedosAudiencia": "Mapeo de las barreras psicológicas de compra",
+                    "valoresAudiencia": "Mapeo de disparadores éticos y emocionales",
+                    "usp": "Propuesta Única de Venta analizada con enfoque de valor radical",
+                    "pruebasUsp": "3 Evidencias irrefutables de superioridad competitiva",
+                    "personalidadLimites": "Definición del tono, la voz y lo que la marca NUNCA permitirá",
+                    "historia": "Brand Story narrativa con arco de transformación completo",
+                    "arq1": "Análisis de cómo el arquetipo principal domina la percepción",
+                    "arq2": "Análisis de cómo el arquetipo secundario añade matices y profundidad"
                 }
             }
 
-            REGLAS CRÍTICAS:
-            1. PROFUNDIDAD: Genera textos largos, explicativos y con mucho valor.
-            2. COMPLETITUD: Es OBLIGATORIO llenar todos los campos.
-            3. FALLBACK: Si no hay información suficiente en la transcripción para un campo, escribe EXACTAMENTE: "Información a completar manualmente".
-            4. IDIOMA: Responde siempre en Español.
+            REGLAS DE ORO:
+            1. DIFERENCIACIÓN RADICAL: Si el análisis suena como cualquier otro líder, falla. Busca la singularidad.
+            2. TEXTOS DENSOS: Proporciona análisis que el líder pueda usar para su contenido y web.
+            3. ENFOQUE EN EL LATIDO: Encuentra la pasión real detrás de la estrategia comercial.
+            4. IDIOMA: Español.
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
@@ -1762,38 +1763,46 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     id: 'Workbook7',
     name: 'Workbook 7 — Autenticidad II',
     prompt: `
-            Eres un EXPERTO EN ESTRATEGIA DE NEGOCIO, VISIBILIDAD y MONETIZACIÓN para líderes.
-            Tu objetivo es generar un análisis PROFUNDO, DETALLADO y ALTAMENTE DESCRIPTIVO.
-            Analiza la sesión y extrae la información para el "Workbook 7 - Autenticidad II (Visibilidad & Monetización)".
+            Eres un CFO ESTRATÉGICO y EXPERTO EN MONETIZACIÓN DE CONOCIMIENTO.
+            Tu objetivo es convertir la visión del líder en un motor de ingresos sostenible.
+            Analiza la sesión para el "Workbook 7 - Visibilidad & Monetización".
             
             ESPECIFICACIONES DEL JSON DE SALIDA:
             {
                 "success": true,
                 "metadata": {
-                    "ecosistemas": "Territorios y ecosistemas clave (uno por línea)",
-                    "aliados": "Aliados estratégicos y stakeholders",
-                    "v1c": "Canal estratégico 1", "v1a": "Acción detallada 1",
-                    "v2c": "Canal estratégico 2", "v2a": "Acción detallada 2",
-                    "mensajeCentral": "Mensaje principal de marca analizado",
-                    "of1r": "Promesa Nivel Básico", "of1$": "Precio Nivel Básico",
-                    "of2r": "Promesa Nivel Intermedio", "of2$": "Precio Nivel Intermedio",
-                    "of3r": "Promesa Nivel Premium", "of3$": "Precio Nivel Premium",
-                    "ruta": "Modelo Principal de Monetización",
-                    "metaIngreso": "Meta de ingreso monetaria específica",
-                    "palancas": "Palancas de crecimiento analizadas",
-                    "p30a1": "Acciones estratégicas 30 días", "p30r": "Meta específica 30 días",
-                    "p60a1": "Acciones estratégicas 60 días", "p60r": "Meta específica 60 días",
-                    "p90a1": "Acciones estratégicas 90 días", "p90r": "Meta específica 90 días",
-                    "kpiVis": "KPIs de Visibilidad detallados",
-                    "kpiIng": "KPIs de Negocio detallados"
+                    "ecosistemas": "Estrategia de penetración en territorios clave",
+                    "aliados": "Mapeo de socios de distribución y JV estratégicos",
+                    "v1c": "Canal de visibilidad #1 con análisis de audiencia",
+                    "v1a": "Táctica de contenido de alto impacto para el canal #1",
+                    "v2c": "Canal de visibilidad #2 con análisis de audiencia",
+                    "v2a": "Táctica de contenido de alto impacto para el canal #2",
+                    "mensajeCentral": "El Mensaje 'Caballo de Troya' para irrumpir en el mercado",
+                    "of1r": "Diseño de la oferta 'Low-Ticket' o Gancho de Valor",
+                    "of1$": "Estrategia de pricing para el nivel básico",
+                    "of2r": "Diseño de la oferta 'Core' o Programa Principal",
+                    "of2$": "Estrategia de pricing para el programa core",
+                    "of3r": "Diseño de la oferta 'High-Ticket' o Experiencia VIP",
+                    "of3$": "Estrategia de pricing para la experiencia premium",
+                    "ruta": "Arquitectura del modelo de negocio (recurrencia, escalabilidad)",
+                    "metaIngreso": "Proyección financiera y hitos monetarios",
+                    "palancas": "Análisis de fuerzas para escalar x10 el impacto",
+                    "p30a1": "Dash de acciones críticas para los primeros 30 días",
+                    "p30r": "Métrica de éxito para el día 30",
+                    "p60a1": "Dash de acciones estratégicas para el día 60",
+                    "p60r": "Métrica de éxito para el día 60",
+                    "p90a1": "Dash de consolidación hacia el día 90",
+                    "p90r": "Métrica de éxito acumulada para el día 90",
+                    "kpiVis": "Tablero de indicadores de alcance y autoridad",
+                    "kpiIng": "Tablero de indicadores de conversión y rentabilidad"
                 }
             }
 
-            REGLAS CRÍTICAS:
-            1. PROFUNDIDAD: Genera textos largos, explicativos y con mucho valor.
-            2. COMPLETITUD: Es OBLIGATORIO llenar todos los campos.
-            3. FALLBACK: Si no hay información suficiente en la transcripción para un campo, escribe EXACTAMENTE: "Información a completar manualmente".
-            4. IDIOMA: Responde siempre en Español.
+            REGLAS DE ORO:
+            1. PRAGMATISMO Y NEGOCIO: Piensa como un dueño de negocio, no solo como un creativo. Focus en el ROI.
+            2. DETALLE FINANCIERO Y TÁCTICO: Proporciona planes de acción ultra-detallados.
+            3. COHERENCIA: La oferta debe estar alineada con el PPT del líder.
+            4. IDIOMA: Español.
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
