@@ -50,27 +50,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
-
-      // Map the internal storage to the HTML IDs
-      const initialData: any = {
-        exitoFrase: m.exitoFrase || "",
-        exitoEvidencia: m.exitoEvidencia || "",
-        metaSmart: m.metaSmart || "",
-        metaCual: m.metaCual || "",
-        smartCheck: m.smartCheck || "",
-        brecha: m.brecha || "",
-        c1: m.c1 || "",
-        c3: m.c3 || "",
-        c5: m.c5 || "",
-        g1: m.g1 || "",
-        g2: m.g2 || "",
-        g3: m.g3 || "",
-        hab1: m.hab1 || "",
-        hab2: m.hab2 || "",
-        pdeiAcciones: m.pdeiAcciones || "",
-        acciones90: m.acciones90 || "",
-        wheel: m.wheel || [50, 50, 50, 50, 50, 50, 50, 50]
-      };
+      const wheel = m.wheel || [50, 50, 50, 50, 50, 50, 50, 50];
 
       return `
 <!doctype html>
@@ -101,37 +81,12 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
-      margin: 0;
-      font-family: var(--font-stack);
-      background-color: var(--bg);
-      color: var(--text-main);
-      line-height: 1.6;
-      padding-bottom: 100px;
+      margin: 0; font-family: var(--font-stack); background-color: var(--bg);
+      color: var(--text-main); line-height: 1.6; padding-bottom: 100px;
     }
-    .layout {
-      display: grid;
-      grid-template-columns: 240px 1fr;
-      max-width: 1100px;
-      margin: 20px auto;
-      gap: 24px;
-      padding: 0 20px;
-    }
-    @media (max-width: 900px) {
-      .layout { display: block; padding: 0 16px; margin-top: 100px; }
-    }
-    .sidebar {
-      position: sticky;
-      top: 20px;
-      height: fit-content;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      box-shadow: var(--shadow);
-    }
+    .layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1100px; margin: 20px auto; gap: 24px; padding: 0 20px; }
+    @media (max-width: 900px) { .layout { display: block; padding: 0 16px; margin-top: 100px; } }
+    .sidebar { position: sticky; top: 20px; height: fit-content; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
     .mobile-nav-wrapper { display: none; }
     @media (max-width: 900px) {
       .sidebar { display: none; }
@@ -148,18 +103,13 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       .nav-pill { white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-muted); background: #f1f5f9; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all 0.2s; }
       .nav-pill.active { background: var(--text-main); color: white; }
     }
-    .nav-link {
-      display: flex; align-items: center; gap: 10px;
-      color: var(--text-muted); text-decoration: none;
-      padding: 10px 12px; border-radius: 8px;
-      font-size: 14px; font-weight: 500; transition: all 0.2s;
+    .nav-link { 
+      display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none;
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;
     }
     .nav-link:hover { background: #f1f5f9; color: var(--text-main); }
     .nav-link.active { background: var(--accent-light); color: #d97706; border-left: 3px solid var(--accent); font-weight: 600; }
-    .card {
-      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius);
-      padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow);
-    }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow); }
     @media (max-width: 600px) { .card { padding: 20px; } }
     h1, h2 { margin-top: 0; color: var(--text-main); letter-spacing: -0.02em; }
     h1 { font-size: 26px; font-weight: 800; }
@@ -167,7 +117,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
     label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
     input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
-    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
     textarea { resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
     .wheel-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
     @media(max-width:700px){ .wheel-container{ grid-template-columns: 1fr; } }
@@ -180,8 +130,8 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     .action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 8px 10px; border-radius: 100px; display: flex; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; width: max-content; max-width: 90%; }
     .action-bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
     .action-bar button:hover { color: white; background: rgba(255,255,255,0.1); }
-    .action-bar button.primary { background: var(--accent); color: white; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4); }
-    #toast { visibility: hidden; min-width: 250px; background-color: var(--text-main); color: #fff; text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed; z-index: 101; left: 50%; top: 20px; transform: translateX(-50%); font-weight: 500; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); opacity: 0; transition: all 0.3s; }
+    .action-bar button.primary { background: var(--accent); color: white; }
+    #toast { visibility: hidden; min-width: 250px; background-color: var(--text-main); color: #fff; text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed; z-index: 101; left: 50%; top: 20px; transform: translateX(-50%); font-weight: 500; font-size: 14px; opacity: 0; transition: all 0.3s; }
     #toast.show { visibility: visible; opacity: 1; top: 40px; }
     .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media(max-width:700px){ .two-cols{ grid-template-columns: 1fr; } }
@@ -232,11 +182,11 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="two-cols">
             <div>
               <label>Tu definición de éxito (1 frase)</label>
-              <textarea id="exitoFrase" rows="2" placeholder="Ej: Crecer con propósito y equilibrio..."></textarea>
+              <textarea id="exitoFrase" rows="2">${m.exitoFrase || ''}</textarea>
             </div>
             <div>
               <label>Evidencia Observable</label>
-              <textarea id="exitoEvidencia" rows="2" placeholder="Ej: Promoción, Ahorro de X monto..."></textarea>
+              <textarea id="exitoEvidencia" rows="2">${m.exitoEvidencia || ''}</textarea>
             </div>
         </div>
       </section>
@@ -257,20 +207,20 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="two-cols">
             <div>
                 <label>Meta SMART Principal</label>
-                <textarea id="metaSmart" placeholder="Para Dic 2026, yo he logrado..."></textarea>
+                <textarea id="metaSmart">${m.metaSmart || ''}</textarea>
             </div>
             <div>
                 <label>Meta Cualitativa</label>
-                <textarea id="metaCual" placeholder="Ser reconocido como..."></textarea>
+                <textarea id="metaCual">${m.metaCual || ''}</textarea>
             </div>
         </div>
         <div style="margin-top:24px;">
             <label>Checklist de Calidad (S-M-A-R-T)</label>
-            <textarea id="smartCheck" placeholder="S:... M:... A:... R:... T:..."></textarea>
+            <textarea id="smartCheck">${m.smartCheck || ''}</textarea>
         </div>
         <div style="margin-top:24px;">
             <label>La Brecha Crítica</label>
-            <textarea id="brecha" placeholder="¿Qué me separa hoy de esta meta?"></textarea>
+            <textarea id="brecha">${m.brecha || ''}</textarea>
         </div>
       </section>
 
@@ -279,15 +229,15 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="space-y-4">
             <div style="margin-bottom:15px;">
                 <label>A 1 Año (Foco Inmediato)</label>
-                <textarea id="c1"></textarea>
+                <textarea id="c1">${m.c1 || ''}</textarea>
             </div>
             <div style="margin-bottom:15px;">
                 <label>A 3 Años (Consolidación)</label>
-                <textarea id="c3"></textarea>
+                <textarea id="c3">${m.c3 || ''}</textarea>
             </div>
             <div>
                 <label>A 5 Años (Legado)</label>
-                <textarea id="c5"></textarea>
+                <textarea id="c5">${m.c5 || ''}</textarea>
             </div>
         </div>
       </section>
@@ -297,15 +247,15 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="space-y-4">
             <div style="margin-bottom:15px;">
                 <label>Conocimiento / Hard Skill</label>
-                <textarea id="g1"></textarea>
+                <textarea id="g1">${m.g1 || ''}</textarea>
             </div>
             <div style="margin-bottom:15px;">
                 <label>Mindset / Creencias</label>
-                <textarea id="g2"></textarea>
+                <textarea id="g2">${m.g2 || ''}</textarea>
             </div>
             <div>
                 <label>Redes / Entorno</label>
-                <textarea id="g3"></textarea>
+                <textarea id="g3">${m.g3 || ''}</textarea>
             </div>
         </div>
       </section>
@@ -315,16 +265,16 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="two-cols">
             <div>
                 <label>Hábito Clave 1</label>
-                <textarea id="hab1"></textarea>
+                <textarea id="hab1">${m.hab1 || ''}</textarea>
             </div>
             <div>
                 <label>Hábito Clave 2</label>
-                <textarea id="hab2"></textarea>
+                <textarea id="hab2">${m.hab2 || ''}</textarea>
             </div>
         </div>
         <div style="margin-top:24px;">
             <label>Acciones Principales</label>
-            <textarea id="pdeiAcciones"></textarea>
+            <textarea id="pdeiAcciones">${m.pdeiAcciones || ''}</textarea>
         </div>
       </section>
 
@@ -333,11 +283,11 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="two-cols">
           <div>
             <label>5 Acciones Críticas</label>
-            <textarea id="acciones90" placeholder="1. ...&#10;2. ..."></textarea>
+            <textarea id="acciones90">${m.acciones90 || ''}</textarea>
           </div>
           <div>
             <label>Ritual Semanal</label>
-            <textarea id="ritual" placeholder="Día y hora de revisión..."></textarea>
+            <textarea id="ritual">${m.ritual || ''}</textarea>
           </div>
         </div>
       </section>
@@ -350,7 +300,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
 
   <script>
     const areas = ["Salud", "Finanzas", "Relaciones", "Familia", "Trabajo", "Contribución", "Espíritu", "Diversión"];
-    const initialDataFromDB = ${JSON.stringify(initialData)};
+    const wheelData = ${JSON.stringify(wheel)};
     
     const ctx = document.getElementById('wheelChart').getContext('2d');
     const wheelChart = new Chart(ctx, {
@@ -359,7 +309,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         labels: areas,
         datasets: [{
           label: 'Nivel',
-          data: initialDataFromDB.wheel || Array(8).fill(50),
+          data: wheelData,
           backgroundColor: 'rgba(245, 158, 11, 0.25)',
           borderColor: '#f59e0b',
           pointBackgroundColor: '#fff',
@@ -383,7 +333,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
 
     const sliderContainer = document.getElementById('sliderContainer');
     areas.forEach((area, index) => {
-      const val = (initialDataFromDB.wheel && initialDataFromDB.wheel[index]) || 50;
+      const val = wheelData[index];
       const html = \`
         <div class="slider-group">
           <span class="slider-label">\${area}</span>
@@ -405,23 +355,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       });
     });
 
-    const STORAGE_KEY = 'workbook_light_v1';
-    const toast = document.getElementById("toast");
-
-    function showToast(msg) {
-      toast.textContent = msg;
-      toast.className = "show";
-      setTimeout(() => { toast.className = ""; }, 3000);
-    }
-
-    function getAllData() {
-      const data = {};
-      document.querySelectorAll('input:not(.wheel-slider), textarea, select').forEach(el => {
-        if(el.id) data[el.id] = el.value;
-      });
-      data.wheel = wheelChart.data.datasets[0].data;
-      return data;
-    }
+    document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
 
     function resizeTextarea(el) {
       el.style.height = 'auto';
@@ -433,60 +367,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       setTimeout(() => resizeTextarea(el), 100);
     });
 
-    function setAllData(data) {
-      for (const [key, value] of Object.entries(data)) {
-        if (key === 'wheel') continue;
-        const el = document.getElementById(key);
-        if (el) el.value = value;
-      }
-      if(data.wheel && Array.isArray(data.wheel)){
-        wheelChart.data.datasets[0].data = data.wheel;
-        wheelChart.update();
-        data.wheel.forEach((val, idx) => {
-          const slider = document.getElementById(\`wheel_\${idx}\`);
-          const label = document.getElementById(\`val_\${idx}\`);
-          if(slider) slider.value = val;
-          if(label) label.textContent = val + '%';
-        });
-      }
-    }
-
-    document.getElementById('saveBtn').addEventListener('click', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(getAllData()));
-      showToast("💾 Guardado localmente");
-    });
-
-    document.getElementById('loadBtn').addEventListener('click', () => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if(saved) {
-        setAllData(JSON.parse(saved));
-        showToast("📂 Datos cargados");
-      } else {
-        showToast("⚠️ No hay datos previos");
-      }
-    });
-
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      if(confirm("¿Limpiar todo el formulario?")) {
-        localStorage.removeItem(STORAGE_KEY);
-        location.reload();
-      }
-    });
-
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getAllData(), null, 2));
-      const el = document.createElement('a');
-      el.setAttribute("href", dataStr);
-      el.setAttribute("download", "workbook_metas.json");
-      document.body.appendChild(el);
-      el.click();
-      el.remove();
-    });
-
-    document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
-
     window.addEventListener('load', () => {
-      setAllData(initialDataFromDB);
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if(entry.isIntersecting){
@@ -508,7 +389,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
   </script>
 </body>
 </html>
-            `;
+             `;
     }
   },
   'Workbook2': {
