@@ -52,41 +52,25 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       const m = workbook.metadata || {};
 
       // Map the internal storage to the HTML IDs
-      const flatData: any = {
+      const initialData: any = {
         exitoFrase: m.exitoFrase || "",
         exitoEvidencia: m.exitoEvidencia || "",
-        smartMeta: m.metaSmart || "",
-        smart_s: m.smartCheck || "",
-        smart_m: "",
-        smart_a: "",
-        smart_r: "",
-        smart_t: "",
-        plan_1_rol: m.c1 || "",
-        plan_1_kpi: "",
-        plan_3_rol: m.c3 || "",
-        plan_3_kpi: "",
-        plan_5_rol: m.c5 || "",
-        plan_5_kpi: "",
+        metaSmart: m.metaSmart || "",
+        metaCual: m.metaCual || "",
+        smartCheck: m.smartCheck || "",
+        brecha: m.brecha || "",
+        c1: m.c1 || "",
+        c3: m.c3 || "",
+        c5: m.c5 || "",
+        g1: m.g1 || "",
+        g2: m.g2 || "",
+        g3: m.g3 || "",
+        hab1: m.hab1 || "",
+        hab2: m.hab2 || "",
+        pdeiAcciones: m.pdeiAcciones || "",
         acciones90: m.acciones90 || "",
-        ritual: m.ritual || "",
         wheel: m.wheel || [50, 50, 50, 50, 50, 50, 50, 50]
       };
-
-      flatData.gap_1_skill = m.g1 || "";
-      flatData.gap_1_lvl = 50;
-      flatData.gap_1_act = m.g2 || "";
-      flatData.gap_2_skill = m.g3 || "";
-      flatData.gap_2_lvl = 50;
-      flatData.gap_2_act = "";
-
-      flatData.pdei_1_meta = m.pdeiAcciones || "";
-      flatData.pdei_1_act = m.hab1 || "";
-      flatData.pdei_1_date = "";
-      flatData.pdei_1_cel = "";
-      flatData.pdei_2_meta = "";
-      flatData.pdei_2_act = m.hab2 || "";
-      flatData.pdei_2_date = "";
-      flatData.pdei_2_cel = "";
 
       return `
 <!doctype html>
@@ -185,13 +169,6 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
     input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
     textarea { resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
-    .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background-image: linear-gradient(to right, white, white), linear-gradient(to right, white, white), linear-gradient(to right, rgba(0,0,0,0.05), rgba(255,255,255,0)), linear-gradient(to left, rgba(0,0,0,0.05), rgba(255,255,255,0)); background-position: left center, right center, left center, right center; background-repeat: no-repeat; background-color: white; background-size: 20px 100%, 20px 100%, 10px 100%, 10px 100%; background-attachment: local, local, scroll, scroll; }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
-    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; }
-    th { background: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
-    tr:last-child td { border-bottom: none; }
-    td input { background: transparent; border: 1px solid transparent; padding: 4px; border-radius: 4px; }
-    td input:focus { background: white; border-color: var(--accent); }
     .wheel-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
     @media(max-width:700px){ .wheel-container{ grid-template-columns: 1fr; } }
     .slider-group { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
@@ -223,7 +200,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       <a href="#sec-wheel" class="nav-pill">2. Rueda</a>
       <a href="#sec-smart" class="nav-pill">3. SMART</a>
       <a href="#sec-plan" class="nav-pill">4. Carrera</a>
-      <a href="#sec-gap" class="nav-pill">5. GAP</a>
+      <a href="#sec-gap" class="nav-pill">5. Brechas</a>
       <a href="#sec-pdei" class="nav-pill">6. PDEI</a>
       <a href="#sec-90dias" class="nav-pill">7. 90 Días</a>
     </nav>
@@ -277,75 +254,77 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
 
       <section id="sec-smart" class="card">
         <h2>3. Objetivo SMART</h2>
-        <label>Declaración de Meta (Presente)</label>
-        <textarea id="smartMeta" placeholder="Para Dic 2026, yo he logrado..."></textarea>
+        <div class="two-cols">
+            <div>
+                <label>Meta SMART Principal</label>
+                <textarea id="metaSmart" placeholder="Para Dic 2026, yo he logrado..."></textarea>
+            </div>
+            <div>
+                <label>Meta Cualitativa</label>
+                <textarea id="metaCual" placeholder="Ser reconocido como..."></textarea>
+            </div>
+        </div>
         <div style="margin-top:24px;">
-          <label>Checklist de Calidad</label>
-          <div class="table-responsive">
-            <table>
-              <tr><th width="50">S</th><td><input type="text" id="smart_s" placeholder="Específico..."></td></tr>
-              <tr><th>M</th><td><input type="text" id="smart_m" placeholder="Medible (KPI)..."></td></tr>
-              <tr><th>A</th><td><input type="text" id="smart_a" placeholder="Alcanzable..."></td></tr>
-              <tr><th>R</th><td><input type="text" id="smart_r" placeholder="Relevante..."></td></tr>
-              <tr><th>T</th><td><input type="text" id="smart_t" placeholder="Tiempo..."></td></tr>
-            </table>
-          </div>
+            <label>Checklist de Calidad (S-M-A-R-T)</label>
+            <textarea id="smartCheck" placeholder="S:... M:... A:... R:... T:..."></textarea>
+        </div>
+        <div style="margin-top:24px;">
+            <label>La Brecha Crítica</label>
+            <textarea id="brecha" placeholder="¿Qué me separa hoy de esta meta?"></textarea>
         </div>
       </section>
 
       <section id="sec-plan" class="card">
         <h2>4. Visión 1-3-5 Años</h2>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr><th width="80">Año</th><th>Rol / Éxito</th><th>KPIs</th></tr>
-            </thead>
-            <tbody>
-              <tr><td style="font-weight:700;">1 Año</td><td><input type="text" id="plan_1_rol" placeholder="Foco inmediato"></td><td><input type="text" id="plan_1_kpi"></td></tr>
-              <tr><td style="font-weight:700;">3 Años</td><td><input type="text" id="plan_3_rol" placeholder="Consolidación"></td><td><input type="text" id="plan_3_kpi"></td></tr>
-              <tr><td style="font-weight:700;">5 Años</td><td><input type="text" id="plan_5_rol" placeholder="Legado"></td><td><input type="text" id="plan_5_kpi"></td></tr>
-            </tbody>
-          </table>
+        <div class="space-y-4">
+            <div style="margin-bottom:15px;">
+                <label>A 1 Año (Foco Inmediato)</label>
+                <textarea id="c1"></textarea>
+            </div>
+            <div style="margin-bottom:15px;">
+                <label>A 3 Años (Consolidación)</label>
+                <textarea id="c3"></textarea>
+            </div>
+            <div>
+                <label>A 5 Años (Legado)</label>
+                <textarea id="c5"></textarea>
+            </div>
         </div>
       </section>
 
       <section id="sec-gap" class="card">
-        <h2>5. Brechas (GAP)</h2>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr><th>Habilidad Faltante</th><th width="60">Nvl</th><th>Acción</th></tr>
-            </thead>
-            <tbody>
-              <tr><td><input type="text" id="gap_1_skill" placeholder="Ej: Inglés"></td><td><input type="number" id="gap_1_lvl"></td><td><input type="text" id="gap_1_act"></td></tr>
-              <tr><td><input type="text" id="gap_2_skill"></td><td><input type="number" id="gap_2_lvl"></td><td><input type="text" id="gap_2_act"></td></tr>
-            </tbody>
-          </table>
+        <h2>5. Brechas Detalladas</h2>
+        <div class="space-y-4">
+            <div style="margin-bottom:15px;">
+                <label>Conocimiento / Hard Skill</label>
+                <textarea id="g1"></textarea>
+            </div>
+            <div style="margin-bottom:15px;">
+                <label>Mindset / Creencias</label>
+                <textarea id="g2"></textarea>
+            </div>
+            <div>
+                <label>Redes / Entorno</label>
+                <textarea id="g3"></textarea>
+            </div>
         </div>
       </section>
 
       <section id="sec-pdei" class="card">
-        <h2>6. Plan de Desarrollo</h2>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr><th>Qué aprender</th><th>Cómo (Acción)</th><th width="110">Fecha</th><th>Premio</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><input type="text" id="pdei_1_meta" placeholder="Skill"></td>
-                <td><input type="text" id="pdei_1_act" placeholder="Curso/Libro"></td>
-                <td><input type="date" id="pdei_1_date"></td>
-                <td><input type="text" id="pdei_1_cel" placeholder="Cena"></td>
-              </tr>
-              <tr>
-                <td><input type="text" id="pdei_2_meta"></td>
-                <td><input type="text" id="pdei_2_act"></td>
-                <td><input type="date" id="pdei_2_date"></td>
-                <td><input type="text" id="pdei_2_cel"></td>
-              </tr>
-            </tbody>
-          </table>
+        <h2>6. Plan de Desarrollo (PDEI)</h2>
+        <div class="two-cols">
+            <div>
+                <label>Hábito Clave 1</label>
+                <textarea id="hab1"></textarea>
+            </div>
+            <div>
+                <label>Hábito Clave 2</label>
+                <textarea id="hab2"></textarea>
+            </div>
+        </div>
+        <div style="margin-top:24px;">
+            <label>Acciones Principales</label>
+            <textarea id="pdeiAcciones"></textarea>
         </div>
       </section>
 
@@ -371,7 +350,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
 
   <script>
     const areas = ["Salud", "Finanzas", "Relaciones", "Familia", "Trabajo", "Contribución", "Espíritu", "Diversión"];
-    const initialDataFromDB = ${JSON.stringify(flatData)};
+    const initialDataFromDB = ${JSON.stringify(initialData)};
     
     const ctx = document.getElementById('wheelChart').getContext('2d');
     const wheelChart = new Chart(ctx, {
@@ -759,24 +738,24 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="dofa-grid">
           <div class="dofa-item positive">
             <label style="color:#059669;">Fortalezas</label>
-            <textarea id="fortalezas" style="background:transparent; border:none; padding:0;">${m.dofa_fortalezas || ''}</textarea>
+            <textarea id="dofa_fortalezas" style="background:transparent; border:none; padding:0;">${m.dofa_fortalezas || ''}</textarea>
           </div>
           <div class="dofa-item negative">
             <label style="color:#dc2626;">Debilidades</label>
-            <textarea id="debilidades" style="background:transparent; border:none; padding:0;">${m.dofa_debilidades || ''}</textarea>
+            <textarea id="dofa_debilidades" style="background:transparent; border:none; padding:0;">${m.dofa_debilidades || ''}</textarea>
           </div>
           <div class="dofa-item positive">
             <label style="color:#059669;">Oportunidades</label>
-            <textarea id="oportunidades" style="background:transparent; border:none; padding:0;">${m.dofa_oportunidades || ''}</textarea>
+            <textarea id="dofa_oportunidades" style="background:transparent; border:none; padding:0;">${m.dofa_oportunidades || ''}</textarea>
           </div>
           <div class="dofa-item negative">
             <label style="color:#dc2626;">Amenazas</label>
-            <textarea id="amenazas" style="background:transparent; border:none; padding:0;">${m.dofa_amenazas || ''}</textarea>
+            <textarea id="dofa_amenazas" style="background:transparent; border:none; padding:0;">${m.dofa_amenazas || ''}</textarea>
           </div>
         </div>
         <div style="margin-top:15px;">
           <label>Costo de inacción</label>
-          <input type="text" id="perderSiNoActuo" value="${m.perdidasCreencia || ''}">
+          <textarea id="perdidasCreencia">${m.perdidasCreencia || ''}</textarea>
         </div>
       </section>
 
@@ -793,15 +772,19 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
           </div>
         </div>
         <label>Las 3 Preguntas del Líder</label>
-        <div class="table-responsive">
-          <table>
-            <thead><tr><th width="30%">Pregunta</th><th>Tu Respuesta Hoy</th></tr></thead>
-            <tbody>
-              <tr><td><strong>1. ¿Foco?</strong></td><td><input type="text" value="${m.preguntasFoco || ''}"></td></tr>
-              <tr><td><strong>2. ¿Significado?</strong></td><td><input type="text" value="${m.preguntasSignificado || ''}"></td></tr>
-              <tr><td><strong>3. ¿Acción?</strong></td><td><input type="text" value="${m.preguntasAccion || ''}"></td></tr>
-            </tbody>
-          </table>
+        <div class="space-y-4">
+            <div style="margin-bottom:12px;">
+                <label>1. ¿En qué está mi foco (Energía)?</label>
+                <textarea id="preguntasFoco">${m.preguntasFoco || ''}</textarea>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label>2. ¿Qué significado le doy a los retos?</label>
+                <textarea id="preguntasSignificado">${m.preguntasSignificado || ''}</textarea>
+            </div>
+            <div>
+                <label>3. ¿Qué acción concreta tomaré?</label>
+                <textarea id="preguntasAccion">${m.preguntasAccion || ''}</textarea>
+            </div>
         </div>
       </section>
     </main>
@@ -948,11 +931,9 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       <h1>${workbook.title}</h1>
     </div>
     <nav class="mobile-nav-scroller">
-      <a href="#sec-obj" class="nav-pill active">1. Objetivo</a>
-      <a href="#sec-insumos" class="nav-pill">2. Insumos</a>
-      <a href="#sec-estructura" class="nav-pill">3. Estructura</a>
-      <a href="#sec-logros" class="nav-pill">4. Logros</a>
-      <a href="#sec-cierre" class="nav-pill">5. Cierre</a>
+      <a href="#sec-insumos" class="nav-pill active">1. Insumos</a>
+      <a href="#sec-speech" class="nav-pill">2. Speech</a>
+      <a href="#sec-habitos" class="nav-pill">3. Hábitos</a>
     </nav>
   </div>
 
@@ -961,125 +942,68 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       <div style="margin-bottom: 10px; padding: 0 12px;">
         <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Índice</span>
       </div>
-      <a href="#sec-obj" class="nav-link active">1. Objetivo</a>
-      <a href="#sec-insumos" class="nav-link">2. Insumos Clave</a>
-      <a href="#sec-estructura" class="nav-link">3. Elevator Speech</a>
-      <a href="#sec-logros" class="nav-link">4. Logros & Story</a>
-      <a href="#sec-cierre" class="nav-link">5. CTA & Cierre</a>
+      <a href="#sec-insumos" class="nav-link active">1. Insumos Clave</a>
+      <a href="#sec-speech" class="nav-link">2. Elevator Speech</a>
+      <a href="#sec-habitos" class="nav-link">3. Hábitos de Poder</a>
     </aside>
 
     <main class="main-content">
-      <section id="sec-obj" class="card">
-        <span style="color:var(--accent); font-weight:700; font-size:12px;">Paso 1</span>
-        <h1>Definición de Intención</h1>
-        <p class="subtitle">¿Qué quieres lograr con esta conversación?</p>
-        <div class="two-cols">
-          <div>
-            <label>Objetivo Principal</label>
-            <input type="text" id="objetivo" value="${m.objetivo || ''}">
-          </div>
-          <div>
-            <label>Contexto de uso</label>
-            <input type="text" id="contexto" value="${m.contexto || ''}">
-          </div>
-        </div>
-      </section>
-
       <section id="sec-insumos" class="card">
-        <h2>2. Los 3 Pilares del Mensaje</h2>
+        <span style="color:var(--accent); font-weight:700; font-size:12px;">Paso 1</span>
+        <h1>Insumos de Marca</h1>
+        <p class="subtitle">Los cimientos de tu mensaje.</p>
         <div class="two-cols">
           <div>
-            <label>¿Qué problema resuelves?</label>
+            <label>Problema que resuelves</label>
             <textarea id="problema">${m.problema || ''}</textarea>
-          </div>
-          <div>
-            <label>¿Para quién?</label>
-            <textarea id="audiencia">${m.audiencia || ''}</textarea>
           </div>
           <div>
             <label>Tu Diferencial</label>
             <textarea id="diferencial">${m.diferencial || ''}</textarea>
           </div>
-          <div>
-            <label>La Prueba (1 Dato)</label>
-            <textarea id="prueba">${m.prueba1 || ''}</textarea>
-          </div>
-        </div>
-      </section>
-
-      <section id="sec-estructura" class="card">
-        <h2>3. Constructor del Elevator Speech</h2>
-        <div class="table-responsive">
-          <table>
-            <thead><tr><th width="20%">Parte</th><th>Tu Redacción</th><th width="25%">Tip</th></tr></thead>
-            <tbody>
-              <tr>
-                <td><strong>1. Quién eres</strong></td>
-                <td><textarea id="quienEres">${m.elevatorCompleto || ''}</textarea></td>
-                <td style="color:var(--text-muted); font-size:13px;">Usa un detalle memorable.</td>
-              </tr>
-              <tr>
-                <td><strong>2. Qué haces</strong></td>
-                <td><textarea id="queHaces">${m.diferencial || ''}</textarea></td>
-                <td style="color:var(--text-muted); font-size:13px;">Enfócate en el resultado.</td>
-              </tr>
-              <tr>
-                <td><strong>3. Por qué importa</strong></td>
-                <td><textarea id="porQueImporta">${m.metodologia || ''}</textarea></td>
-                <td style="color:var(--text-muted); font-size:13px;">Aquí va tu dato de prueba.</td>
-              </tr>
-              <tr>
-                <td><strong>4. Hook/Cierre</strong></td>
-                <td><textarea id="hook">${m.cta || ''}</textarea></td>
-                <td style="color:var(--text-muted); font-size:13px;">Invita a la acción.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="highlight-box">
-          <label style="color:var(--accent); font-size:13px;">🌟 Tu Versión Final (30-60s)</label>
-          <textarea id="elevatorCompleto" style="border:none; background:transparent; font-size:16px; min-height:120px;">${m.elevatorCompleto || ''}</textarea>
         </div>
         <div class="two-cols" style="margin-top:20px;">
           <div>
-            <label>Versión Ultra-Corta (15s)</label>
-            <textarea id="version15">${m.version15 || ''}</textarea>
+            <label>Mercado / Nicho</label>
+            <textarea id="mercado">${m.mercado || ''}</textarea>
           </div>
           <div>
-            <label>Tono Deseado</label>
-            <input type="text" id="tono" value="${m.tono || ''}">
+            <label>Metodología / Cómo</label>
+            <textarea id="metodologia">${m.metodologia || ''}</textarea>
           </div>
         </div>
       </section>
 
-      <section id="sec-logros" class="card">
-        <h2>4. Banco de Logros</h2>
-        <div class="two-cols">
+      <section id="sec-speech" class="card">
+        <h2>2. Elevator Pitch (60")</h2>
+        <p class="subtitle">Tu discurso fluido para captar atención inmediata.</p>
+        <textarea id="elevatorCompleto" rows="4" style="font-size:18px; font-weight:500; color:var(--accent);">${m.elevatorCompleto || ''}</textarea>
+        <div class="two-cols" style="margin-top:20px;">
           <div>
-            <label>Top 5 Logros Profesionales</label>
-            <textarea id="logrosProf">${m.logrosProf || ''}</textarea>
+            <label>Historia STAR</label>
+            <textarea id="historia">${m.historia || ''}</textarea>
           </div>
-          <div>
-            <label>Top 5 Logros Personales</label>
-            <textarea id="logrosPers">${m.logrosPers || ''}</textarea>
-          </div>
-        </div>
-        <div style="margin-top:20px;">
-          <label>Micro-Historia (Método STAR)</label>
-          <textarea id="historia">${m.historia || ''}</textarea>
-        </div>
-      </section>
-
-      <section id="sec-cierre" class="card">
-        <h2>5. Cierre & CTA</h2>
-        <div class="two-cols">
           <div>
             <label>Call to Action (CTA)</label>
-            <input type="text" id="cta" value="${m.cta || ''}">
+            <textarea id="cta">${m.cta || ''}</textarea>
           </div>
-          <div>
-            <label>Mensajes Clave (Repetir)</label>
-            <textarea id="mensajes">${m.mensajes || ''}</textarea>
+        </div>
+      </section>
+
+      <section id="sec-habitos" class="card">
+        <h2>3. Hábitos de Poder</h2>
+        <div class="two-cols">
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <label>Hábito 1: Comunicación</label>
+            <textarea id="hab1">${m.hab1 || ''}</textarea>
+            <label style="margin-top:10px;">Acción Concreta</label>
+            <textarea id="accionHab1">${m.accionHab1 || ''}</textarea>
+          </div>
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <label>Hábito 2: Comunicación</label>
+            <textarea id="hab2">${m.hab2 || ''}</textarea>
+            <label style="margin-top:10px;">Acción Concreta</label>
+            <textarea id="accionHab2">${m.accionHab2 || ''}</textarea>
           </div>
         </div>
       </section>
@@ -1122,10 +1046,15 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
                 "metadata": {
                     "metaRel": "Metas de networking claras y ambiciosas",
                     "valorRel": "Oferta de valor detallada del líder",
-                    "miedo1": "Análisis profundo del peor escenario",
-                    "miedo2": "Racionalización lógica del miedo",
-                    "contacts": "Lista detallada de contactos estratégicos (Nombre, Rol, Poder, Interés)",
-                    "activation": "Plan detallado de activación de red por contacto"
+                    "aliado1": "Aliado 1: Nombre y por qué es clave",
+                    "aliado2": "Aliado 2: Nombre y por qué es clave",
+                    "aliado3": "Aliado 3: Nombre y por qué es clave",
+                    "guion1": "Guion 1: Primer contacto o reactivación",
+                    "guion2": "Guion 2: Seguimiento o aporte de valor",
+                    "planEventos": "Lista de espacios y canales estratégicos",
+                    "pilar1": "Pilar 1: Presencia",
+                    "pilar2": "Pilar 2: Utilidad",
+                    "pilar3": "Pilar 3: Reciprocidad"
                 }
             }
 
@@ -1137,36 +1066,27 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
-      const flatData = {
-        metaRel: m.metaRel || "",
-        valorRel: m.valorRel || "",
-        miedo1: m.miedo1 || "",
-        miedo2: m.miedo2 || "",
-        contacts: m.contacts || "",
-        activation: m.activation || ""
-      };
-      const contacts = flatData.contacts;
-      const activation = flatData.activation;
 
       return `
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>${workbook.title} — Networking</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
 
   <style>
+    :root{
       --bg: #f8fafc;
       --card-bg: #ffffff;
       --card-border: #e2e8f0;
       --text-main: #0f172a;
       --text-muted: #64748b;
-      --accent: #059669;
-      --accent-light: #d1fae5;
+      --accent: #059669; 
+      --accent-light: #ecfeff; 
       --accent-glow: rgba(5, 150, 105, 0.15);
       --radius: 16px;
       --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
@@ -1177,184 +1097,132 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       margin: 0; font-family: var(--font-stack); background-color: var(--bg);
       color: var(--text-main); line-height: 1.6; padding-bottom: 100px;
     }
-    .layout { display: grid; grid - template - columns: 240px 1fr; max - width: 1100px; margin: 20px auto; gap: 24px; padding: 0 20px; }
-@media(max - width: 900px) { .layout { display: block; padding: 0 16px; margin - top: 110px; } }
-    .mobile - nav - wrapper { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop - filter: blur(10px); z - index: 90; border - bottom: 1px solid var(--card - border); padding: 10px 0 0 0; box - shadow: 0 4px 12px rgba(0, 0, 0, 0.03); }
-@media(max - width: 900px) { .mobile - nav - wrapper { display: block; } }
-    .mobile - header { padding: 0 16px 10px; }
-    .mobile - header h1 { font - size: 18px; margin: 0; color: var(--text - main); }
-    .mobile - nav - scroller { display: flex; overflow - x: auto; padding: 0 16px 10px; gap: 10px; scrollbar - width: none; }
-    .mobile - nav - scroller:: -webkit - scrollbar { display: none; }
-    .nav - pill { white - space: nowrap; font - size: 13px; font - weight: 600; color: var(--text - muted); background: #f1f5f9; padding: 6px 14px; border - radius: 20px; text - decoration: none; transition: all 0.2s; }
-    .nav - pill.active { background: var(--text - main); color: white; }
-    .sidebar { position: sticky; top: 20px; height: fit - content; background: var(--card - bg); border: 1px solid var(--card - border); border - radius: var(--radius); padding: 20px; display: flex; flex - direction: column; gap: 6px; box - shadow: var(--shadow); }
-@media(max - width: 900px) { .sidebar { display: none; } }
-    .nav - link { display: flex; align - items: center; gap: 10px; color: var(--text - muted); text - decoration: none; padding: 10px 12px; border - radius: 8px; font - size: 14px; font - weight: 500; transition: all 0.2s; }
-    .nav - link:hover { background: #f1f5f9; color: var(--text - main); }
-    .nav - link.active { background: var(--accent - light); color: var(--accent); border - left: 3px solid var(--accent); font - weight: 600; }
-    .card { background: var(--card - bg); border: 1px solid var(--card - border); border - radius: var(--radius); padding: 30px; margin - bottom: 24px; box - shadow: var(--shadow); }
-@media(max - width: 600px) { .card { padding: 20px; } }
-    h1 { font - size: 26px; font - weight: 800; margin - top: 0; color: var(--text - main); letter - spacing: -0.5px; }
-    h2 { font - size: 18px; border - bottom: 1px solid var(--card - border); padding - bottom: 12px; margin - bottom: 16px; margin - top: 0; }
-p.subtitle { color: var(--text - muted); font - size: 14px; margin - bottom: 20px; line - height: 1.5; }
-    .chip - container { display: flex; flex - wrap: wrap; gap: 8px; margin - bottom: 15px; }
-    .chip { font - size: 12px; background: #f1f5f9; padding: 4px 10px; border - radius: 20px; color: var(--text - muted); font - weight: 600; }
-    label { display: block; font - size: 12px; font - weight: 700; text - transform: uppercase; letter - spacing: 0.5px; color: var(--text - muted); margin - bottom: 6px; }
-input, textarea, select { width: 100 %; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text - main); padding: 12px 14px; border - radius: 10px; font - family: inherit; font - size: 15px; transition: all 0.2s; -webkit - appearance: none; }
-input: focus, textarea: focus, select:focus { outline: none; border - color: var(--accent); background: white; box - shadow: 0 0 0 3px var(--accent - glow); }
-    textarea { resize: vertical; min - height: 100px; }
-    .table - responsive { overflow - x: auto; border - radius: 10px; border: 1px solid var(--card - border); background: white; margin - bottom: 15px; }
-    table { width: 100 %; border - collapse: collapse; min - width: 700px; }
-th, td { padding: 14px; text - align: left; border - bottom: 1px solid var(--card - border); font - size: 14px; vertical - align: top; }
-    th { background: #f8fafc; color: var(--text - muted); font - weight: 700; font - size: 11px; text - transform: uppercase; }
-    td input, td textarea, td select { background: transparent; border: 1px solid transparent; padding: 6px; }
-    td input: focus, td textarea: focus, td select:focus { background: white; border - color: var(--accent); }
-    .two - cols { display: grid; grid - template - columns: 1fr 1fr; gap: 20px; }
-@media(max - width: 700px) { .two - cols{ grid - template - columns: 1fr; } }
-    .action - bar { position: fixed; bottom: 20px; left: 50 %; transform: translateX(-50 %); background: #1e293b; padding: 8px 10px; border - radius: 100px; display: flex; gap: 8px; box - shadow: 0 10px 25px rgba(0, 0, 0, 0.2); z - index: 100; max - width: 90 %; }
-    .action - bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border - radius: 20px; font - size: 13px; font - weight: 600; cursor: pointer; }
-    .action - bar button:hover { color: white; background: rgba(255, 255, 255, 0.1); }
-    .action - bar button.primary { background: var(--accent); color: white; }
-#toast { visibility: hidden; min - width: 250px; background - color: var(--text - main); color: #fff; text - align: center; border - radius: 50px; padding: 12px 24px; position: fixed; z - index: 101; left: 50 %; top: 20px; transform: translateX(-50 %); font - weight: 500; font - size: 14px; opacity: 0; transition: all 0.3s; }
-#toast.show { visibility: visible; opacity: 1; top: 50px; }
-@media print { body { background: white; padding: 0; } .sidebar, .action - bar, .mobile - nav - wrapper { display: none; } .layout { display: block; margin: 0; } .card { box - shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
-</style>
-  </head>
-  < body >
-  <div id="toast" >✅ Guardado </div>
-    < div class="mobile-nav-wrapper" >
-      <div class="mobile-header" >
-        <span style="color:var(--accent); font-size:11px; font-weight:800; text-transform:uppercase;" > Módulo 4 </span>
-          < h1 > ${workbook.title} </h1>
+    .layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1100px; margin: 20px auto; gap: 24px; padding: 0 20px; }
+    @media (max-width: 900px) { .layout { display: block; padding: 0 16px; margin-top: 110px; } }
+    .mobile-nav-wrapper { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 90; border-bottom: 1px solid var(--card-border); padding: 10px 0 0 0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    @media (max-width: 900px) { .mobile-nav-wrapper { display: block; } }
+    .mobile-header { padding: 0 16px 10px; }
+    .mobile-header h1 { font-size: 18px; margin: 0; color: var(--text-main); }
+    .mobile-nav-scroller { display: flex; overflow-x: auto; padding: 0 16px 10px; gap: 10px; scrollbar-width: none; }
+    .mobile-nav-scroller::-webkit-scrollbar { display: none; }
+    .nav-pill { white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-muted); background: #f1f5f9; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all 0.2s; }
+    .nav-pill.active { background: var(--text-main); color: white; }
+    .sidebar { position: sticky; top: 20px; height: fit-content; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .sidebar { display: none; } }
+    .nav-link { display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .nav-link:hover { background: #f1f5f9; color: var(--text-main); }
+    .nav-link.active { background: var(--accent-light); color: var(--accent); border-left: 3px solid var(--accent); font-weight: 600; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    @media (max-width: 600px) { .card { padding: 20px; } }
+    h1, h2 { margin-top: 0; color: var(--text-main); letter-spacing: -0.02em; }
+    h1 { font-size: 26px; font-weight: 800; }
+    h2 { font-size: 18px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
+    p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+    textarea { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
+    textarea:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
+    .action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 8px 10px; border-radius: 100px; display: flex; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; max-width: 90%; }
+    .action-bar button { background: transparent; border: none; color: #cbd5e1; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .action-bar button:hover { color: white; background: rgba(255,255,255,0.1); }
+    .action-bar button.primary { background: var(--accent); color: white; }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width:700px){ .two-cols{ grid-template-columns: 1fr; } }
+    @media print { body { background: white; padding: 0; } .sidebar, .action-bar, .mobile-nav-wrapper { display: none; } .layout { display: block; margin: 0; } .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="mobile-nav-wrapper">
+    <div class="mobile-header">
+      <h1>${workbook.title}</h1>
+    </div>
+    <nav class="mobile-nav-scroller">
+      <a href="#sec-estrategia" class="nav-pill active">1. Estrategia</a>
+      <a href="#sec-aliados" class="nav-pill">2. Aliados</a>
+      <a href="#sec-guion" class="nav-pill">3. Guiones</a>
+      <a href="#sec-plan" class="nav-pill">4. Plan</a>
+      <a href="#sec-pilares" class="nav-pill">5. Pilares</a>
+    </nav>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <a href="#sec-estrategia" class="nav-link active">1. Estrategia de Valor</a>
+      <a href="#sec-aliados" class="nav-link">2. Aliados Estratégicos</a>
+      <a href="#sec-guion" class="nav-link">3. Guiones de Conexión</a>
+      <a href="#sec-plan" class="nav-link">4. Plan de Canales</a>
+      <a href="#sec-pilares" class="nav-link">5. Pilares de Seguimiento</a>
+    </aside>
+
+    <main class="main-content">
+      <section id="sec-estrategia" class="card">
+        <h1>Estrategia de Valor</h1>
+        <div class="two-cols">
+          <div>
+            <label>Meta de Networking</label>
+            <textarea id="metaRel">${m.metaRel || ''}</textarea>
+          </div>
+          <div>
+            <label>Oferta de Valor Relevante</label>
+            <textarea id="valorRel">${m.valorRel || ''}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-aliados" class="card">
+        <h2>2. Aliados Estratégicos</h2>
+        <div class="space-y-4">
+            <div style="margin-bottom:12px;">
+                <label>Aliado Principal</label>
+                <textarea id="aliado1">${m.aliado1 || ''}</textarea>
             </div>
-            < nav class="mobile-nav-scroller" >
-              <a href="#sec-skills" class="nav-pill active" > 1. Habilidades </a>
-                < a href = "#sec-miedos" class="nav-pill" > 2. Miedos </a>
-                  < a href = "#sec-acciones" class="nav-pill" > 3. Acciones </a>
-                    < a href = "#sec-estrategia" class="nav-pill" > 4. Estrategia </a>
-                      < a href = "#sec-mapa" class="nav-pill" > 5. Mapa A / B / C </a>
-                        </nav>
-                        </div>
+            <div style="margin-bottom:12px;">
+                <label>Aliado Crativo / Soporte</label>
+                <textarea id="aliado2">${m.aliado2 || ''}</textarea>
+            </div>
+            <div>
+                <label>Aliado Institucional / Red</label>
+                <textarea id="aliado3">${m.aliado3 || ''}</textarea>
+            </div>
+        </div>
+      </section>
 
-                        < div class="layout" >
-                          <aside class="sidebar" >
-                            <div style="margin-bottom: 10px; padding: 0 12px;" >
-                              <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:800;" > Contenido </span>
-                                </div>
-                                < a href = "#sec-skills" class="nav-link active" > 1. Habilidades Clave </a>
-                                  < a href = "#sec-miedos" class="nav-link" > 2. Superar Miedos </a>
-                                    < a href = "#sec-acciones" class="nav-link" > 3. Acciones 7 Días </a>
-                                      < a href = "#sec-estrategia" class="nav-link" > 4. Estrategia </a>
-                                        < a href = "#sec-mapa" class="nav-link" > 5. Mapa Prioridades </a>
-                                          < a href = "#sec-plan" class="nav-link" > 6. Activación </a>
-                                            </aside>
+      <section id="sec-guion" class="card">
+        <h2>3. Guiones de Conexión</h2>
+        <div class="two-cols">
+          <div>
+            <label>Guion 1 (Primer Contacto)</label>
+            <textarea id="guion1">${m.guion1 || ''}</textarea>
+          </div>
+          <div>
+            <label>Guion 2 (Aporte de Valor)</label>
+            <textarea id="guion2">${m.guion2 || ''}</textarea>
+          </div>
+        </div>
+      </section>
 
-                                            < main class="main-content" >
-                                              <section id="sec-skills" class="card" >
-                                                <span style="color:var(--accent); font-weight:700; font-size:12px;" > Paso 1 </span>
-                                                  < h1 > Habilidades de Conexión </h1>
-                                                    < p class="subtitle" > Selecciona 2 áreas para fortalecer esta semana.</p>
-                                                      < div class="chip-container" >
-                                                        <span class="chip" > Escucha Activa < /span><span class="chip">Storytelling</span > <span class="chip" > Rapport < /span><span class="chip">Persuasión</span >
-                                                          </div>
-                                                          < div class="two-cols" >
-                                                            <div>
-                                                            <label>Habilidad #1 </label>
-                                                              < input type = "text" value = "${m.hab1 || ''}" >
-                                                                <textarea style="margin-top:10px;" > ${m.accionHab1 || ''} </textarea>
-                                                                  </div>
-                                                                  < div >
-                                                                  <label>Habilidad #2 </label>
-                                                                    < input type = "text" value = "${m.hab2 || ''}" >
-                                                                      <textarea style="margin-top:10px;" > ${m.accionHab2 || ''} </textarea>
-                                                                        </div>
-                                                                        </div>
-                                                                        </section>
+      <section id="sec-plan" class="card">
+        <h2>4. Plan de Canales & Eventos</h2>
+        <textarea id="planEventos">${m.planEventos || ''}</textarea>
+      </section>
 
-                                                                        < section id = "sec-miedos" class="card" >
-                                                                          <h2>2. Superando la Barrera(Miedo) </h2>
-                                                                            < div class="two-cols" >
-                                                                              <div>
-                                                                              <label>¿Qué es lo peor que puede pasar ? </label>
-                                                                                < textarea > ${m.miedo1 || ''} </textarea>
-                                                                                  </div>
-                                                                                  < div >
-                                                                                  <label>¿Qué pensarán realmente ? </label>
-                                                                                    < textarea > ${m.miedo2 || ''} </textarea>
-                                                                                      </div>
-                                                                                      </div>
-                                                                                      </section>
-
-                                                                                      < section id = "sec-acciones" class="card" >
-                                                                                        <h2>3. Activación Inmediata </h2>
-                                                                                          < div class="table-responsive" >
-                                                                                            <table>
-                                                                                            <thead><tr><th width="30%" > Categoría < /th><th>Persona</th > <th>Acción < /th></tr > </thead>
-                                                                                              < tbody >
-                                                                                              <tr><td><strong>Organización Interna < /strong></td > <td><input type="text" value = "${m.orgPersona || ''}" > </td><td><input type="text" value="${m.orgAccion || ''}"></td > </tr>
-                                                                                                < tr > <td><strong>Cliente / Externo < /strong></td > <td><input type="text" value = "${m.cliPersona || ''}" > </td><td><input type="text" value="${m.cliAccion || ''}"></td > </tr>
-                                                                                                  < tr > <td><strong>Círculo Social < /strong></td > <td><input type="text" value = "${m.socPersona || ''}" > </td><td><input type="text" value="${m.socAccion || ''}"></td > </tr>
-                                                                                                    </tbody>
-                                                                                                    </table>
-                                                                                                    </div>
-                                                                                                    </section>
-
-                                                                                                    < section id = "sec-estrategia" class="card" >
-                                                                                                      <h2>4. Estrategia de Valor </h2>
-                                                                                                        < div class="two-cols" >
-                                                                                                          <div>
-                                                                                                          <label>Mis Metas de Networking </label>
-                                                                                                            < textarea rows = "3" > ${m.metaRel || ''} </textarea>
-                                                                                                              </div>
-                                                                                                              < div >
-                                                                                                              <label>Mi Oferta de Valor </label>
-                                                                                                                < textarea rows = "3" > ${m.valorRel || ''} </textarea>
-                                                                                                                  </div>
-                                                                                                                  </div>
-                                                                                                                  </section>
-
-                                                                                                                  < section id = "sec-mapa" class="card" >
-                                                                                                                    <h2>5. Mapa de Prioridades(A / B / C) </h2>
-                                                                                                                      < div class="table-responsive" >
-                                                                                                                        <table>
-                                                                                                                        <thead><tr><th>Nombre < /th><th>Rol</th > <th>Poder < /th><th>Interés</th > </tr></thead >
-                                                                                                                        <tbody>
-                                                                                                                        ${contacts.map((c: any) => `
-                <tr>
-                  <td><input type="text" value="${c.name || ''}"></td>
-                  <td><input type="text" value="${c.role || ''}"></td>
-                  <td><input type="text" value="${c.power || ''}" style="text-align:center;"></td>
-                  <td><input type="text" value="${c.interest || ''}" style="text-align:center;"></td>
-                </tr>
-              `).join('')
-        }
-              ${(!contacts || contacts.length < 3) ? '<tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>'.repeat(3 - (contacts?.length || 0)) : ''}
-</tbody>
-  </table>
-  </div>
-  </section>
-
-  < section id = "sec-plan" class="card" >
-    <h2>6. Plan de Activación </h2>
-      < div class="table-responsive" >
-        <table>
-        <thead><tr><th width="20%" > Contacto < /th><th>Interés</th > <th>Valor < /th><th>Frecuencia</th > </tr></thead >
-          <tbody>
-          ${activation.map((a: any) => `
-                <tr>
-                  <td><input type="text" value="${a.contact || ''}"></td>
-                  <td><textarea rows="1">${a.interest || ''}</textarea></td>
-                  <td><textarea rows="1">${a.value || ''}</textarea></td>
-                  <td><input type="text" value="${a.frequency || ''}"></td>
-                </tr>
-              `).join('')
-        }
-              ${(!activation || activation.length < 2) ? '<tr><td><input type="text"></td><td><textarea rows="1"></textarea></td><td><textarea rows="1"></textarea></td><td><input type="text"></td></tr>'.repeat(2 - (activation?.length || 0)) : ''}
-</tbody>
-  </table>
-  </div>
-  </section>
-  </main>
+      <section id="sec-pilares" class="card">
+        <h2>5. Pilares de Seguimiento</h2>
+        <div class="two-cols">
+          <div>
+            <label>Pilar 1: Presencia</label>
+            <textarea id="pilar1">${m.pilar1 || ''}</textarea>
+          </div>
+          <div>
+            <label>Pilar 2: Utilidad</label>
+            <textarea id="pilar2">${m.pilar2 || ''}</textarea>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <label>Pilar 3: Reciprocidad</label>
+          <textarea id="pilar3">${m.pilar3 || ''}</textarea>
+        </div>
+      </section>
+    </main>
   </div>
 
   <div class="action-bar">
@@ -1374,8 +1242,8 @@ th, td { padding: 14px; text - align: left; border - bottom: 1px solid var(--car
       setTimeout(() => resizeTextarea(el), 100);
     });
   </script>
-  </body>
-  </html>
+</body>
+</html>
     `;
     }
   },
