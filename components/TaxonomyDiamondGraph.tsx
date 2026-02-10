@@ -303,6 +303,14 @@ export default function TaxonomyDiamondGraph({ data, focus, inventory = [], show
             .on('mouseenter', function (event, d) {
                 // Show tooltip
                 const tooltip = d3.select(tooltipRef.current)
+                const getPillarDesc = (name: string) => {
+                    if (name === 'Shine Up') return 'Ecosistema Relacional'
+                    if (name === 'Shine Within') return 'Esencia'
+                    if (name === 'Shine Out') return 'Presencia Estratégica'
+                    if (name === 'Shine Beyond') return 'Legado'
+                    return 'Eje principal del framework 4Shine'
+                }
+
                 if (tooltip.node()) {
                     tooltip
                         .style('opacity', '1')
@@ -311,7 +319,7 @@ export default function TaxonomyDiamondGraph({ data, focus, inventory = [], show
                         .html(`
                             <div class="font-bold text-sm mb-1" style="color: ${d.color}">${d.name}</div>
                             <div class="text-[10px] text-text-muted uppercase tracking-wider mb-2">${d.level === 'Pillar' ? 'Pilar' : d.level === 'Sub' ? 'Componente' : d.level === 'Comp' ? 'Competencia' : 'Conducta'}</div>
-                            ${d.level === 'Pillar' ? `<div class="text-xs text-text-main">Eje principal del framework 4Shine</div>` : ''}
+                            ${d.level === 'Pillar' ? `<div class="text-xs text-text-main">${getPillarDesc(d.name)}</div>` : ''}
                             ${d.isGap && showGaps ? '<div class="text-xs text-danger mt-2 font-bold">⚠️ Sin contenido vinculado</div>' : ''}
                         `)
                 }

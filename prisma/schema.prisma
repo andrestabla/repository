@@ -117,14 +117,14 @@ model Taxonomy {
 }
 
 model User {
-  email     String      @id
-  name      String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  isActive  Boolean     @default(true)
-  role      Role        @default(CURADOR)
-  allowedModules String[] @default([]) // List of module IDs: products, workbooks, analytics, etc.
-  logs      SystemLog[]
+  email          String      @id
+  name           String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  isActive       Boolean     @default(true)
+  role           Role        @default(CURADOR)
+  allowedModules String[]    @default([])
+  logs           SystemLog[]
 }
 
 model SystemLog {
@@ -172,34 +172,22 @@ model GlossaryTerm {
   updatedAt  DateTime @updatedAt
 }
 
-enum Role {
-  METODOLOGO
-  CURADOR
-  AUDITOR
-  ADMIN
-}
-
 model StrategicProduct {
-  id          String   @id @default(cuid())
+  id          String                    @id @default(cuid())
   title       String
-  description String?  // @db.Text not supported in basic postgres prisma unless using specific provider features, but String in Prisma maps to text in Postgres usually or we can rely on default
-  type        String   // PDF, Presentation, Video, Spreadsheet, Doc
-  driveLink   String?  // URL de Google Drive o externa (opcional si hay embedCode)
-  embedCode   String?  // Código HTML para embedders (YouTube, Vimeo, etc.)
-  driveId     String?  // ID extraído para embed
-  category    String?  // Categoría personalizada o tag
-  tags        String[] @default([])
-  
-  // Metadatos de IA
+  description String?
+  type        String
+  driveLink   String?
+  driveId     String?
+  category    String?
+  tags        String[]                  @default([])
   aiSummary   String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relaciones opcionales
-  pillar      String? 
-  versions    StrategicProductVersion[]
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  pillar      String?
+  embedCode   String?
   comments    StrategicProductComment[]
+  versions    StrategicProductVersion[]
 }
 
 model StrategicProductVersion {
@@ -207,40 +195,39 @@ model StrategicProductVersion {
   versionNumber Int
   driveLink     String?
   driveId       String?
-  embedCode     String?          @db.Text
-  notes         String?          @db.Text
-  
+  embedCode     String?
+  notes         String?
   productId     String
-  product       StrategicProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
   createdAt     DateTime         @default(now())
+  product       StrategicProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model StrategicProductComment {
   id        String           @id @default(cuid())
-  content   String           @db.Text
+  content   String
   productId String
-  product   StrategicProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
   userEmail String
   userName  String?
   createdAt DateTime         @default(now())
+  product   StrategicProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Workbook {
   id          String   @id @default(cuid())
   title       String
-  description String?  @db.Text
-  
-  // Educational Metadata
-  metadata    Json?    // Stores: objectives, audience, duration, difficulty, prerequisites, takeaways
-  
-  status      String   @default("Borrador") // Borrador, Revisión, Publicado
-  type        String?  // Tipo de Workbook: Workbook1, Workbook2, etc.
-  
-  // Content Source
+  description String?
+  metadata    Json?
+  status      String   @default("Borrador")
   driveId     String?
-  content     String?  @db.Text // Extracted or AI generated content
-  
+  content     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  type        String?
+}
+
+enum Role {
+  METODOLOGO
+  CURADOR
+  AUDITOR
+  ADMIN
 }

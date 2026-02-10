@@ -64,10 +64,10 @@ export default function PublicDiamondView({ taxonomy, inventory, focus }: Props)
                 <div className="absolute bottom-6 left-6 bg-white/80 backdrop-blur-md border border-gray-100 p-4 rounded-2xl shadow-xl z-10 max-w-xs transition-all hover:bg-white pointer-events-none md:pointer-events-auto">
                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Leyenda del Sistema</h4>
                     <div className="space-y-2">
-                        <LegendItem color="#10b981" label="Shine Up" sub="Gestión y Liderazgo" />
-                        <LegendItem color="#8b5cf6" label="Shine Within" sub="Auto-Liderazgo" />
-                        <LegendItem color="#3b82f6" label="Shine Out" sub="Resultados y Mercado" />
-                        <LegendItem color="#f59e0b" label="Shine Beyond" sub="Innovación y Estrategia" />
+                        <LegendItem color="#10b981" label="Shine Up" sub="Ecosistema Relacional" />
+                        <LegendItem color="#8b5cf6" label="Shine Within" sub="Esencia" />
+                        <LegendItem color="#3b82f6" label="Shine Out" sub="Presencia Estratégica" />
+                        <LegendItem color="#f59e0b" label="Shine Beyond" sub="Legado" />
                     </div>
                     <div className="mt-4 pt-3 border-t border-gray-100">
                         <p className="text-[9px] text-slate-400 leading-relaxed italic">
