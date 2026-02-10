@@ -184,7 +184,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
     input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
     input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
-    textarea { resize: vertical; min-height: 100px; }
+    textarea { resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
     .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background-image: linear-gradient(to right, white, white), linear-gradient(to right, white, white), linear-gradient(to right, rgba(0,0,0,0.05), rgba(255,255,255,0)), linear-gradient(to left, rgba(0,0,0,0.05), rgba(255,255,255,0)); background-position: left center, right center, left center, right center; background-repeat: no-repeat; background-color: white; background-size: 20px 100%, 20px 100%, 10px 100%, 10px 100%; background-attachment: local, local, scroll, scroll; }
     table { width: 100%; border-collapse: collapse; min-width: 600px; }
     th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; }
@@ -366,11 +366,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
   </div>
 
   <div class="action-bar">
-    <button class="primary" id="saveBtn">Guardar</button>
-    <button id="loadBtn">Cargar</button>
-    <button id="exportBtn">JSON</button>
     <button id="printBtn">Imprimir / PDF</button>
-    <button id="clearBtn" style="color:#fca5a5;">Borrar</button>
   </div>
 
   <script>
@@ -447,6 +443,16 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       data.wheel = wheelChart.data.datasets[0].data;
       return data;
     }
+
+    function resizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    document.querySelectorAll('textarea').forEach(el => {
+      el.addEventListener('input', () => resizeTextarea(el));
+      setTimeout(() => resizeTextarea(el), 100);
+    });
 
     function setAllData(data) {
       for (const [key, value] of Object.entries(data)) {
@@ -621,7 +627,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
     input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
     input:focus, textarea:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
-    textarea { resize: vertical; min-height: 100px; }
+    textarea { resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
     .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; min-width: 650px; }
     th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; }
@@ -802,15 +808,21 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
   </div>
 
   <div class="action-bar">
-    <button class="primary" id="saveBtn">Guardar</button>
-    <button id="loadBtn">Cargar</button>
-    <button id="exportBtn">Exportar</button>
     <button id="printBtn">Imprimir / PDF</button>
-    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
   </div>
 
   <script>
     document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+
+    function resizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    document.querySelectorAll('textarea').forEach(el => {
+      el.addEventListener('input', () => resizeTextarea(el));
+      setTimeout(() => resizeTextarea(el), 100);
+    });
   </script>
 </body>
 </html>
@@ -906,7 +918,7 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
     label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
     input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
     input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
-    textarea { resize: vertical; min-height: 100px; }
+    textarea { resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
     .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; min-width: 700px; }
     th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; vertical-align: top; }
@@ -1075,15 +1087,21 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
   </div>
 
   <div class="action-bar">
-    <button class="primary" id="saveBtn">Guardar</button>
-    <button id="loadBtn">Cargar</button>
-    <button id="exportBtn">Exportar</button>
     <button id="printBtn">Imprimir / PDF</button>
-    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
   </div>
 
   <script>
     document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+
+    function resizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    document.querySelectorAll('textarea').forEach(el => {
+      el.addEventListener('input', () => resizeTextarea(el));
+      setTimeout(() => resizeTextarea(el), 100);
+    });
   </script>
 </body>
 </html>
@@ -1339,17 +1357,23 @@ th, td { padding: 14px; text - align: left; border - bottom: 1px solid var(--car
   </main>
   </div>
 
-  < div class="action-bar" >
-    <button class="primary" id = "saveBtn" > Guardar </button>
-      < button id = "loadBtn" > Cargar </button>
-        < button id = "exportBtn" > Exportar </button>
-          < button id = "printBtn" > Imprimir / PDF </button>
-            < button id = "clearBtn" style = "color:#fca5a5;" > Limpiar </button>
-              </div>
+  <div class="action-bar">
+    <button id="printBtn">Imprimir / PDF</button>
+  </div>
 
-              <script>
-document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
-</script>
+  <script>
+    document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+
+    function resizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    document.querySelectorAll('textarea').forEach(el => {
+      el.addEventListener('input', () => resizeTextarea(el));
+      setTimeout(() => resizeTextarea(el), 100);
+    });
+  </script>
   </body>
   </html>
     `;
@@ -1452,7 +1476,7 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
     label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
     input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
     input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
-    textarea { resize: vertical; min-height: 100px; }
+    textarea { resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
     .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; min-width: 700px; }
     th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; vertical-align: top; }
@@ -1641,11 +1665,7 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
   </div>
 
   <div class="action-bar">
-    <button class="primary" id="saveBtn">Guardar</button>
-    <button id="loadBtn">Cargar</button>
-    <button id="exportBtn">Exportar</button>
     <button id="printBtn">Imprimir / PDF</button>
-    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
   </div>
 
   <script>
@@ -1653,6 +1673,16 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
       document.getElementById(id).textContent = val;
     }
     document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+
+    function resizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    document.querySelectorAll('textarea').forEach(el => {
+      el.addEventListener('input', () => resizeTextarea(el));
+      setTimeout(() => resizeTextarea(el), 100);
+    });
   </script>
 </body>
 </html>
@@ -1753,7 +1783,7 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
     label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
     input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
     input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
-    textarea { resize: vertical; min-height: 100px; }
+    textarea { resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
     .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; min-width: 700px; }
     th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; vertical-align: top; }
@@ -1958,15 +1988,21 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
   </div>
 
   <div class="action-bar">
-    <button class="primary" id="saveBtn">Guardar</button>
-    <button id="loadBtn">Cargar</button>
-    <button id="exportBtn">Exportar</button>
     <button id="printBtn">Imprimir / PDF</button>
-    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
   </div>
 
   <script>
     document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+
+    function resizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    document.querySelectorAll('textarea').forEach(el => {
+      el.addEventListener('input', () => resizeTextarea(el));
+      setTimeout(() => resizeTextarea(el), 100);
+    });
   </script>
 </body>
 </html>
@@ -2066,7 +2102,7 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
     label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
     input, textarea, select { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-main); padding: 12px 14px; border-radius: 10px; font-family: inherit; font-size: 15px; transition: all 0.2s; -webkit-appearance: none; }
     input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-glow); }
-    textarea { resize: vertical; min-height: 100px; }
+    textarea { resize: none; min-height: 50px; overflow: hidden; line-height: 1.5; }
     .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid var(--card-border); background: white; margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; min-width: 700px; }
     th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 14px; vertical-align: top; }
@@ -2289,15 +2325,21 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
   </div>
 
   <div class="action-bar">
-    <button class="primary" id="saveBtn">Guardar</button>
-    <button id="loadBtn">Cargar</button>
-    <button id="exportBtn">Exportar</button>
     <button id="printBtn">Imprimir / PDF</button>
-    <button id="clearBtn" style="color:#fca5a5;">Limpiar</button>
   </div>
 
   <script>
     document.getElementById('printBtn').addEventListener('click', () => { window.print(); });
+
+    function resizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    document.querySelectorAll('textarea').forEach(el => {
+      el.addEventListener('input', () => resizeTextarea(el));
+      setTimeout(() => resizeTextarea(el), 100);
+    });
   </script>
 </body>
 </html>
