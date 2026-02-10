@@ -75,7 +75,7 @@ export function WorkbookCard({ workbook, onEdit, onDelete }: WorkbookCardProps) 
                                 <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
                                 <div className="absolute right-0 mt-2 w-32 bg-panel border border-border rounded-xl shadow-xl z-20 py-2 animate-in fade-in zoom-in-95 duration-200">
                                     <button
-                                        onClick={() => { onEdit(workbook); setShowActions(false); }}
+                                        onClick={() => { window.location.href = `/workbooks/${workbook.slug || workbook.id}`; setShowActions(false); }}
                                         className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-bold text-text-main hover:bg-bg hover:text-accent transition-colors"
                                     >
                                         <Edit2 size={12} />
@@ -131,7 +131,7 @@ export function WorkbookCard({ workbook, onEdit, onDelete }: WorkbookCardProps) 
             {/* Footer */}
             <div className="pt-4 mt-auto border-t border-border flex items-center justify-end">
                 <button
-                    onClick={() => { /* Open Detail View Future Implementation */ onEdit(workbook) }}
+                    onClick={() => { window.location.href = `/workbooks/${workbook.slug || workbook.id}` }}
                     className="flex items-center gap-2 px-3 py-1.5 bg-text-main text-bg group-hover:bg-accent group-hover:text-white text-[10px] font-black rounded-lg transition-all uppercase tracking-wide"
                 >
                     <Eye size={12} />

@@ -7,8 +7,13 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params
-        const workbook = await prisma.workbook.findUnique({
-            where: { id }
+        const workbook = await prisma.workbook.findFirst({
+            where: {
+                OR: [
+                    { id },
+                    { slug: id }
+                ]
+            }
         })
 
         if (!workbook) {
@@ -31,8 +36,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         // Allowed fields to update
         const { title, description, metadata, status, content, type } = body
 
+        // Find the workbook first to get its ID if slug was provided
+        const existing = await prisma.workbook.findFirst({
+            where: {
+                OR: [{ id }, { slug: id }]
+            }
+        })
+
+        if (!existing) {
+            return NextResponse.json({ error: 'Workbook not found' }, { status: 404 })
+        }
+
         const workbook = await prisma.workbook.update({
-            where: { id },
+            where: { id: existing.id },
             data: {
                 title,
                 description,
@@ -54,8 +70,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params
+        const existing = await prisma.workbook.findFirst({
+            where: {
+                OR: [{ id }, { slug: id }]
+            }
+        })
+
+        if (!existing) {
+            return NextResponse.json({ error: 'Workbook not found' }, { status: 404 })
+        }
+
         await prisma.workbook.delete({
-            where: { id }
+            where: { id: existing.id }
         })
 
         return NextResponse.json({ success: true })

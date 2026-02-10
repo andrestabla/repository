@@ -223,6 +223,7 @@ model Workbook {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   type        String?
+  slug        String?  @unique
 }
 
 enum Role {

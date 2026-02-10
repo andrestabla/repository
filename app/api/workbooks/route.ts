@@ -20,7 +20,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { title, description, driveId, type } = body
+        const { title, description, driveId, type, metadata } = body
+
+        // Generate a unique slug
+        const slug = (title || 'workbook')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '') + '-' + Math.random().toString(36).substring(2, 7)
 
         // Create the workbook
         const workbook = await prisma.workbook.create({
@@ -29,8 +38,9 @@ export async function POST(request: Request) {
                 description,
                 driveId,
                 type,
+                slug,
                 status: 'Borrador',
-                metadata: {
+                metadata: metadata || {
                     objectives: [],
                     audience: '',
                     duration: '',
