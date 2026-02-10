@@ -482,7 +482,7 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                                         <textarea
                                             className="w-full bg-white border border-rose-200 rounded-xl px-5 py-4 text-lg font-black text-rose-900 text-center placeholder:text-rose-200"
                                             value={extraMetadata.proposito || ''}
-                                            onChange={e => setExtraMetadata({ ...extraMetadata, propositos: e.target.value })}
+                                            onChange={e => setExtraMetadata({ ...extraMetadata, proposito: e.target.value })}
                                             placeholder="Tu gran POR QUÉ..."
                                         />
                                     </div>
