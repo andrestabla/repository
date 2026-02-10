@@ -24,21 +24,21 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
                     "exitoEvidencia": "Evidencias observables y tangibles de éxito",
                     "wheel": [50, 60, 70, 80, 40, 50, 90, 30], 
                     "metaSmart": "Redacción de la meta SMART principal",
-                    "smartCheck": { "s": "...", "m": "...", "a": "...", "r": "...", "t": "..." },
-                    "planCarrera": {
-                        "year1": { "definition": "...", "evidence": "..." },
-                        "year3": { "definition": "...", "evidence": "..." },
-                        "year5": { "definition": "...", "evidence": "..." }
-                    },
-                    "gaps": [
-                        { "skill": "...", "level": 3, "diagnostic": "...", "action": "...", "resources": "..." }
-                    ],
-                    "pdei": [
-                        { "meta": "...", "action": "...", "date": "...", "indicator": "...", "celebration": "..." }
-                    ],
-                    "acciones90": "Lista detallada de acciones",
+                    "metaCual": "Redacción de la meta cualitativa principal",
+                    "smartCheck": "Checklist detallado (S, M, A, R, T) en formato texto",
+                    "brecha": "Descripción de la brecha o gap principal",
+                    "c1": "Plan de carrera a 1 año",
+                    "c3": "Plan de carrera a 3 años",
+                    "c5": "Plan de carrera a 5 años",
+                    "g1": "Brecha de Conocimiento / Skill",
+                    "g2": "Brecha de Mindset / Creencia",
+                    "g3": "Brecha de Redes / Entorno",
+                    "hab1": "Hábito 1 (Detonante y Acción)",
+                    "hab2": "Hábito 2",
+                    "pdeiAcciones": "Acciones clave del PDEI",
+                    "acciones90": "Plan de acción detallado para los próximos 90 días",
                     "barreras": "Lista de barreras potenciales",
-                    "ritual": "Descripción minuciosa del ritual"
+                    "ritual": "Descripción minuciosa del ritual de inicio"
                 }
             }
 
@@ -55,48 +55,38 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
       const flatData: any = {
         exitoFrase: m.exitoFrase || "",
         exitoEvidencia: m.exitoEvidencia || "",
-        smartMeta: m.smartMeta || "",
-        smart_s: m.smartCheck?.s || "",
-        smart_m: m.smartCheck?.m || "",
-        smart_a: m.smartCheck?.a || "",
-        smart_r: m.smartCheck?.r || "",
-        smart_t: m.smartCheck?.t || "",
-        plan_1_rol: m.planCarrera?.year1?.definition || "",
-        plan_1_kpi: m.planCarrera?.year1?.evidence || "",
-        plan_3_rol: m.planCarrera?.year3?.definition || "",
-        plan_3_kpi: m.planCarrera?.year3?.evidence || "",
-        plan_5_rol: m.planCarrera?.year5?.definition || "",
-        plan_5_kpi: m.planCarrera?.year5?.evidence || "",
+        smartMeta: m.metaSmart || "",
+        smart_s: m.smartCheck || "",
+        smart_m: "",
+        smart_a: "",
+        smart_r: "",
+        smart_t: "",
+        plan_1_rol: m.c1 || "",
+        plan_1_kpi: "",
+        plan_3_rol: m.c3 || "",
+        plan_3_kpi: "",
+        plan_5_rol: m.c5 || "",
+        plan_5_kpi: "",
         acciones90: m.acciones90 || "",
         ritual: m.ritual || "",
         wheel: m.wheel || [50, 50, 50, 50, 50, 50, 50, 50]
       };
 
-      // Map gaps (up to 2 for this UI)
-      if (m.gaps && m.gaps.length > 0) {
-        flatData.gap_1_skill = m.gaps[0].skill;
-        flatData.gap_1_lvl = m.gaps[0].level;
-        flatData.gap_1_act = m.gaps[0].action;
-      }
-      if (m.gaps && m.gaps.length > 1) {
-        flatData.gap_2_skill = m.gaps[1].skill;
-        flatData.gap_2_lvl = m.gaps[1].level;
-        flatData.gap_2_act = m.gaps[1].action;
-      }
+      flatData.gap_1_skill = m.g1 || "";
+      flatData.gap_1_lvl = 50;
+      flatData.gap_1_act = m.g2 || "";
+      flatData.gap_2_skill = m.g3 || "";
+      flatData.gap_2_lvl = 50;
+      flatData.gap_2_act = "";
 
-      // Map pdei (up to 2 for this UI)
-      if (m.pdei && m.pdei.length > 0) {
-        flatData.pdei_1_meta = m.pdei[0].meta;
-        flatData.pdei_1_act = m.pdei[0].action;
-        flatData.pdei_1_date = m.pdei[0].date;
-        flatData.pdei_1_cel = m.pdei[0].celebration;
-      }
-      if (m.pdei && m.pdei.length > 1) {
-        flatData.pdei_2_meta = m.pdei[1].meta;
-        flatData.pdei_2_act = m.pdei[1].action;
-        flatData.pdei_2_date = m.pdei[1].date;
-        flatData.pdei_2_cel = m.pdei[1].celebration;
-      }
+      flatData.pdei_1_meta = m.pdeiAcciones || "";
+      flatData.pdei_1_act = m.hab1 || "";
+      flatData.pdei_1_date = "";
+      flatData.pdei_1_cel = "";
+      flatData.pdei_2_meta = "";
+      flatData.pdei_2_act = m.hab2 || "";
+      flatData.pdei_2_date = "";
+      flatData.pdei_2_cel = "";
 
       return `
 <!doctype html>
@@ -554,25 +544,17 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
                     "lenguajeTransformador": "Cómo debe hablarse el líder (ejemplos)",
                     "autodefinicion10": "Identidad en 10 palabras con fuerza",
                     "asociacionesExito": "Significado emocional detallado",
-                    "creencias": [
-                        { "limitante": "...", "pasado": "Yo pensaba que...", "nueva": "..." }
-                    ],
                     "perdidasCreencia": "Costos de mantener las creencias",
                     "beneficiosNuevas": "Ganancias detalladas",
-                    "dofa": {
-                        "fortalezas": "...",
-                        "debilidades": "...",
-                        "oportunidades": "...",
-                        "amenazas": "..."
-                    },
-                    "perderSiNoActuo": "Costo crítico de la inacción",
+                    "dofa_fortalezas": "Fortalezas detectadas",
+                    "dofa_oportunidades": "Oportunidades de crecimiento",
+                    "dofa_debilidades": "Debilidades o áreas de mejora",
+                    "dofa_amenazas": "Amenazas externas",
                     "decisionPoderosa": "La gran decisión estratégica",
                     "comoCambioVida": "Impacto esperado a largo plazo",
-                    "preguntasLider": {
-                        "foco": "Energía centrada en...",
-                        "significado": "Interpretación de los retos",
-                        "accion": "Próximo paso concreto"
-                    }
+                    "preguntasFoco": "Energía centrada en...",
+                    "preguntasSignificado": "Interpretación de los retos",
+                    "preguntasAccion": "Próximo paso concreto"
                 }
             }
 
@@ -771,24 +753,24 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="dofa-grid">
           <div class="dofa-item positive">
             <label style="color:#059669;">Fortalezas</label>
-            <textarea id="fortalezas" style="background:transparent; border:none; padding:0;">${m.dofa?.fortalezas || ''}</textarea>
+            <textarea id="fortalezas" style="background:transparent; border:none; padding:0;">${m.dofa_fortalezas || ''}</textarea>
           </div>
           <div class="dofa-item negative">
             <label style="color:#dc2626;">Debilidades</label>
-            <textarea id="debilidades" style="background:transparent; border:none; padding:0;">${m.dofa?.debilidades || ''}</textarea>
+            <textarea id="debilidades" style="background:transparent; border:none; padding:0;">${m.dofa_debilidades || ''}</textarea>
           </div>
           <div class="dofa-item positive">
             <label style="color:#059669;">Oportunidades</label>
-            <textarea id="oportunidades" style="background:transparent; border:none; padding:0;">${m.dofa?.oportunidades || ''}</textarea>
+            <textarea id="oportunidades" style="background:transparent; border:none; padding:0;">${m.dofa_oportunidades || ''}</textarea>
           </div>
           <div class="dofa-item negative">
             <label style="color:#dc2626;">Amenazas</label>
-            <textarea id="amenazas" style="background:transparent; border:none; padding:0;">${m.dofa?.amenazas || ''}</textarea>
+            <textarea id="amenazas" style="background:transparent; border:none; padding:0;">${m.dofa_amenazas || ''}</textarea>
           </div>
         </div>
         <div style="margin-top:15px;">
           <label>Costo de inacción</label>
-          <input type="text" id="perderSiNoActuo" value="${m.perderSiNoActuo || ''}">
+          <input type="text" id="perderSiNoActuo" value="${m.perdidasCreencia || ''}">
         </div>
       </section>
 
@@ -809,9 +791,9 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
           <table>
             <thead><tr><th width="30%">Pregunta</th><th>Tu Respuesta Hoy</th></tr></thead>
             <tbody>
-              <tr><td><strong>1. ¿Foco?</strong></td><td><input type="text" value="${m.preguntasLider?.foco || ''}"></td></tr>
-              <tr><td><strong>2. ¿Significado?</strong></td><td><input type="text" value="${m.preguntasLider?.significado || ''}"></td></tr>
-              <tr><td><strong>3. ¿Acción?</strong></td><td><input type="text" value="${m.preguntasLider?.accion || ''}"></td></tr>
+              <tr><td><strong>1. ¿Foco?</strong></td><td><input type="text" value="${m.preguntasFoco || ''}"></td></tr>
+              <tr><td><strong>2. ¿Significado?</strong></td><td><input type="text" value="${m.preguntasSignificado || ''}"></td></tr>
+              <tr><td><strong>3. ¿Acción?</strong></td><td><input type="text" value="${m.preguntasAccion || ''}"></td></tr>
             </tbody>
           </table>
         </div>
@@ -847,28 +829,17 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
             {
                 "success": true,
                 "metadata": {
-                    "objetivo": "Objetivo detallado de la comunicación",
-                    "contexto": "Análisis del escenario o audiencia clave",
-                    "insumos": {
-                        "problema": "El dolor profundo que resuelves",
-                        "audiencia": "Descripción detallada del avatar",
-                        "diferencial": "Tu propuesta única de valor explicada",
-                        "prueba": "Dato o evidencia de éxito contundente"
-                    },
-                    "speech": {
-                        "quienEres": "Presentación memorable y con gancho",
-                        "queHaces": "Resultado transformador que entregas",
-                        "porQueImporta": "Tu diferencial + dato de respaldo",
-                        "hook": "Llamado a la acción o pregunta final potente"
-                    },
+                    "problema": "El dolor profundo que resuelves",
+                    "diferencial": "Tu propuesta única de valor explicada",
+                    "mercado": "Análisis del mercado o nicho ideal",
+                    "metodologia": "Descripción de tu metodología o proceso único",
                     "elevatorCompleto": "Discurso fluido, persuasivo de 60 segundos",
-                    "version15": "Versión ultra-impactante corta",
-                    "tono": "Tono sugerido analizado (Ejecutivo, Inspirador, etc.)",
-                    "logrosProf": "Lista de hitos profesionales clave",
-                    "logrosPers": "Lista de hitos personales relevantes",
-                    "historia": "Estructura STAR (Situación, Tarea, Acción, Resultado) desarrollada",
+                    "historia": "Historia STAR (Situación, Tarea, Acción, Resultado) desarrollada",
                     "cta": "Call to action específico e irresistible",
-                    "mensajes": "3 Ideas fuerza para la memoria de la audiencia"
+                    "hab1": "Hábito de comunicación 1",
+                    "accionHab1": "Acción concreta para el hábito 1",
+                    "hab2": "Hábito de comunicación 2",
+                    "accionHab2": "Acción concreta para el hábito 2"
                 }
             }
 
@@ -1007,19 +978,19 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         <div class="two-cols">
           <div>
             <label>¿Qué problema resuelves?</label>
-            <textarea id="problema">${m.insumos?.problema || ''}</textarea>
+            <textarea id="problema">${m.problema || ''}</textarea>
           </div>
           <div>
             <label>¿Para quién?</label>
-            <textarea id="audiencia">${m.insumos?.audiencia || ''}</textarea>
+            <textarea id="audiencia">${m.audiencia || ''}</textarea>
           </div>
           <div>
             <label>Tu Diferencial</label>
-            <textarea id="diferencial">${m.insumos?.diferencial || ''}</textarea>
+            <textarea id="diferencial">${m.diferencial || ''}</textarea>
           </div>
           <div>
             <label>La Prueba (1 Dato)</label>
-            <textarea id="prueba">${m.insumos?.prueba || ''}</textarea>
+            <textarea id="prueba">${m.prueba1 || ''}</textarea>
           </div>
         </div>
       </section>
@@ -1032,22 +1003,22 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
             <tbody>
               <tr>
                 <td><strong>1. Quién eres</strong></td>
-                <td><textarea id="quienEres">${m.speech?.quienEres || ''}</textarea></td>
+                <td><textarea id="quienEres">${m.elevatorCompleto || ''}</textarea></td>
                 <td style="color:var(--text-muted); font-size:13px;">Usa un detalle memorable.</td>
               </tr>
               <tr>
                 <td><strong>2. Qué haces</strong></td>
-                <td><textarea id="queHaces">${m.speech?.queHaces || ''}</textarea></td>
+                <td><textarea id="queHaces">${m.diferencial || ''}</textarea></td>
                 <td style="color:var(--text-muted); font-size:13px;">Enfócate en el resultado.</td>
               </tr>
               <tr>
                 <td><strong>3. Por qué importa</strong></td>
-                <td><textarea id="porQueImporta">${m.speech?.porQueImporta || ''}</textarea></td>
+                <td><textarea id="porQueImporta">${m.metodologia || ''}</textarea></td>
                 <td style="color:var(--text-muted); font-size:13px;">Aquí va tu dato de prueba.</td>
               </tr>
               <tr>
                 <td><strong>4. Hook/Cierre</strong></td>
-                <td><textarea id="hook">${m.speech?.hook || ''}</textarea></td>
+                <td><textarea id="hook">${m.cta || ''}</textarea></td>
                 <td style="color:var(--text-muted); font-size:13px;">Invita a la acción.</td>
               </tr>
             </tbody>
@@ -1131,26 +1102,12 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
             {
                 "success": true,
                 "metadata": {
-                    "hab1": "Habilidad estratégica #1",
-                    "accionHab1": "Acción detallada para fortalecerla",
-                    "hab2": "Habilidad estratégica #2",
-                    "accionHab2": "Acción detallada para fortalecerla",
-                    "miedo1": "Análisis profundo del peor escenario",
-                    "miedo2": "Racionalización lógica del miedo",
-                    "orgPersona": "Persona clave interna analizada",
-                    "orgAccion": "Acción de contacto estratégica interna",
-                    "cliPersona": "Persona clave externa o cliente",
-                    "cliAccion": "Acción de contacto estratégica externa",
-                    "socPersona": "Persona estratégica del círculo social",
-                    "socAccion": "Acción de contacto social enfocada",
                     "metaRel": "Metas de networking claras y ambiciosas",
                     "valorRel": "Oferta de valor detallada del líder",
-                    "contacts": [
-                        { "name": "...", "role": "...", "power": 1, "interest": 3 }
-                    ],
-                    "activation": [
-                        { "contact": "...", "interest": "...", "value": "...", "frequency": "..." }
-                    ]
+                    "miedo1": "Análisis profundo del peor escenario",
+                    "miedo2": "Racionalización lógica del miedo",
+                    "contacts": "Lista detallada de contactos estratégicos (Nombre, Rol, Poder, Interés)",
+                    "activation": "Plan detallado de activación de red por contacto"
                 }
             }
 
@@ -1162,8 +1119,16 @@ export const WORKBOOK_TEMPLATES: Record<string, WorkbookTemplate> = {
         `,
     exportTemplate: (workbook: any) => {
       const m = workbook.metadata || {};
-      const contacts = m.contacts || [];
-      const activation = m.activation || [];
+      const flatData = {
+        metaRel: m.metaRel || "",
+        valorRel: m.valorRel || "",
+        miedo1: m.miedo1 || "",
+        miedo2: m.miedo2 || "",
+        contacts: m.contacts || "",
+        activation: m.activation || ""
+      };
+      const contacts = flatData.contacts;
+      const activation = flatData.activation;
 
       return `
 <!doctype html>
@@ -1403,11 +1368,14 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
                 "success": true,
                 "metadata": {
                     "emo1": "Emoción predominante 1",
-                    "emo1i": 5,
-                    "emo1n": "Análisis de la sensación y necesidad real",
+                    "emo1i": "Intensidad inicial",
+                    "emo1n": "Sensación y Nueva Intensidad",
                     "emo2": "Emoción predominante 2",
-                    "emo2i": 5,
-                    "emo2n": "Análisis de la sensación y necesidad real",
+                    "emo2i": "Intensidad inicial",
+                    "emo2n": "Sensación y Nueva Intensidad",
+                    "emo3": "Emoción predominante 3",
+                    "emo3i": "Intensidad inicial",
+                    "emo3n": "Sensación y Nueva Intensidad",
                     "triggers": "Lista detallada de detonantes",
                     "patron": "Descripción minuciosa del patrón automático",
                     "r1s": "Situación + Pensamiento Automático nocivo",
@@ -1416,15 +1384,8 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
                     "r1a": "Nueva Acción consciente sugerida",
                     "ancla1": "Ancla Física (Cuerpo y respiración)",
                     "ancla2": "Ancla Mental (Frase de poder)",
-                    "preguntas": "Protocolo completo de decisión consciente",
                     "h1": "Micro-hábito de serenidad 1",
-                    "h1t": "Señal externa o interna para el hábito",
-                    "h1d": "Duración estimada",
-                    "h1r": "Recompensa psicológica",
-                    "h2": "Micro-hábito de serenidad 2",
-                    "h2t": "Señal externa o interna para el hábito",
-                    "h2d": "Duración estimada",
-                    "h2r": "Recompensa psicológica"
+                    "h1t": "Señal para el hábito 1"
                 }
             }
 
@@ -1716,26 +1677,16 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
                     "despues1": "Estado final deseado (el éxito)",
                     "metodo1": "Método único de transformación",
                     "prueba1": "Evidencia o prueba social detallada",
-                    "fraseValor": "Tagline o promesa central de marca",
-                    "resultadoMedible": "Dato de respaldo o KPI",
                     "audiencia": "Perfil exhaustivo del avatar",
                     "necesidadAudiencia": "Análisis de la necesidad real",
                     "miedosAudiencia": "Mapeo de miedos u objeciones",
                     "valoresAudiencia": "Qué compran o valoran profundamente",
                     "usp": "Propuesta Única de Venta analizada",
                     "pruebasUsp": "3 evidencias claras de diferenciación",
-                    "attr1": "Atributo de marca 1",
-                    "attr1c": "Conducta asociada al atributo 1",
-                    "attr1n": "Límite (qué no es) del atributo 1",
-                    "attr2": "Atributo de marca 2",
-                    "attr2c": "Conducta asociada al atributo 2",
-                    "attr2n": "Límite del atributo 2",
-                    "tono": "Tono de voz estratégico",
-                    "noUso": "Lista de palabras prohibidas",
+                    "personalidadLimites": "Límites y atributos de personalidad",
+                    "historia": "Historia de origen o Brand Story narrativa",
                     "arq1": "Arquetipo Principal analizado",
-                    "arq2": "Arquetipo Secundario analizado",
-                    "manifestacion": "Manifestación diaria de la esencia",
-                    "historia": "Historia de origen o Mini-Bio narrativa"
+                    "arq2": "Arquetipo Secundario analizado"
                 }
             }
 
@@ -2034,19 +1985,15 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
             {
                 "success": true,
                 "metadata": {
-                    "ecosistemaPersonal": "Comunidades, hobbies, voluntariado detallado",
-                    "ecosistemaProfesional": "Gremios, eventos clave del sector",
-                    "ecosistemaCorporativo": "Comités internos, stakeholders estratégicos",
-                    "ecosistemaExterno": "LinkedIn, podcasts, medios de impacto",
+                    "ecosistemas": "Territorios y ecosistemas clave (uno por línea)",
+                    "aliados": "Aliados estratégicos y stakeholders",
+                    "v1c": "Canal estratégico 1", "v1a": "Acción detallada 1",
+                    "v2c": "Canal estratégico 2", "v2a": "Acción detallada 2",
                     "mensajeCentral": "Mensaje principal de marca analizado",
-                    "temasPilares": "Análisis de los 3 temas pilares de contenido",
-                    "v1c": "Canal estratégico 1", "v1a": "Acción detallada 1", "v1f": "Frecuencia 1",
-                    "v2c": "Canal estratégico 2", "v2a": "Acción detallada 2", "v2f": "Frecuencia 2",
-                    "of1r": "Promesa Nivel Básico desarrollada", "of1$": "Precio/Valor Nivel Básico",
-                    "of2r": "Promesa Nivel Intermedio desarrollada", "of2$": "Precio/Valor Nivel Intermedio",
-                    "of3r": "Promesa Nivel Premium desarrollada", "of3$": "Precio/Valor Nivel Premium",
-                    "pruebasSociales": "Testimonios, logos, casos de éxito detallados",
-                    "ruta": "Modelo Principal analizado (Corporativo, Consultora, etc.)",
+                    "of1r": "Promesa Nivel Básico", "of1$": "Precio Nivel Básico",
+                    "of2r": "Promesa Nivel Intermedio", "of2$": "Precio Nivel Intermedio",
+                    "of3r": "Promesa Nivel Premium", "of3$": "Precio Nivel Premium",
+                    "ruta": "Modelo Principal de Monetización",
                     "metaIngreso": "Meta de ingreso monetaria específica",
                     "palancas": "Palancas de crecimiento analizadas",
                     "p30a1": "Acciones estratégicas 30 días", "p30r": "Meta específica 30 días",
@@ -2185,24 +2132,16 @@ document.getElementById('printBtn').addEventListener('click', () => { window.pri
     <main class="main-content">
       <section id="sec-ecosistemas" class="card">
         <span style="color:var(--accent); font-weight:700; font-size:12px;">Paso 1</span>
-        <h1>Ecosistemas</h1>
-        <p class="subtitle">¿Dónde debe vivir tu marca? Identifica tus territorios.</p>
+        <h1>Ecosistemas y Aliados</h1>
+        <p class="subtitle">¿Dónde debe vivir tu marca? Identifica tus territorios y aliados.</p>
         <div class="two-cols">
           <div>
-            <label>Ecosistema Personal</label>
-            <textarea>${m.ecosistemaPersonal || ''}</textarea>
+            <label>Ecosistemas Relevantes</label>
+            <textarea>${m.ecosistemas || ''}</textarea>
           </div>
           <div>
-            <label>Ecosistema Profesional</label>
-            <textarea>${m.ecosistemaProfesional || ''}</textarea>
-          </div>
-          <div>
-            <label>Ecosistema Corporativo</label>
-            <textarea>${m.ecosistemaCorporativo || ''}</textarea>
-          </div>
-          <div>
-            <label>Ecosistema Digital/Externo</label>
-            <textarea>${m.ecosistemaExterno || ''}</textarea>
+            <label>Aliados Estratégicos</label>
+            <textarea>${m.aliados || ''}</textarea>
           </div>
         </div>
       </section>

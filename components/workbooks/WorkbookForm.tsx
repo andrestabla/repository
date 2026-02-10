@@ -609,19 +609,19 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-1.5">Fortalezas</label>
-                                                        <textarea className="w-full bg-panel border border-border rounded-xl px-4 py-2 text-xs" rows={4} value={extraMetadata.dofa?.fortalezas || ''} onChange={e => setExtraMetadata({ ...extraMetadata, dofa: { ...extraMetadata.dofa, fortalezas: e.target.value } })} />
+                                                        <textarea className="w-full bg-panel border border-border rounded-xl px-4 py-2 text-xs" rows={4} value={extraMetadata.dofa_fortalezas || ''} onChange={e => setExtraMetadata({ ...extraMetadata, dofa_fortalezas: e.target.value })} />
                                                     </div>
                                                     <div>
                                                         <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-1.5">Oportunidades</label>
-                                                        <textarea className="w-full bg-panel border border-border rounded-xl px-4 py-2 text-xs" rows={4} value={extraMetadata.dofa?.oportunidades || ''} onChange={e => setExtraMetadata({ ...extraMetadata, dofa: { ...extraMetadata.dofa, oportunidades: e.target.value } })} />
+                                                        <textarea className="w-full bg-panel border border-border rounded-xl px-4 py-2 text-xs" rows={4} value={extraMetadata.dofa_oportunidades || ''} onChange={e => setExtraMetadata({ ...extraMetadata, dofa_oportunidades: e.target.value })} />
                                                     </div>
                                                     <div>
                                                         <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-1.5">Debilidades</label>
-                                                        <textarea className="w-full bg-panel border border-border rounded-xl px-4 py-2 text-xs" rows={4} value={extraMetadata.dofa?.debilidades || ''} onChange={e => setExtraMetadata({ ...extraMetadata, dofa: { ...extraMetadata.dofa, debilidades: e.target.value } })} />
+                                                        <textarea className="w-full bg-panel border border-border rounded-xl px-4 py-2 text-xs" rows={4} value={extraMetadata.dofa_debilidades || ''} onChange={e => setExtraMetadata({ ...extraMetadata, dofa_debilidades: e.target.value })} />
                                                     </div>
                                                     <div>
                                                         <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-1.5">Amenazas</label>
-                                                        <textarea className="w-full bg-panel border border-border rounded-xl px-4 py-2 text-xs" rows={4} value={extraMetadata.dofa?.amenazas || ''} onChange={e => setExtraMetadata({ ...extraMetadata, dofa: { ...extraMetadata.dofa, amenazas: e.target.value } })} />
+                                                        <textarea className="w-full bg-panel border border-border rounded-xl px-4 py-2 text-xs" rows={4} value={extraMetadata.dofa_amenazas || ''} onChange={e => setExtraMetadata({ ...extraMetadata, dofa_amenazas: e.target.value })} />
                                                     </div>
                                                 </div>
                                             )}
