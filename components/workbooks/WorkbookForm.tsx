@@ -336,55 +336,202 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook }: Wo
                         </div>
                     </div>
 
-                    {/* Dynamic Lists */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                        {/* Objectives */}
-                        <div className="bg-bg/30 p-4 rounded-xl border border-border">
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Objetivos de Aprendizaje</label>
-                                <button type="button" onClick={() => addListItem(setObjectives, objectives)} className="text-accent hover:bg-accent/10 p-1 rounded"><Plus size={14} /></button>
+                    {/* Dynamic Specialized Fields */}
+                    {type !== 'General' && (
+                        <div className="pt-6 border-t border-border space-y-8 animate-in slide-in-from-top-4 duration-300">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-accent/10 rounded-lg text-accent">
+                                    <Sparkles size={16} />
+                                </div>
+                                <h3 className="text-sm font-black text-text-main uppercase tracking-widest">Estructura del {type}</h3>
                             </div>
-                            <div className="space-y-2">
-                                {objectives.map((obj, i) => (
-                                    <div key={i} className="flex gap-2">
-                                        <span className="text-text-muted text-xs font-mono pt-2">{i + 1}.</span>
+
+                            {/* Workbook 1: Metas & PDI */}
+                            {type === 'Workbook1' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Definición de Éxito</label>
+                                            <textarea
+                                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm"
+                                                value={extraMetadata.exitoFrase || ''}
+                                                onChange={e => setExtraMetadata({ ...extraMetadata, exitoFrase: e.target.value })}
+                                                placeholder="Frase que define el éxito..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Meta SMART Principal</label>
+                                            <textarea
+                                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm"
+                                                value={extraMetadata.metaSmart || ''}
+                                                onChange={e => setExtraMetadata({ ...extraMetadata, metaSmart: e.target.value })}
+                                                placeholder="Para finales de..."
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Plan 90 Días</label>
+                                            <textarea
+                                                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm h-[130px]"
+                                                value={extraMetadata.acciones90 || ''}
+                                                onChange={e => setExtraMetadata({ ...extraMetadata, acciones90: e.target.value })}
+                                                placeholder="Acciones críticas..."
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Workbook 2: Autoconfianza */}
+                            {type === 'Workbook2' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Emociones Hoy</label>
+                                        <textarea
+                                            className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm"
+                                            value={extraMetadata.emocionesHoy || ''}
+                                            onChange={e => setExtraMetadata({ ...extraMetadata, emocionesHoy: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Creencias Limitantes</label>
+                                        <textarea
+                                            className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm"
+                                            value={extraMetadata.frasesLimitantes || ''}
+                                            onChange={e => setExtraMetadata({ ...extraMetadata, frasesLimitantes: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Decisión Poderosa</label>
                                         <input
                                             type="text"
-                                            className="flex-1 bg-panel border border-border rounded-lg px-3 py-1.5 text-sm text-text-main focus:ring-1 focus:ring-accent outline-none"
-                                            value={obj}
-                                            onChange={e => handleListChange(i, e.target.value, setObjectives, objectives)}
-                                            placeholder="Verbo de acción + resultado..."
+                                            className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm font-bold text-accent"
+                                            value={extraMetadata.decisionPoderosa || ''}
+                                            onChange={e => setExtraMetadata({ ...extraMetadata, decisionPoderosa: e.target.value })}
                                         />
-                                        <button type="button" onClick={() => removeListItem(i, setObjectives, objectives)} className="text-text-muted hover:text-red-500"><Trash size={12} /></button>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                </div>
+                            )}
 
-                        {/* Takeaways */}
-                        <div className="bg-bg/30 p-4 rounded-xl border border-border">
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Key Takeaways</label>
-                                <button type="button" onClick={() => addListItem(setTakeaways, takeaways)} className="text-accent hover:bg-accent/10 p-1 rounded"><Plus size={14} /></button>
-                            </div>
-                            <div className="space-y-2">
-                                {takeaways.map((item, i) => (
-                                    <div key={i} className="flex gap-2">
-                                        <span className="text-text-muted text-xs font-mono pt-2">•</span>
-                                        <input
-                                            type="text"
-                                            className="flex-1 bg-panel border border-border rounded-lg px-3 py-1.5 text-sm text-text-main focus:ring-1 focus:ring-accent outline-none"
-                                            value={item}
-                                            onChange={e => handleListChange(i, e.target.value, setTakeaways, takeaways)}
-                                            placeholder="Punto clave..."
-                                        />
-                                        <button type="button" onClick={() => removeListItem(i, setTakeaways, takeaways)} className="text-text-muted hover:text-red-500"><Trash size={12} /></button>
+                            {/* Workbook 3: Comunicación */}
+                            {type === 'Workbook3' && (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Problema que resuelves</label>
+                                            <textarea className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.insumos?.problema || ''} onChange={e => setExtraMetadata({ ...extraMetadata, insumos: { ...extraMetadata.insumos, problema: e.target.value } })} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Tu Diferencial</label>
+                                            <textarea className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.insumos?.diferencial || ''} onChange={e => setExtraMetadata({ ...extraMetadata, insumos: { ...extraMetadata.insumos, diferencial: e.target.value } })} />
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Elevator Speech (60s)</label>
+                                        <textarea
+                                            className="w-full bg-bg border border-border rounded-xl px-4 py-4 text-sm font-medium leading-relaxed"
+                                            value={extraMetadata.elevatorCompleto || ''}
+                                            onChange={e => setExtraMetadata({ ...extraMetadata, elevatorCompleto: e.target.value })}
+                                            rows={5}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Workbook 4: Networking */}
+                            {type === 'Workbook4' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Meta de Networking</label>
+                                        <textarea className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.metaRel || ''} onChange={e => setExtraMetadata({ ...extraMetadata, metaRel: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Oferta de Valor</label>
+                                        <textarea className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.valorRel || ''} onChange={e => setExtraMetadata({ ...extraMetadata, valorRel: e.target.value })} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Workbook 5: Serenidad */}
+                            {type === 'Workbook5' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Triggers (Detonantes)</label>
+                                        <textarea className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.triggers || ''} onChange={e => setExtraMetadata({ ...extraMetadata, triggers: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Patrón de Reacción</label>
+                                        <textarea className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.patron || ''} onChange={e => setExtraMetadata({ ...extraMetadata, patron: e.target.value })} />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Reencuadre Cognitivo</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <textarea placeholder="Situación..." className="bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.r1s || ''} onChange={e => setExtraMetadata({ ...extraMetadata, r1s: e.target.value })} />
+                                            <textarea placeholder="Nueva pregunta..." className="bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.r1r || ''} onChange={e => setExtraMetadata({ ...extraMetadata, r1r: e.target.value })} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Workbook 6: Autenticidad I */}
+                            {type === 'Workbook6' && (
+                                <div className="space-y-6">
+                                    <div className="bg-rose-50/50 p-6 rounded-2xl border border-rose-100">
+                                        <label className="block text-[10px] font-bold text-rose-600 uppercase tracking-widest mb-2 text-center">Propósito Personal Transformador (PPT)</label>
+                                        <textarea
+                                            className="w-full bg-white border border-rose-200 rounded-xl px-5 py-4 text-lg font-black text-rose-900 text-center placeholder:text-rose-200"
+                                            value={extraMetadata.proposito || ''}
+                                            onChange={e => setExtraMetadata({ ...extraMetadata, propositos: e.target.value })}
+                                            placeholder="Tu gran POR QUÉ..."
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Diferencial (USP)</label>
+                                            <textarea className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.usp || ''} onChange={e => setExtraMetadata({ ...extraMetadata, usp: e.target.value })} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Arquetipos</label>
+                                            <input type="text" className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm mb-2" placeholder="Principal" value={extraMetadata.arq1 || ''} onChange={e => setExtraMetadata({ ...extraMetadata, arq1: e.target.value })} />
+                                            <input type="text" className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" placeholder="Secundario" value={extraMetadata.arq2 || ''} onChange={e => setExtraMetadata({ ...extraMetadata, arq2: e.target.value })} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Workbook 7: Autenticidad II */}
+                            {type === 'Workbook7' && (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Canal 1</label>
+                                            <input type="text" className="w-full bg-bg border border-border rounded-xl px-3 py-2 text-sm" value={extraMetadata.v1c || ''} onChange={e => setExtraMetadata({ ...extraMetadata, v1c: e.target.value })} />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Acción</label>
+                                            <input type="text" className="w-full bg-bg border border-border rounded-xl px-3 py-2 text-sm" value={extraMetadata.v1a || ''} onChange={e => setExtraMetadata({ ...extraMetadata, v1a: e.target.value })} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Frecuencia</label>
+                                            <input type="text" className="w-full bg-bg border border-border rounded-xl px-3 py-2 text-sm" value={extraMetadata.v1f || ''} onChange={e => setExtraMetadata({ ...extraMetadata, v1f: e.target.value })} />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Ecosistema Externo</label>
+                                            <textarea className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm" value={extraMetadata.ecosistemaExterno || ''} onChange={e => setExtraMetadata({ ...extraMetadata, ecosistemaExterno: e.target.value })} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Meta de Ingreso</label>
+                                            <input type="text" className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm font-bold text-indigo-600" value={extraMetadata.metaIngreso || ''} onChange={e => setExtraMetadata({ ...extraMetadata, metaIngreso: e.target.value })} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
-                    </div>
+                    )}
 
                     <div className="pt-6 border-t border-border flex justify-end gap-3">
                         <button type="button" onClick={onClose} className="px-5 py-3 text-text-muted font-bold hover:text-text-main text-xs uppercase tracking-wide transition-colors">Cancelar</button>
