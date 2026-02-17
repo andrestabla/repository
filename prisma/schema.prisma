@@ -168,6 +168,8 @@ model GlossaryTerm {
   definition String
   pillars    String[] @default([])
   source     String?
+  relatedCompetency String?
+  sourceType String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

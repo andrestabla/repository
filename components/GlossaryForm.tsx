@@ -9,6 +9,8 @@ interface GlossaryTerm {
     definition: string
     pillars: string[]
     source?: string
+    relatedCompetency?: string
+    sourceType?: string
 }
 
 interface Props {
@@ -22,6 +24,8 @@ export default function GlossaryForm({ initialData, onClose, onSave }: Props) {
         term: '',
         definition: '',
         pillars: [],
+        relatedCompetency: '',
+        sourceType: '',
         ...initialData
     })
     const [isGenerating, setIsGenerating] = useState(false)
@@ -41,7 +45,9 @@ export default function GlossaryForm({ initialData, onClose, onSave }: Props) {
             setFormData(prev => ({
                 ...prev,
                 definition: data.definition,
-                pillars: data.pillars || []
+                pillars: data.pillars || [],
+                relatedCompetency: data.relatedCompetency,
+                sourceType: data.sourceType
             }))
         } catch (e: any) {
             alert('Error generando definición: ' + e.message)
@@ -144,6 +150,31 @@ export default function GlossaryForm({ initialData, onClose, onSave }: Props) {
                                     </button>
                                 )
                             })}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Competencia Relacionada (Taxonomía)</label>
+                            <input
+                                value={formData.relatedCompetency || ''}
+                                onChange={e => setFormData({ ...formData, relatedCompetency: e.target.value })}
+                                className="w-full h-10 bg-bg border-2 border-border rounded-lg px-3 text-xs font-bold text-text-main focus:border-accent outline-none"
+                                placeholder="Ej: Liderazgo Estratégico"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 pl-1">Tipo de Fuente</label>
+                            <select
+                                value={formData.sourceType || ''}
+                                onChange={e => setFormData({ ...formData, sourceType: e.target.value })}
+                                className="w-full h-10 bg-bg border-2 border-border rounded-lg px-3 text-xs font-bold text-text-main focus:border-accent outline-none"
+                            >
+                                <option value="">Seleccionar...</option>
+                                <option value="Teórico">Teórico (Investigación)</option>
+                                <option value="Práctico">Práctico (Experiencia 4S)</option>
+                                <option value="Híbrido">Híbrido</option>
+                            </select>
                         </div>
                     </div>
                 </div>

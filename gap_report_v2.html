@@ -1,0 +1,2097 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gap Analysis & Content Strategy 4Shine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #0f172a; margin: 0; padding: 0; line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        
+        header { text-align: center; margin-bottom: 50px; }
+        h1 { font-size: 2.25rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
+        p.subtitle { color: var(--secondary); font-size: 1.125rem; max-width: 600px; margin: 0 auto; }
+
+        /* Modern Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 60px; }
+        .stat-card { background: var(--card-bg); padding: 32px; border-radius: 20px; box-shadow: var(--shadow-sm); border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(8px); text-align: center; transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+        .stat-value { font-size: 3.5rem; font-weight: 800; display: block; margin-bottom: 4px; line-height: 1; letter-spacing: -0.05em; }
+        .stat-label { color: var(--secondary); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; }
+
+        /* Sticky Tabs */
+        .tabs-container { position: sticky; top: 20px; z-index: 100; margin-bottom: 40px; display: flex; justify-content: center; }
+        .tabs { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px); padding: 8px; border-radius: 9999px; display: inline-flex; gap: 6px; box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.6); }
+        .tab-btn { padding: 10px 24px; background: transparent; border: none; border-radius: 9999px; font-size: 0.95rem; font-weight: 600; color: var(--secondary); cursor: pointer; transition: all 0.2s; }
+        .tab-btn:hover { color: var(--primary); background: rgba(37, 99, 235, 0.05); }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+        
+        .tab-content { display: none; margin-top: 20px; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .tab-content.active { display: block; }
+
+        /* Accordion Pillar Cards */
+        .pillar-card { background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--border); margin-bottom: 24px; transition: box-shadow 0.3s ease; }
+        .pillar-card:hover { box-shadow: var(--shadow-md); }
+        
+        .pillar-header { background: #fff; padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; transition: background 0.2s; }
+        .pillar-header:hover { background: #f8fafc; }
+        .pillar-title-group { display: flex; align-items: center; gap: 16px; }
+        .chevron { transition: transform 0.3s ease; color: var(--secondary); }
+        .pillar-card.open .chevron { transform: rotate(180deg); }
+        .pillar-title { font-size: 1.25rem; font-weight: 700; margin: 0; color: #334155; }
+        
+        .progress-wrapper { display: flex; align-items: center; gap: 12px; }
+        .progress-bar { width: 140px; height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 9999px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+        .pillar-content { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #fcfcfc; }
+        .pillar-card.open .pillar-content { max-height: 2000px; /* Arbitrary large height */ border-top: 1px solid var(--border); }
+
+        /* Modern Gap Items */
+        .gap-list { list-style: none; padding: 0; margin: 0; }
+        .gap-item { padding: 20px 32px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 40px 1fr; gap: 8px; transition: background 0.15s; align-items: start; }
+        .gap-item:hover { background: #fff; }
+        .gap-item:last-child { border-bottom: none; }
+        .gap-icon { height: 32px; width: 32px; background: #fef2f2; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--danger); font-size: 1.1rem; }
+        .gap-details { display: flex; flex-direction: column; gap: 6px; }
+        .breadcrumb { font-size: 0.8rem; color: var(--secondary); font-weight: 600; display:flex; align-items:center; gap: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .behavior-text { font-size: 1.05rem; color: #1e293b; line-height: 1.6; font-weight: 500; }
+        .status-badge { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        /* Flexbox Proposals */
+        .proposals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px; padding-bottom: 40px; }
+        .proposal-card { background: var(--card-bg); border-radius: 16px; padding: 28px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; height: 100%; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); justify-content: space-between; position: relative; overflow: hidden; }
+        .proposal-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: #bfdbfe; }
+        
+        .proposal-header { margin-bottom: 24px; }
+        .proposal-type { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 16px; display: inline-block; padding: 6px 10px; border-radius: 6px; letter-spacing: 0.05em; }
+        
+        .type-podcast { background: #f3e8ff; color: #6b21a8; }
+        .type-video { background: #eff6ff; color: #1e40af; }
+        .type-doc { background: #f1f5f9; color: #475569; }
+        
+        .proposal-title { font-size: 1.25rem; font-weight: 700; margin: 0 0 16px 0; color: #0f172a; line-height: 1.3; }
+        .proposal-desc { font-size: 0.95rem; color: var(--secondary); line-height: 1.6; }
+        .proposal-desc strong { color: #334155; }
+        
+        .proposal-footer { margin-top: auto; padding-top: 24px; border-top: 1px solid var(--border); }
+        .behavior-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .b-tag { background: #fff1f2; color: #be123c; font-size: 0.75rem; font-weight: 500; padding: 4px 10px; border-radius: 9999px; border: 1px solid #fecdd3; }
+
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center; }
+        .filter-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: white; color: var(--secondary); cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+        .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Diagnóstico de Contenido 4Shine</h1>
+            <p class="subtitle">Análisis de Brechas y Estrategia de Desarrollo de Contenido</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-value" style="color:var(--primary)">96</span>
+                <span class="stat-label">Total Conductas</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" style="color:var(--success)">23</span>
+                <span class="stat-label">Cubiertas</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" style="color:var(--danger)">73</span>
+                <span class="stat-label">Brechas (Gaps)</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value change-color">24%</span>
+                <span class="stat-label">Score Global</span>
+            </div>
+        </div>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event, 'gaps')">📊 Análisis de Brechas</button>
+                <button class="tab-btn" onclick="openTab(event, 'proposals')">🚀 Estrategia (43)</button>
+            </div>
+        </div>
+
+        <div id="gaps" class="tab-content active">
+             <div style="text-align:center; margin-bottom:20px; color:var(--secondary);">
+                <small>Haz clic en los pilares para ver el detalle de las brechas.</small>
+            </div>
+            
+                <div class="pillar-card " onclick="toggleAccordion(this)">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="chevron">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                            <div>
+                                <h3 class="pillar-title">Shine Within</h3>
+                            </div>
+                        </div>
+                        <div class="progress-wrapper">
+                            <span class="status-badge" style="background:var(--warning)20; color:var(--warning)">31% Cobertura</span>
+                             <div class="progress-bar">
+                                <div class="progress-fill" style="width: 31%; background: var(--warning)"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pillar-content">
+                    <ul class="gap-list">
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Autoconfianza y autoliderazgo</span> <span style="color:#cbd5e1">•</span> <span>Autoeficacia y seguridad</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Muestra consistencia entre lo que dice y hace, generando credibilidad y confianza en los colaboradores
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Autoconfianza y autoliderazgo</span> <span style="color:#cbd5e1">•</span> <span>Responsabilidad radical (accountability)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Pasa de poner excusas a tomar decisiones; reconoce que tiene el control de su vida y responsabilidad sobre sus resultados.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Autoconfianza y autoliderazgo</span> <span style="color:#cbd5e1">•</span> <span>Responsabilidad radical (accountability)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            No culpa a factores externos; asume la propiedad de sus errores y busca soluciones proactivas.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Inteligencia emocional y regulación (self-regulation)</span> <span style="color:#cbd5e1">•</span> <span>Autoconciencia emocional</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Identifica sus "detonantes" emocionales (ej. sentirse cuestionado) antes de que provoquen una reacción impulsiva.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Inteligencia emocional y regulación (self-regulation)</span> <span style="color:#cbd5e1">•</span> <span>Regulación emocional</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Utiliza "anclas de serenidad" (respiración consciente, objetos físicos o mantras) para volver a su centro en momentos de estrés.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Inteligencia emocional y regulación (self-regulation)</span> <span style="color:#cbd5e1">•</span> <span>Regulación emocional</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Gestiona la frustración manteniendo la calma, proyectando estabilidad al equipo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Inteligencia emocional y regulación (self-regulation)</span> <span style="color:#cbd5e1">•</span> <span>Gestión de la energía</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Prioriza su descanso y desconexión para mantener la claridad mental, entendiendo que el agotamiento afecta la calidad de sus decisiones.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Inteligencia emocional y regulación (self-regulation)</span> <span style="color:#cbd5e1">•</span> <span>Gestión de la energía</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Incorpora rutinas de bienestar físico y mental para recargar su "batería" de liderazgo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Propósito y valores (integridad)</span> <span style="color:#cbd5e1">•</span> <span>Claridad de propósito (Ikigai)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Utiliza su propósito como filtro para la toma de decisiones difíciles, asegurando que sus acciones honren su intención de vida.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Propósito y valores (integridad)</span> <span style="color:#cbd5e1">•</span> <span>Integridad y coherencia</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Hace lo que dice.  Sus acciones privadas y públicas son congruentes con los valores que predica.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Propósito y valores (integridad)</span> <span style="color:#cbd5e1">•</span> <span>Integridad y coherencia</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Cumple sus promesas y compromisos, generando un entorno de confianza y previsibilidad.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Propósito y valores (integridad)</span> <span style="color:#cbd5e1">•</span> <span>Integridad y coherencia</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Defiende sus principios éticos incluso bajo presión o ante la posibilidad de ganancias a corto plazo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Propósito y valores (integridad)</span> <span style="color:#cbd5e1">•</span> <span>Autenticidad</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Es transparente sobre sus intenciones y valores, lo que facilita la conexión humana con su equipo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Aprendizaje y reflexión (self-awareness)</span> <span style="color:#cbd5e1">•</span> <span>Práctica reflexiva</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Dedica tiempo agendado para la auto-observación y el análisis de su desempeño (ej. llevar un diario o bitácora emocional).
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Aprendizaje y reflexión (self-awareness)</span> <span style="color:#cbd5e1">•</span> <span>Práctica reflexiva</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Se hace preguntas poderosas sobre su identidad y futuro (¿En quién me quiero convertir? ¿Qué puedo ofrecer?).
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Aprendizaje y reflexión (self-awareness)</span> <span style="color:#cbd5e1">•</span> <span>Apertura al feedback</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Recibe la crítica sin ponerse a la defensiva, utilizándola como insumo para su crecimiento personal.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Aprendizaje y reflexión (self-awareness)</span> <span style="color:#cbd5e1">•</span> <span>Mentalidad de crecimiento</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Ve los errores y fracasos no como definiciones de su valía, sino como oportunidades de aprendizaje y mejora.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Gestión de energía y bienestar (biohacking)</span> <span style="color:#cbd5e1">•</span> <span>Regulación somática y fisiológica</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Gestiona sus ritmos circadianos y descanso para asegurar un rendimiento cognitivo óptimo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Toma de decisiones y resolución de problemas</span> <span style="color:#cbd5e1">•</span> <span>Compostura</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Mantiene la serenidad en situaciones de crisis, proyectando confianza y evitando que el pánico paralice al equipo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Toma de decisiones y resolución de problemas</span> <span style="color:#cbd5e1">•</span> <span>Compostura</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Controla los impulsos y evita reacciones defensivas, permitiendo que otros piensen con claridad y ejecuten tareas críticas.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Identidad de liderazgo (identity ownership)</span> <span style="color:#cbd5e1">•</span> <span>Re-alineación Cognitiva</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Reescribe narrativas internas de duda ("ocupo el cargo") por narrativas de propiedad ("merezco el cargo").
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Identidad de liderazgo (identity ownership)</span> <span style="color:#cbd5e1">•</span> <span>Re-alineación Cognitiva</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Integra sus valores personales con su rol profesional sin sentir que está "actuando".
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="pillar-card " onclick="toggleAccordion(this)">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="chevron">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                            <div>
+                                <h3 class="pillar-title">Shine Out</h3>
+                            </div>
+                        </div>
+                        <div class="progress-wrapper">
+                            <span class="status-badge" style="background:var(--warning)20; color:var(--warning)">38% Cobertura</span>
+                             <div class="progress-bar">
+                                <div class="progress-fill" style="width: 38%; background: var(--warning)"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pillar-content">
+                    <ul class="gap-list">
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Comunicación de impacto</span> <span style="color:#cbd5e1">•</span> <span>Escucha Activa y Empática</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Se "pone en los zapatos" de sus colegas para construir relaciones de confianza y seguridad psicológica.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Comunicación de impacto</span> <span style="color:#cbd5e1">•</span> <span>Adaptabilidad Comunicativa</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Identifica señales no verbales en los demás y modifica el ritmo o enfoque de su mensaje para mantener la sintonía y asegurar que el mensaje sea aceptado.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Influencia positiva</span> <span style="color:#cbd5e1">•</span> <span>Construcción de confianza (Trust)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Admite abiertamente cuando "no sabe" algo y trata a todos con respeto, eliminando el miedo a represalias por reportar problemas.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Influencia positiva</span> <span style="color:#cbd5e1">•</span> <span>Influencia ética y persuasión</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Apela a valores e ideales compartidos para generar una voluntad genuina de colaboración en el equipo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Influencia positiva</span> <span style="color:#cbd5e1">•</span> <span>Reconocimiento y feedback</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Reconoce públicamente los logros y da crédito explícito a los colaboradores por sus contribuciones, fomentando el orgullo colectivo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Influencia positiva</span> <span style="color:#cbd5e1">•</span> <span>Reconocimiento y feedback</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Brinda feedback privado, específico y centrado en la conducta (no en la persona) para corregir el rumbo y desarrollar talento.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Presencia digital e híbrida</span> <span style="color:#cbd5e1">•</span> <span>Influencia asíncrona y virtual</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Proyecta la misma "gravitas" y calidez en videoconferencias que en persona.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Presencia digital e híbrida</span> <span style="color:#cbd5e1">•</span> <span>Influencia asíncrona y virtual</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Gestiona su reputación y narrativa en plataformas digitales (LinkedIn) de forma estratégica, no solo social.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Competencia conversacional (ontológica)</span> <span style="color:#cbd5e1">•</span> <span>Ingeniería del lenguaje (promesas y pedidos)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Hace pedidos impecables (con condiciones de satisfacción y tiempos claros) para evitar retrabajos.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Competencia conversacional (ontológica)</span> <span style="color:#cbd5e1">•</span> <span>Ingeniería del lenguaje (promesas y pedidos)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Gestiona sus promesas: si no puede cumplir, revoca o renegocia a tiempo, manteniendo la confianza.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="pillar-card " onclick="toggleAccordion(this)">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="chevron">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                            <div>
+                                <h3 class="pillar-title">Shine Up</h3>
+                            </div>
+                        </div>
+                        <div class="progress-wrapper">
+                            <span class="status-badge" style="background:var(--danger)20; color:var(--danger)">19% Cobertura</span>
+                             <div class="progress-bar">
+                                <div class="progress-fill" style="width: 19%; background: var(--danger)"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pillar-content">
+                    <ul class="gap-list">
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Networking estratégico</span> <span style="color:#cbd5e1">•</span> <span>Conectividad interna y externa</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Participa en eventos de la industria y mantiene vínculos con stakeholders externos (clientes, proveedores) para detectar tendencias.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Networking estratégico</span> <span style="color:#cbd5e1">•</span> <span>Gestión de relaciones (relationship management)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Utiliza su capital social para apoyar a su equipo y abrir puertas a nuevas oportunidades de negocio o desarrollo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Networking estratégico</span> <span style="color:#cbd5e1">•</span> <span>Visibilidad estratégica</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Se posiciona no solo como experto técnico, sino como un referente que aporta valor en comités y espacios de decisión.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Networking estratégico</span> <span style="color:#cbd5e1">•</span> <span>Visibilidad estratégica</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Construye relaciones basadas en la reciprocidad y el valor mutuo, no solo en la necesidad inmediata (transaccional).
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Visión de futuro y estrategia</span> <span style="color:#cbd5e1">•</span> <span>Visión compartida (visioning)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Articula un escenario futuro aspiracional de manera vívida (ej. "ser referentes regionales en 5 años") logrando que el equipo haga propia esa visión (shared vision).
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Visión de futuro y estrategia</span> <span style="color:#cbd5e1">•</span> <span>Visión compartida (visioning)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Comunica el "por qué" detrás de las metas, dando un fuerte sentido de finalidad y propósito al trabajo diario.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Visión de futuro y estrategia</span> <span style="color:#cbd5e1">•</span> <span>Alineación de metas (execution)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Traduce la visión abstracta en objetivos SMART (específicos, medibles, alcanzables, relevantes y temporales) y planes de acción concretos
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Visión de futuro y estrategia</span> <span style="color:#cbd5e1">•</span> <span>Alineación de metas (execution)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Asegura la "línea de vista": explica claramente cómo las tareas cotidianas y las metas de corto plazo contribuyen a la estrategia general.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Toma de decisiones y resolución de problemas</span> <span style="color:#cbd5e1">•</span> <span>Decisión bajo incertidumbre</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Reúne datos rápidamente y consulta expertos, pero toma decisiones oportunas incluso con información incompleta, evitando la "parálisis por análisis".
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Toma de decisiones y resolución de problemas</span> <span style="color:#cbd5e1">•</span> <span>Decisión bajo incertidumbre</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Asume la responsabilidad de las consecuencias de sus decisiones, sean aciertos o errores, sin buscar culpables externos
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Toma de decisiones y resolución de problemas</span> <span style="color:#cbd5e1">•</span> <span>Resolución de causa raíz</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            No se queda en la corrección de síntomas superficiales; investiga a fondo para identificar y resolver la causa raíz de los problemas basándose en evidencias y datos.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Toma de decisiones y resolución de problemas</span> <span style="color:#cbd5e1">•</span> <span>Resolución de causa raíz</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Aplica el pensamiento crítico para cuestionar suposiciones y reducir sesgos antes de decidir
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Adaptabilidad e innovación</span> <span style="color:#cbd5e1">•</span> <span>Agilidad y adaptabilidad</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Revisa y ajusta las estrategias establecidas si surgen cambios tecnológicos o regulatorios, demostrando disposición a abandonar ideas que ya no funcionan.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Adaptabilidad e innovación</span> <span style="color:#cbd5e1">•</span> <span>Agilidad y adaptabilidad</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Fomenta una cultura donde el cambio se ve como oportunidad y no como amenaza.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Adaptabilidad e innovación</span> <span style="color:#cbd5e1">•</span> <span>Estimulación intelectual (innovación)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Cuestiona el "así es como siempre se ha hecho", desafiando el statu quo y animando al equipo a proponer nuevas formas de trabajar.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Adaptabilidad e innovación</span> <span style="color:#cbd5e1">•</span> <span>Estimulación intelectual (innovación)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Instituye proyectos piloto o pruebas de concepto para testear soluciones en entornos controlados antes de escalarlas.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Adaptabilidad e innovación</span> <span style="color:#cbd5e1">•</span> <span>Gestión del error constructivo</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Respalda al equipo cuando un experimento bien intencionado falla, enfocándose en extraer aprendizajes ("fail forward") en lugar de castigar el error.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Adaptabilidad e innovación</span> <span style="color:#cbd5e1">•</span> <span>Gestión del error constructivo</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Elimina el "factor miedo", empoderando a los empleados para asumir riesgos calculados en la búsqueda de innovación.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Inteligencia política y contextual</span> <span style="color:#cbd5e1">•</span> <span>Lectura de poder y patrocinio</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Identifica y cultiva activamente sponsors que hablen de él/ella en mesas de decisión.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Agilidad tecnológica (tech-savviness)</span> <span style="color:#cbd5e1">•</span> <span>Liderazgo en la industria 5.0</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Promueve la adopción de nuevas herramientas digitales sin perder el enfoque en el bienestar del equipo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Agilidad tecnológica (tech-savviness)</span> <span style="color:#cbd5e1">•</span> <span>Liderazgo en la industria 5.0</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Traduce conceptos tecnológicos complejos a decisiones de negocio estratégicas.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="pillar-card " onclick="toggleAccordion(this)">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="chevron">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                            <div>
+                                <h3 class="pillar-title">Shine Beyond</h3>
+                            </div>
+                        </div>
+                        <div class="progress-wrapper">
+                            <span class="status-badge" style="background:var(--danger)20; color:var(--danger)">9% Cobertura</span>
+                             <div class="progress-bar">
+                                <div class="progress-fill" style="width: 9%; background: var(--danger)"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pillar-content">
+                    <ul class="gap-list">
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Desarrollo de otros líderes (mentoring & coaching)</span> <span style="color:#cbd5e1">•</span> <span>Empoderamiento (empowerment)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Comparte el poder delegando autoridad real para la toma de decisiones importantes, no solo tareas operativas, fomentando la autonomía.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Desarrollo de otros líderes (mentoring & coaching)</span> <span style="color:#cbd5e1">•</span> <span>Empoderamiento (empowerment)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Elimina el micro-management; define el "qué" pero permite al equipo decidir el "cómo", demostrando confianza plena en sus capacidades.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Desarrollo de otros líderes (mentoring & coaching)</span> <span style="color:#cbd5e1">•</span> <span>Desafío para el crecimiento</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Asigna proyectos desafiantes (stretch assignments) que obligan a los colaboradores a salir de su zona de confort para desarrollar nuevas habilidades.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Desarrollo de otros líderes (mentoring & coaching)</span> <span style="color:#cbd5e1">•</span> <span>Desafío para el crecimiento</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Utiliza el coaching para ayudar a los colaboradores a encontrar sus propias soluciones en lugar de dárselas resueltas.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Impacto social y humano</span> <span style="color:#cbd5e1">•</span> <span>Ética y responsabilidad social</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Integra consideraciones éticas y de impacto comunitario en la toma de decisiones financieras y estratégicas, priorizando el bien común sobre la ganancia a corto plazo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Impacto social y humano</span> <span style="color:#cbd5e1">•</span> <span>Ética y responsabilidad social</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Impulsa iniciativas que aporten valor social (sostenibilidad, diversidad, inclusión) y modela la integridad en todas sus acciones.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Impacto social y humano</span> <span style="color:#cbd5e1">•</span> <span>Liderazgo de servicio (stewardship)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Actúa como un administrador (trustee) de los recursos y las personas, priorizando las necesidades de los colaboradores y la comunidad por encima del interés propio.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Impacto social y humano</span> <span style="color:#cbd5e1">•</span> <span>Liderazgo de servicio (stewardship)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Fomenta un clima de seguridad psicológica donde el bienestar emocional y físico del equipo es una prioridad tangible.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Impacto social y humano</span> <span style="color:#cbd5e1">•</span> <span>Inclusión y equidad</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Promueve activamente la diversidad y crea un entorno inclusivo donde se valoran diferentes perspectivas y antecedentes.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Impacto social y humano</span> <span style="color:#cbd5e1">•</span> <span>Inclusión y equidad</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Trata a todos con justicia e imparcialidad, asegurando equidad en oportunidades y reconocimiento.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Legado personal y trascendencia</span> <span style="color:#cbd5e1">•</span> <span>Institucionalización de cultura</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Establece rituales, historias y prácticas que anclan los valores y la visión en el ADN de la organización, asegurando que perduren más allá de su mandato.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Legado personal y trascendencia</span> <span style="color:#cbd5e1">•</span> <span>Institucionalización de cultura</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Documenta lecciones aprendidas y crea sistemas para que el conocimiento crítico (know-how) permanezca en la empresa.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Legado personal y trascendencia</span> <span style="color:#cbd5e1">•</span> <span>Reconocimiento y humildad</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Pone los focos sobre su equipo: cuando hay éxito, se aparta para que su equipo brille ("stand back"); cuando hay fracaso, asume la responsabilidad.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Legado personal y trascendencia</span> <span style="color:#cbd5e1">•</span> <span>Reconocimiento y humildad</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Celebra genuinamente los hitos personales y profesionales de los demás, construyendo una cultura de gratitud y apreciación.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Legado personal y trascendencia</span> <span style="color:#cbd5e1">•</span> <span>Conexión con el propósito (meaning)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Ayuda a cada miembro del equipo a descubrir su propio propósito y a conectarlo con la misión de la organización (alineación de propósito).
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Legado personal y trascendencia</span> <span style="color:#cbd5e1">•</span> <span>Conexión con el propósito (meaning)</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Transforma el trabajo rutinario en una misión significativa, recordando constantemente el impacto positivo que el equipo tiene en el mundo.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Inteligencia cultural e inclusiva</span> <span style="color:#cbd5e1">•</span> <span>Gestión de la diversidad cognitiva</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Forma deliberadamente equipos con diversidad de pensamiento y antecedentes.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Inteligencia cultural e inclusiva</span> <span style="color:#cbd5e1">•</span> <span>Gestión de la diversidad cognitiva</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Detecta y mitiga sesgos inconscientes en la contratación y promoción de talento.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Liderazgo regenerativo</span> <span style="color:#cbd5e1">•</span> <span>Conciencia sistémica y comunitaria</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Conecta los objetivos de negocio con necesidades reales de la comunidad o el medio ambiente.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                                <li class="gap-item">
+                                    <div class="gap-icon">⚠️</div>
+                                    <div class="gap-details">
+                                        <div class="breadcrumb">
+                                            <span>Liderazgo regenerativo</span> <span style="color:#cbd5e1">•</span> <span>Conciencia sistémica y comunitaria</span>
+                                        </div>
+                                        <div class="behavior-text">
+                                            Actúa como un "tejedor" de relaciones externas que traen valor social a la empresa.
+                                        </div>
+                                    </div>
+                                </li>
+                            
+                        </ul>
+                    </div>
+                </div>
+                
+        </div>
+
+        <div id="proposals" class="tab-content">
+            <div style="margin-bottom:30px; background:#e0e7ff; padding:24px; border-radius:12px; border:1px solid #c7d2fe; color:#3730a3; display:flex; align-items:start; gap:16px;">
+                <span style="font-size:1.5rem">💡</span>
+                <div>
+                     <strong style="display:block; margin-bottom:4px; font-size:1.1rem;">Estrategia de Cierre de Brechas</strong>
+                     Propuestas inteligentes agrupadas por competencia para optimizar recursos.
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterProposals('all')">Todos</button>
+                
+                    <button class="filter-btn" onclick="filterProposals('Shine Within')">Shine Within</button>
+                
+                    <button class="filter-btn" onclick="filterProposals('Shine Out')">Shine Out</button>
+                
+                    <button class="filter-btn" onclick="filterProposals('Shine Up')">Shine Up</button>
+                
+                    <button class="filter-btn" onclick="filterProposals('Shine Beyond')">Shine Beyond</button>
+                
+            </div>
+
+            <div class="proposals-grid">
+                
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-podcast">Podcast (15 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Integridad y coherencia</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Episodio de Podcast / Conversación (máx 15 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Profundizar en las 3 conductas complejas de "Integridad y coherencia" mediante exploración dialéctica.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Intro (2 min) - "El Costo de la Inacción":</strong> Narrar una historia breve sobre qué pasa cuando un líder ignora <em>"Integridad y coherencia"</em>. Conectar con el dolor del usuario.<br>
+            2. <strong>Deep Dive (8 min) - "La Anatomía del Error":</strong> Desglosar por qué es tan difícil <em>"Hace lo que dice.  Sus acciones privadas y pública..."</em>. Analizar las barreras psicológicas ocultas.<br>
+            3. <strong>Entrevista/Caso (3 min) - "El Punto de Inflexión":</strong> Relatar un caso real donde aplicar <em>"Defiende sus principios éticos incluso bajo presió..."</em> cambió el rumbo de un equipo.<br>
+            4. <strong>Cierre (2 min) - "El Reto de 24h":</strong> Proponer una acción micro para ejecutar mañana mismo.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Hace lo que dice.  Sus acciones privadas y pública...</span><span class="b-tag">Cumple sus promesas y compromisos, generando un en...</span><span class="b-tag">Defiende sus principios éticos incluso bajo presió...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Responsabilidad radical (accountability)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Responsabilidad radical (accountability)" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Pasa de poner excusas a tomar decisiones..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Responsabilidad radical (accountability). Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"No culpa a factores externos; asume la propiedad de sus errores y busca soluciones proactivas."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Pasa de poner excusas a tomar decisiones; reconoce...</span><span class="b-tag">No culpa a factores externos; asume la propiedad d...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Regulación emocional</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Regulación emocional" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Utiliza "anclas de serenidad" (respiraci..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Regulación emocional. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Gestiona la frustración manteniendo la calma, proyectando estabilidad al equipo."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Utiliza "anclas de serenidad" (respiración conscie...</span><span class="b-tag">Gestiona la frustración manteniendo la calma, proy...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Gestión de la energía</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Gestión de la energía" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Prioriza su descanso y desconexión para ..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Gestión de la energía. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Incorpora rutinas de bienestar físico y mental para recargar su "batería" de liderazgo."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Prioriza su descanso y desconexión para mantener l...</span><span class="b-tag">Incorpora rutinas de bienestar físico y mental par...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Práctica reflexiva</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Práctica reflexiva" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Dedica tiempo agendado para la auto-obse..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Práctica reflexiva. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Se hace preguntas poderosas sobre su identidad y futuro (¿En quién me quiero convertir? ¿Qué puedo ofrecer?)."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Dedica tiempo agendado para la auto-observación y ...</span><span class="b-tag">Se hace preguntas poderosas sobre su identidad y f...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Compostura</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Compostura" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Mantiene la serenidad en situaciones de ..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Compostura. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Controla los impulsos y evita reacciones defensivas, permitiendo que otros piensen con claridad y ejecuten tareas críticas."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Mantiene la serenidad en situaciones de crisis, pr...</span><span class="b-tag">Controla los impulsos y evita reacciones defensiva...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Re-alineación Cognitiva</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Re-alineación Cognitiva" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Reescribe narrativas internas de duda ("..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Re-alineación Cognitiva. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Integra sus valores personales con su rol profesional sin sentir que está "actuando"."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Reescribe narrativas internas de duda ("ocupo el c...</span><span class="b-tag">Integra sus valores personales con su rol profesio...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Out">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Reconocimiento y feedback</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Reconocimiento y feedback" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Reconoce públicamente los logros y da cr..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Reconocimiento y feedback. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Brinda feedback privado, específico y centrado en la conducta (no en la persona) para corregir el rumbo y desarrollar talento."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Reconoce públicamente los logros y da crédito expl...</span><span class="b-tag">Brinda feedback privado, específico y centrado en ...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Out">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Influencia asíncrona y virtual</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Influencia asíncrona y virtual" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Proyecta la misma "gravitas" y calidez e..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Influencia asíncrona y virtual. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Gestiona su reputación y narrativa en plataformas digitales (LinkedIn) de forma estratégica, no solo social."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Proyecta la misma "gravitas" y calidez en videocon...</span><span class="b-tag">Gestiona su reputación y narrativa en plataformas ...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Out">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Ingeniería del lenguaje (promesas y pedidos)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Ingeniería del lenguaje (promesas y pedidos)" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Hace pedidos impecables (con condiciones..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Ingeniería del lenguaje (promesas y pedidos). Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Gestiona sus promesas: si no puede cumplir, revoca o renegocia a tiempo, manteniendo la confianza."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Hace pedidos impecables (con condiciones de satisf...</span><span class="b-tag">Gestiona sus promesas: si no puede cumplir, revoca...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Visibilidad estratégica</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Visibilidad estratégica" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Se posiciona no solo como experto técnic..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Visibilidad estratégica. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Construye relaciones basadas en la reciprocidad y el valor mutuo, no solo en la necesidad inmediata (transaccional)."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Se posiciona no solo como experto técnico, sino co...</span><span class="b-tag">Construye relaciones basadas en la reciprocidad y ...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Visión compartida (visioning)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Visión compartida (visioning)" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Articula un escenario futuro aspiraciona..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Visión compartida (visioning). Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Comunica el "por qué" detrás de las metas, dando un fuerte sentido de finalidad y propósito al trabajo diario."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Articula un escenario futuro aspiracional de maner...</span><span class="b-tag">Comunica el "por qué" detrás de las metas, dando u...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Alineación de metas (execution)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Alineación de metas (execution)" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Traduce la visión abstracta en objetivos..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Alineación de metas (execution). Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Asegura la "línea de vista": explica claramente cómo las tareas cotidianas y las metas de corto plazo contribuyen a la estrategia general."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Traduce la visión abstracta en objetivos SMART (es...</span><span class="b-tag">Asegura la "línea de vista": explica claramente có...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Decisión bajo incertidumbre</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Decisión bajo incertidumbre" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Reúne datos rápidamente y consulta exper..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Decisión bajo incertidumbre. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Asume la responsabilidad de las consecuencias de sus decisiones, sean aciertos o errores, sin buscar culpables externos"</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Reúne datos rápidamente y consulta expertos, pero ...</span><span class="b-tag">Asume la responsabilidad de las consecuencias de s...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Resolución de causa raíz</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Resolución de causa raíz" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"No se queda en la corrección de síntomas..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Resolución de causa raíz. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Aplica el pensamiento crítico para cuestionar suposiciones y reducir sesgos antes de decidir"</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">No se queda en la corrección de síntomas superfici...</span><span class="b-tag">Aplica el pensamiento crítico para cuestionar supo...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Agilidad y adaptabilidad</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Agilidad y adaptabilidad" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Revisa y ajusta las estrategias establec..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Agilidad y adaptabilidad. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Fomenta una cultura donde el cambio se ve como oportunidad y no como amenaza."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Revisa y ajusta las estrategias establecidas si su...</span><span class="b-tag">Fomenta una cultura donde el cambio se ve como opo...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Estimulación intelectual (innovación)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Estimulación intelectual (innovación)" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Cuestiona el "así es como siempre se ha ..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Estimulación intelectual (innovación). Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Instituye proyectos piloto o pruebas de concepto para testear soluciones en entornos controlados antes de escalarlas."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Cuestiona el "así es como siempre se ha hecho", de...</span><span class="b-tag">Instituye proyectos piloto o pruebas de concepto p...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Gestión del error constructivo</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Gestión del error constructivo" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Respalda al equipo cuando un experimento..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Gestión del error constructivo. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Elimina el "factor miedo", empoderando a los empleados para asumir riesgos calculados en la búsqueda de innovación."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Respalda al equipo cuando un experimento bien inte...</span><span class="b-tag">Elimina el "factor miedo", empoderando a los emple...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Liderazgo en la industria 5.0</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Liderazgo en la industria 5.0" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Promueve la adopción de nuevas herramien..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Liderazgo en la industria 5.0. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Traduce conceptos tecnológicos complejos a decisiones de negocio estratégicas."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Promueve la adopción de nuevas herramientas digita...</span><span class="b-tag">Traduce conceptos tecnológicos complejos a decisio...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Empoderamiento (empowerment)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Empoderamiento (empowerment)" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Comparte el poder delegando autoridad re..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Empoderamiento (empowerment). Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Elimina el micro-management; define el "qué" pero permite al equipo decidir el "cómo", demostrando confianza plena en sus capacidades."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Comparte el poder delegando autoridad real para la...</span><span class="b-tag">Elimina el micro-management; define el "qué" pero ...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Desafío para el crecimiento</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Desafío para el crecimiento" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Asigna proyectos desafiantes (stretch as..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Desafío para el crecimiento. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Utiliza el coaching para ayudar a los colaboradores a encontrar sus propias soluciones en lugar de dárselas resueltas."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Asigna proyectos desafiantes (stretch assignments)...</span><span class="b-tag">Utiliza el coaching para ayudar a los colaboradore...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Ética y responsabilidad social</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Ética y responsabilidad social" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Integra consideraciones éticas y de impa..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Ética y responsabilidad social. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Impulsa iniciativas que aporten valor social (sostenibilidad, diversidad, inclusión) y modela la integridad en todas sus acciones."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Integra consideraciones éticas y de impacto comuni...</span><span class="b-tag">Impulsa iniciativas que aporten valor social (sost...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Liderazgo de servicio (stewardship)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Liderazgo de servicio (stewardship)" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Actúa como un administrador (trustee) de..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Liderazgo de servicio (stewardship). Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Fomenta un clima de seguridad psicológica donde el bienestar emocional y físico del equipo es una prioridad tangible."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Actúa como un administrador (trustee) de los recur...</span><span class="b-tag">Fomenta un clima de seguridad psicológica donde el...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Inclusión y equidad</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Inclusión y equidad" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Promueve activamente la diversidad y cre..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Inclusión y equidad. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Trata a todos con justicia e imparcialidad, asegurando equidad en oportunidades y reconocimiento."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Promueve activamente la diversidad y crea un entor...</span><span class="b-tag">Trata a todos con justicia e imparcialidad, asegur...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Institucionalización de cultura</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Institucionalización de cultura" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Establece rituales, historias y práctica..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Institucionalización de cultura. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Documenta lecciones aprendidas y crea sistemas para que el conocimiento crítico (know-how) permanezca en la empresa."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Establece rituales, historias y prácticas que ancl...</span><span class="b-tag">Documenta lecciones aprendidas y crea sistemas par...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Reconocimiento y humildad</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Reconocimiento y humildad" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Pone los focos sobre su equipo: cuando h..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Reconocimiento y humildad. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Celebra genuinamente los hitos personales y profesionales de los demás, construyendo una cultura de gratitud y apreciación."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Pone los focos sobre su equipo: cuando hay éxito, ...</span><span class="b-tag">Celebra genuinamente los hitos personales y profes...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Conexión con el propósito (meaning)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Conexión con el propósito (meaning)" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Ayuda a cada miembro del equipo a descub..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Conexión con el propósito (meaning). Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Transforma el trabajo rutinario en una misión significativa, recordando constantemente el impacto positivo que el equipo tiene en el mundo."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Ayuda a cada miembro del equipo a descubrir su pro...</span><span class="b-tag">Transforma el trabajo rutinario en una misión sign...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Gestión de la diversidad cognitiva</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Gestión de la diversidad cognitiva" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Forma deliberadamente equipos con divers..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Gestión de la diversidad cognitiva. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Detecta y mitiga sesgos inconscientes en la contratación y promoción de talento."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Forma deliberadamente equipos con diversidad de pe...</span><span class="b-tag">Detecta y mitiga sesgos inconscientes en la contra...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Beyond">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-video">Video (10 min)</span>
+                            <h4 class="proposal-title">Activo Propuesto: Conciencia sistémica y comunitaria</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Video de micro-learning de alto impacto (máx 10 min).<br><br>
+            <strong>Objetivo Estratégico:</strong> Modelar visualmente las 2 conductas de "Conciencia sistémica y comunitaria" para su imitación inmediata.<br><br>
+            <strong>Estructura Sugerida:</strong><br>
+            1. <strong>Hook (1 min) - "Te suena esto?":</strong> Representar una situación de fallo común al intentar <em>"Conecta los objetivos de negocio con nec..."</em>. Capturar la frustración.<br>
+            2. <strong>Concepto Clave (4 min) - "El Shift Mental":</strong> Explicar el principio subyacente de Conciencia sistémica y comunitaria. Usar una metáfora visual potente.<br>
+            3. <strong>Role-Play (3 min) - "Good vs Bad":</strong> Contrastar la conducta equivocada con la ejecución maestral de <em>"Actúa como un "tejedor" de relaciones externas que traen valor social a la empresa."</em>. Analizar el lenguaje corporal.<br>
+            4. <strong>CTA (2 min) - "Guion de Acción":</strong> Entregar una frase o script exacto para usar en la próxima reunión.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Conecta los objetivos de negocio con necesidades r...</span><span class="b-tag">Actúa como un "tejedor" de relaciones externas que...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Autoeficacia y seguridad</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Autoeficacia y seguridad".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Muestra consistencia entre lo que dice y hace, gen..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Muestra consistencia entre lo que dice y hace, gen...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Autoconciencia emocional</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Autoconciencia emocional".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Identifica sus "detonantes" emocionales (ej. senti..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Identifica sus "detonantes" emocionales (ej. senti...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Claridad de propósito (Ikigai)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Claridad de propósito (Ikigai)".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Utiliza su propósito como filtro para la toma de d..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Utiliza su propósito como filtro para la toma de d...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Autenticidad</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Autenticidad".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Es transparente sobre sus intenciones y valores, l..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Es transparente sobre sus intenciones y valores, l...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Apertura al feedback</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Apertura al feedback".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Recibe la crítica sin ponerse a la defensiva, util..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Recibe la crítica sin ponerse a la defensiva, util...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Mentalidad de crecimiento</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Mentalidad de crecimiento".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Ve los errores y fracasos no como definiciones de ..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Ve los errores y fracasos no como definiciones de ...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Within">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Regulación somática y fisiológica</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Regulación somática y fisiológica".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Gestiona sus ritmos circadianos y descanso para as..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Gestiona sus ritmos circadianos y descanso para as...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Out">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Escucha Activa y Empática</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Escucha Activa y Empática".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Se "pone en los zapatos" de sus colegas para const..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Se "pone en los zapatos" de sus colegas para const...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Out">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Adaptabilidad Comunicativa</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Adaptabilidad Comunicativa".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Identifica señales no verbales en los demás y modi..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Identifica señales no verbales en los demás y modi...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Out">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Construcción de confianza (Trust)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Construcción de confianza (Trust)".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Admite abiertamente cuando "no sabe" algo y trata ..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Admite abiertamente cuando "no sabe" algo y trata ...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Out">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Influencia ética y persuasión</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Influencia ética y persuasión".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Apela a valores e ideales compartidos para generar..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Apela a valores e ideales compartidos para generar...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Conectividad interna y externa</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Conectividad interna y externa".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Participa en eventos de la industria y mantiene ví..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Participa en eventos de la industria y mantiene ví...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Gestión de relaciones (relationship management)</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Gestión de relaciones (relationship management)".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Utiliza su capital social para apoyar a su equipo ..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Utiliza su capital social para apoyar a su equipo ...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="proposal-card" data-pillar="Shine Up">
+                        <div class="proposal-header">
+                            <span class="proposal-type type-doc">Documento</span>
+                            <h4 class="proposal-title">Activo Propuesto: Lectura de poder y patrocinio</h4>
+                            <div class="proposal-desc">
+            <strong>Formato:</strong> Documento PDF / Guía Práctica.<br><br>
+            <strong>Objetivo Estratégico:</strong> Proporcionar una herramienta de consulta rápida y autodiagnóstico para "Lectura de poder y patrocinio".<br><br>
+            <strong>Contenido Esquemático:</strong><br>
+            - <strong>Definición (Contexto):</strong> Por qué <em>"Identifica y cultiva activamente sponsors que habl..."</em> es un superpoder invisible.<br>
+            - <strong>Checklist (Autodiagnóstico):</strong> Lista de verificación de "Síntomas de Ausencia" vs "Señales de Maestría".<br>
+            - <strong>Ejercicio (Reflexión):</strong> 3 preguntas incómodas para desbloquear la conducta.<br>
+            - <strong>Plan de Acción (7 Días):</strong> Mini-retos diarios para integrar la conducta en la rutina.</div>
+                        </div>
+                        <div class="proposal-footer">
+                            <div style="font-size:0.7rem; font-weight:700; margin-bottom:8px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">Conductas que resuelve:</div>
+                            <div class="behavior-tags">
+                                <span class="b-tag">Identifica y cultiva activamente sponsors que habl...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+            </div>
+        </div>
+
+        <footer style="margin-top:80px; text-align:center; color:#94a3b8; font-size:0.875rem; border-top:1px solid var(--border); padding-top:30px; padding-bottom:40px;">
+            Generado por <strong>Antigravity v2.3</strong> | 2/14/2026, 12:20:00 PM
+        </footer>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        function toggleAccordion(element) {
+            element.classList.toggle("open");
+        }
+
+        function filterProposals(pillar) {
+            const cards = document.querySelectorAll('.proposal-card');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            buttons.forEach(btn => {
+                if (btn.innerText === pillar || (pillar === 'all' && btn.innerText === 'Todos')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            cards.forEach(card => {
+                const cardPillar = card.getAttribute('data-pillar');
+                if (pillar === 'all' || cardPillar === pillar) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+    

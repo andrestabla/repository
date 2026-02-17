@@ -21,23 +21,43 @@ export async function POST(request: NextRequest) {
         })
 
         const researchItems = await prisma.researchSource.findMany({
-            take: 5,
+            take: 5, // Increased context window? Keep small for now or sort by relevance if possible (text search not available)
+            // Ideally we'd search for relevant items, but random recent is "ok" for general context if no vector DB. 
+            // Better: just generic recent context.
             orderBy: { createdAt: 'desc' },
             select: { id: true, title: true, summary: true, findings: true, apa: true }
         })
 
-        // 2. Fetch Global Instructions
+        // 2. NEW: Fetch Taxonomy V2 (Active Hierarchy)
+        const taxonomyNodes = await prisma.taxonomy.findMany({
+            where: { active: true },
+            select: { name: true, type: true, parent: { select: { name: true } } }
+        })
+
+        // Build simple hierarchy text
+        const pillars = taxonomyNodes.filter(n => n.type === 'Pillar').map(n => n.name)
+        const competencies = taxonomyNodes.filter(n => n.type === 'Competence').map(n => `${n.name} (Sub: ${n.parent?.name})`)
+        
+        const taxonomyContext = `
+        TAXONOMY V2 CONTEXT (Use to categorize):
+        - PILLARS: ${pillars.join(', ')}
+        - COMPETENCIES: ${competencies.slice(0, 50).join(', ')}... (partial list)
+        `
+
+        // 3. Fetch Global Instructions
         const settings = await prisma.systemSettings.findUnique({
             where: { key: 'glossary_ai_instructions' }
         })
         const instructions = settings ? (settings.value as any).text : ''
 
         const context = `
-        ACTIVE ASSETS CONTEXT:
+        ACTIVE ASSETS CONTEXT (Practical Examples):
         ${validatedAssets.map(a => `- ${a.title} (${a.primaryPillar}): ${a.observations?.substring(0, 200)}`).join('\n')}
 
-        RESEARCH CONTEXT (Usa estos IDs para citar):
+        RESEARCH CONTEXT (Theoretical Backing):
         ${researchItems.map(r => `- [ID: ${r.id}] ${r.title}: ${r.summary?.substring(0, 200)} (APA: ${r.apa})`).join('\n')}
+        
+        ${taxonomyContext}
         `
 
         // Add user instructions to prompt if present
@@ -49,7 +69,12 @@ export async function POST(request: NextRequest) {
 
         const prompt = `
         Define el término "${term}" bajo el marco de la metodología 4Shine.
-        Usa el contexto suministrado de Activos e Investigaciones para dar una definición precisa, académica y alineada con los pilares (Shine Within, Out, Up, Beyond).
+        
+        FUENTES DE INFORMACIÓN:
+        1. Contexto de Activos: Úsalo para dar ejemplos prácticos de cómo se aplica.
+        2. Contexto de Investigación: Úsalo para dar sustento teórico (cita fuentes si aplica).
+        3. Taxonomía V2: Identifica a qué Pilar o Competencia pertenece este término.
+
         ${instructionContext}
 
         REGLAS DE CITACIÓN (CRÍTICO):
@@ -62,8 +87,10 @@ export async function POST(request: NextRequest) {
 
         Responde ÚNICAMENTE con un JSON:
         {
-            "definition": "Definición conceptual robusta con citas hipervinculadas (máx 500 caracteres).",
-            "pillars": ["Shine Within", "Shine Out"] // Pilares relacionados detectados
+            "definition": "Definición conceptual robusta (máx 500 caracteres). Si aplica, incluye ejemplos prácticos del inventario.",
+            "pillars": ["Shine Within"], // Pilares relacionados detectados de la Taxonomía
+            "relatedCompetency": "Nombre de la competencia (si aplica)",
+            "sourceType": "Teórico" // o "Práctico" o "Híbrido"
         }
         `
 

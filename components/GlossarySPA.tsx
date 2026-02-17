@@ -212,6 +212,11 @@ export default function GlossarySPA({ initialItems }: any) {
                                             {p}
                                         </span>
                                     ))}
+                                    {item.sourceType && (
+                                        <span className="text-[9px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md">
+                                            {item.sourceType}
+                                        </span>
+                                    )}
                                 </div>
                                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest group-hover:text-accent transition-colors">
                                     Ver Completo
@@ -247,12 +252,26 @@ export default function GlossarySPA({ initialItems }: any) {
                                 </div>
                             </div>
 
-                            <div className="mt-8 pt-6 border-t border-border flex flex-wrap gap-3">
-                                {viewingItem.pillars?.map((p: string) => (
-                                    <span key={p} className="text-xs font-black uppercase tracking-widest bg-accent/10 text-accent px-3 py-1.5 rounded-lg border border-accent/20">
-                                        {p}
-                                    </span>
-                                ))}
+                            <div className="mt-8 pt-6 border-t border-border flex flex-col gap-4">
+                                <div className="flex flex-wrap gap-3">
+                                    {viewingItem.pillars?.map((p: string) => (
+                                        <span key={p} className="text-xs font-black uppercase tracking-widest bg-accent/10 text-accent px-3 py-1.5 rounded-lg border border-accent/20">
+                                            {p}
+                                        </span>
+                                    ))}
+                                    {viewingItem.sourceType && (
+                                        <span className="text-xs font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200">
+                                            Fuente: {viewingItem.sourceType}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {viewingItem.relatedCompetency && (
+                                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Competencia Relacionada</p>
+                                        <p className="text-sm font-bold text-text-main">{viewingItem.relatedCompetency}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

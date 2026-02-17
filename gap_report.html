@@ -1,0 +1,492 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Brechas: Activos vs Conductas 4Shine</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 5px solid #3498db; }
+        .stat-card.alert { border-left-color: #e74c3c; }
+        .stat-number { font-size: 2em; font-weight: bold; display: block; }
+        .pillar-section { margin-bottom: 40px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+        .pillar-header { background: #ecf0f1; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .pillar-header h3 { margin: 0; }
+        .gap-list { list-style: none; padding: 0; margin: 0; }
+        .gap-item { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; flex-direction: column; gap: 5px; }
+        .gap-item:last-child { border-bottom: none; }
+        .gap-item:nth-child(even) { background-color: #fafafa; }
+        .path { font-size: 0.85em; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.5px; }
+        .behavior-text { font-size: 1.1em; color: #c0392b; font-weight: 500; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; color: white; }
+        .badge-red { background-color: #e74c3c; }
+        .badge-green { background-color: #2ecc71; }
+        .progress-bar { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; width: 200px; }
+        .progress-fill { height: 100%; background: #2ecc71; }
+        footer { margin-top: 50px; text-align: center; color: #7f8c8d; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Brechas de Contenido (Gap Analysis)</h1>
+    <p>Este reporte identifica las <strong>Conductas Observables</strong> del sistema 4Shine que <strong>NO</strong> están cubiertas por ningún Activo en el inventario actual.</p>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-number">96</span>
+            Conductas Totales
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" style="color:#2ecc71">23</span>
+            Conductas Cubiertas
+        </div>
+        <div class="stat-card alert">
+            <span class="stat-number" style="color:#e74c3c">73</span>
+            Brechas (Sin Contenido)
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">24%</span>
+            Cobertura Global
+        </div>
+    </div>
+
+    
+        <div class="pillar-section">
+            <div class="pillar-header">
+                <h3>Shine Within</h3>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <span>Cobertura: <strong>31%</strong> (10/32)</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 31%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <ul class="gap-list">
+                    
+                        <li class="gap-item">
+                            <span class="path">Autoconfianza y autoliderazgo > Autoeficacia y seguridad</span>
+                            <span class="behavior-text">⚠️ Muestra consistencia entre lo que dice y hace, generando credibilidad y confianza en los colaboradores</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Autoconfianza y autoliderazgo > Responsabilidad radical (accountability)</span>
+                            <span class="behavior-text">⚠️ Pasa de poner excusas a tomar decisiones; reconoce que tiene el control de su vida y responsabilidad sobre sus resultados.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Autoconfianza y autoliderazgo > Responsabilidad radical (accountability)</span>
+                            <span class="behavior-text">⚠️ No culpa a factores externos; asume la propiedad de sus errores y busca soluciones proactivas.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Inteligencia emocional y regulación (self-regulation) > Autoconciencia emocional</span>
+                            <span class="behavior-text">⚠️ Identifica sus "detonantes" emocionales (ej. sentirse cuestionado) antes de que provoquen una reacción impulsiva.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Inteligencia emocional y regulación (self-regulation) > Regulación emocional</span>
+                            <span class="behavior-text">⚠️ Utiliza "anclas de serenidad" (respiración consciente, objetos físicos o mantras) para volver a su centro en momentos de estrés.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Inteligencia emocional y regulación (self-regulation) > Regulación emocional</span>
+                            <span class="behavior-text">⚠️ Gestiona la frustración manteniendo la calma, proyectando estabilidad al equipo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Inteligencia emocional y regulación (self-regulation) > Gestión de la energía</span>
+                            <span class="behavior-text">⚠️ Prioriza su descanso y desconexión para mantener la claridad mental, entendiendo que el agotamiento afecta la calidad de sus decisiones.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Inteligencia emocional y regulación (self-regulation) > Gestión de la energía</span>
+                            <span class="behavior-text">⚠️ Incorpora rutinas de bienestar físico y mental para recargar su "batería" de liderazgo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Propósito y valores (integridad) > Claridad de propósito (Ikigai)</span>
+                            <span class="behavior-text">⚠️ Utiliza su propósito como filtro para la toma de decisiones difíciles, asegurando que sus acciones honren su intención de vida.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Propósito y valores (integridad) > Integridad y coherencia</span>
+                            <span class="behavior-text">⚠️ Hace lo que dice.  Sus acciones privadas y públicas son congruentes con los valores que predica.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Propósito y valores (integridad) > Integridad y coherencia</span>
+                            <span class="behavior-text">⚠️ Cumple sus promesas y compromisos, generando un entorno de confianza y previsibilidad.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Propósito y valores (integridad) > Integridad y coherencia</span>
+                            <span class="behavior-text">⚠️ Defiende sus principios éticos incluso bajo presión o ante la posibilidad de ganancias a corto plazo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Propósito y valores (integridad) > Autenticidad</span>
+                            <span class="behavior-text">⚠️ Es transparente sobre sus intenciones y valores, lo que facilita la conexión humana con su equipo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Aprendizaje y reflexión (self-awareness) > Práctica reflexiva</span>
+                            <span class="behavior-text">⚠️ Dedica tiempo agendado para la auto-observación y el análisis de su desempeño (ej. llevar un diario o bitácora emocional).</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Aprendizaje y reflexión (self-awareness) > Práctica reflexiva</span>
+                            <span class="behavior-text">⚠️ Se hace preguntas poderosas sobre su identidad y futuro (¿En quién me quiero convertir? ¿Qué puedo ofrecer?).</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Aprendizaje y reflexión (self-awareness) > Apertura al feedback</span>
+                            <span class="behavior-text">⚠️ Recibe la crítica sin ponerse a la defensiva, utilizándola como insumo para su crecimiento personal.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Aprendizaje y reflexión (self-awareness) > Mentalidad de crecimiento</span>
+                            <span class="behavior-text">⚠️ Ve los errores y fracasos no como definiciones de su valía, sino como oportunidades de aprendizaje y mejora.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Gestión de energía y bienestar (biohacking) > Regulación somática y fisiológica</span>
+                            <span class="behavior-text">⚠️ Gestiona sus ritmos circadianos y descanso para asegurar un rendimiento cognitivo óptimo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Toma de decisiones y resolución de problemas > Compostura</span>
+                            <span class="behavior-text">⚠️ Mantiene la serenidad en situaciones de crisis, proyectando confianza y evitando que el pánico paralice al equipo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Toma de decisiones y resolución de problemas > Compostura</span>
+                            <span class="behavior-text">⚠️ Controla los impulsos y evita reacciones defensivas, permitiendo que otros piensen con claridad y ejecuten tareas críticas.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Identidad de liderazgo (identity ownership) > Re-alineación Cognitiva</span>
+                            <span class="behavior-text">⚠️ Reescribe narrativas internas de duda ("ocupo el cargo") por narrativas de propiedad ("merezco el cargo").</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Identidad de liderazgo (identity ownership) > Re-alineación Cognitiva</span>
+                            <span class="behavior-text">⚠️ Integra sus valores personales con su rol profesional sin sentir que está "actuando".</span>
+                        </li>
+                    
+                </ul>
+        </div>
+        
+        <div class="pillar-section">
+            <div class="pillar-header">
+                <h3>Shine Out</h3>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <span>Cobertura: <strong>38%</strong> (6/16)</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 38%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <ul class="gap-list">
+                    
+                        <li class="gap-item">
+                            <span class="path">Comunicación de impacto > Escucha Activa y Empática</span>
+                            <span class="behavior-text">⚠️ Se "pone en los zapatos" de sus colegas para construir relaciones de confianza y seguridad psicológica.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Comunicación de impacto > Adaptabilidad Comunicativa</span>
+                            <span class="behavior-text">⚠️ Identifica señales no verbales en los demás y modifica el ritmo o enfoque de su mensaje para mantener la sintonía y asegurar que el mensaje sea aceptado.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Influencia positiva > Construcción de confianza (Trust)</span>
+                            <span class="behavior-text">⚠️ Admite abiertamente cuando "no sabe" algo y trata a todos con respeto, eliminando el miedo a represalias por reportar problemas.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Influencia positiva > Influencia ética y persuasión</span>
+                            <span class="behavior-text">⚠️ Apela a valores e ideales compartidos para generar una voluntad genuina de colaboración en el equipo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Influencia positiva > Reconocimiento y feedback</span>
+                            <span class="behavior-text">⚠️ Reconoce públicamente los logros y da crédito explícito a los colaboradores por sus contribuciones, fomentando el orgullo colectivo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Influencia positiva > Reconocimiento y feedback</span>
+                            <span class="behavior-text">⚠️ Brinda feedback privado, específico y centrado en la conducta (no en la persona) para corregir el rumbo y desarrollar talento.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Presencia digital e híbrida > Influencia asíncrona y virtual</span>
+                            <span class="behavior-text">⚠️ Proyecta la misma "gravitas" y calidez en videoconferencias que en persona.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Presencia digital e híbrida > Influencia asíncrona y virtual</span>
+                            <span class="behavior-text">⚠️ Gestiona su reputación y narrativa en plataformas digitales (LinkedIn) de forma estratégica, no solo social.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Competencia conversacional (ontológica) > Ingeniería del lenguaje (promesas y pedidos)</span>
+                            <span class="behavior-text">⚠️ Hace pedidos impecables (con condiciones de satisfacción y tiempos claros) para evitar retrabajos.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Competencia conversacional (ontológica) > Ingeniería del lenguaje (promesas y pedidos)</span>
+                            <span class="behavior-text">⚠️ Gestiona sus promesas: si no puede cumplir, revoca o renegocia a tiempo, manteniendo la confianza.</span>
+                        </li>
+                    
+                </ul>
+        </div>
+        
+        <div class="pillar-section">
+            <div class="pillar-header">
+                <h3>Shine Up</h3>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <span>Cobertura: <strong>19%</strong> (5/26)</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 19%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <ul class="gap-list">
+                    
+                        <li class="gap-item">
+                            <span class="path">Networking estratégico > Conectividad interna y externa</span>
+                            <span class="behavior-text">⚠️ Participa en eventos de la industria y mantiene vínculos con stakeholders externos (clientes, proveedores) para detectar tendencias.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Networking estratégico > Gestión de relaciones (relationship management)</span>
+                            <span class="behavior-text">⚠️ Utiliza su capital social para apoyar a su equipo y abrir puertas a nuevas oportunidades de negocio o desarrollo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Networking estratégico > Visibilidad estratégica</span>
+                            <span class="behavior-text">⚠️ Se posiciona no solo como experto técnico, sino como un referente que aporta valor en comités y espacios de decisión.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Networking estratégico > Visibilidad estratégica</span>
+                            <span class="behavior-text">⚠️ Construye relaciones basadas en la reciprocidad y el valor mutuo, no solo en la necesidad inmediata (transaccional).</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Visión de futuro y estrategia > Visión compartida (visioning)</span>
+                            <span class="behavior-text">⚠️ Articula un escenario futuro aspiracional de manera vívida (ej. "ser referentes regionales en 5 años") logrando que el equipo haga propia esa visión (shared vision).</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Visión de futuro y estrategia > Visión compartida (visioning)</span>
+                            <span class="behavior-text">⚠️ Comunica el "por qué" detrás de las metas, dando un fuerte sentido de finalidad y propósito al trabajo diario.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Visión de futuro y estrategia > Alineación de metas (execution)</span>
+                            <span class="behavior-text">⚠️ Traduce la visión abstracta en objetivos SMART (específicos, medibles, alcanzables, relevantes y temporales) y planes de acción concretos</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Visión de futuro y estrategia > Alineación de metas (execution)</span>
+                            <span class="behavior-text">⚠️ Asegura la "línea de vista": explica claramente cómo las tareas cotidianas y las metas de corto plazo contribuyen a la estrategia general.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Toma de decisiones y resolución de problemas > Decisión bajo incertidumbre</span>
+                            <span class="behavior-text">⚠️ Reúne datos rápidamente y consulta expertos, pero toma decisiones oportunas incluso con información incompleta, evitando la "parálisis por análisis".</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Toma de decisiones y resolución de problemas > Decisión bajo incertidumbre</span>
+                            <span class="behavior-text">⚠️ Asume la responsabilidad de las consecuencias de sus decisiones, sean aciertos o errores, sin buscar culpables externos</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Toma de decisiones y resolución de problemas > Resolución de causa raíz</span>
+                            <span class="behavior-text">⚠️ No se queda en la corrección de síntomas superficiales; investiga a fondo para identificar y resolver la causa raíz de los problemas basándose en evidencias y datos.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Toma de decisiones y resolución de problemas > Resolución de causa raíz</span>
+                            <span class="behavior-text">⚠️ Aplica el pensamiento crítico para cuestionar suposiciones y reducir sesgos antes de decidir</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Adaptabilidad e innovación > Agilidad y adaptabilidad</span>
+                            <span class="behavior-text">⚠️ Revisa y ajusta las estrategias establecidas si surgen cambios tecnológicos o regulatorios, demostrando disposición a abandonar ideas que ya no funcionan.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Adaptabilidad e innovación > Agilidad y adaptabilidad</span>
+                            <span class="behavior-text">⚠️ Fomenta una cultura donde el cambio se ve como oportunidad y no como amenaza.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Adaptabilidad e innovación > Estimulación intelectual (innovación)</span>
+                            <span class="behavior-text">⚠️ Cuestiona el "así es como siempre se ha hecho", desafiando el statu quo y animando al equipo a proponer nuevas formas de trabajar.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Adaptabilidad e innovación > Estimulación intelectual (innovación)</span>
+                            <span class="behavior-text">⚠️ Instituye proyectos piloto o pruebas de concepto para testear soluciones en entornos controlados antes de escalarlas.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Adaptabilidad e innovación > Gestión del error constructivo</span>
+                            <span class="behavior-text">⚠️ Respalda al equipo cuando un experimento bien intencionado falla, enfocándose en extraer aprendizajes ("fail forward") en lugar de castigar el error.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Adaptabilidad e innovación > Gestión del error constructivo</span>
+                            <span class="behavior-text">⚠️ Elimina el "factor miedo", empoderando a los empleados para asumir riesgos calculados en la búsqueda de innovación.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Inteligencia política y contextual > Lectura de poder y patrocinio</span>
+                            <span class="behavior-text">⚠️ Identifica y cultiva activamente sponsors que hablen de él/ella en mesas de decisión.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Agilidad tecnológica (tech-savviness) > Liderazgo en la industria 5.0</span>
+                            <span class="behavior-text">⚠️ Promueve la adopción de nuevas herramientas digitales sin perder el enfoque en el bienestar del equipo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Agilidad tecnológica (tech-savviness) > Liderazgo en la industria 5.0</span>
+                            <span class="behavior-text">⚠️ Traduce conceptos tecnológicos complejos a decisiones de negocio estratégicas.</span>
+                        </li>
+                    
+                </ul>
+        </div>
+        
+        <div class="pillar-section">
+            <div class="pillar-header">
+                <h3>Shine Beyond</h3>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <span>Cobertura: <strong>9%</strong> (2/22)</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 9%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <ul class="gap-list">
+                    
+                        <li class="gap-item">
+                            <span class="path">Desarrollo de otros líderes (mentoring & coaching) > Empoderamiento (empowerment)</span>
+                            <span class="behavior-text">⚠️ Comparte el poder delegando autoridad real para la toma de decisiones importantes, no solo tareas operativas, fomentando la autonomía.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Desarrollo de otros líderes (mentoring & coaching) > Empoderamiento (empowerment)</span>
+                            <span class="behavior-text">⚠️ Elimina el micro-management; define el "qué" pero permite al equipo decidir el "cómo", demostrando confianza plena en sus capacidades.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Desarrollo de otros líderes (mentoring & coaching) > Desafío para el crecimiento</span>
+                            <span class="behavior-text">⚠️ Asigna proyectos desafiantes (stretch assignments) que obligan a los colaboradores a salir de su zona de confort para desarrollar nuevas habilidades.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Desarrollo de otros líderes (mentoring & coaching) > Desafío para el crecimiento</span>
+                            <span class="behavior-text">⚠️ Utiliza el coaching para ayudar a los colaboradores a encontrar sus propias soluciones en lugar de dárselas resueltas.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Impacto social y humano > Ética y responsabilidad social</span>
+                            <span class="behavior-text">⚠️ Integra consideraciones éticas y de impacto comunitario en la toma de decisiones financieras y estratégicas, priorizando el bien común sobre la ganancia a corto plazo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Impacto social y humano > Ética y responsabilidad social</span>
+                            <span class="behavior-text">⚠️ Impulsa iniciativas que aporten valor social (sostenibilidad, diversidad, inclusión) y modela la integridad en todas sus acciones.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Impacto social y humano > Liderazgo de servicio (stewardship)</span>
+                            <span class="behavior-text">⚠️ Actúa como un administrador (trustee) de los recursos y las personas, priorizando las necesidades de los colaboradores y la comunidad por encima del interés propio.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Impacto social y humano > Liderazgo de servicio (stewardship)</span>
+                            <span class="behavior-text">⚠️ Fomenta un clima de seguridad psicológica donde el bienestar emocional y físico del equipo es una prioridad tangible.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Impacto social y humano > Inclusión y equidad</span>
+                            <span class="behavior-text">⚠️ Promueve activamente la diversidad y crea un entorno inclusivo donde se valoran diferentes perspectivas y antecedentes.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Impacto social y humano > Inclusión y equidad</span>
+                            <span class="behavior-text">⚠️ Trata a todos con justicia e imparcialidad, asegurando equidad en oportunidades y reconocimiento.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Legado personal y trascendencia > Institucionalización de cultura</span>
+                            <span class="behavior-text">⚠️ Establece rituales, historias y prácticas que anclan los valores y la visión en el ADN de la organización, asegurando que perduren más allá de su mandato.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Legado personal y trascendencia > Institucionalización de cultura</span>
+                            <span class="behavior-text">⚠️ Documenta lecciones aprendidas y crea sistemas para que el conocimiento crítico (know-how) permanezca en la empresa.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Legado personal y trascendencia > Reconocimiento y humildad</span>
+                            <span class="behavior-text">⚠️ Pone los focos sobre su equipo: cuando hay éxito, se aparta para que su equipo brille ("stand back"); cuando hay fracaso, asume la responsabilidad.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Legado personal y trascendencia > Reconocimiento y humildad</span>
+                            <span class="behavior-text">⚠️ Celebra genuinamente los hitos personales y profesionales de los demás, construyendo una cultura de gratitud y apreciación.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Legado personal y trascendencia > Conexión con el propósito (meaning)</span>
+                            <span class="behavior-text">⚠️ Ayuda a cada miembro del equipo a descubrir su propio propósito y a conectarlo con la misión de la organización (alineación de propósito).</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Legado personal y trascendencia > Conexión con el propósito (meaning)</span>
+                            <span class="behavior-text">⚠️ Transforma el trabajo rutinario en una misión significativa, recordando constantemente el impacto positivo que el equipo tiene en el mundo.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Inteligencia cultural e inclusiva > Gestión de la diversidad cognitiva</span>
+                            <span class="behavior-text">⚠️ Forma deliberadamente equipos con diversidad de pensamiento y antecedentes.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Inteligencia cultural e inclusiva > Gestión de la diversidad cognitiva</span>
+                            <span class="behavior-text">⚠️ Detecta y mitiga sesgos inconscientes en la contratación y promoción de talento.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Liderazgo regenerativo > Conciencia sistémica y comunitaria</span>
+                            <span class="behavior-text">⚠️ Conecta los objetivos de negocio con necesidades reales de la comunidad o el medio ambiente.</span>
+                        </li>
+                    
+                        <li class="gap-item">
+                            <span class="path">Liderazgo regenerativo > Conciencia sistémica y comunitaria</span>
+                            <span class="behavior-text">⚠️ Actúa como un "tejedor" de relaciones externas que traen valor social a la empresa.</span>
+                        </li>
+                    
+                </ul>
+        </div>
+        
+
+    <footer>
+        Generado automáticamente por Antigravity a las 2/14/2026, 11:54:36 AM
+    </footer>
+</body>
+</html>
+    
