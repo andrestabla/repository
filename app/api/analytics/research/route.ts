@@ -66,13 +66,13 @@ export async function GET(request: NextRequest) {
         const methodPillarMatrix: Record<string, Record<string, number>> = {}
 
         // I. Índice de Evidencia (Top 20)
-        const evidenceRanking = research.map(r => ({
+        const evidenceRanking = research.map((r: any) => ({
             id: r.id,
             title: r.title,
             methodology: r.methodology || 'No definido',
             score: getEvidenceScore(r.methodology),
             citations: r._count.referencedBy
-        })).sort((a, b) => b.score - a.score).slice(0, 20)
+        })).sort((a: any, b: any) => b.score - a.score).slice(0, 20)
 
 
         // --- 4. GEOGRAFÍA & CULTURA ---
@@ -98,16 +98,16 @@ export async function GET(request: NextRequest) {
 
 
         // --- ITERATE & AGGREGATE ---
-        research.forEach(item => {
+        research.forEach((item: any) => {
             const normalizedMethod = item.methodology ? normalizeMethodology(item.methodology) : 'Unknown'
 
             // Pillars
-            item.pillars.forEach(p => {
+            item.pillars.forEach((p: string) => {
                 if (pillarCounts[p] !== undefined) pillarCounts[p]++
 
                 // E. Pillar x Competence
                 if (item.competence) {
-                    item.competence.split(',').forEach(c => {
+                    item.competence.split(',').forEach((c: string) => {
                         const comp = c.trim()
                         if (pillarCompetenceMatrix[p]) {
                             // Truncate logic
@@ -157,8 +157,8 @@ export async function GET(request: NextRequest) {
 
             // Concepts & Co-occurrence
             if (item.keyConcepts) {
-                const concepts = item.keyConcepts.split(',').map(c => c.trim().toLowerCase()).filter(Boolean)
-                concepts.forEach(c => {
+                const concepts = item.keyConcepts.split(',').map((c: string) => c.trim().toLowerCase()).filter(Boolean)
+                concepts.forEach((c: string) => {
                     conceptCounts[c] = (conceptCounts[c] || 0) + 1
                 })
 
@@ -225,9 +225,9 @@ export async function GET(request: NextRequest) {
         // --- 7. TRAZABILIDAD ---
         // Q. Most Cited (using _count.referencedBy from Prisma include)
         const citationRanking = research
-            .sort((a, b) => b._count.referencedBy - a._count.referencedBy)
+            .sort((a: any, b: any) => b._count.referencedBy - a._count.referencedBy)
             .slice(0, 10)
-            .map(r => ({
+            .map((r: any) => ({
                 title: r.title,
                 count: r._count.referencedBy
             }))
