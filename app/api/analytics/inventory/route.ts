@@ -33,14 +33,14 @@ export async function GET() {
         const pillars = ['Shine Within', 'Shine Out', 'Shine Up', 'Shine Beyond']
         const pillarDist = pillars.map(p => ({
             subject: p, // Radar uses 'subject' or 'name'
-            A: rawItems.filter(i => i.primaryPillar === p).length,
+            A: rawItems.filter((i: any) => i.primaryPillar === p).length,
             fullMark: Math.max(rawItems.length, 10) // Normalize somewhat
         }))
 
         // 2b. Process Radar: Secondary Pillars (Support)
         const secondaryPillarDist = pillars.map(p => ({
             subject: p,
-            A: rawItems.filter(i => i.secondaryPillars && i.secondaryPillars.includes(p)).length,
+            A: rawItems.filter((i: any) => i.secondaryPillars && i.secondaryPillars.includes(p)).length,
             fullMark: Math.max(rawItems.length, 10)
         }))
 
@@ -49,7 +49,7 @@ export async function GET() {
         const maturityMatrix = pillars.map(p => {
             const counts: Record<string, number> = {}
             maturityLevels.forEach(m => {
-                counts[m] = rawItems.filter(i => i.primaryPillar === p && i.maturity === m).length
+                counts[m] = rawItems.filter((i: any) => i.primaryPillar === p && i.maturity === m).length
             })
             return {
                 name: p,
@@ -71,7 +71,7 @@ export async function GET() {
             return node
         }
 
-        rawItems.forEach(item => {
+        rawItems.forEach((item: any) => {
             if (!item.primaryPillar) return
             const pNode = findOrCreate(treeMap.children, item.primaryPillar)
 
@@ -97,11 +97,11 @@ export async function GET() {
         const interventions = ['Conciencia', 'Práctica', 'Aplicación'] // Deduce others?
         const interventionDist = interventions.map(type => ({
             name: type,
-            value: rawItems.filter(i => i.intervention === type).length
+            value: rawItems.filter((i: any) => i.intervention === type).length
         }))
         // Add "Otros/Sin Definir"
         const definedInts = new Set(interventions)
-        const otherInts = rawItems.filter(i => !definedInts.has(i.intervention || '')).length
+        const otherInts = rawItems.filter((i: any) => !definedInts.has(i.intervention || '')).length
         if (otherInts > 0) interventionDist.push({ name: 'Sin Definir', value: otherInts })
 
 
@@ -109,18 +109,18 @@ export async function GET() {
         const moments = ['Inicio', 'Desarrollo', 'Cierre', 'Transversal']
         const journeyDist = moments.map(m => ({
             name: m,
-            count: rawItems.filter(i => i.moment === m).length
+            count: rawItems.filter((i: any) => i.moment === m).length
         }))
 
         // 7. Matrix: Roles vs Levels
         // This is tricky for a single chart. We can execute a Bubble chart format: { x: Role, y: Level, z: Count }
         const roleLevels = ['Junior', 'Senior', 'Manager', 'C-Level']
-        const roles = Array.from(new Set(rawItems.map(i => i.targetRole).filter(Boolean))) as string[]
+        const roles = Array.from(new Set(rawItems.map((i: any) => i.targetRole).filter(Boolean))) as string[]
 
         const roleMatrix = roles.map(r => {
             const dataPoint: any = { role: r }
             roleLevels.forEach(l => {
-                dataPoint[l] = rawItems.filter(i => i.targetRole === r && i.roleLevel === l).length
+                dataPoint[l] = rawItems.filter((i: any) => i.targetRole === r && i.roleLevel === l).length
             })
             return dataPoint
         })
@@ -128,7 +128,7 @@ export async function GET() {
         // 8. Technical Category Distribution
         // Group by 'type' (PDF, Video, Toolkit, etc)
         const typeCounts: Record<string, number> = {}
-        rawItems.forEach(i => {
+        rawItems.forEach((i: any) => {
             const t = i.type || 'Desconocido'
             typeCounts[t] = (typeCounts[t] || 0) + 1
         })
