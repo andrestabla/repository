@@ -23,7 +23,7 @@ export async function GET() {
         ])
 
         // Process Status for Charts
-        const statusData = statusGroup.map(g => ({
+        const statusData = statusGroup.map((g: any) => ({
             name: g.status,
             value: g._count.status
         }))
@@ -35,7 +35,7 @@ export async function GET() {
         }))
 
         // Calculate Validation Percentage
-        const validatedCount = statusGroup.find(g => g.status === 'Validado')?._count.status || 0
+        const validatedCount = statusGroup.find((g: any) => g.status === 'Validado')?._count.status || 0
         const validationRate = totalItems > 0 ? Math.round((validatedCount / totalItems) * 100) : 0
 
         return NextResponse.json({
