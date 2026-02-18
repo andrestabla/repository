@@ -27,40 +27,59 @@ export async function POST(req: NextRequest) {
 
         // --- CONTEXT RETRIEVAL (RAG LITE) ---
 
-        // 1. Identify Gaps
-        const sortedComps = scores.compList.sort((a: any, b: any) => a.score - b.score);
-        const gaps = sortedComps.slice(0, 3);
-        const gapNames = gaps.map((c: any) => c.name);
-        const strengthNames = sortedComps.slice(-3).map((c: any) => c.name);
+        // --- CONTEXT RETRIEVAL (RAG LITE) ---
 
-        // 2. Fetch Glossary Definitions
+        // 1. Identify Gaps (Context-Aware)
+        const allSorted = scores.compList.sort((a: any, b: any) => a.score - b.score);
+        const globalGaps = allSorted.slice(0, 3);
+        const globalStrengths = allSorted.slice(-3).map((c: any) => c.name);
+
+        let targetGaps = globalGaps;
+        let pName = "Visión General";
+
+        if (pillar && pillar !== 'all') {
+            const pComps = scores.compList.filter((c: any) => c.pillar === pillar);
+            targetGaps = pComps.sort((a: any, b: any) => a.score - b.score).slice(0, 3);
+
+            const pillarNames: Record<string, string> = {
+                within: "SHINE WITHIN (Autoliderazgo)",
+                out: "SHINE OUT (Influencia y Relaciones)",
+                up: "SHINE UP (Estrategia y Negocio)",
+                beyond: "SHINE BEYOND (Cultura y Legado)"
+            };
+            pName = pillarNames[pillar] || pillar;
+        }
+
+        const targetGapNames = targetGaps.map((c: any) => c.name);
+
+        // 2. Fetch Glossary Definitions (For TARGET gaps)
         const glossaryDocs = await prisma.glossaryTerm.findMany({
-            where: { term: { in: gapNames } },
+            where: { term: { in: targetGapNames } },
             select: { term: true, definition: true }
         });
 
-        // 3. Fetch Recommended Assets (ContentItem & Workbooks)
-        // Try to find content matching the gaps or the specific pillar
+        const glossaryString = glossaryDocs.map((g: any) => `- **${g.term}**: ${g.definition}`).join('\n');
+
+        // 3. Fetch Recommended Assets
         const whereCondition: any = pillar && pillar !== 'all'
             ? {
                 OR: [
-                    { competence: { in: gapNames } },
+                    { competence: { in: targetGapNames } },
                     { primaryPillar: { equals: pillar, mode: 'insensitive' } }
                 ]
             }
-            : { competence: { in: gapNames } };
+            : { competence: { in: targetGapNames } };
 
         const recommendations = await prisma.contentItem.findMany({
             where: {
                 ...whereCondition,
-                status: 'published' // Only published content
+                status: 'published'
             },
             take: 4,
             select: { title: true, type: true, competence: true, fileUrl: true }
         });
 
         const recsString = recommendations.map((r: any) => `- ${r.title} (${r.type}) [Enfocado en: ${r.competence || 'General'}]`).join('\n');
-        const glossaryString = glossaryDocs.map((g: any) => `- **${g.term}**: ${g.definition}`).join('\n');
 
         let systemPrompt = '';
         let userPrompt = '';
@@ -89,10 +108,10 @@ La Metodología 4Shine tiene 4 Pilares:
 
 Estructura del Reporte (Markdown):
 ## 1. Tu Perfil Estratégico (Arquetipo)
-Define su arquetipo (ej: "Eres un Líder Operativo..."). Integra cómo TUS fortalezas (${strengthNames.join(', ')}) contrastan con TUS brechas.
+Define su arquetipo (ej: "Eres un Líder Operativo..."). Integra cómo TUS fortalezas (${globalStrengths.join(', ')}) contrastan con TUS brechas (${targetGapNames.join(', ')}).
 
 ## 2. Análisis de Riesgos Ocultos (Deep Dive)
-Identifica 2 tensiones sistémicas en su liderazgo. Conecta sus brechas con definiciones teóricas. (Ej: "Tu falta de '${gapNames[0]}' te impide...").
+Identifica 2 tensiones sistémicas en su liderazgo. Conecta sus brechas con definiciones teóricas. (Ej: "Tu falta de '${targetGapNames[0]}' te impide...").
 
 ## 3. Tu Plan de Aceleración (Hoja de Ruta)
 3 acciones tácticas para TI. **DEBES RECOMENDAR** al menos 1 de los recursos listados arriba si son pertinentes para su crecimiento.
@@ -103,20 +122,12 @@ Líder: ${username} (${role})
 Global: ${scores.globalAvg}/5.0
 Pilares: Within ${scores.pillarAvg.within}, Out ${scores.pillarAvg.out}, Up ${scores.pillarAvg.up}, Beyond ${scores.pillarAvg.beyond}.
 
-Top Brechas:
-${gaps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
+Top Brechas Globales:
+${targetGaps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
             `;
 
         } else {
             // --- PILLAR DEEP DIVE ---
-            const pillarNames: Record<string, string> = {
-                within: "SHINE WITHIN (Autoliderazgo)",
-                out: "SHINE OUT (Influencia y Relaciones)",
-                up: "SHINE UP (Estrategia y Negocio)",
-                beyond: "SHINE BEYOND (Cultura y Legado)"
-            };
-            const pName = pillarNames[pillar] || pillar;
-
             systemPrompt = `
 Eres un Coach Especialista en "${pName}" de la metodología 4Shine.
 Analiza con profundidad quirúrgica, hablándole de "TÚ" al líder.
@@ -131,25 +142,21 @@ Estructura del Reporte (Markdown):
 ## Diagnóstico Profundo: ${pName}
 
 ### 1. La Verdad Incómoda
-Analiza TUS puntajes. Usa las definiciones para explicarte POR QUÉ estás fallando en ${gapNames.join(', ')}. Sé crudo pero constructivo.
+Analiza TUS puntajes en este pilar. Usa las definiciones para explicarte POR QUÉ estás fallando en ${targetGapNames.join(', ')}. Sé crudo pero constructivo.
 
 ### 2. Impacto Sistémico
-Conecta estas brechas con TUS resultados de negocio y equipo.
+Conecta estas brechas específicas de ${pName} con TUS resultados de negocio y equipo.
 
 ### 3. Protocolo de Intervención
-2 rutinas específicas para TI y **RECOMIENDA** explícitamente 1 recurso/tool del listado anterior para cerrar TU brecha.
+2 rutinas específicas para TI y **RECOMIENDA** explícitamente 1 recurso/tool del listado anterior para cerrar TU brecha en este pilar.
             `;
-
-            // Filter comps
-            const pComps = scores.compList.filter((c: any) => c.pillar === pillar);
-            const lowComps = pComps.sort((a: any, b: any) => a.score - b.score).slice(0, 3);
 
             userPrompt = `
 Líder: ${username} (${role})
-Puntaje Pilar: ${scores.pillarAvg[pillar]}/5.0
+Puntaje Pilar ${pName}: ${scores.pillarAvg[pillar]}/5.0
 
-Competencias Críticas:
-${lowComps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
+Competencias Críticas en este Pilar:
+${targetGaps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
             `;
         }
 
