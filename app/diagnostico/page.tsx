@@ -334,9 +334,9 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
             });
             const data = await res.json();
             if (data.report) setReport(data.report);
-            else alert('Error generando reporte.');
+            else alert(`Error: ${data.error || 'No se pudo generar el reporte.'}`);
         } catch (e) {
-            alert('Error de conexión.');
+            alert('Error de conexión al servidor.');
         } finally {
             setLoading(false);
         }
@@ -399,10 +399,11 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
                 {report && (
                     <button
                         onClick={handleSpeak}
+                        disabled={audioLoading}
                         className={`p-2 rounded-full transition-colors ${speaking ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                        title={speaking ? "Detener" : "Escuchar Análisis"}
+                        title={speaking ? "Pausar" : "Escuchar Análisis"}
                     >
-                        {speaking ? <span className="animate-pulse">⏹️</span> : <span>🔊</span>}
+                        {audioLoading ? <Loader2 size={16} className="animate-spin" /> : (speaking ? <span className="animate-pulse">⏹️</span> : <span>🔊</span>)}
                     </button>
                 )}
             </div>
@@ -539,37 +540,41 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     {/* LEFT COLUMN: CHARTS */}
                     <div className="space-y-6">
                         {filter === 'all' ? (
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] print:break-inside-avoid">
+                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] min-h-[400px] w-full print:break-inside-avoid">
                                 <h3 className="text-center font-bold text-slate-700 mb-4">Radar de Competencias</h3>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                        <PolarGrid stroke="#e2e8f0" />
-                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
-                                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
-                                        <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
-                                        <Tooltip />
-                                    </RadarChart>
-                                </ResponsiveContainer>
+                                <div style={{ width: '100%', height: 'calc(100% - 40px)' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                            <PolarGrid stroke="#e2e8f0" />
+                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
+                                            <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                                            <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
+                                            <Tooltip />
+                                        </RadarChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         ) : (
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] print:break-inside-avoid">
+                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] min-h-[400px] w-full print:break-inside-avoid">
                                 <h3 className="text-center font-bold text-slate-700 mb-4">{currentPillarTitle}</h3>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart layout="vertical" data={filteredComps}>
-                                        <XAxis type="number" domain={[0, 5]} hide />
-                                        <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: 12 }} />
-                                        <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
-                                            {filteredComps.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={
-                                                    filter === 'within' ? '#6366f1' :
-                                                        filter === 'out' ? '#8b5cf6' :
-                                                            filter === 'up' ? '#ec4899' : '#10b981'
-                                                } />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
+                                <div style={{ width: '100%', height: 'calc(100% - 40px)' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart layout="vertical" data={filteredComps}>
+                                            <XAxis type="number" domain={[0, 5]} hide />
+                                            <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#64748b' }} />
+                                            <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: 12 }} />
+                                            <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
+                                                {filteredComps.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={
+                                                        filter === 'within' ? '#6366f1' :
+                                                            filter === 'out' ? '#8b5cf6' :
+                                                                filter === 'up' ? '#ec4899' : '#10b981'
+                                                    } />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -626,5 +631,5 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                 </div>
             </main>
         </div>
-    )
+    );
 }
