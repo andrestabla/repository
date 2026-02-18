@@ -292,21 +292,23 @@ export default function DiagnosticsPage() {
 }
 
 // --- SUBCOMPONENT: AI ANALYSIS ---
+
 function AiAnalysisSection({ username, role, scores, pillar }: { username: string, role: string, scores: any, pillar: string }) {
-    const [report, setReport] = useState<string | null>(null);
+    const [reports, setReports] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
-    const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
     const [speaking, setSpeaking] = useState(false);
+    const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
     const [audioLoading, setAudioLoading] = useState(false);
 
-    // Reset audio when report changes or unmount
+    const report = reports[pillar]; // Get current report from cache
+
+    // Reset audio when pillar changes (but keep text cache)
     useEffect(() => {
-        if (audio) {
+        if (speaking && audio) {
             audio.pause();
-            setAudio(null);
             setSpeaking(false);
         }
-    }, [report, pillar]);
+    }, [pillar]);
 
     useEffect(() => {
         return () => {
@@ -325,7 +327,6 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
 
     const handleAnalyze = async () => {
         setLoading(true);
-        setReport(null); // Clear previous
         try {
             const res = await fetch('/api/diagnostics/analyze', {
                 method: 'POST',
@@ -333,8 +334,11 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
                 body: JSON.stringify({ username, role, scores, pillar })
             });
             const data = await res.json();
-            if (data.report) setReport(data.report);
-            else alert(`Error: ${data.error || 'No se pudo generar el reporte.'}`);
+            if (data.report) {
+                setReports(prev => ({ ...prev, [pillar]: data.report }));
+            } else {
+                alert(`Error: ${data.error || 'No se pudo generar el reporte.'}`);
+            }
         } catch (e) {
             alert('Error de conexión al servidor.');
         } finally {
@@ -351,10 +355,12 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
             return;
         }
 
-        if (audio) {
-            audio.play();
-            setSpeaking(true);
-            return;
+        if (audio && audio.src) {
+            if (audio.paused) {
+                audio.play();
+                setSpeaking(true);
+                return;
+            }
         }
 
         setAudioLoading(true);
@@ -383,6 +389,12 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
             setAudioLoading(false);
         }
     };
+
+    // Reset audio state when pillar changes (fresh start for audio)
+    useEffect(() => {
+        setAudio(null);
+        setSpeaking(false);
+    }, [pillar]);
 
     return (
         <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-700/50 flex flex-col h-full print:break-inside-avoid">
@@ -413,7 +425,7 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
                     <p className="text-slate-300 text-sm max-w-xs">
                         {pillar === 'all'
                             ? 'Genera un análisis estratégico y hoja de ruta basada en tus resultados globales.'
-                            : 'Realiza una "biopsia" profunda de este pilar para descubrir bloqueos y palancas de crecimiento.'}
+                            : 'Realiza un análisis profundo de este pilar para descubrir bloqueos y palancas de crecimiento.'}
                     </p>
                     <button
                         onClick={handleAnalyze}
@@ -582,7 +594,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     {/* RIGHT COLUMN: AI COACH (Everywhere) */}
                     <div className="h-full">
                         <AiAnalysisSection
-                            key={filter} // Force re-render on filter change to reset AI state
+                            // Key removed to persist state
                             username={state.username}
                             role={state.role}
                             scores={scores}
