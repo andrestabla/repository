@@ -6,7 +6,7 @@ import { SystemSettingsService } from '@/lib/settings';
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { username, role, scores } = body;
+        const { username, role, scores, pillar } = body;
 
         if (!scores || !scores.pillarAvg) {
             return NextResponse.json({ error: "Invalid data" }, { status: 400 });
@@ -22,51 +22,94 @@ export async function POST(req: NextRequest) {
 
         const openai = new OpenAI({ apiKey });
 
-        const systemPrompt = `
+        let systemPrompt = '';
+        let userPrompt = '';
+
+        if (pillar === 'all' || !pillar) {
+            // --- GENERAL ANALYSIS ---
+            systemPrompt = `
 Eres un Coach Ejecutivo Senior experto en la metodología "4Shine".
-Tu objetivo es analizar los resultados del diagnóstico de liderazgo de un usuario y generar un reporte estratégico, directo y accionable.
+Tu estilo es DIRECTO, SOFISTICADO y CONTUNDENTE. No uses lenguaje corporativo vacío.
+Tu objetivo es analizar el perfil holístico del líder y dar una hoja de ruta clara.
 
 La Metodología 4Shine tiene 4 Pilares:
-1. SHINE WITHIN (Autoliderazgo): Gestión de emociones, energía, creencias y propósito.
-2. SHINE OUT (Influencia): Comunicación, confianza, feedback y marca personal.
-3. SHINE UP (Estrategia): Visión, relación con el sistema, lectura de poder y negocio.
-4. SHINE BEYOND (Legado): Sucesión, cultura, impacto social y trascendencia.
+1. SHINE WITHIN (Autoliderazgo): Gestión interna.
+2. SHINE OUT (Influencia): Impacto en otros.
+3. SHINE UP (Estrategia): Lectura del sistema.
+4. SHINE BEYOND (Legado): Impacto a largo plazo.
 
 Estructura del Reporte (Markdown):
-# Diagnóstico Ejecutivo para ${username} (${role})
+## 1. Perfil Estratégico
+Define su arquetipo de liderazgo en una frase (ej: "Líder Operativo de Alto Rendimiento pero Bajo Impacto Estratégico").
 
-## 1. Resumen Estratégico
-Un párrafo contundente sobre su perfil actual. ¿Es un líder operativo, estratégico o trascendente?
+## 2. Análisis de Riesgos Ocultos (Deep Dive)
+Identifica 2 tensiones o riesgos basados en desbalances (ej: Alto Shine Out + Bajo Shine Within = "Riesgo de Impostor"). Sé crudo y real.
 
-## 2. Análisis de Brechas (Hidden Risks)
-Identifica 2-3 riesgos ocultos basados en sus puntajes más bajos o desbalanceados (Ej: Alto Shine Out pero bajo Shine Within = "Líder carismático pero con riesgo de burnout").
+## 3. Plan de Aceleración (3 Movimientos)
+3 acciones de alto nivel para los próximos 30 días. Nada de "mejorar comunicación". Dame tácticas específicas.
+            `;
 
-## 3. Plan de Aceleración (Quick Wins)
-3 acciones concretas y sofisticadas para implementar en los próximos 30 días. No des consejos genéricos ("comunícate mejor"). Sé específico ("Instaura reuniones de 15 min de alineación...").
+            userPrompt = `
+Líder: ${username} (${role})
+Global: ${scores.globalAvg}/5.0
 
-Usa un tono profesional, empático pero firme. No uses listas interminables. Ve al grano.
-        `;
+Pilares:
+- Within: ${scores.pillarAvg.within}
+- Out: ${scores.pillarAvg.out}
+- Up: ${scores.pillarAvg.up}
+- Beyond: ${scores.pillarAvg.beyond}
 
-        const userPrompt = `
-Resultados del Diagnóstico:
-- Índice Global: ${scores.globalAvg}/5.0
-- Rol: ${role}
-
-Desglose por Pilares:
-- Shine Within: ${scores.pillarAvg.within}/5.0
-- Shine Out: ${scores.pillarAvg.out}/5.0
-- Shine Up: ${scores.pillarAvg.up}/5.0
-- Shine Beyond: ${scores.pillarAvg.beyond}/5.0
-
-Top 3 Competencias más bajas (Brechas):
+Top Brechas:
 ${scores.compList.sort((a: any, b: any) => a.score - b.score).slice(0, 3).map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
+            `;
 
-Top 3 Competencias más altas (Fortalezas):
-${scores.compList.sort((a: any, b: any) => b.score - a.score).slice(0, 3).map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
-        `;
+        } else {
+            // --- PILLAR DEEP DIVE ---
+            const pillarNames: Record<string, string> = {
+                within: "SHINE WITHIN (Autoliderazgo)",
+                out: "SHINE OUT (Influencia y Relaciones)",
+                up: "SHINE UP (Estrategia y Negocio)",
+                beyond: "SHINE BEYOND (Cultura y Legado)"
+            };
+            const pName = pillarNames[pillar] || pillar;
+
+            systemPrompt = `
+Eres un Coach Especialista en "${pName}" de la metodología 4Shine.
+Tu objetivo es hacer una "Biopsia de Liderazgo" profunda solo en este pilar.
+Sé extremadamente detallado, crítico y orientado a la acción inmediata.
+
+Estructura del Reporte (Markdown):
+## Diagnóstico de ${pName}
+
+### 1. La Verdad Incómoda
+Analiza sus puntajes en este pilar. ¿Qué están diciendo realmente sobre su día a día? ¿Dónde se está auto-saboteando?
+
+### 2. Impacto en el Negocio
+Conecta sus brechas en este pilar con resultados de negocio (pérdida de talento, lentitud en decisiones, falta de innovación).
+
+### 3. Protocolo de Intervención
+2 rutinas o herramientas específicas para elevar este pilar. Ejemplos: "Auditoría de Calendario", "Feedback Estructurado", "Mapa de Poder".
+            `;
+
+            // Filter comps for this pillar
+            const pComps = scores.compList.filter((c: any) => c.pillar === pillar);
+            const lowComps = pComps.sort((a: any, b: any) => a.score - b.score).slice(0, 3);
+            const highComps = pComps.sort((a: any, b: any) => b.score - a.score).slice(0, 3);
+
+            userPrompt = `
+Líder: ${username} (${role})
+Puntaje Pilar ${pillar}: ${scores.pillarAvg[pillar]}/5.0
+
+Competencias Críticas (Bajas):
+${lowComps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
+
+Competencias Fuertes:
+${highComps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
+            `;
+        }
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o", // Or gpt-4-turbo
+            model: "gpt-4o",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt }

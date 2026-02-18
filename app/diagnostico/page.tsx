@@ -291,12 +291,108 @@ export default function DiagnosticsPage() {
     return null;
 }
 
+// --- SUBCOMPONENT: AI ANALYSIS ---
+function AiAnalysisSection({ username, role, scores, pillar }: { username: string, role: string, scores: any, pillar: string }) {
+    const [report, setReport] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [speaking, setSpeaking] = useState(false);
+
+    const handleAnalyze = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/diagnostics/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, role, scores, pillar })
+            });
+            const data = await res.json();
+            if (data.report) setReport(data.report);
+            else alert('Error generando reporte.');
+        } catch (e) {
+            alert('Error de conexión.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSpeak = () => {
+        if (!report) return;
+        if (speaking) {
+            window.speechSynthesis.cancel();
+            setSpeaking(false);
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(report);
+        utterance.lang = 'es-ES';
+        utterance.rate = 1.1;
+        utterance.pitch = 1.0;
+
+        utterance.onend = () => setSpeaking(false);
+
+        setSpeaking(true);
+        window.speechSynthesis.speak(utterance);
+    };
+
+    // Stop speech on unmount
+    useEffect(() => {
+        return () => {
+            window.speechSynthesis.cancel();
+        };
+    }, []);
+
+    return (
+        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-700/50 flex flex-col h-full print:break-inside-avoid">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-500/20 rounded-lg"><BrainCircuit className="text-indigo-300" /></div>
+                    <div>
+                        <h3 className="font-bold text-lg">AI Executive Coach</h3>
+                        <p className="text-xs text-indigo-300 font-medium uppercase tracking-wider">
+                            {pillar === 'all' ? 'Visión Estratégica' : `Deep Dive: ${PILLAR_INFO[pillar as keyof typeof PILLAR_INFO]?.title || pillar}`}
+                        </p>
+                    </div>
+                </div>
+                {report && (
+                    <button
+                        onClick={handleSpeak}
+                        className={`p-2 rounded-full transition-colors ${speaking ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                        title={speaking ? "Detener" : "Escuchar Análisis"}
+                    >
+                        {speaking ? <span className="animate-pulse">⏹️</span> : <span>🔊</span>}
+                    </button>
+                )}
+            </div>
+
+            {!report ? (
+                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-4 min-h-[200px]">
+                    <p className="text-slate-300 text-sm max-w-xs">
+                        {pillar === 'all'
+                            ? 'Genera un análisis estratégico y hoja de ruta basada en tus resultados globales.'
+                            : 'Realiza una "biopsia" profunda de este pilar para descubrir bloqueos y palancas de crecimiento.'}
+                    </p>
+                    <button
+                        onClick={handleAnalyze}
+                        disabled={loading}
+                        className="bg-indigo-500 hover:bg-indigo-400 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-indigo-900/50 transition-all flex items-center gap-2"
+                    >
+                        {loading ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
+                        {loading ? 'Analizando...' : 'Generar Análisis'}
+                    </button>
+                </div>
+            ) : (
+                <div className="prose prose-invert prose-sm max-w-none overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[500px]">
+                    <ReactMarkdown>{report}</ReactMarkdown>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // --- SUBCOMPONENT: RESULTS VIEW ---
 
 function ResultsView({ state, onReset }: { state: UserState, onReset: () => void }) {
     const [filter, setFilter] = useState<'all' | 'within' | 'out' | 'up' | 'beyond'>('all');
-    const [aiReport, setAiReport] = useState<string | null>(null);
-    const [aiLoading, setAiLoading] = useState(false);
 
     // 1. Calculate Scores
     const scores = React.useMemo(() => {
@@ -333,43 +429,20 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
 
     const globalMsg = scores.globalAvg >= 4.5 ? "Sobresaliente" : scores.globalAvg >= 3.8 ? "Muy Bueno" : "En Desarrollo";
 
-    // AI Analysis Handler
-    const handleAnalyze = async () => {
-        setAiLoading(true);
-        try {
-            const res = await fetch('/api/diagnostics/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: state.username,
-                    role: state.role,
-                    scores
-                })
-            });
-            const data = await res.json();
-            if (data.report) setAiReport(data.report);
-            else alert('Error generating report');
-        } catch (e) {
-            alert('Error network');
-        } finally {
-            setAiLoading(false);
-        }
-    };
-
     // Recharts Data
     const radarData = [
         { subject: 'Within', A: scores.pillarAvg.within, fullMark: 5 },
         { subject: 'Out', A: scores.pillarAvg.out, fullMark: 5 },
-        { subject: 'Beyond', A: scores.pillarAvg.beyond, fullMark: 5 }, // Order for circle
+        { subject: 'Beyond', A: scores.pillarAvg.beyond, fullMark: 5 },
         { subject: 'Up', A: scores.pillarAvg.up, fullMark: 5 },
     ];
-    // Reorder for correct visual circle (Within -> Out -> Up -> Beyond is usuall, but Radar works angular)
 
     // Filter Logic
     const filteredComps = filter === 'all' ? scores.compList : scores.compList.filter(c => c.pillar === filter);
+    const currentPillarTitle = filter === 'all' ? 'Visión General' : PILLAR_INFO[filter].title;
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-20 print:bg-white print:pb-0">
+        <div className="min-h-screen bg-slate-50 pb-20 print:bg-white print:pb-0 print:h-auto print:overflow-visible">
             {/* Header */}
             <div className="bg-white border-b border-slate-200 px-8 py-6 flex items-center justify-between print:hidden">
                 <div className="flex items-center gap-3">
@@ -388,7 +461,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
             <main className="max-w-5xl mx-auto p-8 print:p-0 print:max-w-none">
 
                 {/* Hero Results */}
-                <div className="text-center mb-12 print:mb-8">
+                <div className="text-center mb-12 print:mb-8 print:break-inside-avoid">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Índice Global de Liderazgo</p>
                     <div className="inline-block bg-white rounded-[32px] shadow-lg border border-slate-100 px-12 py-8 print:shadow-none print:border-none">
                         <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500 mb-2">
@@ -408,8 +481,8 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                             key={f}
                             onClick={() => setFilter(f as any)}
                             className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all border ${filter === f
-                                    ? 'bg-indigo-600 text-white border-indigo-600'
-                                    : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'
                                 }`}
                         >
                             {f === 'all' ? 'Visión General' : PILLAR_INFO[f as keyof typeof PILLAR_INFO].title}
@@ -417,101 +490,62 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     ))}
                 </div>
 
-                {/* Main Charts (Only on All) */}
-                {filter === 'all' && (
-                    <div className="grid md:grid-cols-2 gap-8 mb-12">
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px]">
-                            <h3 className="text-center font-bold text-slate-700 mb-4">Radar de Competencias</h3>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                    <PolarGrid stroke="#e2e8f0" />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
-                                    <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
-                                    <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
-                                    <Tooltip />
-                                </RadarChart>
-                            </ResponsiveContainer>
-                        </div>
+                {/* DYNAMIC CONTENT AREA */}
+                <div className="grid md:grid-cols-2 gap-8 mb-12">
 
-                        {/* AI Coach Section */}
-                        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-700/50 flex flex-col">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-indigo-500/20 rounded-lg"><BrainCircuit className="text-indigo-300" /></div>
-                                <h3 className="font-bold text-lg">AI Executive Coach</h3>
+                    {/* LEFT COLUMN: CHARTS */}
+                    <div className="space-y-6">
+                        {filter === 'all' ? (
+                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] print:break-inside-avoid">
+                                <h3 className="text-center font-bold text-slate-700 mb-4">Radar de Competencias</h3>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                        <PolarGrid stroke="#e2e8f0" />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
+                                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                                        <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
+                                        <Tooltip />
+                                    </RadarChart>
+                                </ResponsiveContainer>
                             </div>
-
-                            {!aiReport ? (
-                                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-4">
-                                    <p className="text-slate-300 text-sm max-w-xs">
-                                        Genera un análisis profundo de "Brechas Ocultas" y un "Plan de Aceleración" personalizado usando nuestra IA experta en 4Shine.
-                                    </p>
-                                    <button
-                                        onClick={handleAnalyze}
-                                        disabled={aiLoading}
-                                        className="bg-indigo-500 hover:bg-indigo-400 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-indigo-900/50 transition-all flex items-center gap-2"
-                                    >
-                                        {aiLoading ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
-                                        {aiLoading ? 'Analizando...' : 'Generar Reporte Estratégico'}
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="prose prose-invert prose-sm max-w-none overflow-y-auto pr-2 custom-scrollbar flex-1">
-                                    <ReactMarkdown>{aiReport}</ReactMarkdown>
-                                </div>
-                            )}
-                        </div>
+                        ) : (
+                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] print:break-inside-avoid">
+                                <h3 className="text-center font-bold text-slate-700 mb-4">{currentPillarTitle}</h3>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart layout="vertical" data={filteredComps}>
+                                        <XAxis type="number" domain={[0, 5]} hide />
+                                        <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#64748b' }} />
+                                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: 12 }} />
+                                        <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
+                                            {filteredComps.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={
+                                                    filter === 'within' ? '#6366f1' :
+                                                        filter === 'out' ? '#8b5cf6' :
+                                                            filter === 'up' ? '#ec4899' : '#10b981'
+                                                } />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
                     </div>
-                )}
 
-                {/* Deep Dive Charts per Pillar */}
-                <h2 className="text-xl font-black text-slate-800 mb-6 print:mt-8">
-                    {filter === 'all' ? 'Desglose por Pilar' : PILLAR_INFO[filter].title}
-                </h2>
-
-                <div className="grid md:grid-cols-2 gap-6 mb-12 print:block print:space-y-6">
-                    {['within', 'out', 'up', 'beyond'].map(pKey => {
-                        if (filter !== 'all' && filter !== pKey) return null;
-
-                        const pComps = scores.compList.filter(c => c.pillar === pKey);
-                        // Sort by score for better viz? Optional.
-
-                        return (
-                            <div key={pKey} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 print:break-inside-avoid">
-                                <div className="flex justify-between items-center mb-4">
-                                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${pKey === 'within' ? 'bg-indigo-50 text-indigo-600' :
-                                            pKey === 'out' ? 'bg-violet-50 text-violet-600' :
-                                                pKey === 'up' ? 'bg-pink-50 text-pink-600' : 'bg-emerald-50 text-emerald-600'
-                                        }`}>
-                                        {PILLAR_INFO[pKey as keyof typeof PILLAR_INFO].title}
-                                    </span>
-                                    <span className="font-bold text-slate-800">{scores.pillarAvg[pKey]}/5.0</span>
-                                </div>
-                                <div className="h-[250px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart layout="vertical" data={pComps}>
-                                            <XAxis type="number" domain={[0, 5]} hide />
-                                            <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                            <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: 12 }} />
-                                            <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
-                                                {pComps.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={
-                                                        pKey === 'within' ? '#6366f1' :
-                                                            pKey === 'out' ? '#8b5cf6' :
-                                                                pKey === 'up' ? '#ec4899' : '#10b981'
-                                                    } />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        )
-                    })}
+                    {/* RIGHT COLUMN: AI COACH (Everywhere) */}
+                    <div className="h-full">
+                        <AiAnalysisSection
+                            key={filter} // Force re-render on filter change to reset AI state
+                            username={state.username}
+                            role={state.role}
+                            scores={scores}
+                            pillar={filter}
+                        />
+                    </div>
                 </div>
 
                 {/* Detail Table */}
-                <h3 className="font-bold text-slate-700 mb-4">Detalle de Competencias</h3>
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-12 shadow-sm">
+                <h3 className="font-bold text-slate-700 mb-4 print:mt-8">Detalle de Competencias</h3>
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-12 shadow-sm print:shadow-none print:border-slate-300">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
                             <tr>
@@ -522,7 +556,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredComps.map((c, i) => (
-                                <tr key={i} className="hover:bg-slate-50/50">
+                                <tr key={i} className="hover:bg-slate-50/50 print:break-inside-avoid">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-slate-700">{c.name}</div>
                                         <div className="text-xs text-slate-400">{COMP_DEFINITIONS[c.name]}</div>
@@ -530,7 +564,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                                     <td className="px-6 py-4 text-center font-mono font-bold text-slate-600">{c.score}</td>
                                     <td className="px-6 py-4 text-center">
                                         <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${c.score >= 4 ? 'bg-emerald-100 text-emerald-700' :
-                                                c.score >= 2.5 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+                                            c.score >= 2.5 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
                                             }`}>
                                             {c.score >= 4 ? 'Fortaleza' : c.score >= 2.5 ? 'Oportunidad' : 'Brecha'}
                                         </span>
