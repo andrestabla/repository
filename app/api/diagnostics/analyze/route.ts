@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
         }
 
         // Initialize OpenAI
-        const apiKey = process.env.OPENAI_API_KEY;
+        let apiKey: string | undefined | null = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+            apiKey = await SystemSettingsService.getOpenAIApiKey();
+        }
 
         if (!apiKey) {
             return NextResponse.json({ error: "OpenAI API Key not configured" }, { status: 500 });

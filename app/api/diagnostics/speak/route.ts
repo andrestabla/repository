@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { SystemSettingsService } from '@/lib/settings';
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,7 +10,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No text provided" }, { status: 400 });
         }
 
-        const apiKey = process.env.OPENAI_API_KEY;
+        let apiKey: string | undefined | null = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+            apiKey = await SystemSettingsService.getOpenAIApiKey();
+        }
+
         if (!apiKey) {
             return NextResponse.json({ error: "OpenAI API Key not configured" }, { status: 500 });
         }
