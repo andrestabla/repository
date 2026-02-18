@@ -5,11 +5,11 @@ const prismaClientSingleton = () => {
 }
 
 declare global {
-    var prisma: undefined | ReturnType<typeof prismaClientSingleton>
+    var globalPrisma: undefined | ReturnType<typeof prismaClientSingleton>
 }
 
-const prismaInstance = globalThis.prisma ?? prismaClientSingleton()
+const prismaInstance = globalThis.globalPrisma ?? prismaClientSingleton()
 
 export default prismaInstance
 
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prismaInstance
+if (process.env.NODE_ENV !== 'production') globalThis.globalPrisma = prismaInstance
