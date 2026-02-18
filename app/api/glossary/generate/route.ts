@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
         })
 
         // Build simple hierarchy text
-        const pillars = taxonomyNodes.filter(n => n.type === 'Pillar').map(n => n.name)
-        const competencies = taxonomyNodes.filter(n => n.type === 'Competence').map(n => `${n.name} (Sub: ${n.parent?.name})`)
-        
+        const pillars = taxonomyNodes.filter((n: any) => n.type === 'Pillar').map((n: any) => n.name)
+        const competencies = taxonomyNodes.filter((n: any) => n.type === 'Competence').map((n: any) => `${n.name} (Sub: ${n.parent?.name})`)
+
         const taxonomyContext = `
         TAXONOMY V2 CONTEXT (Use to categorize):
         - PILLARS: ${pillars.join(', ')}
@@ -52,10 +52,10 @@ export async function POST(request: NextRequest) {
 
         const context = `
         ACTIVE ASSETS CONTEXT (Practical Examples):
-        ${validatedAssets.map(a => `- ${a.title} (${a.primaryPillar}): ${a.observations?.substring(0, 200)}`).join('\n')}
+        ${validatedAssets.map((a: any) => `- ${a.title} (${a.primaryPillar}): ${a.observations?.substring(0, 200)}`).join('\n')}
 
         RESEARCH CONTEXT (Theoretical Backing):
-        ${researchItems.map(r => `- [ID: ${r.id}] ${r.title}: ${r.summary?.substring(0, 200)} (APA: ${r.apa})`).join('\n')}
+        ${researchItems.map((r: any) => `- [ID: ${r.id}] ${r.title}: ${r.summary?.substring(0, 200)} (APA: ${r.apa})`).join('\n')}
         
         ${taxonomyContext}
         `
