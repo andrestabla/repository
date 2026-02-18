@@ -1,5 +1,5 @@
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import OpenAI from 'openai'
 import * as dotenv from 'dotenv'
 
@@ -77,19 +77,94 @@ async function main() {
     const allTerms = await prisma.glossaryTerm.findMany()
     console.log(`Found ${allTerms.length} terms to update.`)
 
+    // Load ALL embeddings into memory (for this scale it's fine)
+    console.log("Loading embeddings for RAG...")
+
+    const contentEmbeddings = await prisma.contentItem.findMany({
+        // @ts-ignore
+        where: { embedding: { not: Prisma.JsonNull } },
+        // @ts-ignore
+        select: { id: true, title: true, primaryPillar: true, observations: true, embedding: true }
+    })
+
+    const researchEmbeddings = await prisma.researchSource.findMany({
+        // @ts-ignore
+        where: { embedding: { not: Prisma.JsonNull } },
+        // @ts-ignore
+        select: { id: true, title: true, summary: true, apa: true, embedding: true }
+    })
+
+    console.log(`Loaded ${contentEmbeddings.length} content vectors and ${researchEmbeddings.length} research vectors.`)
+
+    // Helper for cosine similarity
+    function cosineSimilarity(vecA: number[], vecB: number[]): number {
+        let dotProduct = 0, normA = 0, normB = 0
+        for (let i = 0; i < vecA.length; i++) {
+            dotProduct += vecA[i] * vecB[i]
+            normA += vecA[i] * vecA[i]
+            normB += vecB[i] * vecB[i]
+        }
+        return (normA === 0 || normB === 0) ? 0 : dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
+    }
+
     let successCount = 0
     let failureCount = 0
 
     for (const termRecord of allTerms) {
-        console.log(`Updating term: ${termRecord.term}...`)
+        console.log(`\nProcessing term: "${termRecord.term}"...`)
+
+        // A. Generate embedding for the TERM
+        let termEmbedding: number[] | null = null
+        try {
+            const embeddingResp = await openai.embeddings.create({
+                model: 'text-embedding-3-small',
+                input: termRecord.term,
+                encoding_format: 'float'
+            })
+            termEmbedding = embeddingResp.data[0].embedding
+        } catch (e: any) {
+            console.error(`  Failed to embed term: ${e.message}`)
+            failureCount++
+            continue
+        }
+
+        if (!termEmbedding) continue
+
+        // B. Find Top 5 Related Assets
+        const rankedAssets = contentEmbeddings.map(item => ({
+            ...item,
+            // @ts-ignore
+            similarity: cosineSimilarity(termEmbedding!, item.embedding as number[])
+        })).sort((a, b) => b.similarity - a.similarity).slice(0, 5)
+
+        // C. Find Top 5 Related Research
+        const rankedResearch = researchEmbeddings.map(item => ({
+            ...item,
+            // @ts-ignore
+            similarity: cosineSimilarity(termEmbedding!, item.embedding as number[])
+        })).sort((a, b) => b.similarity - a.similarity).slice(0, 5)
+
+        console.log(`  Top Asset: ${rankedAssets[0]?.title} (${rankedAssets[0]?.similarity.toFixed(4)})`)
+        console.log(`  Top Research: ${rankedResearch[0]?.title} (${rankedResearch[0]?.similarity.toFixed(4)})`)
+
+        // D. Build Specific RAG Context
+        const ragContext = `
+        CONTEXTO DE ACTIVOS (Similares al término):
+        ${rankedAssets.map((a: any) => `- ${a.title} (${a.primaryPillar}): ${a.observations?.substring(0, 300)}`).join('\n')}
+
+        CONTEXTO DE INVESTIGACIÓN (Similares al término):
+        ${rankedResearch.map((r: any) => `- [ID: ${r.id}] ${r.title}: ${r.summary?.substring(0, 300)} (APA: ${r.apa})`).join('\n')}
+        
+        ${taxonomyContext}
+        `
 
         const prompt = `
         Define el término "${termRecord.term}" bajo el marco de la metodología 4Shine.
         
-        FUENTES DE INFORMACIÓN:
-        1. Contexto de Activos: Úsalo para dar ejemplos prácticos de cómo se aplica.
-        2. Contexto de Investigación: Úsalo para dar sustento teórico (cita fuentes si aplica).
-        3. Taxonomía V2: Identifica a qué Pilar o Competencia pertenece este término.
+        FUENTES DE INFORMACIÓN (RAG ACTIVADO):
+        1. Contexto de Activos: Estos son los activos MÁS RELEVANTES semánticamente encontrados en el inventario. Úsalos para dar ejemplos precisos.
+        2. Contexto de Investigación: Estas son las fuentes científicas MÁS RELEVANTES. Úsalas para sustento teórico.
+        3. Taxonomía V2: Clasifica el término correctamente.
 
         REGLAS DE CITACIÓN (CRÍTICO):
         1. Si usas información del "RESEARCH CONTEXT", DEBES citar al autor usando formato APA 7.
@@ -97,14 +172,14 @@ async function main() {
         3. Formato del Link: [Autor, Año](/research?id=ID_DE_LA_FUENTE)
         Ejemplo: "...como afirma [Smith, 2023](/research?id=clq...) en su estudio..."
 
-        ${context}
+        ${ragContext}
 
         Responde ÚNICAMENTE con un JSON:
         {
-            "definition": "Definición conceptual robusta (máx 500 caracteres). Si aplica, incluye ejemplos prácticos del inventario.",
-            "pillars": ["Shine Within"], // Pilares relacionados detectados de la Taxonomía
-            "relatedCompetency": "Nombre de la competencia (si aplica)",
-            "sourceType": "Teórico" // o "Práctico" o "Híbrido"
+            "definition": "Definición conceptual robusta (máx 500 caracteres). Integra explícitamente los hallazgos del contexto recuperado.",
+            "pillars": ["Shine Within"], 
+            "relatedCompetency": "Nombre de la competencia",
+            "sourceType": "Teórico" // "Práctico", "Híbrido"
         }
         `
 
@@ -127,24 +202,26 @@ async function main() {
                 data: {
                     definition: parsed.definition,
                     pillars: parsed.pillars || [],
+                    // @ts-ignore
                     relatedCompetency: parsed.relatedCompetency || null,
+                    // @ts-ignore
                     sourceType: parsed.sourceType || 'Teórico'
                 }
             })
 
-            console.log(`  Target: ${termRecord.term} -> Success`)
+            console.log(`  Saved: ${termRecord.term}`)
             successCount++
 
         } catch (error: any) {
-            console.error(`  Target: ${termRecord.term} -> Failed: ${error.message}`)
+            console.error(`  Failed generation: ${error.message}`)
             failureCount++
         }
 
-        // Small delay to be nice to rate limits
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Small delay
+        await new Promise(resolve => setTimeout(resolve, 300))
     }
 
-    console.log(`\nBatch Update Complete. Success: ${successCount}, Failures: ${failureCount}`)
+    console.log(`\nBatch RAG Update Complete. Success: ${successCount}, Failures: ${failureCount}`)
 }
 
 main()

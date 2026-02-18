@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { OpenAIService } from '@/lib/openai'
+import { EmbeddingsService } from '@/lib/embeddings'
+import { Prisma } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)

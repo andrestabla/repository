@@ -70,6 +70,7 @@ model ContentItem {
   geminiUri        String?
   release          MethodologyRelease? @relation(fields: [releaseId], references: [id])
   researchSources  ResearchSource[]    @relation("ContentReferences")
+  embedding        Json?
 
   @@index([releaseId])
 }
@@ -93,6 +94,7 @@ model ResearchSource {
   geographicCoverage String?
   populationParams   String?
   referencedBy       ContentItem[] @relation("ContentReferences")
+  embedding          Json?
 }
 
 model MethodologyRelease {
