@@ -14,11 +14,11 @@ export default async function ProductsPage() {
     })
 
     // Serialize dates if necessary
-    const serialized = initialProducts.map(p => ({
+    const serialized = initialProducts.map((p: any) => ({
         ...p,
         updatedAt: p.updatedAt.toISOString(),
         createdAt: p.createdAt.toISOString(),
-        versions: p.versions.map(v => ({
+        versions: p.versions.map((v: any) => ({
             ...v,
             createdAt: v.createdAt.toISOString()
         }))
