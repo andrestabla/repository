@@ -546,13 +546,13 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     ))}
                 </div>
 
-                {/* DYNAMIC CONTENT AREA */}
-                <div className="grid md:grid-cols-2 gap-8 mb-12">
+                {/* DYNAMIC CONTENT AREA (Screen Only) */}
+                <div className="grid md:grid-cols-2 gap-8 mb-12 print:hidden relative">
 
                     {/* LEFT COLUMN: CHARTS */}
                     <div className="space-y-6">
                         {filter === 'all' ? (
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] min-h-[400px] w-full print:break-inside-avoid">
+                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] min-h-[400px] w-full">
                                 <h3 className="text-center font-bold text-slate-700 mb-4">Radar de Competencias</h3>
                                 <div style={{ width: '100%', height: 'calc(100% - 40px)' }}>
                                     <ResponsiveContainer width="100%" height="100%">
@@ -567,7 +567,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] min-h-[400px] w-full print:break-inside-avoid">
+                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] min-h-[400px] w-full">
                                 <h3 className="text-center font-bold text-slate-700 mb-4">{currentPillarTitle}</h3>
                                 <div style={{ width: '100%', height: 'calc(100% - 40px)' }}>
                                     <ResponsiveContainer width="100%" height="100%">
@@ -603,9 +603,84 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     </div>
                 </div>
 
-                {/* Detail Table */}
-                <h3 className="font-bold text-slate-700 mb-4 print:mt-8">Detalle de Competencias</h3>
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-12 shadow-sm print:shadow-none print:border-slate-300">
+                {/* --- PRINT ONLY: CONSOLIDATED REPORT --- */}
+                <div className="hidden print:block space-y-8">
+                    {/* Radar Global (Print) */}
+                    <div className="break-inside-avoid mb-8">
+                        <h3 className="text-xl font-bold text-slate-900 mb-4 border-b border-slate-200 pb-2">Visión Estratégica Global</h3>
+                        <div className="h-[300px] w-full border border-slate-100 rounded-xl p-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                    <PolarGrid stroke="#e2e8f0" />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
+                                    <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                                    <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
+                                </RadarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Pillars Loop */}
+                    {['within', 'out', 'up', 'beyond'].map(pKey => {
+                        const pInfo = PILLAR_INFO[pKey as keyof typeof PILLAR_INFO];
+                        const pScore = scores.pillarAvg[pKey];
+                        const pComps = scores.compList.filter(c => c.pillar === pKey);
+
+                        return (
+                            <div key={pKey} className="break-before-page break-inside-avoid page-break">
+                                <div className="flex items-center justify-between mb-6 border-b-2 border-slate-900 pb-2">
+                                    <div>
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">Pilar Estratégico</span>
+                                        <h2 className="text-3xl font-black text-indigo-600">{pInfo.title}</h2>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-4xl font-black text-slate-800">{pScore}/5.0</div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-6">
+                                    {/* Chart */}
+                                    <div className="h-[250px] w-full border border-slate-100 rounded-xl p-4">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart layout="vertical" data={pComps}>
+                                                <XAxis type="number" domain={[0, 5]} hide />
+                                                <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 'bold' }} />
+                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={15} fill="#4f46e5" label={{ position: 'right', fill: '#64748b', fontSize: 10 }}>
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+
+                                    {/* Table */}
+                                    <div className="border border-slate-200 rounded-xl overflow-hidden">
+                                        <table className="w-full text-xs text-left">
+                                            <thead className="bg-slate-100 text-slate-700 font-bold uppercase">
+                                                <tr>
+                                                    <th className="px-4 py-2">Competencia</th>
+                                                    <th className="px-4 py-2">Definición</th>
+                                                    <th className="px-4 py-2 text-center">Score</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {pComps.map((c, i) => (
+                                                    <tr key={i}>
+                                                        <td className="px-4 py-2 font-bold text-slate-800">{c.name}</td>
+                                                        <td className="px-4 py-2 text-slate-500 italic">{COMP_DEFINITIONS[c.name]}</td>
+                                                        <td className="px-4 py-2 text-center font-mono font-bold">{c.score}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Detail Table (Screen Only) */}
+                <h3 className="font-bold text-slate-700 mb-4 print:hidden">Detalle de Competencias</h3>
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-12 shadow-sm print:hidden">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
                             <tr>
