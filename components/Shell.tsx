@@ -82,7 +82,7 @@ export default function Shell({ children, session }: { children: React.ReactNode
                 setMobileMenuOpen={setMobileMenuOpen}
             />
 
-            <main className="flex-1 overflow-auto bg-bg relative transition-all duration-300 md:pt-0 pt-16">
+            <main className="flex-1 overflow-auto bg-bg relative transition-all duration-300 md:pt-0 pt-16 print:w-full print:absolute print:left-0 print:top-0 print:p-0 print:m-0">
                 {children}
             </main>
         </div>

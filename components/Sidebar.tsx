@@ -118,7 +118,7 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
     return (
         <aside
             className={`bg-panel border-r border-border flex flex-col transition-all duration-300 ease-in-out shadow-2xl z-50
-            fixed md:relative inset-y-0 left-0 h-full
+            fixed md:relative inset-y-0 left-0 h-full print:hidden
             ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${collapsed ? 'w-[80px] p-4 items-center' : 'w-[280px] p-6'}`}
         >
