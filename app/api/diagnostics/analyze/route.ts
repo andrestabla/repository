@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { SystemSettingsService } from '@/lib/settings';
+import prisma from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
     try {
@@ -13,14 +14,50 @@ export async function POST(req: NextRequest) {
         }
 
         // Initialize OpenAI
-        let apiKey = await SystemSettingsService.getOpenAIApiKey();
-        if (!apiKey) apiKey = process.env.OPENAI_API_KEY || null;
+        const apiKey = process.env.OPENAI_API_KEY;
 
         if (!apiKey) {
             return NextResponse.json({ error: "OpenAI API Key not configured" }, { status: 500 });
         }
 
         const openai = new OpenAI({ apiKey });
+
+        // --- CONTEXT RETRIEVAL (RAG LITE) ---
+
+        // 1. Identify Gaps
+        const sortedComps = scores.compList.sort((a: any, b: any) => a.score - b.score);
+        const gaps = sortedComps.slice(0, 3);
+        const gapNames = gaps.map((c: any) => c.name);
+        const strengthNames = sortedComps.slice(-3).map((c: any) => c.name);
+
+        // 2. Fetch Glossary Definitions
+        const glossaryDocs = await prisma.glossaryTerm.findMany({
+            where: { term: { in: gapNames } },
+            select: { term: true, definition: true }
+        });
+
+        // 3. Fetch Recommended Assets (ContentItem & Workbooks)
+        // Try to find content matching the gaps or the specific pillar
+        const whereCondition: any = pillar && pillar !== 'all'
+            ? {
+                OR: [
+                    { competence: { in: gapNames } },
+                    { primaryPillar: { equals: pillar, mode: 'insensitive' } }
+                ]
+            }
+            : { competence: { in: gapNames } };
+
+        const recommendations = await prisma.contentItem.findMany({
+            where: {
+                ...whereCondition,
+                status: 'published' // Only published content
+            },
+            take: 4,
+            select: { title: true, type: true, competence: true, fileUrl: true }
+        });
+
+        const recsString = recommendations.map((r: any) => `- ${r.title} (${r.type}) [Enfocado en: ${r.competence || 'General'}]`).join('\n');
+        const glossaryString = glossaryDocs.map((g: any) => `- **${g.term}**: ${g.definition}`).join('\n');
 
         let systemPrompt = '';
         let userPrompt = '';
@@ -29,38 +66,41 @@ export async function POST(req: NextRequest) {
             // --- GENERAL ANALYSIS ---
             systemPrompt = `
 Eres un Coach Ejecutivo Senior experto en la metodología "4Shine".
-Tu estilo es DIRECTO, SOFISTICADO y CONTUNDENTE. No uses lenguaje corporativo vacío.
-Tu objetivo es analizar el perfil holístico del líder y dar una hoja de ruta clara.
+Tu estilo es DIRECTO, SOFISTICADO y CONTUNDENTE.
+Tu objetivo es analizar el perfil holístico del líder, usando el contexto de la plataforma.
+
+**RECURSOS DE LA PLATAFORMA (Contexto RAG):**
+A continuación, definiciones oficiales de sus brechas y recursos recomendados. ÚSALOS para dar consejos específicos.
+*Glosario Técnico:*
+${glossaryString}
+
+*Recursos Recomendados Disponibles:*
+${recsString}
 
 La Metodología 4Shine tiene 4 Pilares:
-1. SHINE WITHIN (Autoliderazgo): Gestión interna.
-2. SHINE OUT (Influencia): Impacto en otros.
-3. SHINE UP (Estrategia): Lectura del sistema.
-4. SHINE BEYOND (Legado): Impacto a largo plazo.
+1. SHINE WITHIN (Autoliderazgo)
+2. SHINE OUT (Influencia)
+3. SHINE UP (Estrategia)
+4. SHINE BEYOND (Legado)
 
 Estructura del Reporte (Markdown):
-## 1. Perfil Estratégico
-Define su arquetipo de liderazgo en una frase (ej: "Líder Operativo de Alto Rendimiento pero Bajo Impacto Estratégico").
+## 1. Perfil Estratégico (Arquetipo)
+Define su arquetipo (ej: "Líder Operativo..."). Integra cómo sus fortalezas (${strengthNames.join(', ')}) contrastan con sus brechas.
 
 ## 2. Análisis de Riesgos Ocultos (Deep Dive)
-Identifica 2 tensiones o riesgos basados en desbalances (ej: Alto Shine Out + Bajo Shine Within = "Riesgo de Impostor"). Sé crudo y real.
+Identifica 2 tensiones sistémicas. Conecta las brechas con definiciones teóricas. (Ej: "Tu falta de '${gapNames[0]}' te impide...").
 
-## 3. Plan de Aceleración (3 Movimientos)
-3 acciones de alto nivel para los próximos 30 días. Nada de "mejorar comunicación". Dame tácticas específicas.
+## 3. Plan de Aceleración (Hoja de Ruta)
+3 acciones tácticas. **DEBES RECOMENDAR** al menos 1 de los recursos listados arriba si son pertinentes.
             `;
 
             userPrompt = `
 Líder: ${username} (${role})
 Global: ${scores.globalAvg}/5.0
-
-Pilares:
-- Within: ${scores.pillarAvg.within}
-- Out: ${scores.pillarAvg.out}
-- Up: ${scores.pillarAvg.up}
-- Beyond: ${scores.pillarAvg.beyond}
+Pilares: Within ${scores.pillarAvg.within}, Out ${scores.pillarAvg.out}, Up ${scores.pillarAvg.up}, Beyond ${scores.pillarAvg.beyond}.
 
 Top Brechas:
-${scores.compList.sort((a: any, b: any) => a.score - b.score).slice(0, 3).map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
+${gaps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
             `;
 
         } else {
@@ -75,36 +115,37 @@ ${scores.compList.sort((a: any, b: any) => a.score - b.score).slice(0, 3).map((c
 
             systemPrompt = `
 Eres un Coach Especialista en "${pName}" de la metodología 4Shine.
-Tu objetivo es hacer una "Biopsia de Liderazgo" profunda solo en este pilar.
-Sé extremadamente detallado, crítico y orientado a la acción inmediata.
+Analiza con profundidad quirúrgica.
+
+**CONTEXTO DE PLATAFORMA:**
+*Definiciones Clave:*
+${glossaryString}
+*Herramientas 4Shine Sugeridas:*
+${recsString}
 
 Estructura del Reporte (Markdown):
-## Diagnóstico de ${pName}
+## Diagnóstico Profundo: ${pName}
 
 ### 1. La Verdad Incómoda
-Analiza sus puntajes en este pilar. ¿Qué están diciendo realmente sobre su día a día? ¿Dónde se está auto-saboteando?
+Analiza sus puntajes. Usa las definiciones para explicar POR QUÉ está fallando en ${gapNames.join(', ')}. Sé crudo.
 
-### 2. Impacto en el Negocio
-Conecta sus brechas en este pilar con resultados de negocio (pérdida de talento, lentitud en decisiones, falta de innovación).
+### 2. Impacto Sistémico
+Conecta estas brechas con resultados de negocio y equipo.
 
 ### 3. Protocolo de Intervención
-2 rutinas o herramientas específicas para elevar este pilar. Ejemplos: "Auditoría de Calendario", "Feedback Estructurado", "Mapa de Poder".
+2 rutinas específicas y **RECOMIENDA** explícitamente 1 recurso/tool del listado anterior para cerrar la brecha.
             `;
 
-            // Filter comps for this pillar
+            // Filter comps
             const pComps = scores.compList.filter((c: any) => c.pillar === pillar);
             const lowComps = pComps.sort((a: any, b: any) => a.score - b.score).slice(0, 3);
-            const highComps = pComps.sort((a: any, b: any) => b.score - a.score).slice(0, 3);
 
             userPrompt = `
 Líder: ${username} (${role})
-Puntaje Pilar ${pillar}: ${scores.pillarAvg[pillar]}/5.0
+Puntaje Pilar: ${scores.pillarAvg[pillar]}/5.0
 
-Competencias Críticas (Bajas):
+Competencias Críticas:
 ${lowComps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
-
-Competencias Fuertes:
-${highComps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
             `;
         }
 

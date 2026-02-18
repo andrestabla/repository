@@ -295,17 +295,24 @@ export default function DiagnosticsPage() {
 function AiAnalysisSection({ username, role, scores, pillar }: { username: string, role: string, scores: any, pillar: string }) {
     const [report, setReport] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
     const [speaking, setSpeaking] = useState(false);
-    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [audioLoading, setAudioLoading] = useState(false);
+
+    // Reset audio when report changes or unmount
+    useEffect(() => {
+        if (audio) {
+            audio.pause();
+            setAudio(null);
+            setSpeaking(false);
+        }
+    }, [report, pillar]);
 
     useEffect(() => {
-        const loadVoices = () => {
-            setVoices(window.speechSynthesis.getVoices());
+        return () => {
+            if (audio) audio.pause();
         };
-        loadVoices();
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-        return () => { window.speechSynthesis.cancel(); }
-    }, []);
+    }, [audio]);
 
     const cleanMarkdownForSpeech = (text: string) => {
         return text
@@ -318,6 +325,7 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
 
     const handleAnalyze = async () => {
         setLoading(true);
+        setReport(null); // Clear previous
         try {
             const res = await fetch('/api/diagnostics/analyze', {
                 method: 'POST',
@@ -334,39 +342,47 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
         }
     };
 
-    const handleSpeak = () => {
+    const handleSpeak = async () => {
         if (!report) return;
-        if (speaking) {
-            window.speechSynthesis.cancel();
+
+        if (speaking && audio) {
+            audio.pause();
             setSpeaking(false);
             return;
         }
 
-        const cleanText = cleanMarkdownForSpeech(report);
-        const utterance = new SpeechSynthesisUtterance(cleanText);
+        if (audio) {
+            audio.play();
+            setSpeaking(true);
+            return;
+        }
 
-        // Priority: es-CO -> es-MX -> any es
-        const voice = voices.find(v => v.lang === 'es-CO') ||
-            voices.find(v => v.lang === 'es-MX') ||
-            voices.find(v => v.lang.startsWith('es'));
+        setAudioLoading(true);
+        try {
+            const cleanText = cleanMarkdownForSpeech(report);
+            const res = await fetch('/api/diagnostics/speak', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: cleanText })
+            });
 
-        if (voice) utterance.voice = voice;
+            if (!res.ok) throw new Error("Audio error");
 
-        utterance.rate = 1.0; // Slightly slower for better clarity
-        utterance.pitch = 1.0;
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const newAudio = new Audio(url);
 
-        utterance.onend = () => setSpeaking(false);
+            newAudio.onended = () => setSpeaking(false);
+            newAudio.play();
 
-        setSpeaking(true);
-        window.speechSynthesis.speak(utterance);
+            setAudio(newAudio);
+            setSpeaking(true);
+        } catch (e) {
+            alert("Error generando audio.");
+        } finally {
+            setAudioLoading(false);
+        }
     };
-
-    // Stop speech on unmount
-    useEffect(() => {
-        return () => {
-            window.speechSynthesis.cancel();
-        };
-    }, []);
 
     return (
         <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-700/50 flex flex-col h-full print:break-inside-avoid">
