@@ -296,6 +296,25 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
     const [report, setReport] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [speaking, setSpeaking] = useState(false);
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+    useEffect(() => {
+        const loadVoices = () => {
+            setVoices(window.speechSynthesis.getVoices());
+        };
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        return () => { window.speechSynthesis.cancel(); }
+    }, []);
+
+    const cleanMarkdownForSpeech = (text: string) => {
+        return text
+            .replace(/[#*`_~]/g, '') // Remove symbols
+            .replace(/\n\s*-\s/g, '. ') // Replace bullets with periods for pause
+            .replace(/\n\n/g, '. ') // Double newlines to periods
+            .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Links to text
+            .replace(/\s+/g, ' '); // Collapse whitespace
+    };
 
     const handleAnalyze = async () => {
         setLoading(true);
@@ -323,9 +342,17 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
             return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(report);
-        utterance.lang = 'es-ES';
-        utterance.rate = 1.1;
+        const cleanText = cleanMarkdownForSpeech(report);
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+
+        // Priority: es-CO -> es-MX -> any es
+        const voice = voices.find(v => v.lang === 'es-CO') ||
+            voices.find(v => v.lang === 'es-MX') ||
+            voices.find(v => v.lang.startsWith('es'));
+
+        if (voice) utterance.voice = voice;
+
+        utterance.rate = 1.0; // Slightly slower for better clarity
         utterance.pitch = 1.0;
 
         utterance.onend = () => setSpeaking(false);
