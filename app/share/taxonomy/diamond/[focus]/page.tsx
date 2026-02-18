@@ -39,12 +39,12 @@ export default async function Page({ params }: { params: Promise<{ focus: string
     })
 
     // Build Tree
-    const taxonomyTree = taxonomyRaw.map(item => ({ ...item, children: [] as any[] }))
+    const taxonomyTree = taxonomyRaw.map((item: any) => ({ ...item, children: [] as any[] }))
     const dataMap: any = {}
-    taxonomyTree.forEach(item => dataMap[item.id] = item)
+    taxonomyTree.forEach((item: any) => dataMap[item.id] = item)
 
     const rootNodes: any[] = []
-    taxonomyTree.forEach(item => {
+    taxonomyTree.forEach((item: any) => {
         if (item.parentId && dataMap[item.parentId]) {
             dataMap[item.parentId].children.push(item)
         } else {
