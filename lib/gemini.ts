@@ -35,7 +35,7 @@ export class GeminiService {
 
         const dynamicContext = validatedSamples.length > 0
             ? "\nEJEMPLOS DE ACTIVOS VALIDADOS (Referencia de Estilo y Nivel):\n" +
-            validatedSamples.map(s => `
+            validatedSamples.map((s: any) => `
             - Título: ${s.title}
             - Pilar: ${s.primaryPillar} (${(s.secondaryPillars as string[]).join(', ')})
             - Sub: ${s.sub} | Competencia: ${s.competence}
@@ -62,13 +62,13 @@ export class GeminiService {
 
         // Build a simplified context string
         let taxonomyContext = "ESTRUCTURA METODOLÓGICA VÁLIDA (Debes seleccionar valores EXACTOS de esta lista):\n";
-        taxonomyTree.forEach(p => {
+        taxonomyTree.forEach((p: any) => {
             taxonomyContext += `\nPILAR: ${p.name}\n`;
-            p.children.forEach(sub => {
+            p.children.forEach((sub: any) => {
                 taxonomyContext += `  - Componente: ${sub.name}\n`;
-                sub.children.forEach(comp => {
+                sub.children.forEach((comp: any) => {
                     taxonomyContext += `    * Competencia: ${comp.name}\n`;
-                    const behaviors = comp.children.map(b => b.name).join(' | ');
+                    const behaviors = comp.children.map((b: any) => b.name).join(' | ');
                     taxonomyContext += `      > Conductas: ${behaviors.substring(0, 1000)}...\n`;
                 });
             });
@@ -261,7 +261,7 @@ export class GeminiService {
 
         const dynamicContext = validatedSamples.length > 0
             ? "\nEJEMPLOS DE ACTIVOS VALIDADOS (Referencia de Estilo y Nivel):\n" +
-            validatedSamples.map(s => `
+            validatedSamples.map((s: any) => `
             - Título: ${s.title}
             - Pilar: ${s.primaryPillar} (${(s.secondaryPillars as string[]).join(', ')})
             - Sub: ${s.sub} | Competencia: ${s.competence}
@@ -288,13 +288,13 @@ export class GeminiService {
 
         // Build taxonomy context string
         let taxonomyContext = "ESTRUCTURA METODOLÓGICA VÁLIDA (Debes seleccionar valores EXACTOS de esta lista):\n";
-        taxonomyTree.forEach(p => {
+        taxonomyTree.forEach((p: any) => {
             taxonomyContext += `\nPILAR: ${p.name}\n`;
-            p.children.forEach(sub => {
+            p.children.forEach((sub: any) => {
                 taxonomyContext += `  - Componente: ${sub.name}\n`;
-                sub.children.forEach(comp => {
+                sub.children.forEach((comp: any) => {
                     taxonomyContext += `    * Competencia: ${comp.name}\n`;
-                    const behaviors = comp.children.map(b => b.name).join(' | ');
+                    const behaviors = comp.children.map((b: any) => b.name).join(' | ');
                     taxonomyContext += `      > Conductas: ${behaviors.substring(0, 1000)}...\n`;
                 });
             });
