@@ -21,12 +21,12 @@ export default async function Page() {
     })
 
     // Build Tree
-    const taxonomyTree = taxonomyRaw.map(item => ({ ...item, children: [] as any[] }))
+    const taxonomyTree = taxonomyRaw.map((item: any) => ({ ...item, children: [] as any[] }))
     const dataMap: any = {}
-    taxonomyTree.forEach(item => dataMap[item.id] = item)
+    taxonomyTree.forEach((item: any) => dataMap[item.id] = item)
 
     const rootNodes: any[] = []
-    taxonomyTree.forEach(item => {
+    taxonomyTree.forEach((item: any) => {
         if (item.parentId && dataMap[item.parentId]) {
             dataMap[item.parentId].children.push(item)
         } else {
@@ -36,7 +36,7 @@ export default async function Page() {
 
     // Sort pillars manually if needed, or rely on 'order'
     const shineOrder = ['Shine Within', 'Shine Out', 'Shine Up', 'Shine Beyond']
-    rootNodes.sort((a, b) => {
+    rootNodes.sort((a: any, b: any) => {
         const idxA = shineOrder.indexOf(a.name)
         const idxB = shineOrder.indexOf(b.name)
         if (idxA !== -1 && idxB !== -1) return idxA - idxB
