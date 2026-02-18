@@ -1,36 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Chart as ChartJS,
-    RadialLinearScale,
-    PointElement,
-    LineElement,
-    Filler,
-    Tooltip,
-    Legend,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-} from 'chart.js';
-import { Radar, Bar } from 'react-chartjs-2';
-import { Book, CheckCircle, ChevronRight, ChevronLeft, RefreshCw, Download, Info } from 'lucide-react';
-import { DB, SCALES, PILLAR_INFO, COMP_DEFINITIONS, Question } from './DiagnosticsData';
-
-// Register ChartJS components
-ChartJS.register(
-    RadialLinearScale,
-    PointElement,
-    LineElement,
-    Filler,
-    Tooltip,
-    Legend,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title
-);
+    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
+    BarChart, Bar, XAxis, YAxis, Tooltip, Cell
+} from 'recharts';
+import { Book, ChevronRight, ChevronLeft, RefreshCw, Download, Sparkles, BrainCircuit, Loader2 } from 'lucide-react';
+import { DB, SCALES, PILLAR_INFO, COMP_DEFINITIONS } from './DiagnosticsData';
+import ReactMarkdown from 'react-markdown'; // Ensure this or simple renderer
 
 // --- TYPES ---
 interface UserState {
@@ -61,7 +38,6 @@ export default function DiagnosticsPage() {
             try {
                 const parsed = JSON.parse(saved);
                 setUserState(parsed);
-                // If they have answers, maybe suggest continuing? For now, simple load.
             } catch (e) {
                 console.error('Failed to load state', e);
             }
@@ -319,6 +295,8 @@ export default function DiagnosticsPage() {
 
 function ResultsView({ state, onReset }: { state: UserState, onReset: () => void }) {
     const [filter, setFilter] = useState<'all' | 'within' | 'out' | 'up' | 'beyond'>('all');
+    const [aiReport, setAiReport] = useState<string | null>(null);
+    const [aiLoading, setAiLoading] = useState(false);
 
     // 1. Calculate Scores
     const scores = React.useMemo(() => {
@@ -355,29 +333,44 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
 
     const globalMsg = scores.globalAvg >= 4.5 ? "Sobresaliente" : scores.globalAvg >= 3.8 ? "Muy Bueno" : "En Desarrollo";
 
-    // Charts Config
-    const radarData = {
-        labels: ['Within', 'Out', 'Up', 'Beyond'],
-        datasets: [{
-            label: 'Nivel Actual',
-            data: [scores.pillarAvg.within, scores.pillarAvg.out, scores.pillarAvg.up, scores.pillarAvg.beyond],
-            backgroundColor: 'rgba(99, 102, 241, 0.2)',
-            borderColor: '#6366f1',
-            borderWidth: 2,
-        }]
+    // AI Analysis Handler
+    const handleAnalyze = async () => {
+        setAiLoading(true);
+        try {
+            const res = await fetch('/api/diagnostics/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: state.username,
+                    role: state.role,
+                    scores
+                })
+            });
+            const data = await res.json();
+            if (data.report) setAiReport(data.report);
+            else alert('Error generating report');
+        } catch (e) {
+            alert('Error network');
+        } finally {
+            setAiLoading(false);
+        }
     };
 
-    const radarOptions = {
-        scales: { r: { min: 0, max: 5, ticks: { display: false } } },
-        plugins: { legend: { display: false } }
-    };
+    // Recharts Data
+    const radarData = [
+        { subject: 'Within', A: scores.pillarAvg.within, fullMark: 5 },
+        { subject: 'Out', A: scores.pillarAvg.out, fullMark: 5 },
+        { subject: 'Beyond', A: scores.pillarAvg.beyond, fullMark: 5 }, // Order for circle
+        { subject: 'Up', A: scores.pillarAvg.up, fullMark: 5 },
+    ];
+    // Reorder for correct visual circle (Within -> Out -> Up -> Beyond is usuall, but Radar works angular)
 
     // Filter Logic
     const filteredComps = filter === 'all' ? scores.compList : scores.compList.filter(c => c.pillar === filter);
 
     return (
         <div className="min-h-screen bg-slate-50 pb-20 print:bg-white print:pb-0">
-            {/* Header Print Friendly */}
+            {/* Header */}
             <div className="bg-white border-b border-slate-200 px-8 py-6 flex items-center justify-between print:hidden">
                 <div className="flex items-center gap-3">
                     <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600"><Book size={20} /></div>
@@ -427,31 +420,50 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                 {/* Main Charts (Only on All) */}
                 {filter === 'all' && (
                     <div className="grid md:grid-cols-2 gap-8 mb-12">
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px]">
                             <h3 className="text-center font-bold text-slate-700 mb-4">Radar de Competencias</h3>
-                            <div className="h-[300px] flex items-center justify-center">
-                                <Radar data={radarData} options={radarOptions} />
-                            </div>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                    <PolarGrid stroke="#e2e8f0" />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
+                                    <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                                    <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
+                                    <Tooltip />
+                                </RadarChart>
+                            </ResponsiveContainer>
                         </div>
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                            <h3 className="text-center font-bold text-slate-700 mb-4">Análisis Cualitativo</h3>
-                            <div className="prose prose-sm leading-relaxed text-slate-600">
-                                {scores.globalAvg >= 3.8 ? (
-                                    <p><strong>Liderazgo Sólido.</strong> Tienes bases firmes. Tu siguiente nivel requiere afinar la "presencia ejecutiva" y el pensamiento estratégico.</p>
-                                ) : (
-                                    <p><strong>En Desarrollo.</strong> Tienes potencial, pero existen brechas operativas. Prioriza el "Shine Within" para construir una base sólida.</p>
-                                )}
-                                <p className="mt-4">Este reporte te ayudará a identificar palancas clave de crecimiento en los 4 pilares.</p>
+
+                        {/* AI Coach Section */}
+                        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-700/50 flex flex-col">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-2 bg-indigo-500/20 rounded-lg"><BrainCircuit className="text-indigo-300" /></div>
+                                <h3 className="font-bold text-lg">AI Executive Coach</h3>
                             </div>
+
+                            {!aiReport ? (
+                                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-4">
+                                    <p className="text-slate-300 text-sm max-w-xs">
+                                        Genera un análisis profundo de "Brechas Ocultas" y un "Plan de Aceleración" personalizado usando nuestra IA experta en 4Shine.
+                                    </p>
+                                    <button
+                                        onClick={handleAnalyze}
+                                        disabled={aiLoading}
+                                        className="bg-indigo-500 hover:bg-indigo-400 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-indigo-900/50 transition-all flex items-center gap-2"
+                                    >
+                                        {aiLoading ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
+                                        {aiLoading ? 'Analizando...' : 'Generar Reporte Estratégico'}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="prose prose-invert prose-sm max-w-none overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                    <ReactMarkdown>{aiReport}</ReactMarkdown>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
 
-                {/* Deep Dive Charts per Pillar - Always rendered but filtered via logic if needed, 
-                    or render specifically based on filter. 
-                    Let's render a specific chart if filter is active, or all 4 if 'all'. 
-                */}
-
+                {/* Deep Dive Charts per Pillar */}
                 <h2 className="text-xl font-black text-slate-800 mb-6 print:mt-8">
                     {filter === 'all' ? 'Desglose por Pilar' : PILLAR_INFO[filter].title}
                 </h2>
@@ -461,16 +473,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                         if (filter !== 'all' && filter !== pKey) return null;
 
                         const pComps = scores.compList.filter(c => c.pillar === pKey);
-                        const data = {
-                            labels: pComps.map(c => c.name),
-                            datasets: [{
-                                label: 'Puntaje',
-                                data: pComps.map(c => c.score),
-                                backgroundColor: pKey === 'within' ? '#6366f1' : pKey === 'out' ? '#8b5cf6' : pKey === 'up' ? '#ec4899' : '#10b981',
-                                borderRadius: 6,
-                                barThickness: 20
-                            }]
-                        };
+                        // Sort by score for better viz? Optional.
 
                         return (
                             <div key={pKey} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 print:break-inside-avoid">
@@ -484,24 +487,22 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                                     <span className="font-bold text-slate-800">{scores.pillarAvg[pKey]}/5.0</span>
                                 </div>
                                 <div className="h-[250px]">
-                                    <Bar
-                                        data={data}
-                                        options={{
-                                            indexAxis: 'y',
-                                            responsive: true,
-                                            maintainAspectRatio: false,
-                                            scales: { x: { min: 0, max: 5, grid: { color: '#f1f5f9' } }, y: { grid: { display: false } } },
-                                            plugins: { legend: { display: false } }
-                                        }}
-                                    />
-                                </div>
-                                {/* Qualitative Feedback Snippet */}
-                                <div className="mt-4 pt-4 border-t border-slate-50 text-xs text-slate-500 italic">
-                                    {scores.pillarAvg[pKey] >= 4
-                                        ? "Fortaleza clara. Enfócate en mentorear a otros en este pilar."
-                                        : scores.pillarAvg[pKey] >= 3
-                                            ? "Competente, pero con inconsistencias. Refuerza hábitos clave."
-                                            : "Área de foco urgente. Puede estar limitando tu impacto global."}
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart layout="vertical" data={pComps}>
+                                            <XAxis type="number" domain={[0, 5]} hide />
+                                            <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#64748b' }} />
+                                            <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: 12 }} />
+                                            <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
+                                                {pComps.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={
+                                                        pKey === 'within' ? '#6366f1' :
+                                                            pKey === 'out' ? '#8b5cf6' :
+                                                                pKey === 'up' ? '#ec4899' : '#10b981'
+                                                    } />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </div>
                         )

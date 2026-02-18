@@ -19,7 +19,8 @@ import {
     ChevronRight,
     LogOut,
     Package,
-    FileText
+    FileText,
+    Sparkles
 } from 'lucide-react'
 import { signOut } from "next-auth/react"
 
@@ -163,6 +164,7 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
                 )}
 
                 <NavBtn id="dashboard" label="Panel de Control" icon={<LayoutDashboard size={18} />} active={pathname === '/dashboard'} href="/dashboard" collapsed={collapsed} onClick={handleNavClick} />
+                <NavBtn id="diagnostico" label="Diagnóstico 4Shine" icon={<Sparkles size={18} />} active={pathname.startsWith('/diagnostico')} href="/diagnostico" collapsed={collapsed} onClick={handleNavClick} />
 
                 <NavHeader label="OPERACIÓN" collapsed={collapsed} />
                 {canAccess('products') && <NavBtn id="products" label="Productos" icon={<Package size={18} />} active={pathname.startsWith('/productos')} href="/productos" collapsed={collapsed} onClick={handleNavClick} />}
