@@ -1,0 +1,552 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    Chart as ChartJS,
+    RadialLinearScale,
+    PointElement,
+    LineElement,
+    Filler,
+    Tooltip,
+    Legend,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+} from 'chart.js';
+import { Radar, Bar } from 'react-chartjs-2';
+import { Book, CheckCircle, ChevronRight, ChevronLeft, RefreshCw, Download, Info } from 'lucide-react';
+import { DB, SCALES, PILLAR_INFO, COMP_DEFINITIONS, Question } from './DiagnosticsData';
+
+// Register ChartJS components
+ChartJS.register(
+    RadialLinearScale,
+    PointElement,
+    LineElement,
+    Filler,
+    Tooltip,
+    Legend,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title
+);
+
+// --- TYPES ---
+interface UserState {
+    username: string;
+    role: string;
+    answers: Record<number, number>; // questionId -> score
+    currentIdx: number;
+}
+
+type Step = 'intro' | 'instructions' | 'quiz' | 'results';
+
+const ITEMS_PER_PAGE = 6;
+
+export default function DiagnosticsPage() {
+    // --- STATE ---
+    const [step, setStep] = useState<Step>('intro');
+    const [userState, setUserState] = useState<UserState>({
+        username: '',
+        role: 'Director/C-Level',
+        answers: {},
+        currentIdx: 0,
+    });
+
+    // --- INIT / PERSISTENCE ---
+    useEffect(() => {
+        const saved = localStorage.getItem('4shine_full_v1');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                setUserState(parsed);
+                // If they have answers, maybe suggest continuing? For now, simple load.
+            } catch (e) {
+                console.error('Failed to load state', e);
+            }
+        }
+    }, []);
+
+    const saveState = (newState: UserState) => {
+        setUserState(newState);
+        localStorage.setItem('4shine_full_v1', JSON.stringify(newState));
+    };
+
+    const handleStart = () => {
+        if (!userState.username.trim()) {
+            alert('Por favor ingresa tu nombre.');
+            return;
+        }
+        setStep('instructions');
+    };
+
+    const handleStartQuiz = () => {
+        setStep('quiz');
+        window.scrollTo(0, 0);
+    };
+
+    const handleReset = () => {
+        if (confirm('¿Reiniciar todo? Se perderán tus respuestas.')) {
+            localStorage.removeItem('4shine_full_v1');
+            window.location.reload();
+        }
+    };
+
+    const handleAnswer = (qId: number, val: number) => {
+        const newAnswers = { ...userState.answers, [qId]: val };
+        saveState({ ...userState, answers: newAnswers });
+    };
+
+    const handleNextPage = () => {
+        const start = userState.currentIdx;
+        const end = Math.min(start + ITEMS_PER_PAGE, DB.length);
+        const pageItems = DB.slice(start, end);
+
+        // Validate
+        const missing = pageItems.find((i) => !userState.answers[i.id]);
+        if (missing) {
+            alert('Por favor responde todas las preguntas antes de continuar.');
+            return;
+        }
+
+        if (end >= DB.length) {
+            setStep('results');
+        } else {
+            saveState({ ...userState, currentIdx: end });
+            window.scrollTo(0, 0);
+        }
+    };
+
+    const handlePrevPage = () => {
+        const newIdx = Math.max(0, userState.currentIdx - ITEMS_PER_PAGE);
+        saveState({ ...userState, currentIdx: newIdx });
+        window.scrollTo(0, 0);
+    };
+
+    const handleDemo = () => {
+        if (confirm("¿Cargar datos de prueba? Se sobrescribirá tu progreso.")) {
+            const demoAnswers: Record<number, number> = {};
+            DB.forEach(q => {
+                demoAnswers[q.id] = Math.floor(Math.random() * 3) + 2; // Random 2-4
+            });
+            setUserState({
+                username: "Usuario Demo",
+                role: "Invitado",
+                answers: demoAnswers,
+                currentIdx: DB.length
+            });
+            setStep('results');
+        }
+    };
+
+
+    // --- RENDERERS ---
+
+    if (step === 'intro') {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
+                <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl rounded-[32px] p-8 md:p-12 max-w-3xl w-full text-center animate-in fade-in zoom-in duration-500">
+                    <div className="inline-block bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+                        Diagnóstico Ejecutivo 2026
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight leading-tight">
+                        Sistema de Escalamiento Estratégico <span className="text-indigo-600">4Shine</span>
+                    </h1>
+                    <p className="text-slate-500 text-lg mb-10 max-w-lg mx-auto leading-relaxed">
+                        Mapea tu madurez en los 4 pilares: <strong className="text-indigo-600">Within, Out, Up y Beyond</strong>.
+                    </p>
+
+                    <div className="max-w-sm mx-auto space-y-4 text-left">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Nombre Completo</label>
+                            <input
+                                value={userState.username}
+                                onChange={(e) => setUserState({ ...userState, username: e.target.value })}
+                                className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:border-indigo-500 outline-none transition-all"
+                                placeholder="Ej: Andrés Tabla"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Rol Actual</label>
+                            <select
+                                value={userState.role}
+                                onChange={(e) => setUserState({ ...userState, role: e.target.value })}
+                                className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:border-indigo-500 outline-none transition-all"
+                            >
+                                <option value="Director/C-Level">Director / C-Level</option>
+                                <option value="Gerente">Gerente</option>
+                                <option value="Lider de Equipo">Líder de Equipo</option>
+                                <option value="Emprendedor">Emprendedor</option>
+                                <option value="Consultor">Consultor / Coach</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="mt-10 space-y-4">
+                        <button
+                            onClick={handleStart}
+                            className="bg-indigo-600 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-lg shadow-indigo-200 hover:scale-105 transition-transform w-full max-w-sm"
+                        >
+                            Iniciar Diagnóstico
+                        </button>
+                        <button onClick={handleDemo} className="block w-full text-sm text-slate-400 hover:text-indigo-500 font-medium">
+                            Ver Resultados Demo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'instructions') {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl shadow-xl p-8 max-w-2xl w-full">
+                    <h2 className="text-2xl font-black text-slate-800 text-center mb-6">Antes de comenzar</h2>
+                    <div className="grid md:grid-cols-3 gap-4 mb-8">
+                        {[
+                            { icon: '⏱️', title: '20-25 Min', desc: 'Tómate tu tiempo.' },
+                            { icon: '💡', title: 'Sinceridad', desc: 'No hay respuestas "correctas".' },
+                            { icon: '📊', title: 'Sin Juicios', desc: 'Es un mapa, no un examen.' },
+                        ].map((item, i) => (
+                            <div key={i} className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
+                                <div className="text-3xl mb-2">{item.icon}</div>
+                                <h3 className="font-bold text-slate-700 text-sm mb-1">{item.title}</h3>
+                                <p className="text-xs text-slate-500">{item.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex justify-center gap-4">
+                        <button onClick={() => setStep('intro')} className="px-6 py-2 text-slate-400 font-bold hover:text-slate-600">Volver</button>
+                        <button onClick={handleStartQuiz} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:scale-105 transition-transform">
+                            Comenzar Ahora
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'quiz') {
+        const start = userState.currentIdx;
+        const end = Math.min(start + ITEMS_PER_PAGE, DB.length);
+        const items = DB.slice(start, end);
+        const currentPillarKey = items[0].pillar;
+        const pillarInfo = PILLAR_INFO[currentPillarKey];
+        const progress = Math.round((start / DB.length) * 100);
+
+        return (
+            <div className="min-h-screen bg-slate-50 pb-20">
+                {/* Header */}
+                <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-10 px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <span className="text-xs font-black text-indigo-500 uppercase tracking-widest block mb-1">{pillarInfo.title}</span>
+                        <h2 className="text-lg font-bold text-slate-800 leading-none">{pillarInfo.sub}</h2>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-xs font-bold text-slate-400 mb-1">{progress}% Completado</div>
+                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="max-w-3xl mx-auto p-6 space-y-6 mt-6">
+                    {items.map((q) => (
+                        <div key={q.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-indigo-100 transition-colors">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="bg-indigo-100 text-indigo-700 font-bold text-xs px-2 py-1 rounded-md">#{q.id}</span>
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{q.comp}</span>
+                            </div>
+                            <p className="text-lg font-medium text-slate-800 mb-6 leading-relaxed">
+                                {q.text}
+                            </p>
+                            <div className="grid grid-cols-5 gap-2">
+                                {SCALES[q.scale].map((label, idx) => {
+                                    const val = idx + 1;
+                                    const isSelected = userState.answers[q.id] === val;
+                                    return (
+                                        <button
+                                            key={val}
+                                            onClick={() => handleAnswer(q.id, val)}
+                                            className={`
+                                        flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all min-h-[80px]
+                                        ${isSelected
+                                                    ? 'border-indigo-500 bg-indigo-50'
+                                                    : 'border-slate-100 bg-white hover:border-slate-300'
+                                                }
+                                    `}
+                                        >
+                                            <span className={`text-xl font-black mb-1 ${isSelected ? 'text-indigo-600' : 'text-slate-200'}`}>{val}</span>
+                                            <span className={`text-[10px] leading-tight text-center font-bold ${isSelected ? 'text-indigo-800' : 'text-slate-400'}`}>{label}</span>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    ))}
+
+                    <div className="flex items-center justify-between pt-8">
+                        <button
+                            onClick={handlePrevPage}
+                            disabled={start === 0}
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft size={20} /> Anterior
+                        </button>
+                        <button
+                            onClick={handleNextPage}
+                            className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:scale-105 transition-transform"
+                        >
+                            {end >= DB.length ? 'Finalizar' : 'Siguiente'} <ChevronRight size={20} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'results') {
+        return <ResultsView state={userState} onReset={handleReset} />;
+    }
+
+    return null;
+}
+
+// --- SUBCOMPONENT: RESULTS VIEW ---
+
+function ResultsView({ state, onReset }: { state: UserState, onReset: () => void }) {
+    const [filter, setFilter] = useState<'all' | 'within' | 'out' | 'up' | 'beyond'>('all');
+
+    // 1. Calculate Scores
+    const scores = React.useMemo(() => {
+        const pScores: Record<string, number[]> = { within: [], out: [], up: [], beyond: [] };
+        const cScores: Record<string, number[]> = {};
+
+        DB.forEach(q => {
+            const val = state.answers[q.id] || 0;
+            pScores[q.pillar].push(val);
+
+            const cKey = `${q.pillar}|${q.comp}`;
+            if (!cScores[cKey]) cScores[cKey] = [];
+            cScores[cKey].push(val);
+        });
+
+        const pillarAvg: Record<string, number> = {};
+        Object.keys(pScores).forEach(k => {
+            const arr = pScores[k];
+            pillarAvg[k] = arr.length ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)) : 0;
+        });
+
+        const compList = Object.keys(cScores).map(k => {
+            const [p, n] = k.split('|');
+            const arr = cScores[k];
+            const avg = parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1));
+            return { pillar: p, name: n, score: avg };
+        });
+
+        const allVals = Object.values(state.answers);
+        const globalAvg = allVals.length ? parseFloat((allVals.reduce((a, b) => a + b, 0) / allVals.length).toFixed(1)) : 0;
+
+        return { pillarAvg, compList, globalAvg };
+    }, [state]);
+
+    const globalMsg = scores.globalAvg >= 4.5 ? "Sobresaliente" : scores.globalAvg >= 3.8 ? "Muy Bueno" : "En Desarrollo";
+
+    // Charts Config
+    const radarData = {
+        labels: ['Within', 'Out', 'Up', 'Beyond'],
+        datasets: [{
+            label: 'Nivel Actual',
+            data: [scores.pillarAvg.within, scores.pillarAvg.out, scores.pillarAvg.up, scores.pillarAvg.beyond],
+            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+            borderColor: '#6366f1',
+            borderWidth: 2,
+        }]
+    };
+
+    const radarOptions = {
+        scales: { r: { min: 0, max: 5, ticks: { display: false } } },
+        plugins: { legend: { display: false } }
+    };
+
+    // Filter Logic
+    const filteredComps = filter === 'all' ? scores.compList : scores.compList.filter(c => c.pillar === filter);
+
+    return (
+        <div className="min-h-screen bg-slate-50 pb-20 print:bg-white print:pb-0">
+            {/* Header Print Friendly */}
+            <div className="bg-white border-b border-slate-200 px-8 py-6 flex items-center justify-between print:hidden">
+                <div className="flex items-center gap-3">
+                    <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600"><Book size={20} /></div>
+                    <div>
+                        <h1 className="text-xl font-black text-slate-800">Reporte 4Shine</h1>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{state.username}</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={() => window.print()} className="p-2 hover:bg-slate-100 rounded-full text-slate-500"><Download size={20} /></button>
+                    <button onClick={onReset} className="p-2 hover:bg-slate-100 rounded-full text-slate-500"><RefreshCw size={20} /></button>
+                </div>
+            </div>
+
+            <main className="max-w-5xl mx-auto p-8 print:p-0 print:max-w-none">
+
+                {/* Hero Results */}
+                <div className="text-center mb-12 print:mb-8">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Índice Global de Liderazgo</p>
+                    <div className="inline-block bg-white rounded-[32px] shadow-lg border border-slate-100 px-12 py-8 print:shadow-none print:border-none">
+                        <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500 mb-2">
+                            {scores.globalAvg}
+                        </div>
+                        <div className={`text-sm font-black uppercase tracking-widest px-4 py-1 rounded-full inline-block ${scores.globalAvg >= 4 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                            {globalMsg}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex justify-center gap-2 mb-8 overflow-x-auto pb-2 print:hidden">
+                    {['all', 'within', 'out', 'up', 'beyond'].map(f => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f as any)}
+                            className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all border ${filter === f
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'
+                                }`}
+                        >
+                            {f === 'all' ? 'Visión General' : PILLAR_INFO[f as keyof typeof PILLAR_INFO].title}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Main Charts (Only on All) */}
+                {filter === 'all' && (
+                    <div className="grid md:grid-cols-2 gap-8 mb-12">
+                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                            <h3 className="text-center font-bold text-slate-700 mb-4">Radar de Competencias</h3>
+                            <div className="h-[300px] flex items-center justify-center">
+                                <Radar data={radarData} options={radarOptions} />
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                            <h3 className="text-center font-bold text-slate-700 mb-4">Análisis Cualitativo</h3>
+                            <div className="prose prose-sm leading-relaxed text-slate-600">
+                                {scores.globalAvg >= 3.8 ? (
+                                    <p><strong>Liderazgo Sólido.</strong> Tienes bases firmes. Tu siguiente nivel requiere afinar la "presencia ejecutiva" y el pensamiento estratégico.</p>
+                                ) : (
+                                    <p><strong>En Desarrollo.</strong> Tienes potencial, pero existen brechas operativas. Prioriza el "Shine Within" para construir una base sólida.</p>
+                                )}
+                                <p className="mt-4">Este reporte te ayudará a identificar palancas clave de crecimiento en los 4 pilares.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Deep Dive Charts per Pillar - Always rendered but filtered via logic if needed, 
+                    or render specifically based on filter. 
+                    Let's render a specific chart if filter is active, or all 4 if 'all'. 
+                */}
+
+                <h2 className="text-xl font-black text-slate-800 mb-6 print:mt-8">
+                    {filter === 'all' ? 'Desglose por Pilar' : PILLAR_INFO[filter].title}
+                </h2>
+
+                <div className="grid md:grid-cols-2 gap-6 mb-12 print:block print:space-y-6">
+                    {['within', 'out', 'up', 'beyond'].map(pKey => {
+                        if (filter !== 'all' && filter !== pKey) return null;
+
+                        const pComps = scores.compList.filter(c => c.pillar === pKey);
+                        const data = {
+                            labels: pComps.map(c => c.name),
+                            datasets: [{
+                                label: 'Puntaje',
+                                data: pComps.map(c => c.score),
+                                backgroundColor: pKey === 'within' ? '#6366f1' : pKey === 'out' ? '#8b5cf6' : pKey === 'up' ? '#ec4899' : '#10b981',
+                                borderRadius: 6,
+                                barThickness: 20
+                            }]
+                        };
+
+                        return (
+                            <div key={pKey} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 print:break-inside-avoid">
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${pKey === 'within' ? 'bg-indigo-50 text-indigo-600' :
+                                            pKey === 'out' ? 'bg-violet-50 text-violet-600' :
+                                                pKey === 'up' ? 'bg-pink-50 text-pink-600' : 'bg-emerald-50 text-emerald-600'
+                                        }`}>
+                                        {PILLAR_INFO[pKey as keyof typeof PILLAR_INFO].title}
+                                    </span>
+                                    <span className="font-bold text-slate-800">{scores.pillarAvg[pKey]}/5.0</span>
+                                </div>
+                                <div className="h-[250px]">
+                                    <Bar
+                                        data={data}
+                                        options={{
+                                            indexAxis: 'y',
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            scales: { x: { min: 0, max: 5, grid: { color: '#f1f5f9' } }, y: { grid: { display: false } } },
+                                            plugins: { legend: { display: false } }
+                                        }}
+                                    />
+                                </div>
+                                {/* Qualitative Feedback Snippet */}
+                                <div className="mt-4 pt-4 border-t border-slate-50 text-xs text-slate-500 italic">
+                                    {scores.pillarAvg[pKey] >= 4
+                                        ? "Fortaleza clara. Enfócate en mentorear a otros en este pilar."
+                                        : scores.pillarAvg[pKey] >= 3
+                                            ? "Competente, pero con inconsistencias. Refuerza hábitos clave."
+                                            : "Área de foco urgente. Puede estar limitando tu impacto global."}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+
+                {/* Detail Table */}
+                <h3 className="font-bold text-slate-700 mb-4">Detalle de Competencias</h3>
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-12 shadow-sm">
+                    <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
+                            <tr>
+                                <th className="px-6 py-4">Competencia</th>
+                                <th className="px-6 py-4 w-24 text-center">Puntaje</th>
+                                <th className="px-6 py-4 w-32 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredComps.map((c, i) => (
+                                <tr key={i} className="hover:bg-slate-50/50">
+                                    <td className="px-6 py-4">
+                                        <div className="font-bold text-slate-700">{c.name}</div>
+                                        <div className="text-xs text-slate-400">{COMP_DEFINITIONS[c.name]}</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-center font-mono font-bold text-slate-600">{c.score}</td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${c.score >= 4 ? 'bg-emerald-100 text-emerald-700' :
+                                                c.score >= 2.5 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+                                            }`}>
+                                            {c.score >= 4 ? 'Fortaleza' : c.score >= 2.5 ? 'Oportunidad' : 'Brecha'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="text-center print:hidden">
+                    <button onClick={() => window.print()} className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold hover:bg-slate-800 transition-colors">
+                        Descargar Reporte PDF
+                    </button>
+                    <p className="text-xs text-slate-400 mt-4">4Shine Leadership Diagnosis System © 2026</p>
+                </div>
+            </main>
+        </div>
+    )
+}
