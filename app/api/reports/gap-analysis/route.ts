@@ -38,17 +38,17 @@ export async function GET(request: NextRequest) {
         const allNodes = await prisma.taxonomy.findMany({ where: { active: true } })
 
         // Build map for quick parent lookup
-        const nodeMap = new Map(allNodes.map(n => [n.id, n]))
+        const nodeMap = new Map(allNodes.map((n: any) => [n.id, n]))
 
         // Identify "Behavior" nodes. 
         // If type field exists and is reliable:
-        let behaviorNodes = allNodes.filter(n => n.type === 'Conducta' || n.type === 'Behavior')
+        let behaviorNodes = allNodes.filter((n: any) => n.type === 'Conducta' || n.type === 'Behavior')
 
         // Fallback if types aren't explicitly 'Conducta' (based on level depth or naming?):
         if (behaviorNodes.length === 0) {
             // Heuristic: Leaf nodes (nodes that are not parents to anyone)
-            const parentIds = new Set(allNodes.map(n => n.parentId).filter(Boolean))
-            behaviorNodes = allNodes.filter(n => !parentIds.has(n.id) && n.parentId)
+            const parentIds = new Set(allNodes.map((n: any) => n.parentId).filter(Boolean))
+            behaviorNodes = allNodes.filter((n: any) => !parentIds.has(n.id) && n.parentId)
         }
 
         // 2. Fetch Inventory
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
         // Create a signature set for existing content: "Pillar|Sub|Competence|Behavior"
         // Normalizing strings to avoid whitespace mismatch
-        const coveredSignatures = new Set(inventory.map(i => {
+        const coveredSignatures = new Set(inventory.map((i: any) => {
             return `${i.primaryPillar?.trim()}|${i.sub?.trim()}|${i.competence?.trim()}|${i.behavior?.trim()}`.toLowerCase()
         }))
 
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
                 stats[pillarName].coveredBehaviors++
             } else {
                 // Check if behavior string ALONE matches anything in that pillar (more robust against sub/comp renames)
-                const looseMatch = inventory.some(i =>
+                const looseMatch = inventory.some((i: any) =>
                     i.primaryPillar?.toLowerCase() === pillarName.toLowerCase() &&
                     i.behavior?.trim().toLowerCase() === behName.trim().toLowerCase()
                 )
