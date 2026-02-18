@@ -9,7 +9,7 @@ export default async function WorkbooksPage() {
         orderBy: { updatedAt: 'desc' }
     })
 
-    const serialized = workbooks.map(w => ({
+    const serialized = workbooks.map((w: any) => ({
         ...w,
         createdAt: w.createdAt.toISOString(),
         updatedAt: w.updatedAt.toISOString(),
