@@ -630,7 +630,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     {/* Radar Global (Print) */}
                     <div className="break-inside-avoid mb-8 page-break-after">
                         <h3 className="text-xl font-bold text-slate-900 mb-4 border-b border-slate-200 pb-2">Visión Estratégica Global</h3>
-                        <div className="flex gap-8">
+                        <div className="flex gap-8 items-start">
                             <div className="w-1/2">
                                 <ul className="space-y-4">
                                     <li className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -659,9 +659,9 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                                         <PolarGrid stroke="#e2e8f0" />
-                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#0f172a', fontSize: 12, fontWeight: 'bold' }} />
                                         <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
-                                        <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
+                                        <Radar name="Usuario" dataKey="A" stroke="#4f46e5" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} isAnimationActive={false} />
                                     </RadarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -674,13 +674,8 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                         const pScore = scores.pillarAvg[pKey];
                         const pComps = scores.compList.filter(c => c.pillar === pKey);
 
-                        // Since we lifted state not yet, we need to pass a callback or ref. 
-                        // Wait, I can't easily access the report text here if it's inside AiAnalysisSection and that section is conditionally rendered.
-                        // I will render a print-only AiAnalysisSection for each pillar? No, that would trigger API calls.
-                        // STRATEGY: I need to lift `reports` out of AiAnalysisSection to ResultsView so I can pass it down to both the interactive view AND the print view.
-
                         return (
-                            <div key={pKey} className="break-before-page break-inside-avoid page-break">
+                            <div key={pKey} className="break-before-page break-inside-avoid page-break mb-8">
                                 <div className="flex items-center justify-between mb-6 border-b-2 border-slate-900 pb-2">
                                     <div>
                                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">Pilar Estratégico</span>
@@ -693,13 +688,13 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
 
                                 <div className="grid grid-cols-1 gap-6 mb-8">
                                     {/* Chart & Table Side by Side for Print Compactness */}
-                                    <div className="flex gap-6">
-                                        <div className="h-[250px] w-1/2 border border-slate-100 rounded-xl p-4">
+                                    <div className="flex gap-6 items-start">
+                                        <div className="h-[300px] w-1/2 border border-slate-100 rounded-xl p-4">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart layout="vertical" data={pComps}>
                                                     <XAxis type="number" domain={[0, 5]} hide />
                                                     <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 'bold' }} />
-                                                    <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={15} fill="#4f46e5" label={{ position: 'right', fill: '#64748b', fontSize: 10 }}>
+                                                    <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20} fill="#4f46e5" label={{ position: 'right', fill: '#0f172a', fontSize: 12, fontWeight: 'bold' }} isAnimationActive={false}>
                                                     </Bar>
                                                 </BarChart>
                                             </ResponsiveContainer>
@@ -709,15 +704,15 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                                             <table className="w-full text-[10px] text-left">
                                                 <thead className="bg-slate-100 text-slate-700 font-bold uppercase">
                                                     <tr>
-                                                        <th className="px-2 py-1">Competencia</th>
-                                                        <th className="px-2 py-1 text-center">Score</th>
+                                                        <th className="px-2 py-2">Competencia</th>
+                                                        <th className="px-2 py-2 text-center">Score</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
                                                     {pComps.map((c, i) => (
                                                         <tr key={i}>
-                                                            <td className="px-2 py-1 font-bold text-slate-800">{c.name}</td>
-                                                            <td className="px-2 py-1 text-center font-mono font-bold">{c.score}</td>
+                                                            <td className="px-2 py-2 font-bold text-slate-800">{c.name}</td>
+                                                            <td className="px-2 py-2 text-center font-mono font-bold text-slate-600">{c.score}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -727,12 +722,12 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                                 </div>
 
                                 {reports[pKey] && (
-                                    <div className="mt-6 border-t border-slate-200 pt-6">
-                                        <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-4">
+                                    <div className="mt-6 border-t border-slate-200 pt-6 break-inside-avoid">
+                                        <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-4 text-sm uppercase tracking-wider">
                                             <BrainCircuit size={18} className="text-indigo-600" />
                                             Análisis Estratégico AI
                                         </h4>
-                                        <div className="prose prose-sm prose-slate max-w-none">
+                                        <div className="prose prose-sm prose-slate max-w-none text-justify text-slate-700">
                                             <ReactMarkdown>{reports[pKey]}</ReactMarkdown>
                                         </div>
                                     </div>
