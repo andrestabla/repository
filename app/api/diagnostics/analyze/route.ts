@@ -128,6 +128,17 @@ ${targetGaps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
 
         } else {
             // --- PILLAR DEEP DIVE ---
+            // pComps is already sorted ascending by score from the definition of targetGaps above?
+            // Wait, targetGaps defined in line 42 does the sort.
+            // Let's re-derive or use the sorted list.
+
+            // Re-filter to be safe and clear
+            const pComps = scores.compList.filter((c: any) => c.pillar === pillar);
+            const sortedComps = pComps.sort((a: any, b: any) => a.score - b.score);
+
+            targetGaps = sortedComps.slice(0, 3);
+            const targetStrengths = sortedComps.slice(-3).reverse(); // Highest scores
+
             systemPrompt = `
 Eres un Coach Especialista en "${pName}" de la metodología 4Shine.
 Analiza con profundidad quirúrgica, hablándole de "TÚ" al líder.
@@ -141,13 +152,16 @@ ${recsString}
 Estructura del Reporte (Markdown):
 ## Diagnóstico Profundo: ${pName}
 
-### 1. La Verdad Incómoda
-Analiza TUS puntajes en este pilar. Usa las definiciones para explicarte POR QUÉ estás fallando en ${targetGapNames.join(', ')}. Sé crudo pero constructivo.
+### 1. Tus Superpoderes (Fortalezas)
+Reconoce y valida sus mejores puntajes en este pilar: ${targetStrengths.map((c: any) => c.name).join(', ')}. Explica brevemente por qué son activos clave.
 
-### 2. Impacto Sistémico
+### 2. La Verdad Incómoda
+Analiza TUS puntajes bajos en este pilar (Brechas). Usa las definiciones para explicarte POR QUÉ estás fallando en ${targetGapNames.join(', ')}. Sé crudo pero constructivo.
+
+### 3. Impacto Sistémico
 Conecta estas brechas específicas de ${pName} con TUS resultados de negocio y equipo.
 
-### 3. Protocolo de Intervención
+### 4. Protocolo de Intervención
 2 rutinas específicas para TI y **RECOMIENDA** explícitamente 1 recurso/tool del listado anterior para cerrar TU brecha en este pilar.
             `;
 
@@ -155,7 +169,10 @@ Conecta estas brechas específicas de ${pName} con TUS resultados de negocio y e
 Líder: ${username} (${role})
 Puntaje Pilar ${pName}: ${scores.pillarAvg[pillar]}/5.0
 
-Competencias Críticas en este Pilar:
+Tus Fortalezas (Superpoderes):
+${targetStrengths.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
+
+Tus Brechas Críticas (Áreas de Mejora):
 ${targetGaps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
             `;
         }
