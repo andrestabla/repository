@@ -293,8 +293,16 @@ export default function DiagnosticsPage() {
 
 // --- SUBCOMPONENT: AI ANALYSIS ---
 
-function AiAnalysisSection({ username, role, scores, pillar }: { username: string, role: string, scores: any, pillar: string }) {
-    const [reports, setReports] = useState<Record<string, string>>({});
+interface AiAnalysisProps {
+    username: string;
+    role: string;
+    scores: any;
+    pillar: string;
+    reports: Record<string, string>;
+    setReports: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}
+
+function AiAnalysisSection({ username, role, scores, pillar, reports, setReports }: AiAnalysisProps) {
     const [loading, setLoading] = useState(false);
     const [speaking, setSpeaking] = useState(false);
     const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
@@ -397,8 +405,8 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
     }, [pillar]);
 
     return (
-        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-700/50 flex flex-col h-full print:break-inside-avoid">
-            <div className="flex items-center justify-between mb-6">
+        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-700/50 flex flex-col h-full print:break-inside-avoid print:bg-white print:text-black print:border-slate-200 print:shadow-none">
+            <div className="flex items-center justify-between mb-6 print:hidden">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-500/20 rounded-lg"><BrainCircuit className="text-indigo-300" /></div>
                     <div>
@@ -421,7 +429,7 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
             </div>
 
             {!report ? (
-                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-4 min-h-[200px]">
+                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-4 min-h-[200px] print:hidden">
                     <p className="text-slate-300 text-sm max-w-xs">
                         {pillar === 'all'
                             ? 'Genera un análisis estratégico y hoja de ruta basada en tus resultados globales.'
@@ -437,7 +445,7 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
                     </button>
                 </div>
             ) : (
-                <div className="prose prose-invert prose-sm max-w-none overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[500px]">
+                <div className="prose prose-invert prose-sm max-w-none overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[500px] print:max-h-none print:overflow-visible print:prose-slate print:text-black">
                     <ReactMarkdown>{report}</ReactMarkdown>
                 </div>
             )}
@@ -449,6 +457,8 @@ function AiAnalysisSection({ username, role, scores, pillar }: { username: strin
 
 function ResultsView({ state, onReset }: { state: UserState, onReset: () => void }) {
     const [filter, setFilter] = useState<'all' | 'within' | 'out' | 'up' | 'beyond'>('all');
+    // Lifted State for Reports
+    const [reports, setReports] = useState<Record<string, string>>({});
 
     // 1. Calculate Scores
     const scores = React.useMemo(() => {
@@ -594,7 +604,9 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     {/* RIGHT COLUMN: AI COACH (Everywhere) */}
                     <div className="h-full">
                         <AiAnalysisSection
-                            // Key removed to persist state
+                            // Pass reports and setter
+                            reports={reports}
+                            setReports={setReports}
                             username={state.username}
                             role={state.role}
                             scores={scores}
@@ -605,18 +617,54 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
 
                 {/* --- PRINT ONLY: CONSOLIDATED REPORT --- */}
                 <div className="hidden print:block space-y-8">
+                    {/* PRINT HEADER */}
+                    <div className="text-center border-b-2 border-slate-900 pb-8 mb-8">
+                        <h1 className="text-4xl font-black text-slate-900 mb-2">Reporte de Liderazgo 4Shine</h1>
+                        <p className="text-xl font-bold text-slate-600 mb-1">{state.username}</p>
+                        <p className="text-sm text-slate-400 uppercase tracking-widest">{state.role} • {new Date().toLocaleDateString()}</p>
+                        <p className="mt-6 text-slate-600 max-w-2xl mx-auto italic">
+                            "Este reporte es una radiografía estratégica de tu liderazgo actual. Úsalo como un mapa para navegar tu crecimiento y amplificar tu impacto en la organización."
+                        </p>
+                    </div>
+
                     {/* Radar Global (Print) */}
-                    <div className="break-inside-avoid mb-8">
+                    <div className="break-inside-avoid mb-8 page-break-after">
                         <h3 className="text-xl font-bold text-slate-900 mb-4 border-b border-slate-200 pb-2">Visión Estratégica Global</h3>
-                        <div className="h-[300px] w-full border border-slate-100 rounded-xl p-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                    <PolarGrid stroke="#e2e8f0" />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
-                                    <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
-                                    <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
-                                </RadarChart>
-                            </ResponsiveContainer>
+                        <div className="flex gap-8">
+                            <div className="w-1/2">
+                                <ul className="space-y-4">
+                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                        <span className="font-bold text-slate-700">Índice Global</span>
+                                        <span className="font-black text-2xl text-indigo-600">{scores.globalAvg}/5.0</span>
+                                    </li>
+                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                        <span className="font-bold text-slate-700">Within (Autoliderazgo)</span>
+                                        <span className="font-bold text-slate-900">{scores.pillarAvg.within}</span>
+                                    </li>
+                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                        <span className="font-bold text-slate-700">Out (Influencia)</span>
+                                        <span className="font-bold text-slate-900">{scores.pillarAvg.out}</span>
+                                    </li>
+                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                        <span className="font-bold text-slate-700">Up (Estrategia)</span>
+                                        <span className="font-bold text-slate-900">{scores.pillarAvg.up}</span>
+                                    </li>
+                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                        <span className="font-bold text-slate-700">Beyond (Legado)</span>
+                                        <span className="font-bold text-slate-900">{scores.pillarAvg.beyond}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="h-[300px] w-1/2 border border-slate-100 rounded-xl p-4">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                        <PolarGrid stroke="#e2e8f0" />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
+                                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                                        <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
+                                    </RadarChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
                     </div>
 
@@ -625,6 +673,11 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                         const pInfo = PILLAR_INFO[pKey as keyof typeof PILLAR_INFO];
                         const pScore = scores.pillarAvg[pKey];
                         const pComps = scores.compList.filter(c => c.pillar === pKey);
+
+                        // Since we lifted state not yet, we need to pass a callback or ref. 
+                        // Wait, I can't easily access the report text here if it's inside AiAnalysisSection and that section is conditionally rendered.
+                        // I will render a print-only AiAnalysisSection for each pillar? No, that would trigger API calls.
+                        // STRATEGY: I need to lift `reports` out of AiAnalysisSection to ResultsView so I can pass it down to both the interactive view AND the print view.
 
                         return (
                             <div key={pKey} className="break-before-page break-inside-avoid page-break">
@@ -638,41 +691,52 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-6">
-                                    {/* Chart */}
-                                    <div className="h-[250px] w-full border border-slate-100 rounded-xl p-4">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart layout="vertical" data={pComps}>
-                                                <XAxis type="number" domain={[0, 5]} hide />
-                                                <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 'bold' }} />
-                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={15} fill="#4f46e5" label={{ position: 'right', fill: '#64748b', fontSize: 10 }}>
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
+                                <div className="grid grid-cols-1 gap-6 mb-8">
+                                    {/* Chart & Table Side by Side for Print Compactness */}
+                                    <div className="flex gap-6">
+                                        <div className="h-[250px] w-1/2 border border-slate-100 rounded-xl p-4">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart layout="vertical" data={pComps}>
+                                                    <XAxis type="number" domain={[0, 5]} hide />
+                                                    <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 'bold' }} />
+                                                    <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={15} fill="#4f46e5" label={{ position: 'right', fill: '#64748b', fontSize: 10 }}>
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
 
-                                    {/* Table */}
-                                    <div className="border border-slate-200 rounded-xl overflow-hidden">
-                                        <table className="w-full text-xs text-left">
-                                            <thead className="bg-slate-100 text-slate-700 font-bold uppercase">
-                                                <tr>
-                                                    <th className="px-4 py-2">Competencia</th>
-                                                    <th className="px-4 py-2">Definición</th>
-                                                    <th className="px-4 py-2 text-center">Score</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {pComps.map((c, i) => (
-                                                    <tr key={i}>
-                                                        <td className="px-4 py-2 font-bold text-slate-800">{c.name}</td>
-                                                        <td className="px-4 py-2 text-slate-500 italic">{COMP_DEFINITIONS[c.name]}</td>
-                                                        <td className="px-4 py-2 text-center font-mono font-bold">{c.score}</td>
+                                        <div className="w-1/2 border border-slate-200 rounded-xl overflow-hidden">
+                                            <table className="w-full text-[10px] text-left">
+                                                <thead className="bg-slate-100 text-slate-700 font-bold uppercase">
+                                                    <tr>
+                                                        <th className="px-2 py-1">Competencia</th>
+                                                        <th className="px-2 py-1 text-center">Score</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {pComps.map((c, i) => (
+                                                        <tr key={i}>
+                                                            <td className="px-2 py-1 font-bold text-slate-800">{c.name}</td>
+                                                            <td className="px-2 py-1 text-center font-mono font-bold">{c.score}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
+
+                                {reports[pKey] && (
+                                    <div className="mt-6 border-t border-slate-200 pt-6">
+                                        <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-4">
+                                            <BrainCircuit size={18} className="text-indigo-600" />
+                                            Análisis Estratégico AI
+                                        </h4>
+                                        <div className="prose prose-sm prose-slate max-w-none">
+                                            <ReactMarkdown>{reports[pKey]}</ReactMarkdown>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
