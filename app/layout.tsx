@@ -21,7 +21,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es">
-      <body className={`antialiased h-screen overflow-hidden`}>
+      <body className={`antialiased h-screen overflow-hidden print:h-auto print:overflow-visible`}>
         <Providers>
           <Shell session={session}>
             {children}

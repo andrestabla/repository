@@ -45,9 +45,9 @@ export default function Shell({ children, session }: { children: React.ReactNode
     }
 
     return (
-        <div className="flex h-screen overflow-hidden bg-bg text-text-main font-ui">
+        <div className="flex h-screen overflow-hidden bg-bg text-text-main font-ui print:h-auto print:overflow-visible print:block">
             {/* Mobile Header */}
-            <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-panel border-b border-border flex items-center justify-between px-4 z-40">
+            <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-panel border-b border-border flex items-center justify-between px-4 z-40 print:hidden">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setMobileMenuOpen(true)}
