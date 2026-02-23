@@ -384,32 +384,19 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
             }
         });
 
-        // Calculate Pillar Percentages using provided formulas
-        // within: [(SumLikert - 30)/120 + SumSJT/30] / 2 * 100
+        // Calculate Pillar Percentages
         const calcPillarPct = (pKey: keyof typeof pillars) => {
             const p = pillars[pKey];
             const sumL = p.likert.reduce((a, b) => a + b, 0);
             const sumS = p.sjt.reduce((a, b) => a + b, 0);
 
-            // Likert normalized (range is 0 to 4*N)
-            // Formulas provided:
-            // Within: N=30 -> [(sumL - 30)/120]
-            // Out: N=16 -> [(sumL - 16)/64]
-            // Up: N=26 -> [(sumL - 26)/104]
-            // Beyond: N=24 -> [(sumL - 24)/96]
+            // Dynamic Likert normalization based on actual question count
+            const numLikert = p.likert.length;
+            const likertNorm = numLikert > 0 ? (sumL - numLikert) / (4 * numLikert) : 0;
 
-            let N = 30;
-            if (pKey === 'out') N = 16;
-            if (pKey === 'up') N = 26;
-            if (pKey === 'beyond') N = 24;
-
-            const likertNorm = (sumL - N) / (4 * N);
-
-            // SJT normalized (Sum / Max)
-            // Formulas provided say: SumSJT/30 for Within, SumSJT/9 for others (N=3 questions * 3 max weight)
-            let sjtMax = 30; // 10 questions for Within triangulation
-            if (pKey !== 'within') sjtMax = 9; // 3 questions for others
-
+            // SJT normalization (Sum / Max possible)
+            // Within has 10 SJT items (max 30 pts), others have 3 (max 9 pts)
+            const sjtMax = pKey === 'within' ? 30 : 9;
             const sjtNorm = sumS / sjtMax;
 
             const totalPct = ((likertNorm + sjtNorm) / 2) * 100;
@@ -447,10 +434,15 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
         { subject: 'Up', A: scoring.pillarMetrics.up.total, fullMark: 100 },
     ];
 
-    const currentPillarData = filter === 'all' ? radarData : [
-        { name: 'Likert (Sentir)', val: scoring.pillarMetrics[filter].likert },
-        { name: 'SJT (Hacer)', val: scoring.pillarMetrics[filter].sjt },
-    ];
+    // Intra-pillar Radar Data: Breaks down the selected pillar by competency
+    const pillarRadarData = filter === 'all' ? [] : scoring.compList
+        .filter(c => c.pillar === filter)
+        .map(c => ({
+            subject: c.name.length > 15 ? c.name.substring(0, 15) + '...' : c.name,
+            fullName: c.name,
+            A: Math.round(((c.score - 1) / 4) * 100),
+            fullMark: 100
+        }));
 
     const getStatus = (val: number) => {
         if (val >= 71) return { label: 'Fortaleza', color: 'emerald' };
@@ -467,7 +459,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                 <div className="flex items-center gap-3">
                     <div className="h-10 w-10 flex items-center justify-center bg-slate-900 rounded-xl text-white font-bold text-sm">4S</div>
                     <div>
-                        <h1 className="text-lg font-black text-slate-900 leading-none">Diagnostic Results</h1>
+                        <h1 className="text-lg font-black text-slate-900 leading-none">Resultados del Diagnóstico</h1>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{state.username}</p>
                     </div>
                 </div>
@@ -495,7 +487,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                             <h2 className="text-3xl font-black text-slate-900 mb-2">Resumen Ejecutivo</h2>
                             <p className="text-slate-500 leading-relaxed text-sm">
                                 Tu madurez de liderazgo se sitúa en un nivel <strong>{globalStatus.label.toLowerCase()}</strong>.
-                                Se observa una {scoring.pillarMetrics.within.sjt > scoring.pillarMetrics.within.likert ? 'excelente' : 'cierta'} coherencia entre tu autopercepción y tu toma de decisiones situacionales.
+                                La puntuación máxima posible es 100% en cada pilar, calculada mediante una combinación ponderada de autoevaluación y juicio situacional.
                             </p>
                         </div>
                     </div>
@@ -541,46 +533,37 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     <div className="space-y-6">
                         <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 min-h-[450px]">
                             <h3 className="text-center font-black text-slate-800 mb-8 uppercase tracking-widest text-xs flex items-center justify-center gap-2">
-                                <Info size={16} className="text-indigo-500" /> Analysis: {filter === 'all' ? 'Mapping Global' : PILLAR_INFO[filter].title}
+                                <Info size={16} className="text-indigo-500" />
+                                {filter === 'all' ? 'MAPPING GLOBAL' : `RED POR COMPONENTE: ${PILLAR_INFO[filter].title.toUpperCase()}`}
                             </h3>
 
                             <div className="h-[320px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    {filter === 'all' ? (
-                                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                            <PolarGrid stroke="#f1f5f9" />
-                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: '900' }} />
-                                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                            <Radar name="Usuario" dataKey="A" stroke="#4f46e5" strokeWidth={4} fill="#6366f1" fillOpacity={0.15} />
-                                            <Tooltip contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                                        </RadarChart>
-                                    ) : (
-                                        <BarChart data={currentPillarData} layout="vertical" margin={{ left: 20 }}>
-                                            <XAxis type="number" domain={[0, 100]} hide />
-                                            <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#475569' }} axisLine={false} />
-                                            <Bar dataKey="val" radius={[0, 10, 10, 0]} barSize={40}>
-                                                {currentPillarData.map((e, i) => (
-                                                    <Cell key={`cell-${i}`} fill={i === 0 ? '#6366f1' : '#10b981'} />
-                                                ))}
-                                            </Bar>
-                                            <Tooltip cursor={{ fill: '#f8fafc' }} />
-                                        </BarChart>
-                                    )}
+                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={filter === 'all' ? radarData : pillarRadarData}>
+                                        <PolarGrid stroke="#f1f5f9" />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 9, fontWeight: '800' }} />
+                                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                        <Radar name="Score" dataKey="A" stroke="#4f46e5" strokeWidth={3} fill="#6366f1" fillOpacity={0.15} />
+                                        <Tooltip
+                                            labelFormatter={(l, items) => items[0]?.payload?.fullName || l}
+                                            contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                        />
+                                    </RadarChart>
                                 </ResponsiveContainer>
                             </div>
 
                             {filter !== 'all' && (
-                                <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mb-2">Insights del Pilar</p>
+                                <div className="mt-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                                    <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight mb-2">Equilibrio del Pilar</p>
                                     <div className="flex gap-4">
                                         <div className="flex-1">
-                                            <div className="text-sm font-black text-slate-800">{scoring.pillarMetrics[filter].likert}%</div>
-                                            <div className="text-[9px] text-slate-400 uppercase">Autopercepción</div>
+                                            <div className="text-lg font-black text-indigo-900">{scoring.pillarMetrics[filter].likert}%</div>
+                                            <div className="text-[9px] text-indigo-400 font-bold uppercase">Autopercepción</div>
                                         </div>
-                                        <div className="h-8 w-px bg-slate-200"></div>
+                                        <div className="h-8 w-px bg-indigo-200"></div>
                                         <div className="flex-1 text-right">
-                                            <div className="text-sm font-black text-slate-800">{scoring.pillarMetrics[filter].sjt}%</div>
-                                            <div className="text-[9px] text-slate-400 uppercase">Capacidad de Juicio</div>
+                                            <div className="text-lg font-black text-emerald-700">{scoring.pillarMetrics[filter].sjt}%</div>
+                                            <div className="text-[9px] text-emerald-500 font-bold uppercase">Juicio Situacional</div>
                                         </div>
                                     </div>
                                 </div>
