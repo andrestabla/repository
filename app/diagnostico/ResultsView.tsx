@@ -5,7 +5,7 @@ import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
     Tooltip
 } from 'recharts';
-import { RefreshCw, Download, Sparkles, BrainCircuit, Loader2, Info, Share2, ExternalLink, Copy } from 'lucide-react';
+import { RefreshCw, Download, Sparkles, BrainCircuit, Loader2, Info, Share2, ExternalLink, Copy, Mail } from 'lucide-react';
 import { DB, PILLAR_INFO, COMP_DEFINITIONS } from './DiagnosticsData';
 import ReactMarkdown from 'react-markdown';
 import html2canvas from 'html2canvas';
@@ -87,20 +87,32 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                         (el as HTMLElement).style.display = 'none';
                     });
 
-                    // 2. SANITIZE COLORS: Modern CSS functions (lab, oklch) crash html2canvas.
-                    // We iterate over all elements and replace offending colors with fallbacks.
+                    // 2. SANITIZE COLORS: Modern CSS functions (lab, oklch, oklab, color-mix) crash html2canvas.
                     const allElements = clonedDoc.getElementsByTagName("*");
+                    const problematicColors = ['lab(', 'oklch(', 'oklab(', 'color-mix('];
+                    const colorProps = [
+                        'color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderBottomColor',
+                        'borderLeftColor', 'borderRightColor', 'fill', 'stroke', 'outlineColor',
+                        'boxShadow', 'textShadow', 'columnRuleColor', 'textDecorationColor'
+                    ];
+
                     for (let i = 0; i < allElements.length; i++) {
                         const el = allElements[i] as HTMLElement;
                         const style = window.getComputedStyle(el);
 
-                        // Check common properties that might use these colors
-                        ['color', 'backgroundColor', 'borderColor', 'fill', 'stroke'].forEach(prop => {
+                        // Check direct color properties
+                        colorProps.forEach(prop => {
                             const val = (style as any)[prop];
-                            if (val && (val.includes('lab(') || val.includes('oklch('))) {
-                                // Fallback to transparent or a safe default if we detect modern syntax
-                                // Note: Tailwind 4 variables might still be resolved as lab/oklch strings
+                            if (val && problematicColors.some(c => val.includes(c))) {
                                 el.style.setProperty(prop, 'transparent', 'important');
+                            }
+                        });
+
+                        // Check backgrounds for gradients with modern colors
+                        ['background', 'backgroundImage'].forEach(prop => {
+                            const val = (style as any)[prop];
+                            if (val && problematicColors.some(c => val.includes(c))) {
+                                el.style.setProperty(prop, 'none', 'important');
                             }
                         });
                     }
@@ -248,8 +260,15 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                                         value={`${window.location.origin}/diagnostico/share/${publicId}`}
                                         className="text-[10px] bg-transparent text-indigo-600 outline-none w-24"
                                     />
-                                    <button onClick={copyToClipboard} className="text-indigo-600 hover:text-indigo-800"><Copy size={16} /></button>
-                                    <a href={`/diagnostico/share/${publicId}`} target="_blank" className="text-indigo-600 hover:text-indigo-800"><ExternalLink size={16} /></a>
+                                    <button onClick={copyToClipboard} className="text-indigo-600 hover:text-indigo-800" title="Copiar Link"><Copy size={16} /></button>
+                                    <a
+                                        href={`mailto:?subject=Diagnóstico de Liderazgo 4Shine - ${state.username}&body=Hola, puedes ver los resultados de mi diagnóstico aquí: ${window.location.origin}/diagnostico/share/${publicId}`}
+                                        className="text-indigo-600 hover:text-indigo-800"
+                                        title="Enviar por Correo"
+                                    >
+                                        <Mail size={16} />
+                                    </a>
+                                    <a href={`/diagnostico/share/${publicId}`} target="_blank" className="text-indigo-600 hover:text-indigo-800" title="Ver en pestaña nueva"><ExternalLink size={16} /></a>
                                 </div>
                             ) : (
                                 <button

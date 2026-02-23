@@ -118,10 +118,10 @@ export const DB: Question[] = [
         id: 97, type: 'sjt', pillar: 'within', comp: 'Autoeficacia y seguridad',
         text: "Situación: Te asignan liderar una presentación ante dirección sobre un tema que dominas “a medias”. Quedan 48 horas. ¿Qué haces primero?",
         options: [
-            { id: 'A', text: "Buscar a un colega experto para que asuma la presentación.", weight: 1 },
-            { id: 'B', text: "Rechazar el reto hasta sentirte totalmente preparado.", weight: 0 },
-            { id: 'C', text: "Planificar un esquema y pedir apoyo específico para complementar tu conocimiento.", weight: 3 },
-            { id: 'D', text: "Dedicarse a leer sobre el tema hasta el último minuto sin consultar a nadie.", weight: 2 }
+            { id: 'A', text: "Delegar la tarea en un colega experto para asegurar la calidad del resultado final.", weight: 1 },
+            { id: 'B', text: "Posponer el compromiso argumentando falta de tiempo para una preparación de excelencia.", weight: 0 },
+            { id: 'C', text: "Estructurar los puntos clave y solicitar apoyo técnico para los vacíos de información.", weight: 3 },
+            { id: 'D', text: "Estudiar el tema de manera aislada para evitar mostrar vulnerabilidad ante los demás.", weight: 2 }
         ]
     },
     { id: 98, type: 'likert', pillar: 'within', comp: 'Autoeficacia y seguridad', text: "Cuando me asignan un reto nuevo que aún no domino totalmente, confío en que puedo aprender lo necesario y pido apoyo específico sin sentir que eso disminuye mi liderazgo.", scale: 'freq' },
@@ -129,10 +129,10 @@ export const DB: Question[] = [
         id: 99, type: 'sjt', pillar: 'within', comp: 'Mentalidad de crecimiento',
         text: "Situación: Un proyecto bajo su liderazgo fracasa y el equipo está desmotivado. ¿Qué hace primero en la reunión siguiente?",
         options: [
-            { id: 'A', text: "Culpar a su equipo por no ejecutar bien.", weight: 0 },
-            { id: 'B', text: "Analizar las causas y plantear aprendizajes y acciones de mejora.", weight: 3 },
-            { id: 'C', text: "Minimizar el fracaso y seguir adelante como si nada hubiera pasado.", weight: 1 },
-            { id: 'D', text: "Cancelar la reunión para evitar confrontaciones.", weight: 0 }
+            { id: 'A', text: "Buscar responsables directos de la ejecución para evitar que el error se repita pronto.", weight: 0 },
+            { id: 'B', text: "Analizar las causas raíz con el equipo para extraer lecciones y ajustar la estrategia.", weight: 3 },
+            { id: 'C', text: "Restar importancia a lo ocurrido y orientar al equipo de inmediato al siguiente reto.", weight: 1 },
+            { id: 'D', text: "Posponer la revisión del proyecto hasta que el clima emocional sea menos tenso y difícil.", weight: 0 }
         ]
     },
     { id: 100, type: 'likert', pillar: 'within', comp: 'Mentalidad de crecimiento', text: "Cuando algo sale mal, mi enfoque principal es identificar aprendizajes y ajustar el proceso, más que buscar culpables o explicaciones definitivas.", scale: 'freq' },
@@ -140,10 +140,10 @@ export const DB: Question[] = [
         id: 101, type: 'sjt', pillar: 'within', comp: 'Responsabilidad radical (accountability)',
         text: "Situación: Un entregable importante se atrasó y un stakeholder reclama. Parte del atraso fue por su decisión de cambiar prioridades a última hora. ¿Qué hace primero?",
         options: [
-            { id: 'A', text: "Culpar al equipo por no haber cumplido a tiempo.", weight: 0 },
-            { id: 'B', text: "Explicar la razón del retraso y ofrecer una nueva fecha de entrega, asumiendo responsabilidad.", weight: 3 },
-            { id: 'C', text: "Justificar que el stakeholder no entiende las prioridades del negocio.", weight: 1 },
-            { id: 'D', text: "Evitar al stakeholder y reprogramar la entrega sin explicación.", weight: 0 }
+            { id: 'A', text: "Señalar la falta de agilidad del equipo ante el cambio de prioridades solicitado antes.", weight: 0 },
+            { id: 'B', text: "Reconocer el impacto del cambio solicitado y presentar un nuevo plan de entrega sólido.", weight: 3 },
+            { id: 'C', text: "Explicar que las necesidades del negocio justifican plenamente el retraso del cierre.", weight: 1 },
+            { id: 'D', text: "Evitar el contacto directo hasta tener el producto terminado y listo para su revisión.", weight: 0 }
         ]
     },
     { id: 102, type: 'likert', pillar: 'within', comp: 'Responsabilidad radical (accountability)', text: "Cuando un compromiso no se cumple bajo mi liderazgo, asumo públicamente mi parte del resultado y defino acciones concretas para corregirlo.", scale: 'freq' },
@@ -151,10 +151,10 @@ export const DB: Question[] = [
         id: 103, type: 'sjt', pillar: 'within', comp: 'Autoconciencia emocional',
         text: "Situación: En una reunión, una persona cuestiona tu decisión con un tono que percibes como desafiante. Notas irritación creciente. ¿Qué es lo más efectivo hacer primero?",
         options: [
-            { id: 'A', text: "Responder de manera tajante para defender tu autoridad.", weight: 0 },
-            { id: 'B', text: "Tomarse un momento para respirar y preguntar aclarando la intención de la otra persona.", weight: 3 },
-            { id: 'C', text: "Ignorar el comentario y seguir con la agenda.", weight: 1 },
-            { id: 'D', text: "Finalizar la reunión inmediatamente.", weight: 0 }
+            { id: 'A', text: "Confrontar la actitud desafiante de inmediato para dejar clara tu posición de mando.", weight: 0 },
+            { id: 'B', text: "Hacer una pausa breve para valorar tu reacción y pedir una aclaración objetiva al otro.", weight: 3 },
+            { id: 'C', text: "Continuar con la exposición ignorando la tensión para no perder el control del tiempo.", weight: 1 },
+            { id: 'D', text: "Suspender el encuentro argumentando que las condiciones actuales no son productivas.", weight: 0 }
         ]
     },
     { id: 104, type: 'likert', pillar: 'within', comp: 'Autoconciencia emocional', text: "En medio de una interacción tensa, suelo poder identificar con precisión lo que estoy sintiendo (p. ej., frustración, miedo, vergüenza) y cómo eso podría sesgar mi respuesta.", scale: 'freq' },
@@ -162,10 +162,10 @@ export const DB: Question[] = [
         id: 105, type: 'sjt', pillar: 'within', comp: 'Compostura',
         text: "Situación: Una discusión se torna acalorada; dos personas elevan la voz. ¿Qué haces primero como líder?",
         options: [
-            { id: 'A', text: "Tomar partido de inmediato por la persona con quien más simpatizas.", weight: 0 },
-            { id: 'B', text: "Pedir a todos que se calmen y establecer reglas de conversación para continuar.", weight: 3 },
-            { id: 'C', text: "Abandonar la sala para que se enfríen las cosas.", weight: 1 },
-            { id: 'D', text: "Ignorar la discusión y continuar con la agenda.", weight: 0 }
+            { id: 'A', text: "Intervenir a favor de la postura que consideras más alineada con tu visión personal.", weight: 0 },
+            { id: 'B', text: "Detener la interacción y establecer acuerdos de respeto para retomar la conversación.", weight: 3 },
+            { id: 'C', text: "Retirarte momentáneamente para permitir que las partes resuelvan el conflicto solas.", weight: 1 },
+            { id: 'D', text: "Seguir con el orden del día permitiendo que los involucrados gestionen su desacuerdo.", weight: 0 }
         ]
     },
     { id: 106, type: 'likert', pillar: 'within', comp: 'Compostura', text: "En discusiones tensas, cuido mi tono de voz y lenguaje corporal para mantener un clima de respeto, incluso si no estoy de acuerdo.", scale: 'freq' },
@@ -173,10 +173,10 @@ export const DB: Question[] = [
         id: 107, type: 'sjt', pillar: 'within', comp: 'Gestión de la energía',
         text: "Situación: Llevas semanas con alta carga. Estás cansado y notas irritabilidad. Surge una urgencia “para ayer” que no es crítica. ¿Qué haces primero?",
         options: [
-            { id: 'A', text: "Aceptar la urgencia sin importar tu estado.", weight: 1 },
-            { id: 'B', text: "Rechazar la tarea de forma abrupta, pues no puedes más.", weight: 0 },
-            { id: 'C', text: "Evaluar la prioridad y negociar plazos o delegar, priorizando tu bienestar y el del equipo.", weight: 3 },
-            { id: 'D', text: "Ignorar tu cansancio y continuar trabajando hasta terminar.", weight: 0 }
+            { id: 'A', text: "Asumir la nueva responsabilidad de inmediato para demostrar compromiso total al líder.", weight: 1 },
+            { id: 'B', text: "Expresar tu malestar de forma abierta para que la organización note tu nivel de fatiga.", weight: 0 },
+            { id: 'C', text: "Validar la urgencia real y proponer una alternativa de entrega o delegación efectiva.", weight: 3 },
+            { id: 'D', text: "Continuar trabajando sin pausas hasta que todas las pendientes queden solucionadas.", weight: 0 }
         ]
     },
     { id: 108, type: 'likert', pillar: 'within', comp: 'Gestión de la energía', text: "Programo intencionalmente hábitos de recuperación (descanso, movimiento, pausas, desconexión) para sostener mi rendimiento como líder.", scale: 'freq' },
@@ -184,10 +184,10 @@ export const DB: Question[] = [
         id: 109, type: 'sjt', pillar: 'within', comp: 'Claridad de propósito (Ikigai)',
         text: "Situación: Te ofrecen liderar una iniciativa de alto impacto y visibilidad, pero implica prácticas que chocan con valores que tú declaras (p. ej., transparencia con clientes). ¿Qué haces primero?",
         options: [
-            { id: 'A', text: "Aceptar de inmediato para ganar visibilidad.", weight: 1 },
-            { id: 'B', text: "Negociar condiciones para asegurar que se respeten los valores y decidir en función de ello.", weight: 3 },
-            { id: 'C', text: "Rechazar sin preguntar detalles.", weight: 0 },
-            { id: 'D', text: "Aceptar pero adoptar una postura pasiva ante las prácticas cuestionables.", weight: 0 }
+            { id: 'A', text: "Priorizar el éxito de la iniciativa para asegurar tu crecimiento dentro del equipo líder.", weight: 1 },
+            { id: 'B', text: "Expresar tus dudas éticas y buscar un ajuste que alinee el proyecto con tus valores.", weight: 3 },
+            { id: 'C', text: "Declinar la oportunidad sin dar explicaciones para no comprometer tu imagen personal.", weight: 0 },
+            { id: 'D', text: "Participar pero evitar involucrarte en las dinámicas que consideras poco transparentes.", weight: 0 }
         ]
     },
     { id: 110, type: 'likert', pillar: 'within', comp: 'Claridad de propósito (Ikigai)', text: "Tener claro mi “para qué” me ayuda a priorizar y decir no a actividades que no aportan a ese propósito, incluso si son urgentes o populares.", scale: 'freq' },
@@ -195,10 +195,10 @@ export const DB: Question[] = [
         id: 111, type: 'sjt', pillar: 'within', comp: 'Integridad y coherencia',
         text: "Situación: Te piden “ajustar” un informe para que se vea mejor antes de una reunión, aunque eso implique omitir datos relevantes. ¿Qué haces primero?",
         options: [
-            { id: 'A', text: "Aceptar hacer los cambios sin cuestionar.", weight: 0 },
-            { id: 'B', text: "Negociar para presentar los datos de forma clara pero honesta, explicando el riesgo de omitir información.", weight: 3 },
-            { id: 'C', text: "Rechazar la petición sin dar razones.", weight: 0 },
-            { id: 'D', text: "Ajustar el informe y justificar que es lo correcto para la empresa.", weight: 1 }
+            { id: 'A', text: "Acceder a la edición del documento para evitar un conflicto innecesario con tu superior.", weight: 0 },
+            { id: 'B', text: "Presentar la realidad de forma constructiva, explicando el valor de la transparencia.", weight: 3 },
+            { id: 'C', text: "Negarte a realizar el cambio de forma rotunda para marcar un límite ético personal claro.", weight: 0 },
+            { id: 'D', text: "Realizar el ajuste solicitado y preparar una justificación técnica por si hay preguntas.", weight: 1 }
         ]
     },
     { id: 112, type: 'likert', pillar: 'within', comp: 'Integridad y coherencia', text: "Aun cuando exista presión por resultados, prefiero asumir el costo de una decisión difícil antes que comprometer mis valores o la transparencia.", scale: 'freq' },
@@ -206,10 +206,10 @@ export const DB: Question[] = [
         id: 113, type: 'sjt', pillar: 'within', comp: 'Autenticidad',
         text: "Situación: En tu organización se valora un estilo muy “duro” y tú sueles liderar desde la calma y el diálogo. Un colega te dice: “Así no te van a respetar”. ¿Qué haces primero?",
         options: [
-            { id: 'A', text: "Adoptar un estilo más duro para demostrar autoridad.", weight: 1 },
-            { id: 'B', text: "Explicar tu enfoque y buscar resultados a través del diálogo, demostrando que la firmeza y la calma pueden coexistir.", weight: 3 },
-            { id: 'C', text: "Ignorar el comentario y seguir trabajando a tu manera.", weight: 1 },
-            { id: 'D', text: "Cambiar radicalmente tu estilo a uno que no te representa.", weight: 0 }
+            { id: 'A', text: "Intentar proyectar una imagen más severa para ganar el respeto de quienes te critican.", weight: 1 },
+            { id: 'B', text: "Mantener tu estilo, explicando cómo tu enfoque basado en el diálogo genera resultados.", weight: 3 },
+            { id: 'C', text: "No dar importancia al comentario y seguir trabajando bajo tus propios criterios de éxito.", weight: 1 },
+            { id: 'D', text: "Adoptar las sugerencias del colega para adaptarte mejor a la cultura dominante actual.", weight: 0 }
         ]
     },
     { id: 114, type: 'likert', pillar: 'within', comp: 'Autenticidad', text: "En situaciones de presión social o política, puedo ser firme y claro sin dejar de actuar desde mi estilo personal y valores.", scale: 'freq' },
@@ -217,10 +217,10 @@ export const DB: Question[] = [
         id: 115, type: 'sjt', pillar: 'within', comp: 'Práctica reflexiva',
         text: "Situación: Un colaborador te dice: “Siento que no escuchas en reuniones y cierras rápido”. Te incomoda el comentario. ¿Qué haces primero?",
         options: [
-            { id: 'A', text: "Justificarte y argumentar que escuchas lo suficiente.", weight: 1 },
-            { id: 'B', text: "Agradecer el feedback, pedir ejemplos y explorar cómo mejorar tu escucha.", weight: 3 },
-            { id: 'C', text: "Evitar hablar con esa persona en el futuro.", weight: 0 },
-            { id: 'D', text: "Explicar que el equipo debe ser más rápido y no hay tiempo para escucharlo.", weight: 0 }
+            { id: 'A', text: "Explicar que la velocidad del negocio exige cierres rápidos y poca apertura al debate.", weight: 1 },
+            { id: 'B', text: "Valorar el comentario sinceramente y organizar una instancia para mejorar la escucha.", weight: 3 },
+            { id: 'C', text: "Marcar distancia con esa persona para evitar sesgos emocionales en futuras reuniones.", weight: 0 },
+            { id: 'D', text: "Indicar que su percepción es subjetiva y que el equipo debe enfocarse en los objetivos.", weight: 0 }
         ]
     },
     { id: 116, type: 'likert', pillar: 'within', comp: 'Práctica reflexiva', text: "Después de un proyecto o situación importante, realizo una reflexión deliberada (solo o con el equipo) para extraer aprendizajes y ajustar mi forma de liderar.", scale: 'freq' },
@@ -230,30 +230,30 @@ export const DB: Question[] = [
         id: 117, type: 'sjt', pillar: 'out', comp: 'Escucha Activa y Empática',
         text: "Situación: Durante una reunión, una persona del equipo se mantiene callada y con gestos de desacuerdo. ¿Qué haces?",
         options: [
-            { id: 'A', text: "Ignorar su lenguaje no verbal y seguir con la agenda.", weight: 0 },
-            { id: 'B', text: "Preguntar directamente a la persona qué piensa y escuchar su perspectiva con empatía.", weight: 3 },
-            { id: 'C', text: "Criticar su actitud y recordarle que debe colaborar.", weight: 0 },
-            { id: 'D', text: "Cambiar de tema para no incomodar a nadie.", weight: 1 }
+            { id: 'A', text: "Mantener el enfoque en los puntos de la agenda para no dilatar el cierre de la sesión.", weight: 0 },
+            { id: 'B', text: "Crear un espacio seguro para que la persona comparta su visión y se sienta escuchada.", weight: 3 },
+            { id: 'C', text: "Llamar la atención sobre su falta de participación para fomentar el aporte de ideas.", weight: 0 },
+            { id: 'D', text: "Girar la conversación hacia otros temas menos polémicos para reducir el nivel de tensión.", weight: 1 }
         ]
     },
     {
         id: 118, type: 'sjt', pillar: 'out', comp: 'Claridad e inspiración',
         text: "Situación: Debes comunicar un cambio de estrategia que sabes será impopular. ¿Cómo lo abordas?",
         options: [
-            { id: 'A', text: "Anunciar el cambio sin dar contexto y exigir cumplimiento.", weight: 0 },
-            { id: 'B', text: "Explicar la razón del cambio, escuchar inquietudes y co-crear soluciones de mitigación.", weight: 3 },
-            { id: 'C', text: "Retrasar la comunicación esperando que la gente se adapte sola.", weight: 0 },
-            { id: 'D', text: "Delegar la comunicación a alguien más para evitar confrontaciones.", weight: 0 }
+            { id: 'A', text: "Presentar la directriz de forma firme y directa para evitar cuestionamientos técnicos.", weight: 0 },
+            { id: 'B', text: "Comunicar el propósito del cambio y abrir un diálogo para gestionar el impacto grupal.", weight: 3 },
+            { id: 'C', text: "Esperar a que la necesidad del cambio sea evidente para comunicarlo de forma oficial.", weight: 0 },
+            { id: 'D', text: "Pedir a un tercero que realice el anuncio para mantener tu neutralidad ante el equipo.", weight: 0 }
         ]
     },
     {
         id: 119, type: 'sjt', pillar: 'out', comp: 'Apertura al feedback',
         text: "Situación: Recibes un feedback negativo de un compañero sobre tu forma de delegar. ¿Qué haces?",
         options: [
-            { id: 'A', text: "Defenderte inmediatamente y explicar tus razones.", weight: 1 },
-            { id: 'B', text: "Escuchar activamente, agradecer el feedback y analizar cómo puedes mejorar.", weight: 3 },
-            { id: 'C', text: "Ignorar el comentario pensando que no es relevante.", weight: 0 },
-            { id: 'D', text: "Castigar a tu compañero asignándole más tareas.", weight: 0 }
+            { id: 'A', text: "Rebatir los puntos de la crítica con ejemplos donde la delegación fue exitosa antes.", weight: 1 },
+            { id: 'B', text: "Recibir la información con apertura y definir un plan de acción para delegar mejor.", weight: 3 },
+            { id: 'C', text: "Pasar por alto la observación al considerar que no refleja tu proceso real de gestión.", weight: 0 },
+            { id: 'D', text: "Aumentar el nivel de control sobre el compañero para evitar que su opinión te afecte.", weight: 0 }
         ]
     },
 
@@ -262,30 +262,30 @@ export const DB: Question[] = [
         id: 120, type: 'sjt', pillar: 'up', comp: 'Pensamiento estratégico',
         text: "Situación: La dirección exige recortes presupuestarios significativos. Debes decidir qué proyectos priorizar. ¿Qué haces?",
         options: [
-            { id: 'A', text: "Mantener todos los proyectos para no desmotivar a nadie.", weight: 1 },
-            { id: 'B', text: "Revisar datos y alinearlos con la estrategia, priorizando los proyectos con mayor impacto estratégico y comunicando la decisión.", weight: 3 },
-            { id: 'C', text: "Delegar la decisión a tus subordinados para evitar ser responsable.", weight: 0 },
-            { id: 'D', text: "Elegir proyectos al azar para ser “justo”.", weight: 0 }
+            { id: 'A', text: "Intentar sostener todas las iniciativas cargando al equipo para evitar bajas de moral.", weight: 1 },
+            { id: 'B', text: "Analizar el impacto a largo plazo de cada proyecto y priorizar según la visión global.", weight: 3 },
+            { id: 'C', text: "Pedir a los líderes de proyecto que decidan entre ellos qué iniciativas deben pausarse.", weight: 0 },
+            { id: 'D', text: "Aplicar un recorte porcentual igualitario a todas las áreas para parecer lo más justo.", weight: 0 }
         ]
     },
     {
         id: 121, type: 'sjt', pillar: 'up', comp: 'Gestión de relaciones (relationship management)',
         text: "Situación: Estás formando alianzas con otros departamentos que compiten por recursos. ¿Cómo aseguras una colaboración efectiva?",
         options: [
-            { id: 'A', text: "Negociando acuerdos de ganar–ganar basados en objetivos comunes y responsabilidad compartida.", weight: 3 },
-            { id: 'B', text: "Aceptando todas las condiciones de los otros departamentos para evitar conflicto.", weight: 1 },
-            { id: 'C', text: "Imponiendo tus condiciones, ya que necesitas los recursos.", weight: 0 },
-            { id: 'D', text: "Evitando la colaboración para no complicar el proceso.", weight: 0 }
+            { id: 'A', text: "Establecer acuerdos de beneficio mutuo que alineen los intereses de todas las partes.", weight: 3 },
+            { id: 'B', text: "Ceder ante las presiones externas con tal de asegurar la paz y la fluidez del proyecto.", weight: 1 },
+            { id: 'C', text: "Asegurar tus propios recursos primero mediante un uso firme de tu posición y poder.", weight: 0 },
+            { id: 'D', text: "Mantener una comunicación mínima con otras áreas para evitar conflictos por recursos.", weight: 0 }
         ]
     },
     {
         id: 122, type: 'sjt', pillar: 'up', comp: 'Decisión bajo incertidumbre',
         text: "Situación: Debes tomar una decisión bajo alta incertidumbre y presión de tiempo. ¿Cuál es tu enfoque?",
         options: [
-            { id: 'A', text: "Retrasar la decisión hasta que tengas certeza absoluta.", weight: 0 },
-            { id: 'B', text: "Recopilar la mejor información disponible, consultar perspectivas clave y tomar una decisión oportuna asumiendo riesgos calculados.", weight: 3 },
-            { id: 'C', text: "Tomar la decisión basándote únicamente en tu intuición, sin consultar a nadie.", weight: 1 },
-            { id: 'D', text: "Dejar la decisión en manos de alguien más.", weight: 0 }
+            { id: 'A', text: "Suspender la decisión hasta contar con datos precisos que minimicen cualquier riesgo.", weight: 0 },
+            { id: 'B', text: "Valorar la información disponible, consultar expertos y actuar con determinación clara.", weight: 3 },
+            { id: 'C', text: "Tomar una dirección basada en tu experiencia previa sin consultar otras perspectivas.", weight: 1 },
+            { id: 'D', text: "Transferir la responsabilidad de la elección a un comité para diluir el riesgo personal.", weight: 0 }
         ]
     },
 
@@ -294,30 +294,30 @@ export const DB: Question[] = [
         id: 123, type: 'sjt', pillar: 'beyond', comp: 'Inclusión y equidad',
         text: "Situación: Observas que un colega no está siendo incluido en decisiones importantes debido a su origen o estilo de trabajo. ¿Qué haces?",
         options: [
-            { id: 'A', text: "No intervenir ya que no te afecta directamente.", weight: 0 },
-            { id: 'B', text: "Cuestionar la exclusión, abogar por su participación y trabajar para eliminar sesgos en el equipo.", weight: 3 },
-            { id: 'C', text: "Informar al colega que se adapte a la cultura existente.", weight: 1 },
-            { id: 'D', text: "Comentar con otros colegas pero no actuar.", weight: 0 }
+            { id: 'A', text: "Evitar la intervención directa para no generar fricciones con la cultura de la empresa.", weight: 0 },
+            { id: 'B', text: "Promover la integración del colega y proponer cambios en los criterios de participación.", weight: 3 },
+            { id: 'C', text: "Sugerir al colaborador que intente mimetizarse más con el estilo de trabajo del resto.", weight: 1 },
+            { id: 'D', text: "Hablar sobre la situación en privado con otros colegas sin proponer acciones de cambio.", weight: 0 }
         ]
     },
     {
         id: 124, type: 'sjt', pillar: 'beyond', comp: 'Ética y responsabilidad social',
         text: "Situación: Te piden acelerar un proyecto sacrificando estándares éticos o de seguridad. ¿Qué haces?",
         options: [
-            { id: 'A', text: "Acceder a la petición para cumplir con plazos.", weight: 0 },
-            { id: 'B', text: "Comunicar los riesgos éticos y de seguridad, ofrecer alternativas y mantener tus estándares.", weight: 3 },
-            { id: 'C', text: "Ignorar los estándares para contentar a la dirección.", weight: 0 },
-            { id: 'D', text: "Demorar el proyecto sin explicar la razón.", weight: 1 }
+            { id: 'A', text: "Cumplir con los plazos solicitados asumiendo que la dirección conoce bien los riesgos.", weight: 0 },
+            { id: 'B', text: "Exponer los riesgos de seguridad y ética, ofreciendo una ruta que respete los mínimos.", weight: 3 },
+            { id: 'C', text: "Omitir los protocolos de seguridad actuales para garantizar la competitividad externa.", weight: 0 },
+            { id: 'D', text: "Dilatar la entrega del proyecto de forma pasiva sin explicar los motivos reales detrás.", weight: 1 }
         ]
     },
     {
         id: 125, type: 'sjt', pillar: 'beyond', comp: 'Mentoría y sucesión',
         text: "Situación: Estás mentorando a un nuevo líder. ¿Cómo fomentas que desarrolle su propio legado?",
         options: [
-            { id: 'A', text: "Impartiendo tu propio estilo sin dejar espacio a su creatividad.", weight: 0 },
-            { id: 'B', text: "Preguntando por su visión y apoyándolo a desarrollar acciones alineadas con esa visión, incluso si difiere de la tuya.", weight: 3 },
-            { id: 'C', text: "Dirigiendo todas las decisiones para asegurar que siga tu camino.", weight: 0 },
-            { id: 'D', text: "Dejan que explore solo sin acompañamiento.", weight: 1 }
+            { id: 'A', text: "Exigir que el aprendiz replique tus métodos para asegurar la continuidad de tu éxito.", weight: 0 },
+            { id: 'B', text: "Ayudarle a encontrar su propio estilo de liderazgo alentando su visión y creatividad.", weight: 3 },
+            { id: 'C', text: "Supervisar cada una de sus decisiones para evitar que se desvíe de los estándares hoy.", weight: 0 },
+            { id: 'D', text: "Permitir que descubra su camino por cuenta propia sin ofrecerle guía o acompañamiento.", weight: 1 }
         ]
     }
 ];
