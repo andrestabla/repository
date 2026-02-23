@@ -57,6 +57,29 @@ export default function DiagnosticsPage() {
         }
     };
 
+    const handleDemo = () => {
+        // Sample results for demo mode
+        const demoAnswers: Record<string | number, string | number> = {};
+
+        // Fill 96 Likert questions with varied values (mostly 3-5)
+        for (let i = 1; i <= 96; i++) {
+            demoAnswers[i] = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
+        }
+
+        // Fill 29 SJT questions (97-125) with varied options
+        for (let i = 97; i <= 125; i++) {
+            demoAnswers[i] = ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)];
+        }
+
+        setUserState({
+            username: 'Andrés (Demo)',
+            role: 'Líder Ejecutivo',
+            answers: demoAnswers,
+            currentIdx: 0
+        });
+        setStep('results');
+    };
+
     const handleAnswer = (qId: string | number, val: string | number) => {
         const newAnswers = { ...userState.answers, [qId]: val };
         saveState({ ...userState, answers: newAnswers });
@@ -103,6 +126,12 @@ export default function DiagnosticsPage() {
                             <h1 className="text-5xl md:text-7xl font-black text-white leading-none tracking-tighter">LEADERSHIP<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">DIAGNOSTIC</span></h1>
                             <p className="text-slate-400 text-lg leading-relaxed max-w-md">Evalúa tu madurez de liderazgo mediante un modelo híbrido de autopercepción y juicio situacional.</p>
                         </div>
+                        <button
+                            onClick={handleDemo}
+                            className="bg-white/10 hover:bg-white/20 text-white/80 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/10 backdrop-blur-md"
+                        >
+                            Ver Resultados Demo
+                        </button>
                     </div>
                     <div className="bg-white/5 backdrop-blur-3xl p-10 rounded-[40px] border border-white/10 shadow-2xl space-y-8">
                         <div className="space-y-6">
@@ -155,17 +184,25 @@ export default function DiagnosticsPage() {
                     <div className="text-center space-y-4">
                         <div className="h-1.5 w-12 bg-indigo-600 mx-auto rounded-full"></div>
                         <h2 className="text-4xl font-black text-slate-900 tracking-tight">Instrucciones</h2>
+                        <div className="inline-block px-4 py-1 bg-slate-100 text-[10px] font-black uppercase text-slate-500 rounded-full">
+                            Tiempo estimado: 20-25 minutos
+                        </div>
                     </div>
-                    <div className="grid gap-4">
-                        {features.map((f, i) => (
-                            <div key={i} className="flex items-start gap-4 p-5 rounded-3xl bg-slate-50 border border-slate-100">
-                                <div className="h-8 w-8 rounded-xl bg-white flex items-center justify-center text-slate-900 font-black shadow-sm flex-shrink-0">{i + 1}</div>
-                                <div>
-                                    <h4 className="font-black text-slate-900 mb-1">{f.title}</h4>
-                                    <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+                    <div className="space-y-4">
+                        <p className="text-slate-600 text-sm leading-relaxed text-center font-medium italic">
+                            El objetivo de este diagnóstico es identificar tus brechas de liderazgo actuales y proporcionarte una hoja de ruta personalizada basada en el modelo 4Shine.
+                        </p>
+                        <div className="grid gap-4">
+                            {features.map((f, i) => (
+                                <div key={i} className="flex items-start gap-4 p-5 rounded-3xl bg-slate-50 border border-slate-100">
+                                    <div className="h-8 w-8 rounded-xl bg-white flex items-center justify-center text-slate-900 font-black shadow-sm flex-shrink-0">{i + 1}</div>
+                                    <div>
+                                        <h4 className="font-black text-slate-900 mb-1">{f.title}</h4>
+                                        <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                     <p className="text-center text-slate-400 text-xs font-medium px-8 leading-relaxed italic">
                         "La calidad de tu liderazgo no depende de tus intenciones, sino de tu capacidad para gestionar situaciones complejas con madurez."
@@ -210,6 +247,7 @@ export default function DiagnosticsPage() {
             <main className="max-w-3xl mx-auto px-6 pt-12 space-y-8">
                 {pageItems.map((q, qIdx) => {
                     const ans = userState.answers[q.id];
+                    const questionNumber = start + qIdx + 1;
                     return (
                         <div key={q.id} className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${qIdx * 100}ms` }}>
                             <div className="space-y-4">
@@ -219,7 +257,10 @@ export default function DiagnosticsPage() {
                                         {q.type === 'sjt' ? 'Situacional' : 'Autoinforme'}
                                     </span>
                                 </div>
-                                <h4 className="text-xl font-bold text-slate-900 leading-snug">{q.text}</h4>
+                                <h4 className="text-xl font-bold text-slate-900 leading-snug">
+                                    <span className="text-indigo-600 mr-2">{questionNumber}.</span>
+                                    {q.text}
+                                </h4>
                             </div>
 
                             {q.type === 'likert' ? (
