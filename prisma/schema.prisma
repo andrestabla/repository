@@ -230,6 +230,18 @@ model Workbook {
   slug        String?  @unique
 }
 
+model DiagnosticResult {
+  id        String   @id @default(cuid())
+  username  String
+  role      String
+  answers   Json     // Store the original answers
+  scores    Json     // Keep pre-calculated for convenience
+  reports   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  publicId  String   @unique @default(cuid())
+}
+
 enum Role {
   METODOLOGO
   CURADOR
