@@ -61,15 +61,22 @@ export default function DiagnosticsPage() {
         // Sample results for demo mode
         const demoAnswers: Record<string | number, string | number> = {};
 
-        // Fill 96 Likert questions with varied values (mostly 3-5)
-        for (let i = 1; i <= 96; i++) {
-            demoAnswers[i] = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
-        }
+        // Random target mean between 2.5 and 4.2 for Likert questions
+        // This ensures the global score falls within the requested range
+        const targetMean = Math.random() * (4.2 - 2.5) + 2.5;
 
-        // Fill 29 SJT questions (97-125) with varied options
-        for (let i = 97; i <= 125; i++) {
-            demoAnswers[i] = ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)];
-        }
+        DB.forEach(q => {
+            if (q.type === 'likert') {
+                // Assign a value around the target mean with small variation
+                let val = Math.round(targetMean + (Math.random() * 1.5 - 0.75));
+                val = Math.max(1, Math.min(5, val));
+                demoAnswers[q.id] = val;
+            } else {
+                // Random SJT option
+                const optIds = q.options?.map(o => o.id) || ['A', 'B', 'C', 'D'];
+                demoAnswers[q.id] = optIds[Math.floor(Math.random() * optIds.length)];
+            }
+        });
 
         setUserState({
             username: 'Andrés (Demo)',
