@@ -9,6 +9,8 @@ import {
 import { Book, ChevronRight, ChevronLeft, RefreshCw, Download, Sparkles, BrainCircuit, Loader2, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { DB, SCALES, PILLAR_INFO, COMP_DEFINITIONS, Question } from './DiagnosticsData';
 import ReactMarkdown from 'react-markdown';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 // --- TYPES ---
 interface UserState {
@@ -355,6 +357,64 @@ export default function DiagnosticsPage() {
 function ResultsView({ state, onReset }: { state: UserState, onReset: () => void }) {
     const [filter, setFilter] = useState<'all' | 'within' | 'out' | 'up' | 'beyond'>('all');
     const [reports, setReports] = useState<Record<string, string>>({});
+    const [isExporting, setIsExporting] = useState(false);
+    const reportRef = React.useRef<HTMLDivElement>(null);
+
+    const handleDownloadPDF = async () => {
+        if (!reportRef.current) return;
+        setIsExporting(true);
+        try {
+            // Wait a bit for charts to be fully ready and animations to finish
+            await new Promise(r => setTimeout(r, 500));
+
+            const canvas = await html2canvas(reportRef.current, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#f8fafc',
+                onclone: (clonedDoc) => {
+                    clonedDoc.querySelectorAll('.no-export').forEach(el => {
+                        (el as HTMLElement).style.display = 'none';
+                    });
+                },
+                windowWidth: reportRef.current.scrollWidth,
+                windowHeight: reportRef.current.scrollHeight,
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'p',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            // Handle multi-page
+            let heightLeft = pdfHeight;
+            let position = 0;
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - pdfHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save(`Diagnostico_4Shine_${state.username}.pdf`);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Error al generar el PDF.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     // 1. ADVANCED SCORING ENGINE
     const scoring = React.useMemo(() => {
@@ -464,12 +524,18 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => window.print()} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"><Download size={20} /></button>
+                    <button
+                        onClick={handleDownloadPDF}
+                        disabled={isExporting}
+                        className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors disabled:opacity-50"
+                    >
+                        {isExporting ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
+                    </button>
                     <button onClick={onReset} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"><RefreshCw size={20} /></button>
                 </div>
             </nav>
 
-            <main className="max-w-6xl mx-auto p-6 md:p-10 space-y-10">
+            <main ref={reportRef} className="max-w-6xl mx-auto p-6 md:p-10 space-y-10">
                 {/* Hero Summary */}
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="md:col-span-2 bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-10">
@@ -499,7 +565,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                             <h3 className="text-xl font-black mb-4 leading-tight">Hoja de Ruta Personalizada</h3>
                             <button
                                 onClick={() => setFilter('all')}
-                                className="w-full bg-white text-indigo-950 font-black py-4 rounded-2xl shadow-lg hover:shadow-indigo-500/20 transition-all active:scale-95"
+                                className="w-full bg-white text-indigo-950 font-black py-4 rounded-2xl shadow-lg hover:shadow-indigo-500/20 transition-all active:scale-95 no-export"
                             >
                                 Generar Informe AI
                             </button>
@@ -509,7 +575,7 @@ function ResultsView({ state, onReset }: { state: UserState, onReset: () => void
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="flex flex-wrap items-center justify-center gap-3 no-export">
                     {['all', 'within', 'out', 'up', 'beyond'].map(f => (
                         <button
                             key={f}
@@ -699,7 +765,7 @@ function AiAnalysisSection({ username, role, scores, pillar, reports, setReports
                     <button
                         onClick={handleAnalyze}
                         disabled={loading}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-2xl font-black shadow-lg shadow-indigo-900/40 transition-all flex items-center gap-3 disabled:opacity-50"
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-2xl font-black shadow-lg shadow-indigo-900/40 transition-all flex items-center gap-3 disabled:opacity-50 no-export"
                     >
                         {loading ? <Loader2 className="animate-spin" /> : <BrainCircuit size={20} />}
                         {loading ? 'Generando...' : 'Obtener Feedback AI'}
