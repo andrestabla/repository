@@ -271,7 +271,7 @@ export default function DiagnosticsPage() {
                             </div>
 
                             {q.type === 'likert' ? (
-                                <div className="space-y-3">
+                                <div className="grid grid-cols-5 gap-2">
                                     {[1, 2, 3, 4, 5].map((v) => {
                                         const labelSet = SCALES[q.scale || 'freq'];
                                         const label = labelSet[v - 1];
@@ -280,16 +280,13 @@ export default function DiagnosticsPage() {
                                                 key={v}
                                                 onClick={() => handleAnswer(q.id, v)}
                                                 className={`
-                                                    w-full flex items-center p-5 rounded-2xl text-sm font-bold transition-all border
+                                                    aspect-square flex flex-col items-center justify-center p-2 rounded-2xl text-[9px] font-black leading-tight text-center transition-all border
                                                     ${ans === v
-                                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 border-indigo-600'
-                                                        : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-100'
+                                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 border-indigo-600 scale-105'
+                                                        : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-100'
                                                     }
                                                 `}
                                             >
-                                                <div className={`h-4 w-4 rounded-full border-2 mr-4 flex items-center justify-center transition-all ${ans === v ? 'border-white bg-white' : 'border-slate-200'}`}>
-                                                    {ans === v && <div className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
-                                                </div>
                                                 {label}
                                             </button>
                                         );
