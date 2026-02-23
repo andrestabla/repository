@@ -82,9 +82,28 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                 logging: true,
                 backgroundColor: '#f8fafc',
                 onclone: (clonedDoc) => {
+                    // 1. Hide unwanted elements
                     clonedDoc.querySelectorAll('.no-export').forEach(el => {
                         (el as HTMLElement).style.display = 'none';
                     });
+
+                    // 2. SANITIZE COLORS: Modern CSS functions (lab, oklch) crash html2canvas.
+                    // We iterate over all elements and replace offending colors with fallbacks.
+                    const allElements = clonedDoc.getElementsByTagName("*");
+                    for (let i = 0; i < allElements.length; i++) {
+                        const el = allElements[i] as HTMLElement;
+                        const style = window.getComputedStyle(el);
+
+                        // Check common properties that might use these colors
+                        ['color', 'backgroundColor', 'borderColor', 'fill', 'stroke'].forEach(prop => {
+                            const val = (style as any)[prop];
+                            if (val && (val.includes('lab(') || val.includes('oklch('))) {
+                                // Fallback to transparent or a safe default if we detect modern syntax
+                                // Note: Tailwind 4 variables might still be resolved as lab/oklch strings
+                                el.style.setProperty(prop, 'transparent', 'important');
+                            }
+                        });
+                    }
                 },
                 windowWidth: reportRef.current.scrollWidth,
                 windowHeight: reportRef.current.scrollHeight,
