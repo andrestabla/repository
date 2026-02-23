@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, RefreshCw } from 'lucide-react';
-import { DB } from './DiagnosticsData';
+import { DB, SCALES } from './DiagnosticsData';
 import { ResultsView, UserState } from './ResultsView';
 
 type Step = 'intro' | 'instructions' | 'quiz' | 'results';
@@ -271,25 +271,29 @@ export default function DiagnosticsPage() {
                             </div>
 
                             {q.type === 'likert' ? (
-                                <div className="grid grid-cols-5 gap-3">
-                                    {[1, 2, 3, 4, 5].map((v) => (
-                                        <button
-                                            key={v}
-                                            onClick={() => handleAnswer(q.id, v)}
-                                            className={`
-                                                aspect-square flex flex-col items-center justify-center p-4 rounded-3xl text-lg font-black transition-all border
-                                                ${ans === v
-                                                    ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200 border-indigo-600 scale-105'
-                                                    : 'bg-white text-slate-400 hover:bg-slate-50 border-slate-100'
-                                                }
-                                            `}
-                                        >
-                                            {v}
-                                            <span className="text-[8px] mt-1 opacity-60 font-bold uppercase tracking-tight">
-                                                {v === 1 ? 'Nunca' : v === 5 ? 'Siempre' : ''}
-                                            </span>
-                                        </button>
-                                    ))}
+                                <div className="space-y-3">
+                                    {[1, 2, 3, 4, 5].map((v) => {
+                                        const labelSet = SCALES[q.scale || 'freq'];
+                                        const label = labelSet[v - 1];
+                                        return (
+                                            <button
+                                                key={v}
+                                                onClick={() => handleAnswer(q.id, v)}
+                                                className={`
+                                                    w-full flex items-center p-5 rounded-2xl text-sm font-bold transition-all border
+                                                    ${ans === v
+                                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 border-indigo-600'
+                                                        : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-100'
+                                                    }
+                                                `}
+                                            >
+                                                <div className={`h-4 w-4 rounded-full border-2 mr-4 flex items-center justify-center transition-all ${ans === v ? 'border-white bg-white' : 'border-slate-200'}`}>
+                                                    {ans === v && <div className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
+                                                </div>
+                                                {label}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <div className="space-y-3">
