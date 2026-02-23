@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { username, role, scores, pillar } = body;
 
-        if (!scores || !scores.pillarAvg) {
-            return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+        if (!scores || !scores.pillarMetrics) {
+            return NextResponse.json({ error: "Invalid data structure" }, { status: 400 });
         }
 
         // Initialize OpenAI
@@ -27,9 +27,8 @@ export async function POST(req: NextRequest) {
 
         // --- CONTEXT RETRIEVAL (RAG LITE) ---
 
-        // --- CONTEXT RETRIEVAL (RAG LITE) ---
-
         // 1. Identify Gaps (Context-Aware)
+        // compList contains Likert scores (1-5). We use them for granularity.
         const allSorted = scores.compList.sort((a: any, b: any) => a.score - b.score);
         const globalGaps = allSorted.slice(0, 3);
         const globalStrengths = allSorted.slice(-3).map((c: any) => c.name);
@@ -108,31 +107,31 @@ La Metodología 4Shine tiene 4 Pilares:
 
 Estructura del Reporte (Markdown):
 ## 1. Tu Perfil Estratégico (Arquetipo)
-Define su arquetipo (ej: "Eres un Líder Operativo..."). Integra cómo TUS fortalezas (${globalStrengths.join(', ')}) contrastan con TUS brechas (${targetGapNames.join(', ')}).
+Define su arquetipo (ej: "Eres un Líder Operativo..."). Integra cómo TUS fortalezas (${globalStrengths.join(', ')}) contrastan con TUS brechas (${targetGapNames.join(', ')}). 
+Menciona su madurez global del ${scores.globalIndex}%.
 
 ## 2. Análisis de Riesgos Ocultos (Deep Dive)
 Identifica 2 tensiones sistémicas en su liderazgo. Conecta sus brechas con definiciones teóricas. (Ej: "Tu falta de '${targetGapNames[0]}' te impide...").
 
 ## 3. Tu Plan de Aceleración (Hoja de Ruta)
-3 acciones tácticas para TI. **DEBES RECOMENDAR** al menos 1 de los recursos listados arriba si son pertinentes para su crecimiento.
+3 acciones tácticas para TI. **DEBES RECOMIENDAR** al menos 1 de los recursos listados arriba si son pertinentes para su crecimiento.
             `;
 
             userPrompt = `
 Líder: ${username} (${role})
-Global: ${scores.globalAvg}/5.0
-Pilares: Within ${scores.pillarAvg.within}, Out ${scores.pillarAvg.out}, Up ${scores.pillarAvg.up}, Beyond ${scores.pillarAvg.beyond}.
+Índice de Madurez Global: ${scores.globalIndex}%
+Resultados por Pilar (0-100%):
+- Within: ${scores.pillarMetrics.within.total}% (Likert: ${scores.pillarMetrics.within.likert}%, SJT: ${scores.pillarMetrics.within.sjt}%)
+- Out: ${scores.pillarMetrics.out.total}% (Likert: ${scores.pillarMetrics.out.likert}%, SJT: ${scores.pillarMetrics.out.sjt}%)
+- Up: ${scores.pillarMetrics.up.total}% (Likert: ${scores.pillarMetrics.up.likert}%, SJT: ${scores.pillarMetrics.up.sjt}%)
+- Beyond: ${scores.pillarMetrics.beyond.total}% (Likert: ${scores.pillarMetrics.beyond.likert}%, SJT: ${scores.pillarMetrics.beyond.sjt}%)
 
-Top Brechas Globales:
+Top Brechas Globales (escala 1-5):
 ${targetGaps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
             `;
 
         } else {
             // --- PILLAR DEEP DIVE ---
-            // pComps is already sorted ascending by score from the definition of targetGaps above?
-            // Wait, targetGaps defined in line 42 does the sort.
-            // Let's re-derive or use the sorted list.
-
-            // Re-filter to be safe and clear
             const pComps = scores.compList.filter((c: any) => c.pillar === pillar);
             const sortedComps = pComps.sort((a: any, b: any) => a.score - b.score);
 
@@ -156,7 +155,8 @@ Estructura del Reporte (Markdown):
 Reconoce y valida sus mejores puntajes en este pilar: ${targetStrengths.map((c: any) => c.name).join(', ')}. Explica brevemente por qué son activos clave.
 
 ### 2. La Verdad Incómoda
-Analiza TUS puntajes bajos en este pilar (Brechas). Usa las definiciones para explicarte POR QUÉ estás fallando en ${targetGapNames.join(', ')}. Sé crudo pero constructivo.
+Analiza TUS puntajes bajos en este pilar (Brechas). Usa las definiciones para explicarte POR QUÉ estás fallando en ${targetGapNames.join(', ')}. Sé crudo pero constructivo. 
+Si hay una brecha entre tu Autopercepción (${scores.pillarMetrics[pillar].likert}%) y tu Juicio Situacional (${scores.pillarMetrics[pillar].sjt}%), menciónalo como un punto de atención crítico.
 
 ### 3. Impacto Sistémico
 Conecta estas brechas específicas de ${pName} con TUS resultados de negocio y equipo.
@@ -167,12 +167,13 @@ Conecta estas brechas específicas de ${pName} con TUS resultados de negocio y e
 
             userPrompt = `
 Líder: ${username} (${role})
-Puntaje Pilar ${pName}: ${scores.pillarAvg[pillar]}/5.0
+Resultado Pilar ${pName}: ${scores.pillarMetrics[pillar].total}%
+Desglose: Autoinforme (Likert) ${scores.pillarMetrics[pillar].likert}%, Juicio Situacional (SJT) ${scores.pillarMetrics[pillar].sjt}%
 
-Tus Fortalezas (Superpoderes):
+Tus Fortalezas (escala 1-5):
 ${targetStrengths.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
 
-Tus Brechas Críticas (Áreas de Mejora):
+Tus Brechas Críticas (escala 1-5):
 ${targetGaps.map((c: any) => `- ${c.name} (${c.score})`).join('\n')}
             `;
         }

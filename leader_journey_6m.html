@@ -184,1422 +184,1083 @@
             background: var(--accent);
             color: white;
             border-color: var(--accent);
-            box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
+
+            header p {
+                font-size: 1.1rem;
+                opacity: 0.9;
+                max-width: 600px;
+                margin: 0 auto;
+            }
+
+            /* Timeline Container */
+            .timeline-container {
+                position: relative;
+                padding: 20px 0;
+            }
+
+            /* Vertical Line */
+            .timeline-container::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 30px;
+                /* Adjust based on marker size */
+                width: 3px;
+                background: #e2e8f0;
+                border-radius: 2px;
+            }
+
+            .timeline-item {
+                position: relative;
+                margin-bottom: 60px;
+                padding-left: 80px;
+            }
+
+            .timeline-item:last-child {
+                margin-bottom: 0;
+            }
+
+            /* Marker (Week Number) */
+            .timeline-marker {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 60px;
+                height: 60px;
+                background: white;
+                border: 3px solid var(--primary);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 800;
+                font-size: 1.1rem;
+                color: var(--text);
+                z-index: 2;
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            }
+
+            /* Phase Colors for Markers */
+            .phase-diagnosis .timeline-marker {
+                border-color: var(--color-diagnosis);
+                color: var(--color-diagnosis);
+            }
+
+            .phase-within .timeline-marker {
+                border-color: var(--color-within);
+                color: var(--color-within);
+            }
+
+            .phase-out .timeline-marker {
+                border-color: var(--color-out);
+                color: var(--color-out);
+            }
+
+            .phase-up .timeline-marker {
+                border-color: var(--color-up);
+                color: var(--color-up);
+            }
+
+            .phase-beyond .timeline-marker {
+                border-color: var(--color-beyond);
+                color: var(--color-beyond);
+            }
+
+            /* Content Card */
+            .timeline-content {
+                background: white;
+                border-radius: 16px;
+                padding: 30px;
+                box-shadow: var(--shadow);
+                border: 1px solid var(--border);
+                position: relative;
+            }
+
+            .timeline-content::before {
+                content: '';
+                position: absolute;
+                top: 25px;
+                left: -8px;
+                width: 16px;
+                height: 16px;
+                background: white;
+                transform: rotate(45deg);
+                border-left: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+            }
+
+            /* Phase Badge */
+            .phase-badge {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 999px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 15px;
+                color: white;
+            }
+
+            .phase-badge.diagnosis {
+                background: var(--color-diagnosis);
+            }
+
+            .phase-badge.within {
+                background: var(--color-within);
+            }
+
+            .phase-badge.out {
+                background: var(--color-out);
+            }
+
+            .phase-badge.up {
+                background: var(--color-up);
+            }
+
+            .phase-badge.beyond {
+                background: var(--color-beyond);
+            }
+
+            .timeline-content h3 {
+                font-size: 1.5rem;
+                margin-bottom: 10px;
+                color: var(--text);
+            }
+
+            .timeline-content .objective {
+                color: var(--text-light);
+                font-size: 1rem;
+                margin-bottom: 25px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid var(--border);
+                font-style: italic;
+            }
+
+            /* Activities Grid */
+            .activities-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 20px;
+            }
+
+            .activity-card {
+                background: #f8fafc;
+                border-radius: 12px;
+                padding: 20px;
+                border: 1px solid var(--border);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                height: 100%;
+            }
+
+            .activity-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            }
+
+            .activity-card h4 {
+                font-size: 0.95rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--text-light);
+                margin-bottom: 15px;
+                border-bottom: 2px solid #e2e8f0;
+                padding-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .activity-card .icon {
+                font-size: 1.2em;
+            }
+
+            .activity-card ul {
+                padding-left: 0;
+                list-style: none;
+            }
+
+            .activity-card ul li {
+                margin-bottom: 10px;
+                line-height: 1.5;
+                font-size: 0.95rem;
+                position: relative;
+                padding-left: 15px;
+            }
+
+            .activity-card ul li::before {
+                content: "•";
+                color: var(--primary);
+                font-weight: bold;
+                position: absolute;
+                left: 0;
+            }
+
+            /* Mentor & Special Styles */
+            .activity-card.mentor-card {
+                background: #fffbeb;
+                border-color: #fcd34d;
+            }
+
+            .activity-card.mentor-card h4 {
+                color: #b45309;
+                border-color: #fcd34d;
+            }
+
+            .activity-card.empty-card {
+                background: transparent;
+                border: 1px dashed #cbd5e1;
+                opacity: 0.8;
+            }
+
+            .mentor-highlight {
+                background: linear-gradient(135deg, #fffbeb 0%, #fff 100%);
+                border: 2px solid #fcd34d;
+                border-radius: 12px;
+                padding: 25px;
+                text-align: center;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                max-width: 600px;
+                margin: 0 auto;
+            }
+
+            .mentor-highlight h4 {
+                color: #b45309;
+                font-size: 1.2rem;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            /* Mentor Week Marker Styling */
+            .timeline-item.mentor-week .timeline-marker {
+                background: #fff !important;
+                border-width: 3px;
+                border-style: solid;
+                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+                font-weight: bold;
+            }
+
+            .timeline-item.mentor-week.phase-diagnosis .timeline-marker {
+                border-color: var(--color-diagnosis);
+                color: var(--color-diagnosis);
+            }
+
+            .timeline-item.mentor-week.phase-within .timeline-marker {
+                border-color: var(--color-within);
+                color: var(--color-within);
+            }
+
+            .timeline-item.mentor-week.phase-out .timeline-marker {
+                border-color: var(--color-out);
+                color: var(--color-out);
+            }
+
+            .timeline-item.mentor-week.phase-up .timeline-marker {
+                border-color: var(--color-up);
+                color: var(--color-up);
+            }
+
+            .timeline-item.mentor-week.phase-beyond .timeline-marker {
+                border-color: var(--color-beyond);
+                color: var(--color-beyond);
+            }
+
+            .activities-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+    <style>
+        /* ... (previous styles) ... */
+
+        /* NAVIGATION ENHANCEMENTS */
+        :root {
+            --nav-height: 60px;
         }
 
-        .btn.primary:hover {
-            background: var(--accent-dark);
-            border-color: var(--accent-dark);
+        html {
+            scroll-behavior: smooth;
         }
 
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #f8fafc;
-            border: 1px solid var(--line);
-            padding: 0 12px;
-            height: 36px;
-            border-radius: 999px;
-            color: var(--text-sec);
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        /* CARDS */
-        .card {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-            margin-top: 10px;
-        }
-
-        .card-hd {
-            padding: 24px 24px 0;
-            background: #fff;
-            border-radius: var(--radius) var(--radius) 0 0;
-        }
-
-        .card-hd h2 {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--text);
-            letter-spacing: -0.03em;
-        }
-
-        .card-hd p {
-            margin: 8px 0 0;
-            color: var(--text-sec);
-            font-size: 15px;
-            max-width: 700px;
-        }
-
-        .card-bd {
-            padding: 24px;
-        }
-
-        /* DASHBOARD KPIS */
-        .kpi {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 24px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--line);
-        }
-
-        .chip {
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid var(--line);
-            background: #f8fafc;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .chip:hover {
-            background: #fff;
-            border-color: var(--accent);
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
-
-        .chip .label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--muted);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 8px;
-        }
-
-        .chip .value {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text);
-            line-height: 1.3;
-        }
-
-        .chip .sub {
-            font-size: 13px;
-            color: var(--text-sec);
-            margin-top: 4px;
-        }
-
-        .chip .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--secondary);
-        }
-
-        /* MODERN TABS (Desktop) */
-        .tabs-container {
-            position: sticky;
-            top: 65px;
-            z-index: 40;
-            margin: 0 -24px;
-            padding: 10px 24px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid var(--line);
-        }
-
-        .tabs {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            padding-bottom: 2px;
-        }
-
-        .tabs::-webkit-scrollbar {
-            display: none;
-        }
-
-        .tab {
-            padding: 8px 16px;
-            border-radius: 30px;
-            border: 1px solid transparent;
-            background: transparent;
-            color: var(--text-sec);
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .tab:hover {
-            background: #f1f5f9;
-            color: var(--text);
-        }
-
-        .tab small {
-            font-family: var(--font-mono);
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 6px;
-            background: rgba(0, 0, 0, 0.06);
-        }
-
-        .tab[aria-selected="true"] {
-            background: var(--text);
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-        }
-
-        .tab[aria-selected="true"] small {
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-        }
-
-        /* MOBILE NAV (Dropdown) */
-        .mobile-nav-container {
-            display: none;
-            /* Oculto por defecto en desktop */
-            padding: 10px 0 20px;
-            position: sticky;
+        /* Scroll Progress Bar */
+        .progress-container {
+            position: fixed;
             top: 0;
-            z-index: 40;
-            background: #fff;
-        }
-
-        .mobile-select-wrapper {
-            position: relative;
+            left: 0;
             width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 1001;
         }
 
-        .mobile-select {
-            width: 100%;
-            appearance: none;
-            -webkit-appearance: none;
-            padding: 12px 40px 12px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--accent);
-            background-color: #f8fafc;
-            font-family: var(--font-main);
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text);
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--secondary));
+            width: 0%;
+            transition: width 0.1s;
         }
 
-        .mobile-select:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .select-icon {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            pointer-events: none;
-            color: var(--accent);
-        }
-
-        /* CONTENT PHASES */
-        .phase {
-            display: none;
-            margin-top: 10px;
-            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .phase.active {
-            display: block
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .phase-title {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .phase-title h3 {
-            margin: 0;
-            font-size: 20px;
-            color: var(--text);
-            font-weight: 700;
-        }
-
-        .phase-title p {
-            margin: 6px 0 0;
-            color: var(--text-sec);
-            font-size: 15px;
-            max-width: 65ch;
-            line-height: 1.6;
-        }
-
-        .meta {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-        }
-
-        .badge {
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 6px;
+        /* Sticky Navigation */
+        .phase-nav {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 240px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: var(--shadow-lg);
             border: 1px solid var(--line);
-            background: #fff;
-            color: var(--text-sec);
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .badge .sw {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--accent);
-        }
-
-        /* MODERN ACCORDION */
-        .accordion {
+            z-index: 100;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 5px;
+            opacity: 0;
+            transform: translateX(20px);
+            animation: slideInNav 0.5s ease-out forwards 0.5s;
         }
 
-        details {
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: #fff;
-            overflow: hidden;
-            transition: all 0.2s;
-        }
-
-        details:hover {
-            border-color: #cbd5e1;
-        }
-
-        details[open] {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
-        }
-
-        summary {
-            list-style: none;
-            cursor: pointer;
-            padding: 18px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            font-weight: 600;
-            font-size: 15px;
-            color: var(--text);
-            background: #fff;
-            transition: background 0.1s;
-            user-select: none;
-        }
-
-        summary:hover {
-            background: #f9fafb;
-        }
-
-        details[open] summary {
-            background: #f8fafc;
-            border-bottom: 1px solid var(--line);
-            color: var(--accent-dark);
-        }
-
-        summary::-webkit-details-marker {
-            display: none
-        }
-
-        .sum-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .icon-box {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: #f1f5f9;
-            color: var(--text-sec);
-            display: grid;
-            place-items: center;
-            flex-shrink: 0;
-        }
-
-        details[open] .icon-box {
-            background: var(--accent-light);
-            color: var(--accent);
-        }
-
-        .chev {
-            transition: transform 0.2s;
-            color: var(--muted);
-        }
-
-        details[open] .chev {
-            transform: rotate(180deg);
-            color: var(--accent);
-        }
-
-        .content {
-            padding: 24px;
-            color: var(--text-sec);
-            background: #fff;
-            font-size: 15px;
-        }
-
-        .content ul li {
-            margin-bottom: 8px;
-            position: relative;
-        }
-
-        .hint {
-            color: var(--text-sec);
-            font-size: 13px;
-            background: #f1f5f9;
-            padding: 12px;
-            border-radius: 8px;
-            border-left: 3px solid var(--secondary);
-            margin-top: 10px;
-        }
-
-        .callout {
-            padding: 16px;
-            border-radius: 8px;
-            border: 1px solid #dbeafe;
-            background: #eff6ff;
-            color: #1e40af;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        .two {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-top: 16px;
-        }
-
-        /* MODAL FIXED */
-        dialog {
-            width: min(500px, 90%);
-            border: none;
-            border-radius: 20px;
-            background: #fff;
-            padding: 0;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            max-height: 90vh;
-            overflow-y: auto;
-            z-index: 1000;
-            /* Asegurar que esté encima de todo */
-        }
-
-        /* Animación de entrada */
-        dialog[open] {
-            animation: zoomIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes zoomIn {
-            from {
-                transform: scale(0.95);
-                opacity: 0;
-            }
-
+        @keyframes slideInNav {
             to {
-                transform: scale(1);
                 opacity: 1;
+                transform: translateX(0);
             }
         }
 
-        dialog::backdrop {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
+        .phase-nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-bottom: 8px;
+            padding-left: 10px;
+            font-weight: 700;
         }
 
-        .modal-hd {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--line);
+        .nav-link {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            background: #f8fafc;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .modal-hd h4 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .modal-bd {
-            padding: 24px;
-            font-size: 15px;
-            color: var(--text-sec);
-            line-height: 1.6;
-        }
-
-        .xbtn {
-            border: 1px solid var(--line);
-            background: #fff;
-            width: 32px;
-            height: 32px;
+            padding: 10px 12px;
             border-radius: 8px;
-            cursor: pointer;
-            display: grid;
-            place-items: center;
-            color: var(--muted);
-            transition: 0.2s;
+            text-decoration: none;
+            color: var(--text-sec);
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
         }
 
-        .xbtn:hover {
+        .nav-link:hover {
+            background: var(--card-hover);
             color: var(--text);
-            background: #f1f5f9;
-            border-color: #cbd5e1;
         }
 
-        footer {
-            margin-top: 60px;
-            color: var(--muted);
-            font-size: 13px;
-            text-align: center;
-            padding-top: 20px;
-            border-top: 1px solid var(--line);
+        .nav-link.active {
+            background: white;
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
+            font-weight: 600;
         }
 
-        /* RESPONSIVE MOBILE */
-        @media (max-width: 768px) {
-            .topbar-inner {
-                padding: 10px 16px;
-            }
+        .nav-link.active.diagnosis {
+            border-left-color: var(--color-diagnosis);
+            color: var(--color-diagnosis);
+        }
 
-            .brand h1 {
-                font-size: 14px;
-            }
+        .nav-link.active.within {
+            border-left-color: var(--color-within);
+            color: var(--color-within);
+        }
 
-            .brand p {
+        .nav-link.active.out {
+            border-left-color: var(--color-out);
+            color: var(--color-out);
+        }
+
+        .nav-link.active.up {
+            border-left-color: var(--color-up);
+            color: var(--color-up);
+        }
+
+        .nav-link.active.beyond {
+            border-left-color: var(--color-beyond);
+            color: var(--color-beyond);
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background: var(--muted);
+            opacity: 0.5;
+        }
+
+        .nav-link.active .nav-dot {
+            opacity: 1;
+        }
+
+        .nav-link.diagnosis .nav-dot {
+            background: var(--color-diagnosis);
+        }
+
+        .nav-link.within .nav-dot {
+            background: var(--color-within);
+        }
+
+        .nav-link.out .nav-dot {
+            background: var(--color-out);
+        }
+
+        .nav-link.up .nav-dot {
+            background: var(--color-up);
+        }
+
+        .nav-link.beyond .nav-dot {
+            background: var(--color-beyond);
+        }
+
+        /* Back to Top */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 90;
+            color: var(--text-sec);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1200px) {
+            .phase-nav {
                 display: none;
+                /* Hide sidebar on smaller screens */
             }
 
-            .actions .pill {
-                display: none;
-            }
-
-            .btn span {
-                display: none;
-            }
-
-            /* Ocultar texto botones en movil */
-            .btn {
-                padding: 8px;
-                width: 36px;
-                justify-content: center;
-            }
-
-            /* Ocultar tabs normales y mostrar select */
-            .tabs-container {
-                display: none;
-            }
-
-            .mobile-nav-container {
-                display: block;
-            }
-
-            .card-hd {
-                padding: 20px 16px 0;
-            }
-
-            .card-bd {
-                padding: 16px;
-            }
-
-            .two {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
-
-            .kpi {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            summary {
-                padding: 14px 16px;
-            }
+            /* Consider a bottom nav for mobile in future */
         }
     </style>
 </head>
 
 <body>
-    <div class="topbar">
-        <div class="topbar-inner">
-            <div class="brand">
-                <div class="logo-container">
-                    <svg class="logo-diamond" viewBox="0 0 24 24">
-                        <path d="M6 3h12l4 6-10 13L2 9z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1>Viaje del Líder 4SHINE®</h1>
-                    <p>6 Meses · Sistema de Escalamiento Estratégico</p>
-                </div>
-            </div>
 
-            <div class="actions">
-                <span class="pill" title="Duración total"><strong>24</strong> semanas</span>
-                <button class="btn" id="btnHelp" type="button" aria-label="Ayuda">
-                    <svg class="svg-icon" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                        <path d="M12 17h.01" />
-                    </svg>
-                    <span>Ayuda</span>
-                </button>
-                <button class="btn primary" id="btnExpand" type="button" title="Abrir/cerrar todo">
-                    <svg class="svg-icon" viewBox="0 0 24 24">
-                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                    </svg>
-                    <span>Expandir</span>
-                </button>
-            </div>
-        </div>
+    <!-- Scroll Progress -->
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
     </div>
 
+    <!-- Floating Navigation (Desktop) -->
+    <nav class="phase-nav">
+        <div class="phase-nav-header">Navegación</div>
+        <a href="#fase-diagnosis" class="nav-link diagnosis">
+            <span class="nav-dot"></span>Descubrimiento
+        </a>
+        <a href="#fase-within" class="nav-link within">
+            <span class="nav-dot"></span>Shine Within
+        </a>
+        <a href="#fase-out" class="nav-link out">
+            <span class="nav-dot"></span>Shine Out
+        </a>
+        <a href="#fase-up" class="nav-link up">
+            <span class="nav-dot"></span>Shine Up
+        </a>
+        <a href="#fase-beyond" class="nav-link beyond">
+            <span class="nav-dot"></span>Shine Beyond
+        </a>
+    </nav>
+
     <div class="container">
-        <section class="card">
-            <div class="card-hd">
-                <h2>Dashboard de Ruta (6 Meses)</h2>
-                <p>Selecciona una fase para ver detalles. El programa está diseñado para una transformación profunda en
-                    24 semanas.</p>
+        <header>
+            <div class="logo">
+                <img src="https://res.cloudinary.com/dtn9k632u/image/upload/v1738870198/4SHINE_LOGO_PRINCIPAL_tujwsu.png"
+                    alt="4Shine Logo">
+            </div>
+            <h1>Ruta del Líder 4Shine · 6 Meses</h1>
+            <p>Un viaje de transformación desde la esencia hasta el legado.</p>
+        </header>
 
-                <div class="kpi">
-                    <div class="chip">
-                        <div class="label"><span class="dot"></span>Inicio</div>
-                        <div class="value">Semanas 1–2 · Diagnóstico</div>
-                        <div class="sub">Autoconocimiento y Definición de PDI</div>
-                    </div>
-                    <div class="chip">
-                        <div class="label"><span class="dot"></span>Cadencia</div>
-                        <div class="value">Sprint quincenales</div>
-                        <div class="sub">Autoestudio + Práctica + Mentoring 1:1</div>
-                    </div>
-                    <div class="chip">
-                        <div class="label"><span class="dot"></span>Salida</div>
-                        <div class="value">Legado e Impacto</div>
-                        <div class="sub">Plan de Sucesión y Futuro</div>
+        <div class="timeline-container">
+
+            <!-- FASE 1: DESCUBRIMIENTO -->
+            <!-- Semana 1 -->
+            <div id="fase-diagnosis" class="timeline-item phase-diagnosis">
+                <div class="timeline-marker">1</div>
+                <div class="timeline-content">
+                    <div class="phase-badge diagnosis">Descubrimiento</div>
+                    <h3>Semana 1: El Punto de Partida</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Establecer el punto de partida. El líder obtiene una
+                        radiografía objetiva de sus competencias actuales y alinea sus brechas con las necesidades del
+                        negocio, resultando en un Plan de Desarrollo Individual (PDI) co-creado que permite responder
+                        "por qué" y "para qué" está en el programa.</p>
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">⚡</span>Actividades / Herramientas</h4>
+                            <ul>
+                                <li><strong>Diagnóstico 4Shine:</strong> Autoevaluación en línea.</li>
+                                <li><strong>Análisis de resultados:</strong> Fortalezas, áreas de mejora y plan de
+                                    acción.</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje</h4>
+                            <ul>
+                                <li>Presentación del programa 4Shine (video).</li>
+                                <li>Infografía interactiva con el camino del líder.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card-bd" style="padding-top:0;">
+            <!-- Semana 2 -->
+            <div class="timeline-item phase-diagnosis">
+                <div class="timeline-marker">2</div>
+                <div class="timeline-content">
+                    <div class="phase-badge diagnosis">PDI</div>
+                    <h3>Semana 2: La Estrella del Norte</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Diseñar su estrella del norte. El líder deja de
+                        operar en piloto automático y define una visión clara y cuantificable de su éxito, traduciendo
+                        sus aspiraciones en un Plan de Desarrollo Individual (PDI) táctico y ejecutable para los
+                        próximos 6 meses.</p>
 
-                <div class="mobile-nav-container">
-                    <div class="mobile-select-wrapper">
-                        <select id="phaseSelect" class="mobile-select">
-                            <option value="0">S1-S2: Diagnóstico</option>
-                            <option value="1">S3-S8: Shine Within</option>
-                            <option value="2">S9-S14: Shine Out</option>
-                            <option value="3">S15-S20: Shine Up</option>
-                            <option value="4">S21-S24: Shine Beyond</option>
-                            <option value="5">Trazabilidad</option>
-                        </select>
-                        <div class="select-icon">
-                            <svg class="svg-icon" viewBox="0 0 24 24">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">📘</span>WB1: Metas y propósito</h4>
+                            <ul>
+                                <li><strong>1. Definición de éxito:</strong> Clarificación de visión personal.</li>
+                                <li><strong>2. Rueda de la vida:</strong> Diagnóstico 360° en 8 áreas.</li>
+                                <li><strong>3. Objetivos SMART:</strong> Metas tangibles y cualitativas.</li>
+                                <li><strong>4. Plan de carrera:</strong> Visión a 1, 3 y 5 años.</li>
+                                <li><strong>5. Plan de Desarrollo (PDI):</strong> Hábitos y acciones críticas.</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje</h4>
+                            <p>Habilitación de contenidos (videos, libros, pódcast) priorizados por áreas de mejora
+                                (competencias) según resultados del diagnóstico.</p>
+                        </div>
+                        <div class="activity-card mentor-card">
+                            <h4><span class="icon">🤝</span>Mentoría</h4>
+                            <ul>
+                                <li>Sesión de 60 min para co-crear el PDI.</li>
+                                <li>Definición de "Victorias tempranas" para el primer mes.</li>
+                                <li>Acuerdo sobre la cadencia de reuniones quincenales.</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
-
-                <div class="tabs-container">
-                    <div class="tabs" role="tablist">
-                        <button class="tab" id="tab-0" aria-selected="true" data-phase="0"><small>S1–2</small>
-                            Diagnóstico</button>
-                        <button class="tab" id="tab-1" aria-selected="false" data-phase="1"><small>S3–8</small> Shine
-                            Within</button>
-                        <button class="tab" id="tab-2" aria-selected="false" data-phase="2"><small>S9–14</small> Shine
-                            Out</button>
-                        <button class="tab" id="tab-3" aria-selected="false" data-phase="3"><small>S15–20</small> Shine
-                            Up</button>
-                        <button class="tab" id="tab-4" aria-selected="false" data-phase="4"><small>S21–24</small> Shine
-                            Beyond</button>
-                        <button class="tab" id="tab-5" aria-selected="false" data-phase="5"><small>∞</small>
-                            Trazabilidad</button>
-                    </div>
-                </div>
-
-                <section class="phase active" id="phase-0">
-                    <div class="phase-title">
-                        <div>
-                            <h3>Semanas 1–2 · Diagnóstico y PDI</h3>
-                            <p>Punto de partida extendido: diagnóstico 360°, análisis de contexto y diseño del Plan de
-                                Desarrollo Individual (PDI).</p>
-                            <div class="meta">
-                                <span class="badge"><span class="sw"></span><b>Entregable:</b> Informe + PDI
-                                    Aprobado</span>
-                                <span class="badge"><span class="sw"></span><b>Hito:</b> Kick-off Meeting</span>
-                            </div>
-                        </div>
-                        <button class="btn" data-open="glosario">
-                            <svg class="svg-icon" viewBox="0 0 24 24">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                            </svg>
-                            <span>Glosario</span>
-                        </button>
-                    </div>
-
-                    <div class="accordion">
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <circle cx="12" cy="12" r="10" />
-                                            <path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" />
-                                        </svg></div>Objetivo
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <p>Establecer una línea base sólida. En estas 2 semanas profundizamos en el perfil
-                                    competencial y alineamos expectativas con stakeholders clave.</p>
-                                <div class="callout"><strong>En plataforma:</strong> el diagnóstico desbloquea la ruta
-                                    completa de 24 semanas.</div>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                                            <path d="M21 3v5h-5" />
-                                            <path d="M9 12h6" />
-                                            <path d="M12 9v6" />
-                                        </svg></div>Diagnóstico automatizado y Entrevistas
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ul>
-                                    <li>Autoevaluación de competencias (Digital).</li>
-                                    <li>Feedback cualitativo inicial de pares/jefes (si aplica).</li>
-                                    <li>Revisión de objetivos de negocio para alinear el PDI.</li>
-                                </ul>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                            <circle cx="9" cy="7" r="4" />
-                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                        </svg></div>Mentoría de Alineación
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ul>
-                                    <li>Sesión de 90 min para co-crear el PDI.</li>
-                                    <li>Definición de "Victorias Tempranas" para el primer mes.</li>
-                                    <li>Acuerdo sobre la cadencia de reuniones quincenales.</li>
-                                </ul>
-                            </div>
-                        </details>
-                    </div>
-                </section>
-
-                <section class="phase" id="phase-1">
-                    <div class="phase-title">
-                        <div>
-                            <h3>Semanas 3–8 · Shine Within (Esencia)</h3>
-                            <p>6 semanas de inmersión en Autoliderazgo: Gestión emocional, propósito y re-programación
-                                de creencias.</p>
-                            <div class="meta">
-                                <span class="badge"><span class="sw"></span><b>Salida:</b> Mapa de Propósito y Ritual de
-                                    Bienestar</span>
-                                <span class="badge"><span class="sw"></span><b>Hito:</b> Checkpoint S8</span>
-                            </div>
-                        </div>
-                        <button class="btn" data-open="evidencias">
-                            <svg class="svg-icon" viewBox="0 0 24 24">
-                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                <polyline points="14 2 14 8 20 8" />
-                            </svg>
-                            <span>Evidencias</span>
-                        </button>
-                    </div>
-
-                    <div class="accordion">
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <circle cx="12" cy="12" r="10" />
-                                            <circle cx="12" cy="12" r="6" />
-                                            <circle cx="12" cy="12" r="2" />
-                                        </svg></div>Objetivos del Bloque
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ul>
-                                    <li>Desarrollar una "Piel Dura" emocional ante la presión.</li>
-                                    <li>Clarificar el Ikigai personal para tomar decisiones alineadas.</li>
-                                    <li>Construir hábitos de recuperación de energía (bienestar físico/mental).</li>
-                                </ul>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path
-                                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z" />
-                                            <path d="M3.3 7.3 12 12l8.7-4.7" />
-                                            <path d="M12 22V12" />
-                                        </svg></div>Herramientas y Prácticas
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <div class="two">
-                                    <div>
-                                        <p><strong>Semanas 3-5: Mindset & Emociones</strong></p>
-                                        <ul>
-                                            <li>Workbook "Reescritura de Creencias Limitantes".</li>
-                                            <li>Diario de regulación emocional (Trigger > Respuesta).</li>
-                                            <li>Técnicas de respiración para reuniones críticas.</li>
-                                        </ul>
-                                    </div>
-                                    <div>
-                                        <p><strong>Semanas 6-8: Energía & Propósito</strong></p>
-                                        <ul>
-                                            <li>Auditoría de hábitos de sueño y energía.</li>
-                                            <li>Definición del "Leadership Manifesto".</li>
-                                            <li>Ejercicio de valores no-negociables.</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                                        </svg></div>Cronograma de Trabajo
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ol>
-                                    <li><strong>S3:</strong> Autoeficacia y Síndrome del Impostor.</li>
-                                    <li><strong>S4:</strong> Regulación Emocional Avanzada.</li>
-                                    <li><strong>S5:</strong> <em>Mentoría de Seguimiento 1.</em></li>
-                                    <li><strong>S6:</strong> Gestión de Energía y Rituales.</li>
-                                    <li><strong>S7:</strong> Propósito y Valores (Ikigai).</li>
-                                    <li><strong>S8:</strong> <em>Checkpoint de Fase Shine Within.</em></li>
-                                </ol>
-                            </div>
-                        </details>
-                    </div>
-                </section>
-
-                <section class="phase" id="phase-2">
-                    <div class="phase-title">
-                        <div>
-                            <h3>Semanas 9–14 · Shine Out (Presencia)</h3>
-                            <p>6 semanas de Comunicación e Influencia: Marca personal, storytelling y gestión de
-                                equipos.</p>
-                            <div class="meta">
-                                <span class="badge"><span class="sw"></span><b>Salida:</b> Video Pitch + Manual de
-                                    Marca</span>
-                                <span class="badge"><span class="sw"></span><b>Hito:</b> Checkpoint S14</span>
-                            </div>
-                        </div>
-                        <button class="btn" data-open="plantillas">
-                            <svg class="svg-icon" viewBox="0 0 24 24">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                <line x1="3" y1="9" x2="21" y2="9" />
-                                <line x1="9" y1="21" x2="9" y2="9" />
-                            </svg>
-                            <span>Plantillas</span>
-                        </button>
-                    </div>
-                    <div class="accordion">
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <circle cx="12" cy="12" r="10" />
-                                            <path d="M12 8v4" />
-                                            <path d="M12 16h.01" />
-                                        </svg></div>Objetivos del Bloque
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ul>
-                                    <li>Proyectar autoridad y confianza en foros ejecutivos.</li>
-                                    <li>Dominar el arte del storytelling para influir sin autoridad.</li>
-                                    <li>Dar y recibir feedback radicalmente honesto.</li>
-                                </ul>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path d="M12 20h9" />
-                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                                            <path d="M12 7h5" />
-                                        </svg></div>Herramientas y Prácticas
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <div class="two">
-                                    <div>
-                                        <p><strong>Semanas 9-11: Comunicación</strong></p>
-                                        <ul>
-                                            <li>Estructura de presentaciones de alto impacto.</li>
-                                            <li>Grabación y análisis de video-pitch.</li>
-                                            <li>Técnicas de escucha activa en 1:1.</li>
-                                        </ul>
-                                    </div>
-                                    <div>
-                                        <p><strong>Semanas 12-14: Influencia</strong></p>
-                                        <ul>
-                                            <li>Matriz de estilos de comunicación (DISC/MBTI).</li>
-                                            <li>Modelo de Feedback Situation-Behavior-Impact.</li>
-                                            <li>Diseño de la "Marca Personal" corporativa.</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                                        </svg></div>Cronograma de Trabajo
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ol>
-                                    <li><strong>S9:</strong> Presencia Ejecutiva y Lenguaje No Verbal.</li>
-                                    <li><strong>S10:</strong> Storytelling de Negocios.</li>
-                                    <li><strong>S11:</strong> <em>Mentoría de Seguimiento 2.</em></li>
-                                    <li><strong>S12:</strong> Influencia Ética y Persuasión.</li>
-                                    <li><strong>S13:</strong> Cultura de Feedback.</li>
-                                    <li><strong>S14:</strong> <em>Checkpoint de Fase Shine Out.</em></li>
-                                </ol>
-                            </div>
-                        </details>
-                    </div>
-                </section>
-
-                <section class="phase" id="phase-3">
-                    <div class="phase-title">
-                        <div>
-                            <h3>Semanas 15–20 · Shine Up (Ecosistema)</h3>
-                            <p>6 semanas de Estrategia y Redes: Visión sistémica, networking político y toma de
-                                decisiones.</p>
-                            <div class="meta">
-                                <span class="badge"><span class="sw"></span><b>Salida:</b> Mapa de Stakeholders + Plan
-                                    de Visibilidad</span>
-                                <span class="badge"><span class="sw"></span><b>Hito:</b> Checkpoint S20</span>
-                            </div>
-                        </div>
-                        <button class="btn" data-open="checklist">
-                            <svg class="svg-icon" viewBox="0 0 24 24">
-                                <polyline points="9 11 12 14 22 4" />
-                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                            </svg>
-                            <span>Checklist</span>
-                        </button>
-                    </div>
-                    <div class="accordion">
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <circle cx="18" cy="5" r="3" />
-                                            <circle cx="6" cy="12" r="3" />
-                                            <circle cx="18" cy="19" r="3" />
-                                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                                        </svg></div>Objetivos del Bloque
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ul>
-                                    <li>Leer el entorno político y navegar matrices de poder.</li>
-                                    <li>Ampliar la red de contactos estratégica (interna/externa).</li>
-                                    <li>Desarrollar pensamiento estratégico a largo plazo (Visioning).</li>
-                                </ul>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path d="M3 3v18h18" />
-                                            <path d="M7 14l4-4 3 3 6-6" />
-                                        </svg></div>Herramientas y Prácticas
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <div class="two">
-                                    <div>
-                                        <p><strong>Semanas 15-17: Estrategia</strong></p>
-                                        <ul>
-                                            <li>Análisis de tendencias de industria.</li>
-                                            <li>Workshop de "Future-Back Thinking".</li>
-                                            <li>Mapa de Riesgos y Oportunidades.</li>
-                                        </ul>
-                                    </div>
-                                    <div>
-                                        <p><strong>Semanas 18-20: Redes</strong></p>
-                                        <ul>
-                                            <li>Mapeo de Stakeholders (Poder vs Interés).</li>
-                                            <li>Plan de visibilidad en LinkedIn/Foros.</li>
-                                            <li>Estrategia de Alianzas Internas.</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                                        </svg></div>Cronograma de Trabajo
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ol>
-                                    <li><strong>S15:</strong> Pensamiento Estratégico.</li>
-                                    <li><strong>S16:</strong> Toma de Decisiones Complejas.</li>
-                                    <li><strong>S17:</strong> <em>Mentoría de Seguimiento 3.</em></li>
-                                    <li><strong>S18:</strong> Mapeo Político y Coaliciones.</li>
-                                    <li><strong>S19:</strong> Networking Estratégico.</li>
-                                    <li><strong>S20:</strong> <em>Checkpoint de Fase Shine Up.</em></li>
-                                </ol>
-                            </div>
-                        </details>
-                    </div>
-                </section>
-
-                <section class="phase" id="phase-4">
-                    <div class="phase-title">
-                        <div>
-                            <h3>Semanas 21–24 · Shine Beyond (Legado)</h3>
-                            <p>4 semanas de Consolidación: Desarrollo de terceros, sucesión y plan futuro.</p>
-                            <div class="meta">
-                                <span class="badge"><span class="sw"></span><b>Salida:</b> Plan Maestro Anual</span>
-                                <span class="badge"><span class="sw"></span><b>Hito:</b> Graduación y Cierre</span>
-                            </div>
-                        </div>
-                        <button class="btn" data-open="presentacion">
-                            <svg class="svg-icon" viewBox="0 0 24 24">
-                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                                <line x1="12" y1="19" x2="12" y2="23" />
-                                <line x1="8" y1="23" x2="16" y2="23" />
-                            </svg>
-                            <span>Presentación</span>
-                        </button>
-                    </div>
-                    <div class="accordion">
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <polygon
-                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                                        </svg></div>Objetivos de Cierre
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ul>
-                                    <li>Institucionalizar el aprendizaje (transferencia de conocimiento).</li>
-                                    <li>Definir el legado de liderazgo (Succession Planning).</li>
-                                    <li>Preparar el plan de vuelo para los próximos 6-12 meses.</li>
-                                </ul>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path
-                                                d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                            <polyline points="14 2 14 8 20 8" />
-                                            <line x1="16" y1="13" x2="8" y2="13" />
-                                            <line x1="16" y1="17" x2="8" y2="17" />
-                                            <line x1="10" y1="9" x2="8" y2="9" />
-                                        </svg></div>Entregables Finales
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ul>
-                                    <li>Portafolio de Logros (24 semanas).</li>
-                                    <li>Plan de Desarrollo Continuo (PDI Año 1).</li>
-                                    <li>Presentación Final ante Sponsors.</li>
-                                </ul>
-                            </div>
-                        </details>
-
-                        <details>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                                        </svg></div>Cronograma de Trabajo
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ol>
-                                    <li><strong>S21:</strong> Mentoría y Desarrollo de Otros.</li>
-                                    <li><strong>S22:</strong> Stewardship y Ética.</li>
-                                    <li><strong>S23:</strong> Diversidad e Inclusión.</li>
-                                    <li><strong>S24:</strong> <em>Cierre, Graduación y Próximos Pasos.</em></li>
-                                </ol>
-                            </div>
-                        </details>
-                    </div>
-                </section>
-
-                <section class="phase" id="phase-5">
-                    <div class="phase-title">
-                        <div>
-                            <h3>Trazabilidad</h3>
-                            <p>Panel de control para seguimiento a largo plazo.</p>
-                        </div>
-                        <button class="btn" data-open="ux">
-                            <svg class="svg-icon" viewBox="0 0 24 24">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                            </svg>
-                            <span>Tips UX</span>
-                        </button>
-                    </div>
-                    <div class="accordion">
-                        <details open>
-                            <summary>
-                                <span class="sum-left">
-                                    <div class="icon-box"><svg class="svg-icon" viewBox="0 0 24 24">
-                                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                                            <polyline points="17 6 23 6 23 12" />
-                                        </svg></div>Seguimiento Semanal
-                                </span>
-                                <svg class="svg-icon chev" viewBox="0 0 24 24">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </summary>
-                            <div class="content">
-                                <ul>
-                                    <li>Progreso acumulado de 24 semanas.</li>
-                                    <li>Registro de 4 checkpoints principales.</li>
-                                    <li>Histórico de 4 mentorías formales.</li>
-                                </ul>
-                            </div>
-                        </details>
-                    </div>
-                </section>
-
             </div>
-        </section>
+
+            <!-- FASE 2: SHINE WITHIN -->
+            <!-- Semana 3 -->
+            <div id="fase-within" class="timeline-item phase-within">
+                <div class="timeline-marker">3</div>
+                <div class="timeline-content">
+                    <div class="phase-badge within">Shine Within · Esencia</div>
+                    <h3>Semana 3: Fundamentos</h3>
+                    <!-- Objetivo implícito en competencias -->
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">💎</span>Competencias Clave</h4>
+                            <ul>
+                                <li><strong>Pensamiento visionario:</strong> Capacidad de proyectar un futuro deseado.
+                                </li>
+                                <li><strong>Autodirección:</strong> Establecimiento de metas autónomas.</li>
+                                <li><strong>Orientación a resultados:</strong> Definición de métricas de éxito.</li>
+                                <li><strong>Planificación estratégica personal:</strong> Diseño de hoja de ruta.</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card empty-card">
+                            <h4><span class="icon">⏳</span>Mentoría</h4>
+                            <p class="text-muted">No aplica esta semana.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 4 -->
+            <div class="timeline-item phase-within mentor-week">
+                <div class="timeline-marker">4</div>
+                <div class="timeline-content">
+                    <div class="phase-badge within">Mentoría</div>
+                    <h3>Semana 4: Seguimiento de Metas</h3>
+                    <div class="mentor-highlight">
+                        <h4><span class="icon">🤝</span>Sesión 1:1 (60 min)</h4>
+                        <p>Trabajo sobre las metas y el propósito definidos.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 5 -->
+            <div class="timeline-item phase-within">
+                <div class="timeline-marker">5</div>
+                <div class="timeline-content">
+                    <div class="phase-badge within">Shine Within · Identidad</div>
+                    <h3>Semana 5: Mindset & Autoconfianza</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Blindar su identidad. El líder identifica y
+                        neutraliza el "síndrome del impostor" y las narrativas limitantes, instalando un sistema de
+                        creencias de autoeficacia que le permite asumir riesgos mayores sin miedo al fracaso.</p>
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">📘</span>WB2: Mindset y Autoconfianza</h4>
+                            <ul>
+                                <li><strong>1. Auditoría de identidad:</strong> "Yo soy" vs. "Yo cargo".</li>
+                                <li><strong>2. Transformación de creencias:</strong> Matriz de reescritura (Limitante ->
+                                    Potenciadora).</li>
+                                <li><strong>3. DOFA personal:</strong> Análisis de fortalezas y riesgos.</li>
+                                <li><strong>4. Elevar estándares:</strong> Toma de decisiones de identidad.</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje - Competencias</h4>
+                            <ul>
+                                <li><strong>Autoeficacia:</strong> Creencia en la propia capacidad de logro.</li>
+                                <li><strong>Mentalidad de crecimiento:</strong> Ver desafíos como aprendizaje.</li>
+                                <li><strong>Autoconciencia:</strong> Reconocimiento de fortalezas y sombras.</li>
+                                <li><strong>Responsabilidad radical:</strong> Asumir control del propio destino.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 6 -->
+            <div class="timeline-item phase-within mentor-week">
+                <div class="timeline-marker">6</div>
+                <div class="timeline-content">
+                    <div class="phase-badge within">Mentoría</div>
+                    <h3>Semana 6: Creencias & Decisiones</h3>
+                    <div class="mentor-highlight">
+                        <h4><span class="icon">🤝</span>Sesión 1:1 (60 min)</h4>
+                        <p>Trabajaremos sobre las creencias, la autoconfianza y la toma de decisiones.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 7 -->
+            <div class="timeline-item phase-within">
+                <div class="timeline-marker">7</div>
+                <div class="timeline-content">
+                    <div class="phase-badge within">Shine Within · Control</div>
+                    <h3>Semana 7: Serenidad & Regulación</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Dominar su estado interno. El líder adquiere la
+                        capacidad de mantener la calma bajo presión, gestionando sus detonantes emocionales para
+                        responder con inteligencia en lugar de reaccionar con impulsividad ante las crisis.</p>
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">📘</span>WB3: Serenidad y Regulación</h4>
+                            <ul>
+                                <li><strong>1. Termómetro emocional:</strong> Registro de intensidad y sensaciones.</li>
+                                <li><strong>2. Identificación de triggers:</strong> Mapeo de detonantes
+                                    (personas/situaciones).</li>
+                                <li><strong>3. Reencuadre cognitivo:</strong> Cambio de interpretación (narrativa).</li>
+                                <li><strong>4. Anclas de calma:</strong> Rutinas físicas y mentales de regulación.</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje - Competencias</h4>
+                            <ul>
+                                <li><strong>Regulación emocional:</strong> Gestión de impulsos y reacciones.</li>
+                                <li><strong>Resiliencia:</strong> Recuperación rápida ante el estrés.</li>
+                                <li><strong>Gestión de energía:</strong> Identificación y cierre de fugas.</li>
+                                <li><strong>Compostura:</strong> Calma bajo presión.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 8 -->
+            <div class="timeline-item phase-within mentor-week">
+                <div class="timeline-marker">8</div>
+                <div class="timeline-content">
+                    <div class="phase-badge within">Mentoría</div>
+                    <h3>Semana 8: Regulación & Cierre Fase 1</h3>
+                    <div class="mentor-highlight">
+                        <h4><span class="icon">🤝</span>Sesión 1:1 (60 min)</h4>
+                        <p>Trabajo sobre la regulación emocional y la serenidad.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FASE 3: SHINE OUT -->
+            <!-- Semana 9-10 -->
+            <div id="fase-out" class="timeline-item phase-out">
+                <div class="timeline-marker">9-10</div>
+                <div class="timeline-content">
+                    <div class="phase-badge out">Shine Out · Presencia Estratégica</div>
+                    <h3>Semana 9-10: Autenticidad & Diferencial</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Definir su diferencial único. El líder descubre y
+                        articula su Propuesta Única de Valor (USP), entendiendo qué lo hace irreemplazable, para liderar
+                        desde su esencia genuina y no desde la imitación o el deber ser.</p>
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">📘</span>WB4: Autenticidad (ADN)</h4>
+                            <ul>
+                                <li><strong>1. Propósito (PPT):</strong> Definición del Propósito Personal
+                                    Transformador.</li>
+                                <li><strong>2. Arquetipos de marca:</strong> Identificación del estilo y tono natural.
+                                </li>
+                                <li><strong>3. Diferencial (USP):</strong> Propuesta Única de Valor.</li>
+                                <li><strong>4. Valores:</strong> Definición de "No Negociables".</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje - Competencias</h4>
+                            <ul>
+                                <li><strong>Autenticidad:</strong> Coherencia entre ser y parecer.</li>
+                                <li><strong>Integridad:</strong> Alineación con valores éticos.</li>
+                                <li><strong>Claridad de propósito:</strong> Conexión con un "Porqué" superior.</li>
+                                <li><strong>Marca personal (fundamentos):</strong> Definición de identidad pública.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Semana 10 note: Implementación -->
+                </div>
+            </div>
+
+            <!-- Semana 11 -->
+            <div class="timeline-item phase-out mentor-week">
+                <div class="timeline-marker">11</div>
+                <div class="timeline-content">
+                    <div class="phase-badge out">Mentoría</div>
+                    <h3>Semana 11: Marca Personal</h3>
+                    <div class="mentor-highlight">
+                        <h4><span class="icon">🤝</span>Sesión 1:1 (60 min)</h4>
+                        <p>Trabajo profundo en la definición y articulación de la Marca Personal.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 12-13 -->
+            <div class="timeline-item phase-out">
+                <div class="timeline-marker">12-13</div>
+                <div class="timeline-content">
+                    <div class="phase-badge out">Shine Out · Presencia Estratégica</div>
+                    <h3>Semana 12-13: Comunicación & Storytelling</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Inspirar a la acción. El líder transforma su
+                        capacidad de comunicación, pasando de "dar información" a "contar historias" que movilizan,
+                        persuaden y generan compromiso emocional en sus audiencias clave.</p>
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">📘</span>WB5: Comunicación (Story)</h4>
+                            <ul>
+                                <li><strong>1. Elevator Pitch:</strong> Guion de 60 segundos de alto impacto.</li>
+                                <li><strong>2. Storytelling (STAR):</strong> Estructura narrativa
+                                    (Situación-Tarea-Acción-Resultado).</li>
+                                <li><strong>3. Insumos de marca:</strong> Problema, solución y metodología.</li>
+                                <li><strong>4. Hábitos de poder:</strong> Prácticas de oratoria y presencia.</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje - Competencias</h4>
+                            <ul>
+                                <li><strong>Comunicación efectiva:</strong> Claridad y síntesis en el mensaje.</li>
+                                <li><strong>Storytelling:</strong> Capacidad de inspirar a través de historias.</li>
+                                <li><strong>Persuasión e influencia:</strong> Movilización de otros mediante la palabra.
+                                </li>
+                                <li><strong>Presencia Ejecutiva:</strong> Proyección de seguridad y autoridad.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 14 -->
+            <div class="timeline-item phase-out mentor-week">
+                <div class="timeline-marker">14</div>
+                <div class="timeline-content">
+                    <div class="phase-badge out">Mentoría</div>
+                    <h3>Semana 14: Presencia Ejecutiva</h3>
+                    <div class="mentor-highlight">
+                        <h4><span class="icon">🤝</span>Sesión 1:1 (60 min)</h4>
+                        <p>Práctica y feedback sobre Presencia Ejecutiva y Pitch.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FASE 4: SHINE UP -->
+            <!-- Semana 15-16 -->
+            <div id="fase-up" class="timeline-item phase-up">
+                <div class="timeline-marker">15-16</div>
+                <div class="timeline-content">
+                    <div class="phase-badge up">Shine Up · Ecosistema Relacional</div>
+                    <h3>Semana 15-16: Networking Estratégico</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Tejer una red de poder. El líder deja de hacer
+                        networking transaccional y construye un mapa de alianzas estratégicas, posicionándose como un
+                        nodo de valor dentro de la organización y accediendo a círculos de toma de decisión.</p>
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">📘</span>WB6: Networking (Red)</h4>
+                            <ul>
+                                <li><strong>1. Mapa de Stakeholders:</strong> Identificación de aliados clave.</li>
+                                <li><strong>2. Estrategia de valor:</strong> Qué ofrezco a mi red (reciprocidad).</li>
+                                <li><strong>3. Guiones de conexión:</strong> Protocolos de abordaje y seguimiento.</li>
+                                <li><strong>4. Plan de eventos:</strong> Presencia estratégica en foros relevantes.</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje - Competencias</h4>
+                            <ul>
+                                <li><strong>Construcción de relaciones:</strong> Generación de vínculos de confianza.
+                                </li>
+                                <li><strong>Networking estratégico:</strong> Gestión deliberada del capital social.</li>
+                                <li><strong>Inteligencia política:</strong> Lectura de dinámicas de poder.</li>
+                                <li><strong>Colaboración:</strong> Creación de alianzas ganar-ganar.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 17 -->
+            <div class="timeline-item phase-up mentor-week">
+                <div class="timeline-marker">17</div>
+                <div class="timeline-content">
+                    <div class="phase-badge up">Mentoría</div>
+                    <h3>Semana 17: Mapa de Alianzas</h3>
+                    <div class="mentor-highlight">
+                        <h4><span class="icon">🤝</span>Sesión 1:1 (60 min)</h4>
+                        <p>Construcción y revisión del mapa de alianzas estratégicas.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 18-19 -->
+            <div class="timeline-item phase-up">
+                <div class="timeline-marker">18-19</div>
+                <div class="timeline-content">
+                    <div class="phase-badge up">Shine Up · Ecosistema Relacional</div>
+                    <h3>Semana 18-19: Visibilidad & Oferta</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Monetizar su valor. El líder aprende a empaquetar su
+                        talento en una oferta irresistible, asegurando que su contribución sea visible, reconocida y
+                        recompensada (ascenso, equidad salarial o nuevos negocios) por el mercado o la organización.</p>
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">📘</span>WB7: Visibilidad y Oferta</h4>
+                            <ul>
+                                <li><strong>1. Escalera de valor:</strong> Empaquetado de conocimiento en ofertas.</li>
+                                <li><strong>2. Modelo de negocio:</strong> Monetización del talento (Interno/Externo).
+                                </li>
+                                <li><strong>3. Estrategia de visibilidad:</strong> Plan de contenidos y canales.</li>
+                                <li><strong>4. Tablero de control:</strong> KPIs de alcance y retorno (ROI).</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje - Competencias</h4>
+                            <ul>
+                                <li><strong>Visión de negocio:</strong> Entendimiento de cómo generar valor.</li>
+                                <li><strong>Orientación al mercado:</strong> Lectura de necesidades externas.</li>
+                                <li><strong>Negociación de valor:</strong> Capacidad de defender la propia oferta.</li>
+                                <li><strong>Emprendimiento Intra/Extra:</strong> Mentalidad de dueño.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 20 -->
+            <div class="timeline-item phase-up mentor-week">
+                <div class="timeline-marker">20</div>
+                <div class="timeline-content">
+                    <div class="phase-badge up">Mentoría</div>
+                    <h3>Semana 20: Visibilidad del Líder</h3>
+                    <div class="mentor-highlight">
+                        <h4><span class="icon">🤝</span>Sesión 1:1 (60 min)</h4>
+                        <p>Estrategia de visibilidad y posicionamiento.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FASE 5: SHINE BEYOND -->
+            <!-- Semana 21-22 -->
+            <div id="fase-beyond" class="timeline-item phase-beyond">
+                <div class="timeline-marker">21-22</div>
+                <div class="timeline-content">
+                    <div class="phase-badge beyond">Shine Beyond · El Legado</div>
+                    <h3>Semana 21-22: Cultura & Legado</h3>
+                    <p class="objective"><strong>Objetivo:</strong> Trascender su rol. El líder deja de ser
+                        indispensable en la operación diaria al formar sucesores capaces e instaurar una cultura de
+                        ética y excelencia que perdura y funciona incluso cuando él no está presente.</p>
+
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">📘</span>WB8: Cultura y Legado</h4>
+                            <ul>
+                                <li><strong>1. Manifiesto de cultura:</strong> Definición de principios éticos y de
+                                    equipo.</li>
+                                <li><strong>2. Plan de sucesión:</strong> Matriz de talento (9-Box) y mentores.</li>
+                                <li><strong>3. Liderazgo regenerativo:</strong> Impacto social e inclusivo.</li>
+                                <li><strong>4. Ritual de cierre:</strong> Institucionalización del aprendizaje.</li>
+                            </ul>
+                        </div>
+                        <div class="activity-card">
+                            <h4><span class="icon">🧠</span>Aprendizaje - Competencias</h4>
+                            <ul>
+                                <li><strong>Desarrollo de otros:</strong> Formación de nuevos líderes (Mentoring).</li>
+                                <li><strong>Creación de cultura:</strong> Modelado de comportamientos colectivos.</li>
+                                <li><strong>Ética e inclusión:</strong> Liderazgo responsable y justo.</li>
+                                <li><strong>Pensamiento de legado:</strong> Construcción de valor a largo plazo.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 23 -->
+            <div class="timeline-item phase-beyond mentor-week">
+                <div class="timeline-marker">23</div>
+                <div class="timeline-content">
+                    <div class="phase-badge beyond">Mentoría</div>
+                    <h3>Semana 23: Impacto & Huella</h3>
+                    <div class="mentor-highlight">
+                        <h4><span class="icon">🤝</span>Sesión 1:1 (60 min)</h4>
+                        <p>Trabajaremos sobre el impacto, la huella del líder en la organización y la sociedad, y el
+                            Cierre del ciclo.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semana 24 -->
+            <div class="timeline-item phase-beyond">
+                <div class="timeline-marker">24</div>
+                <div class="timeline-content">
+                    <div class="phase-badge beyond">Graduación</div>
+                    <h3>Semana 24: Cierre del Programa</h3>
+                    <div class="activities-grid">
+                        <div class="activity-card">
+                            <h4><span class="icon">🎓</span>Cierre</h4>
+                            <p>Reflexión final, entrega de certificados y próximos pasos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
 
         <footer>
-            <p>Controles rápidos: <span
-                    style="font-family:monospace; background:#eee; padding:2px 4px; border-radius:4px;">Tab</span> para
-                navegar.</p>
+            <div class="footer-content">
+                <p>&copy; 2024 4Shine Leadership Academy. Todos los derechos reservados.</p>
+                <div class="program-summary">
+                    <span>24 Semanas</span>
+                    <span>8 Workbooks</span>
+                    <span>96 Competencias</span>
+                </div>
+            </div>
         </footer>
     </div>
 
-    <dialog id="glosario">
-        <div class="modal-hd">
-            <h4>Glosario</h4><button class="xbtn" data-close>✕</button>
-        </div>
-        <div class="modal-bd">
-            <ul>
-                <li><strong>PDI:</strong> Plan de Desarrollo Individual.</li>
-                <li><strong>Checkpoint:</strong> Hito de control y ajustes al finalizar cada fase.</li>
-                <li><strong>Evidencias:</strong> Pruebas tangibles de aplicación de competencias.</li>
-                <li><strong>Ikigai:</strong> Concepto de propósito (pasión, misión, vocación, profesión).</li>
-            </ul>
-        </div>
-    </dialog>
-
-    <dialog id="evidencias">
-        <div class="modal-hd">
-            <h4>Checklist de Evidencias (Shine Within)</h4><button class="xbtn" data-close>✕</button>
-        </div>
-        <div class="modal-bd">
-            <ul>
-                <li>✅ Workbook de Creencias Limitantes.</li>
-                <li>✅ Bitácora Emocional (min. 2 semanas).</li>
-                <li>✅ Mapa de Propósito (Ikigai) completado.</li>
-                <li>✅ Plan de Recuperación de Energía (sueño/descanso).</li>
-            </ul>
-        </div>
-    </dialog>
-
-    <dialog id="plantillas">
-        <div class="modal-hd">
-            <h4>Plantillas (Shine Out)</h4><button class="xbtn" data-close>✕</button>
-        </div>
-        <div class="modal-bd">
-            <ul>
-                <li>Guion de Storytelling de Negocios.</li>
-                <li>Video Pitch (Grabación de 2 min).</li>
-                <li>Manual de Marca Personal.</li>
-                <li>Matriz de Feedback.</li>
-            </ul>
-        </div>
-    </dialog>
-
-    <dialog id="checklist">
-        <div class="modal-hd">
-            <h4>Checklist Shine Up (Ecosistema)</h4><button class="xbtn" data-close>✕</button>
-        </div>
-        <div class="modal-bd">
-            <ul>
-                <li>✅ Mapa de Stakeholders priorizado.</li>
-                <li>✅ 3 Reuniones de Networking estratégico realizadas.</li>
-                <li>✅ Análisis de Tendencias de Industria.</li>
-                <li>✅ Plan de Visibilidad Ejecutiva.</li>
-            </ul>
-        </div>
-    </dialog>
-
-    <dialog id="presentacion">
-        <div class="modal-hd">
-            <h4>Presentación Final</h4><button class="xbtn" data-close>✕</button>
-        </div>
-        <div class="modal-bd">
-            <ol>
-                <li><strong>Trayectoria:</strong> Resumen de los 6 meses (Antes vs Ahora).</li>
-                <li><strong>Logro Principal:</strong> El mayor desafío superado.</li>
-                <li><strong>ROI:</strong> Impacto tangible en el negocio y equipo.</li>
-                <li><strong>Futuro:</strong> Plan para los próximos 12 meses.</li>
-            </ol>
-        </div>
-    </dialog>
-
-    <dialog id="ux">
-        <div class="modal-hd">
-            <h4>Tips UX</h4><button class="xbtn" data-close>✕</button>
-        </div>
-        <div class="modal-bd">
-            <ul>
-                <li><strong>Consistencia:</strong> Revisiones semanales el mismo día.</li>
-                <li><strong>Bloques:</strong> Agendar tiempos de "Trabajo Profundo" para los retos.</li>
-                <li><strong>Alertas:</strong> Configurar recordatorios para los 4 Checkpoints.</li>
-            </ul>
-        </div>
-    </dialog>
-
-    <dialog id="helpModal">
-        <div class="modal-hd">
-            <h4>Ayuda</h4><button class="xbtn" data-close>✕</button>
-        </div>
-        <div class="modal-bd">
-            <ul>
-                <li>Navega por las 5 fases usando el menú superior.</li>
-                <li>Cada fase representa un bloque de semanas (Total 24).</li>
-                <li>Usa el botón "Expandir" para ver todo el contenido.</li>
-            </ul>
-        </div>
-    </dialog>
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="btnBackToTop" title="Volver arriba">
+        <svg class="svg-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;">
+            <path fill="currentColor" d="M18 15l-6-6-6 6" />
+        </svg>
+    </a>
 
     <script>
-        (function () {
-            const tabs = Array.from(document.querySelectorAll('.tab'));
-            const phases = Array.from(document.querySelectorAll('.phase'));
-            const btnExpand = document.getElementById('btnExpand');
-            const btnHelp = document.getElementById('btnHelp');
-            const phaseSelect = document.getElementById('phaseSelect');
+        // --- NAVIGATION & SCROLL LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.timeline-item[id]');
+            const progressBar = document.getElementById('progressBar');
+            const btnBackToTop = document.getElementById('btnBackToTop');
 
-            // --- LOGIC: Active State ---
-            function setActive(idx) {
-                // 1. Update Tabs
-                tabs.forEach((t, i) => {
-                    const active = i === idx;
-                    t.setAttribute('aria-selected', active);
-                    if (active) {
-                        t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        phases[i]?.classList.add('active');
-                    } else {
-                        phases[i]?.classList.remove('active');
+            // Scroll Spy
+            function onScroll() {
+                let current = '';
+                const scrollPos = window.scrollY + 200; // Offset for better detection
+
+                sections.forEach(section => {
+                    if (section.offsetTop <= scrollPos) {
+                        current = section.getAttribute('id');
                     }
                 });
 
-                // 2. Update Dropdown (Mobile)
-                if (phaseSelect) phaseSelect.value = idx;
-
-                // 3. Reset expand button
-                btnExpand.dataset.state = 'collapsed';
-                btnExpand.querySelector('span').textContent = 'Expandir';
-            }
-
-            // --- EVENTS: Tabs Click ---
-            tabs.forEach((t, idx) => {
-                t.addEventListener('click', () => setActive(idx));
-            });
-
-            // --- EVENTS: Mobile Select Change ---
-            if (phaseSelect) {
-                phaseSelect.addEventListener('change', (e) => {
-                    setActive(parseInt(e.target.value));
-                });
-            }
-
-            // --- EVENTS: Expand/Collapse ---
-            btnExpand.addEventListener('click', () => {
-                const activePhase = phases.find(p => p.classList.contains('active'));
-                if (!activePhase) return;
-
-                const state = btnExpand.dataset.state || 'collapsed';
-                const isCollapsed = state === 'collapsed'; // If collapsed, we want to open
-
-                activePhase.querySelectorAll('details').forEach(d => d.open = isCollapsed);
-
-                btnExpand.dataset.state = isCollapsed ? 'expanded' : 'collapsed';
-                btnExpand.querySelector('span').textContent = isCollapsed ? 'Colapsar' : 'Expandir';
-            });
-
-            // --- EVENTS: Modals ---
-            function openDialog(id) {
-                const el = document.getElementById(id);
-                if (el) {
-                    try {
-                        el.showModal();
-                    } catch (e) {
-                        console.error("Dialog API not supported", e);
-                        el.style.display = 'block';
-                        el.style.position = 'fixed';
-                        el.style.top = '50%';
-                        el.style.left = '50%';
-                        el.style.transform = 'translate(-50%, -50%)';
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
                     }
+                });
+
+                // Progress Bar
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                progressBar.style.width = scrolled + "%";
+
+                // Back to Top Visibility
+                if (winScroll > 300) {
+                    btnBackToTop.classList.add('visible');
+                } else {
+                    btnBackToTop.classList.remove('visible');
                 }
             }
 
-            document.querySelectorAll('[data-open]').forEach(btn => {
-                btn.addEventListener('click', () => openDialog(btn.getAttribute('data-open')));
-            });
+            window.addEventListener('scroll', onScroll);
 
-            // Boton Ayuda explicito
-            if (btnHelp) {
-                btnHelp.addEventListener('click', () => openDialog('helpModal'));
-            }
 
-            document.querySelectorAll('[data-close]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const dlg = btn.closest('dialog');
-                    if (dlg) dlg.close();
+            // Simple reveal animation for timeline items (Existing)
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
                 });
+            }, {
+                threshold: 0.1
             });
 
-            document.querySelectorAll('dialog').forEach(dlg => {
-                dlg.addEventListener('click', (e) => {
-                    const rect = dlg.getBoundingClientRect();
-                    if (e.clientY < rect.top || e.clientY > rect.bottom || e.clientX < rect.left || e.clientX > rect.right) dlg.close();
-                });
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                item.style.transition = 'all 0.6s ease-out';
+                observer.observe(item);
             });
-
-            // Init
-            setActive(0);
-        })();
+        });
     </script>
 </body>
 

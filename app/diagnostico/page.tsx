@@ -3,17 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
-    BarChart, Bar, XAxis, YAxis, Tooltip, Cell
+    BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
+    PieChart, Pie
 } from 'recharts';
-import { Book, ChevronRight, ChevronLeft, RefreshCw, Download, Sparkles, BrainCircuit, Loader2 } from 'lucide-react';
-import { DB, SCALES, PILLAR_INFO, COMP_DEFINITIONS } from './DiagnosticsData';
-import ReactMarkdown from 'react-markdown'; // Ensure this or simple renderer
+import { Book, ChevronRight, ChevronLeft, RefreshCw, Download, Sparkles, BrainCircuit, Loader2, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { DB, SCALES, PILLAR_INFO, COMP_DEFINITIONS, Question } from './DiagnosticsData';
+import ReactMarkdown from 'react-markdown';
 
 // --- TYPES ---
 interface UserState {
     username: string;
     role: string;
-    answers: Record<number, number>; // questionId -> score
+    answers: Record<string | number, string | number>; // questionId -> score or optionId
     currentIdx: number;
 }
 
@@ -33,7 +34,7 @@ export default function DiagnosticsPage() {
 
     // --- INIT / PERSISTENCE ---
     useEffect(() => {
-        const saved = localStorage.getItem('4shine_full_v1');
+        const saved = localStorage.getItem('4shine_v2_data');
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
@@ -46,7 +47,7 @@ export default function DiagnosticsPage() {
 
     const saveState = (newState: UserState) => {
         setUserState(newState);
-        localStorage.setItem('4shine_full_v1', JSON.stringify(newState));
+        localStorage.setItem('4shine_v2_data', JSON.stringify(newState));
     };
 
     const handleStart = () => {
@@ -64,12 +65,12 @@ export default function DiagnosticsPage() {
 
     const handleReset = () => {
         if (confirm('¿Reiniciar todo? Se perderán tus respuestas.')) {
-            localStorage.removeItem('4shine_full_v1');
+            localStorage.removeItem('4shine_v2_data');
             window.location.reload();
         }
     };
 
-    const handleAnswer = (qId: number, val: number) => {
+    const handleAnswer = (qId: string | number, val: string | number) => {
         const newAnswers = { ...userState.answers, [qId]: val };
         saveState({ ...userState, answers: newAnswers });
     };
@@ -80,7 +81,7 @@ export default function DiagnosticsPage() {
         const pageItems = DB.slice(start, end);
 
         // Validate
-        const missing = pageItems.find((i) => !userState.answers[i.id]);
+        const missing = pageItems.find((i) => userState.answers[i.id] === undefined);
         if (missing) {
             alert('Por favor responde todas las preguntas antes de continuar.');
             return;
@@ -102,13 +103,18 @@ export default function DiagnosticsPage() {
 
     const handleDemo = () => {
         if (confirm("¿Cargar datos de prueba? Se sobrescribirá tu progreso.")) {
-            const demoAnswers: Record<number, number> = {};
+            const demoAnswers: Record<string | number, string | number> = {};
             DB.forEach(q => {
-                demoAnswers[q.id] = Math.floor(Math.random() * 3) + 2; // Random 2-4
+                if (q.type === 'likert') {
+                    demoAnswers[q.id] = Math.floor(Math.random() * 3) + 2; // Random 2-4
+                } else {
+                    const letters = ['A' as const, 'B' as const, 'C' as const, 'D' as const];
+                    demoAnswers[q.id] = letters[Math.floor(Math.random() * 4)];
+                }
             });
             setUserState({
-                username: "Usuario Demo",
-                role: "Invitado",
+                username: "Andrés (Prueba)",
+                role: "Director / C-Level",
                 answers: demoAnswers,
                 currentIdx: DB.length
             });
@@ -116,21 +122,20 @@ export default function DiagnosticsPage() {
         }
     };
 
-
     // --- RENDERERS ---
 
     if (step === 'intro') {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
                 <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl rounded-[32px] p-8 md:p-12 max-w-3xl w-full text-center animate-in fade-in zoom-in duration-500">
-                    <div className="inline-block bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
-                        Diagnóstico Ejecutivo 2026
+                    <div className="inline-block bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6 border border-indigo-100">
+                        Diagnóstico 4Shine v2.0
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight leading-tight">
-                        Sistema de Escalamiento Estratégico <span className="text-indigo-600">4Shine</span>
+                        Evalúa tu <span className="text-indigo-600">Liderazgo Exponencial</span>
                     </h1>
                     <p className="text-slate-500 text-lg mb-10 max-w-lg mx-auto leading-relaxed">
-                        Mapea tu madurez en los 4 pilares: <strong className="text-indigo-600">Within, Out, Up y Beyond</strong>.
+                        Mapea tu madurez y juicio situacional en los 4 pilares: <strong className="text-indigo-600">Within, Out, Up y Beyond</strong>.
                     </p>
 
                     <div className="max-w-sm mx-auto space-y-4 text-left">
@@ -179,25 +184,37 @@ export default function DiagnosticsPage() {
     if (step === 'instructions') {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl shadow-xl p-8 max-w-2xl w-full">
-                    <h2 className="text-2xl font-black text-slate-800 text-center mb-6">Antes de comenzar</h2>
-                    <div className="grid md:grid-cols-3 gap-4 mb-8">
-                        {[
-                            { icon: '⏱️', title: '20-25 Min', desc: 'Tómate tu tiempo.' },
-                            { icon: '💡', title: 'Sinceridad', desc: 'No hay respuestas "correctas".' },
-                            { icon: '📊', title: 'Sin Juicios', desc: 'Es un mapa, no un examen.' },
-                        ].map((item, i) => (
-                            <div key={i} className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
-                                <div className="text-3xl mb-2">{item.icon}</div>
-                                <h3 className="font-bold text-slate-700 text-sm mb-1">{item.title}</h3>
-                                <p className="text-xs text-slate-500">{item.desc}</p>
+                <div className="bg-white rounded-[32px] shadow-xl p-8 md:p-12 max-w-2xl w-full border border-slate-100">
+                    <h2 className="text-3xl font-black text-slate-900 mb-8 border-b border-slate-100 pb-4">Instrucciones Generales</h2>
+
+                    <div className="space-y-6 mb-10">
+                        <div className="flex gap-4">
+                            <div className="bg-indigo-100 p-2 rounded-lg h-fit text-indigo-600"><CheckCircle2 size={24} /></div>
+                            <div>
+                                <h3 className="font-bold text-slate-800 mb-1">Reactivos Likert (Autoinforme)</h3>
+                                <p className="text-slate-500 text-sm">Evalúa qué tan de acuerdo estás o con qué frecuencia realizas ciertas conductas, en escala de 1 a 5.</p>
                             </div>
-                        ))}
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="bg-indigo-100 p-2 rounded-lg h-fit text-indigo-600"><BrainCircuit size={24} /></div>
+                            <div>
+                                <h3 className="font-bold text-slate-800 mb-1">Juicio Situacional (SJT)</h3>
+                                <p className="text-slate-500 text-sm">Selecciona la opción que consideres más adecuada ante situaciones críticas de liderazgo. Estas preguntas miden tu competencia práctica.</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="bg-slate-100 p-2 rounded-lg h-fit text-slate-600"><AlertTriangle size={24} /></div>
+                            <div>
+                                <h3 className="font-bold text-slate-800 mb-1">Honestidad Radical</h3>
+                                <p className="text-slate-500 text-sm text-balance">No hay respuestas "correctas" teóricas. El valor real está en identificar tus brechas actuales.</p>
+                            </div>
+                        </div>
                     </div>
+
                     <div className="flex justify-center gap-4">
-                        <button onClick={() => setStep('intro')} className="px-6 py-2 text-slate-400 font-bold hover:text-slate-600">Volver</button>
-                        <button onClick={handleStartQuiz} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:scale-105 transition-transform">
-                            Comenzar Ahora
+                        <button onClick={() => setStep('intro')} className="px-6 py-2 text-slate-400 font-bold hover:text-slate-600 transition-colors">Volver</button>
+                        <button onClick={handleStartQuiz} className="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95 transition-all">
+                            Comenzar Diagnóstico
                         </button>
                     </div>
                 </div>
@@ -209,74 +226,116 @@ export default function DiagnosticsPage() {
         const start = userState.currentIdx;
         const end = Math.min(start + ITEMS_PER_PAGE, DB.length);
         const items = DB.slice(start, end);
-        const currentPillarKey = items[0].pillar;
-        const pillarInfo = PILLAR_INFO[currentPillarKey];
+        const currentPillarKey = items[0]?.pillar || 'within';
+        const pillarInfo = PILLAR_INFO[currentPillarKey as keyof typeof PILLAR_INFO];
         const progress = Math.round((start / DB.length) * 100);
 
         return (
             <div className="min-h-screen bg-slate-50 pb-20">
                 {/* Header */}
-                <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-10 px-6 py-4 flex items-center justify-between">
-                    <div>
-                        <span className="text-xs font-black text-indigo-500 uppercase tracking-widest block mb-1">{pillarInfo.title}</span>
-                        <h2 className="text-lg font-bold text-slate-800 leading-none">{pillarInfo.sub}</h2>
+                <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-10 px-6 py-4 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 flex items-center justify-center bg-indigo-600 rounded-xl text-white font-bold text-sm shadow-md">4S</div>
+                        <div>
+                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-1">{pillarInfo?.title}</span>
+                            <h2 className="text-sm md:text-md font-bold text-slate-800 leading-none">{pillarInfo?.sub}</h2>
+                        </div>
                     </div>
-                    <div className="text-right">
-                        <div className="text-xs font-bold text-slate-400 mb-1">{progress}% Completado</div>
-                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="text-right flex flex-col items-end">
+                        <div className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-tighter">{progress}% Completado</div>
+                        <div className="w-24 md:w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${progress}%` }}></div>
                         </div>
                     </div>
                 </div>
 
-                <div className="max-w-3xl mx-auto p-6 space-y-6 mt-6">
+                <div className="max-w-3xl mx-auto p-6 space-y-8 mt-6">
                     {items.map((q) => (
-                        <div key={q.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-indigo-100 transition-colors">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="bg-indigo-100 text-indigo-700 font-bold text-xs px-2 py-1 rounded-md">#{q.id}</span>
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{q.comp}</span>
+                        <div key={q.id} className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm border border-slate-100 hover:border-indigo-100 transition-all duration-300">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <span className="bg-slate-100 text-slate-500 font-bold text-[10px] px-2 py-0.5 rounded-md uppercase">Reactivo #{q.id}</span>
+                                    <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{q.comp}</span>
+                                </div>
+                                <div className="text-[10px] font-black uppercase text-slate-300 border border-slate-100 px-2 py-0.5 rounded-full">
+                                    {q.type === 'sjt' ? 'Escenario Situacional' : 'Autoinforme'}
+                                </div>
                             </div>
-                            <p className="text-lg font-medium text-slate-800 mb-6 leading-relaxed">
+
+                            <p className="text-xl md:text-2xl font-bold text-slate-800 mb-8 leading-tight">
                                 {q.text}
                             </p>
-                            <div className="grid grid-cols-5 gap-2">
-                                {SCALES[q.scale].map((label, idx) => {
-                                    const val = idx + 1;
-                                    const isSelected = userState.answers[q.id] === val;
-                                    return (
-                                        <button
-                                            key={val}
-                                            onClick={() => handleAnswer(q.id, val)}
-                                            className={`
-                                        flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all min-h-[80px]
-                                        ${isSelected
-                                                    ? 'border-indigo-500 bg-indigo-50'
-                                                    : 'border-slate-100 bg-white hover:border-slate-300'
-                                                }
-                                    `}
-                                        >
-                                            <span className={`text-xl font-black mb-1 ${isSelected ? 'text-indigo-600' : 'text-slate-200'}`}>{val}</span>
-                                            <span className={`text-[10px] leading-tight text-center font-bold ${isSelected ? 'text-indigo-800' : 'text-slate-400'}`}>{label}</span>
-                                        </button>
-                                    )
-                                })}
-                            </div>
+
+                            {q.type === 'likert' ? (
+                                <div>
+                                    <div className="grid grid-cols-5 gap-2 md:gap-4">
+                                        {[1, 2, 3, 4, 5].map((val) => {
+                                            const isSelected = userState.answers[q.id] === val;
+                                            const label = SCALES[q.scale || 'freq'][val - 1];
+                                            return (
+                                                <button
+                                                    key={val}
+                                                    onClick={() => handleAnswer(q.id, val)}
+                                                    className={`
+                                                        flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all min-h-[90px] md:min-h-[110px]
+                                                        ${isSelected
+                                                            ? 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100'
+                                                            : 'border-slate-50 bg-slate-50/50 hover:border-slate-200 hover:bg-white'
+                                                        }
+                                                    `}
+                                                >
+                                                    <span className={`text-2xl font-black mb-1 ${isSelected ? 'text-indigo-600Scale' : 'text-slate-300'}`}>{val}</span>
+                                                    <span className={`text-[9px] md:text-[10px] leading-tight text-center font-bold px-1 ${isSelected ? 'text-indigo-800' : 'text-slate-400'}`}>
+                                                        {label}
+                                                    </span>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {q.options?.map((opt) => {
+                                        const isSelected = userState.answers[q.id] === opt.id;
+                                        return (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => handleAnswer(q.id, opt.id)}
+                                                className={`
+                                                    w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition-all duration-200
+                                                    ${isSelected
+                                                        ? 'border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100'
+                                                        : 'border-slate-50 bg-slate-50/50 hover:border-slate-200 hover:bg-white'
+                                                    }
+                                                `}
+                                            >
+                                                <div className={`mt-0.5 h-6 w-6 rounded-full flex items-center justify-center font-bold flex-shrink-0 border-2 transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'}`}>
+                                                    {opt.id}
+                                                </div>
+                                                <span className={`text-sm md:text-md font-bold leading-tight ${isSelected ? 'text-indigo-900' : 'text-slate-600'}`}>
+                                                    {opt.text}
+                                                </span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            )}
                         </div>
                     ))}
 
-                    <div className="flex items-center justify-between pt-8">
+                    <div className="flex items-center justify-between pt-12 pb-20">
                         <button
                             onClick={handlePrevPage}
                             disabled={start === 0}
-                            className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 px-8 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 disabled:opacity-0 transition-all border border-transparent hover:border-slate-300"
                         >
                             <ChevronLeft size={20} /> Anterior
                         </button>
                         <button
                             onClick={handleNextPage}
-                            className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:scale-105 transition-transform"
+                            className="flex items-center gap-2 bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-200 hover:scale-105 active:scale-95 transition-all"
                         >
-                            {end >= DB.length ? 'Finalizar' : 'Siguiente'} <ChevronRight size={20} />
+                            {end >= DB.length ? 'Finalizar' : 'Siguiente Página'} <ChevronRight size={20} />
                         </button>
                     </div>
                 </div>
@@ -291,7 +350,321 @@ export default function DiagnosticsPage() {
     return null;
 }
 
-// --- SUBCOMPONENT: AI ANALYSIS ---
+// --- SUBCOMPONENT: RESULTS VIEW ---
+
+function ResultsView({ state, onReset }: { state: UserState, onReset: () => void }) {
+    const [filter, setFilter] = useState<'all' | 'within' | 'out' | 'up' | 'beyond'>('all');
+    const [reports, setReports] = useState<Record<string, string>>({});
+
+    // 1. ADVANCED SCORING ENGINE
+    const scoring = React.useMemo(() => {
+        // Stats per pillar
+        const pillars = {
+            within: { likert: [] as number[], sjt: [] as number[] },
+            out: { likert: [] as number[], sjt: [] as number[] },
+            up: { likert: [] as number[], sjt: [] as number[] },
+            beyond: { likert: [] as number[], sjt: [] as number[] }
+        };
+
+        const compScores: Record<string, number[]> = {};
+
+        DB.forEach(q => {
+            const ans = state.answers[q.id];
+            if (q.type === 'likert') {
+                const val = (ans as number) || 0;
+                pillars[q.pillar].likert.push(val);
+
+                const cKey = `${q.pillar}|${q.comp}`;
+                if (!compScores[cKey]) compScores[cKey] = [];
+                compScores[cKey].push(val);
+            } else {
+                const opt = q.options?.find(o => o.id === ans);
+                const weight = opt ? opt.weight : 0;
+                pillars[q.pillar].sjt.push(weight);
+            }
+        });
+
+        // Calculate Pillar Percentages using provided formulas
+        // within: [(SumLikert - 30)/120 + SumSJT/30] / 2 * 100
+        const calcPillarPct = (pKey: keyof typeof pillars) => {
+            const p = pillars[pKey];
+            const sumL = p.likert.reduce((a, b) => a + b, 0);
+            const sumS = p.sjt.reduce((a, b) => a + b, 0);
+
+            // Likert normalized (range is 0 to 4*N)
+            // Formulas provided:
+            // Within: N=30 -> [(sumL - 30)/120]
+            // Out: N=16 -> [(sumL - 16)/64]
+            // Up: N=26 -> [(sumL - 26)/104]
+            // Beyond: N=24 -> [(sumL - 24)/96]
+
+            let N = 30;
+            if (pKey === 'out') N = 16;
+            if (pKey === 'up') N = 26;
+            if (pKey === 'beyond') N = 24;
+
+            const likertNorm = (sumL - N) / (4 * N);
+
+            // SJT normalized (Sum / Max)
+            // Formulas provided say: SumSJT/30 for Within, SumSJT/9 for others (N=3 questions * 3 max weight)
+            let sjtMax = 30; // 10 questions for Within triangulation
+            if (pKey !== 'within') sjtMax = 9; // 3 questions for others
+
+            const sjtNorm = sumS / sjtMax;
+
+            const totalPct = ((likertNorm + sjtNorm) / 2) * 100;
+            return {
+                total: Math.round(totalPct),
+                likert: Math.round(likertNorm * 100),
+                sjt: Math.round(sjtNorm * 100)
+            };
+        };
+
+        const pillarMetrics = {
+            within: calcPillarPct('within'),
+            out: calcPillarPct('out'),
+            up: calcPillarPct('up'),
+            beyond: calcPillarPct('beyond')
+        };
+
+        const globalIndex = Math.round((pillarMetrics.within.total + pillarMetrics.out.total + pillarMetrics.up.total + pillarMetrics.beyond.total) / 4);
+
+        const compList = Object.keys(compScores).map(k => {
+            const [p, n] = k.split('|');
+            const arr = compScores[k];
+            const avg = parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1));
+            return { pillar: p, name: n, score: avg };
+        });
+
+        return { pillarMetrics, globalIndex, compList };
+    }, [state]);
+
+    // Data for charts
+    const radarData = [
+        { subject: 'Within', A: scoring.pillarMetrics.within.total, fullMark: 100 },
+        { subject: 'Out', A: scoring.pillarMetrics.out.total, fullMark: 100 },
+        { subject: 'Beyond', A: scoring.pillarMetrics.beyond.total, fullMark: 100 },
+        { subject: 'Up', A: scoring.pillarMetrics.up.total, fullMark: 100 },
+    ];
+
+    const currentPillarData = filter === 'all' ? radarData : [
+        { name: 'Likert (Sentir)', val: scoring.pillarMetrics[filter].likert },
+        { name: 'SJT (Hacer)', val: scoring.pillarMetrics[filter].sjt },
+    ];
+
+    const getStatus = (val: number) => {
+        if (val >= 71) return { label: 'Fortaleza', color: 'emerald' };
+        if (val >= 41) return { label: 'Desarrollo', color: 'amber' };
+        return { label: 'Brecha Crítica', color: 'rose' };
+    };
+
+    const globalStatus = getStatus(scoring.globalIndex);
+
+    return (
+        <div className="min-h-screen bg-slate-50 pb-20 overflow-x-hidden">
+            {/* Nav */}
+            <nav className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 flex items-center justify-center bg-slate-900 rounded-xl text-white font-bold text-sm">4S</div>
+                    <div>
+                        <h1 className="text-lg font-black text-slate-900 leading-none">Diagnostic Results</h1>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{state.username}</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={() => window.print()} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"><Download size={20} /></button>
+                    <button onClick={onReset} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"><RefreshCw size={20} /></button>
+                </div>
+            </nav>
+
+            <main className="max-w-6xl mx-auto p-6 md:p-10 space-y-10">
+                {/* Hero Summary */}
+                <div className="grid md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-10">
+                        <div className="relative group">
+                            <div className="absolute -inset-4 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
+                            <div className="w-48 h-48 rounded-full border-[10px] border-slate-50 flex flex-col items-center justify-center bg-white relative shadow-inner">
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Score Global</span>
+                                <span className="text-6xl font-black text-indigo-600 leading-none">{scoring.globalIndex}%</span>
+                            </div>
+                        </div>
+                        <div className="flex-1 text-center md:text-left">
+                            <div className={`inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 bg-${globalStatus.color}-100 text-${globalStatus.color}-700 border border-${globalStatus.color}-200`}>
+                                Nivel: {globalStatus.label}
+                            </div>
+                            <h2 className="text-3xl font-black text-slate-900 mb-2">Resumen Ejecutivo</h2>
+                            <p className="text-slate-500 leading-relaxed text-sm">
+                                Tu madurez de liderazgo se sitúa en un nivel <strong>{globalStatus.label.toLowerCase()}</strong>.
+                                Se observa una {scoring.pillarMetrics.within.sjt > scoring.pillarMetrics.within.likert ? 'excelente' : 'cierta'} coherencia entre tu autopercepción y tu toma de decisiones situacionales.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-[40px] shadow-xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform"><BrainCircuit size={120} /></div>
+                        <div className="relative z-10">
+                            <div className="bg-indigo-500/20 p-2 rounded-xl w-fit mb-6"><Sparkles className="text-indigo-300" /></div>
+                            <h3 className="text-xl font-black mb-4 leading-tight">Hoja de Ruta Personalizada</h3>
+                            <button
+                                onClick={() => setFilter('all')}
+                                className="w-full bg-white text-indigo-950 font-black py-4 rounded-2xl shadow-lg hover:shadow-indigo-500/20 transition-all active:scale-95"
+                            >
+                                Generar Informe AI
+                            </button>
+                            <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest text-center mt-4">Powered by 4Shine AI</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                    {['all', 'within', 'out', 'up', 'beyond'].map(f => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f as any)}
+                            className={`
+                                px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all
+                                ${filter === f
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                    : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-300'
+                                }
+                            `}
+                        >
+                            {f === 'all' ? 'Visión General' : PILLAR_INFO[f as keyof typeof PILLAR_INFO].title}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Grid Content */}
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Visual Analytics */}
+                    <div className="space-y-6">
+                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 min-h-[450px]">
+                            <h3 className="text-center font-black text-slate-800 mb-8 uppercase tracking-widest text-xs flex items-center justify-center gap-2">
+                                <Info size={16} className="text-indigo-500" /> Analysis: {filter === 'all' ? 'Mapping Global' : PILLAR_INFO[filter].title}
+                            </h3>
+
+                            <div className="h-[320px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    {filter === 'all' ? (
+                                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                            <PolarGrid stroke="#f1f5f9" />
+                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: '900' }} />
+                                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                            <Radar name="Usuario" dataKey="A" stroke="#4f46e5" strokeWidth={4} fill="#6366f1" fillOpacity={0.15} />
+                                            <Tooltip contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                                        </RadarChart>
+                                    ) : (
+                                        <BarChart data={currentPillarData} layout="vertical" margin={{ left: 20 }}>
+                                            <XAxis type="number" domain={[0, 100]} hide />
+                                            <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#475569' }} axisLine={false} />
+                                            <Bar dataKey="val" radius={[0, 10, 10, 0]} barSize={40}>
+                                                {currentPillarData.map((e, i) => (
+                                                    <Cell key={`cell-${i}`} fill={i === 0 ? '#6366f1' : '#10b981'} />
+                                                ))}
+                                            </Bar>
+                                            <Tooltip cursor={{ fill: '#f8fafc' }} />
+                                        </BarChart>
+                                    )}
+                                </ResponsiveContainer>
+                            </div>
+
+                            {filter !== 'all' && (
+                                <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mb-2">Insights del Pilar</p>
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <div className="text-sm font-black text-slate-800">{scoring.pillarMetrics[filter].likert}%</div>
+                                            <div className="text-[9px] text-slate-400 uppercase">Autopercepción</div>
+                                        </div>
+                                        <div className="h-8 w-px bg-slate-200"></div>
+                                        <div className="flex-1 text-right">
+                                            <div className="text-sm font-black text-slate-800">{scoring.pillarMetrics[filter].sjt}%</div>
+                                            <div className="text-[9px] text-slate-400 uppercase">Capacidad de Juicio</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pillar Cards (Only in 'all' view) */}
+                        {filter === 'all' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                {(['within', 'out', 'up', 'beyond'] as const).map(p => {
+                                    const m = scoring.pillarMetrics[p];
+                                    const stat = getStatus(m.total);
+                                    return (
+                                        <div key={p} className="bg-white p-5 rounded-3xl border border-slate-100 hover:shadow-md transition-all cursor-pointer" onClick={() => setFilter(p)}>
+                                            <div className={`h-1.5 w-8 rounded-full mb-3 bg-${stat.color}-500`}></div>
+                                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{PILLAR_INFO[p].title}</h4>
+                                            <div className="text-2xl font-black text-slate-900">{m.total}%</div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* AI Coach Area */}
+                    <div className="h-full">
+                        <AiAnalysisSection
+                            reports={reports}
+                            setReports={setReports}
+                            username={state.username}
+                            role={state.role}
+                            scores={scoring}
+                            pillar={filter}
+                        />
+                    </div>
+                </div>
+
+                {/* Detail Table */}
+                <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-black text-slate-900">Desglose por Competencia</h3>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase">Solo Autoinforme (Likert)</div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                <tr>
+                                    <th className="pb-4 pt-2">Competencia</th>
+                                    <th className="pb-4 pt-2 w-24 text-center">Score (1-5)</th>
+                                    <th className="pb-4 pt-2 w-32 text-right">Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {scoring.compList.filter(c => filter === 'all' || c.pillar === filter).map((c, i) => {
+                                    const normScore = ((c.score - 1) / 4) * 100;
+                                    const stat = getStatus(normScore);
+                                    return (
+                                        <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                                            <td className="py-4">
+                                                <div className="font-bold text-slate-800 text-sm">{c.name}</div>
+                                                <div className="text-[10px] text-slate-400 font-medium group-hover:text-slate-500 transition-colors">{COMP_DEFINITIONS[c.name] || 'Definición pendiente.'}</div>
+                                            </td>
+                                            <td className="py-4 text-center">
+                                                <span className="text-sm font-black text-slate-900 font-mono">{c.score}</span>
+                                            </td>
+                                            <td className="py-4 text-right">
+                                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-md bg-${stat.color}-50 text-${stat.color}-600 border border-${stat.color}-100`}>
+                                                    {stat.label}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    );
+}
+
+// --- SHARED AI SECTION ---
 
 interface AiAnalysisProps {
     username: string;
@@ -304,34 +677,7 @@ interface AiAnalysisProps {
 
 function AiAnalysisSection({ username, role, scores, pillar, reports, setReports }: AiAnalysisProps) {
     const [loading, setLoading] = useState(false);
-    const [speaking, setSpeaking] = useState(false);
-    const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
-    const [audioLoading, setAudioLoading] = useState(false);
-
-    const report = reports[pillar]; // Get current report from cache
-
-    // Reset audio when pillar changes (but keep text cache)
-    useEffect(() => {
-        if (speaking && audio) {
-            audio.pause();
-            setSpeaking(false);
-        }
-    }, [pillar]);
-
-    useEffect(() => {
-        return () => {
-            if (audio) audio.pause();
-        };
-    }, [audio]);
-
-    const cleanMarkdownForSpeech = (text: string) => {
-        return text
-            .replace(/[#*`_~]/g, '') // Remove symbols
-            .replace(/\n\s*-\s/g, '. ') // Replace bullets with periods for pause
-            .replace(/\n\n/g, '. ') // Double newlines to periods
-            .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Links to text
-            .replace(/\s+/g, ' '); // Collapse whitespace
-    };
+    const report = reports[pillar];
 
     const handleAnalyze = async () => {
         setLoading(true);
@@ -344,438 +690,43 @@ function AiAnalysisSection({ username, role, scores, pillar, reports, setReports
             const data = await res.json();
             if (data.report) {
                 setReports(prev => ({ ...prev, [pillar]: data.report }));
-            } else {
-                alert(`Error: ${data.error || 'No se pudo generar el reporte.'}`);
             }
         } catch (e) {
-            alert('Error de conexión al servidor.');
+            console.error(e);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSpeak = async () => {
-        if (!report) return;
-
-        if (speaking && audio) {
-            audio.pause();
-            setSpeaking(false);
-            return;
-        }
-
-        if (audio && audio.src) {
-            if (audio.paused) {
-                audio.play();
-                setSpeaking(true);
-                return;
-            }
-        }
-
-        setAudioLoading(true);
-        try {
-            const cleanText = cleanMarkdownForSpeech(report);
-            const res = await fetch('/api/diagnostics/speak', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: cleanText })
-            });
-
-            if (!res.ok) throw new Error("Audio error");
-
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const newAudio = new Audio(url);
-
-            newAudio.onended = () => setSpeaking(false);
-            newAudio.play();
-
-            setAudio(newAudio);
-            setSpeaking(true);
-        } catch (e) {
-            alert("Error generando audio.");
-        } finally {
-            setAudioLoading(false);
-        }
-    };
-
-    // Reset audio state when pillar changes (fresh start for audio)
-    useEffect(() => {
-        setAudio(null);
-        setSpeaking(false);
-    }, [pillar]);
-
     return (
-        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-700/50 flex flex-col h-full print:break-inside-avoid print:bg-white print:text-black print:border-slate-200 print:shadow-none">
-            <div className="flex items-center justify-between mb-6 print:hidden">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-500/20 rounded-lg"><BrainCircuit className="text-indigo-300" /></div>
-                    <div>
-                        <h3 className="font-bold text-lg">AI Executive Coach</h3>
-                        <p className="text-xs text-indigo-300 font-medium uppercase tracking-wider">
-                            {pillar === 'all' ? 'Visión Estratégica' : `Deep Dive: ${PILLAR_INFO[pillar as keyof typeof PILLAR_INFO]?.title || pillar}`}
-                        </p>
-                    </div>
+        <div className="bg-[#1e1e2e] text-white p-8 rounded-[40px] shadow-2xl h-full flex flex-col border border-slate-800">
+            <div className="flex items-center gap-4 mb-8">
+                <div className="bg-indigo-500/20 p-2 rounded-xl"><Sparkles className="text-indigo-400" /></div>
+                <div>
+                    <h3 className="font-black text-lg leading-none mb-1">AI Executive Consultant</h3>
+                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{pillar === 'all' ? 'Análisis Global' : `Pilar: ${PILLAR_INFO[pillar as keyof typeof PILLAR_INFO]?.title}`}</span>
                 </div>
-                {report && (
-                    <button
-                        onClick={handleSpeak}
-                        disabled={audioLoading}
-                        className={`p-2 rounded-full transition-colors ${speaking ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                        title={speaking ? "Pausar" : "Escuchar Análisis"}
-                    >
-                        {audioLoading ? <Loader2 size={16} className="animate-spin" /> : (speaking ? <span className="animate-pulse">⏹️</span> : <span>🔊</span>)}
-                    </button>
-                )}
             </div>
 
             {!report ? (
-                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-4 min-h-[200px] print:hidden">
-                    <p className="text-slate-300 text-sm max-w-xs">
-                        {pillar === 'all'
-                            ? 'Genera un análisis estratégico y hoja de ruta basada en tus resultados globales.'
-                            : 'Realiza un análisis profundo de este pilar para descubrir bloqueos y palancas de crecimiento.'}
+                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
+                    <p className="text-slate-400 text-sm max-w-[240px]">
+                        Genera un análisis de brechas profundo y una guía de acción táctica basada en tus resultados.
                     </p>
                     <button
                         onClick={handleAnalyze}
                         disabled={loading}
-                        className="bg-indigo-500 hover:bg-indigo-400 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-indigo-900/50 transition-all flex items-center gap-2"
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-2xl font-black shadow-lg shadow-indigo-900/40 transition-all flex items-center gap-3 disabled:opacity-50"
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
-                        {loading ? 'Analizando...' : 'Generar Análisis'}
+                        {loading ? <Loader2 className="animate-spin" /> : <BrainCircuit size={20} />}
+                        {loading ? 'Generando...' : 'Obtener Feedback AI'}
                     </button>
                 </div>
             ) : (
-                <div className="prose prose-invert prose-sm max-w-none overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[500px] print:max-h-none print:overflow-visible print:prose-slate print:text-black">
+                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar text-justify max-h-[600px] prose prose-invert prose-sm">
                     <ReactMarkdown>{report}</ReactMarkdown>
                 </div>
             )}
-        </div>
-    );
-}
-
-// --- SUBCOMPONENT: RESULTS VIEW ---
-
-function ResultsView({ state, onReset }: { state: UserState, onReset: () => void }) {
-    const [filter, setFilter] = useState<'all' | 'within' | 'out' | 'up' | 'beyond'>('all');
-    // Lifted State for Reports
-    const [reports, setReports] = useState<Record<string, string>>({});
-
-    // 1. Calculate Scores
-    const scores = React.useMemo(() => {
-        const pScores: Record<string, number[]> = { within: [], out: [], up: [], beyond: [] };
-        const cScores: Record<string, number[]> = {};
-
-        DB.forEach(q => {
-            const val = state.answers[q.id] || 0;
-            pScores[q.pillar].push(val);
-
-            const cKey = `${q.pillar}|${q.comp}`;
-            if (!cScores[cKey]) cScores[cKey] = [];
-            cScores[cKey].push(val);
-        });
-
-        const pillarAvg: Record<string, number> = {};
-        Object.keys(pScores).forEach(k => {
-            const arr = pScores[k];
-            pillarAvg[k] = arr.length ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)) : 0;
-        });
-
-        const compList = Object.keys(cScores).map(k => {
-            const [p, n] = k.split('|');
-            const arr = cScores[k];
-            const avg = parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1));
-            return { pillar: p, name: n, score: avg };
-        });
-
-        const allVals = Object.values(state.answers);
-        const globalAvg = allVals.length ? parseFloat((allVals.reduce((a, b) => a + b, 0) / allVals.length).toFixed(1)) : 0;
-
-        return { pillarAvg, compList, globalAvg };
-    }, [state]);
-
-    const globalMsg = scores.globalAvg >= 4.5 ? "Sobresaliente" : scores.globalAvg >= 3.8 ? "Muy Bueno" : "En Desarrollo";
-
-    // Recharts Data
-    const radarData = [
-        { subject: 'Within', A: scores.pillarAvg.within, fullMark: 5 },
-        { subject: 'Out', A: scores.pillarAvg.out, fullMark: 5 },
-        { subject: 'Beyond', A: scores.pillarAvg.beyond, fullMark: 5 },
-        { subject: 'Up', A: scores.pillarAvg.up, fullMark: 5 },
-    ];
-
-    // Filter Logic
-    const filteredComps = filter === 'all' ? scores.compList : scores.compList.filter(c => c.pillar === filter);
-    const currentPillarTitle = filter === 'all' ? 'Visión General' : PILLAR_INFO[filter].title;
-
-    return (
-        <div className="min-h-screen bg-slate-50 pb-20 print:bg-white print:pb-0 print:h-auto print:overflow-visible">
-            {/* Header */}
-            <div className="bg-white border-b border-slate-200 px-8 py-6 flex items-center justify-between print:hidden">
-                <div className="flex items-center gap-3">
-                    <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600"><Book size={20} /></div>
-                    <div>
-                        <h1 className="text-xl font-black text-slate-800">Reporte 4Shine</h1>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{state.username}</p>
-                    </div>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={() => window.print()} className="p-2 hover:bg-slate-100 rounded-full text-slate-500"><Download size={20} /></button>
-                    <button onClick={onReset} className="p-2 hover:bg-slate-100 rounded-full text-slate-500"><RefreshCw size={20} /></button>
-                </div>
-            </div>
-
-            <main className="max-w-5xl mx-auto p-8 print:p-0 print:max-w-none">
-
-                {/* Hero Results */}
-                <div className="text-center mb-12 print:mb-8 print:break-inside-avoid">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Índice Global de Liderazgo</p>
-                    <div className="inline-block bg-white rounded-[32px] shadow-lg border border-slate-100 px-12 py-8 print:shadow-none print:border-none">
-                        <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500 mb-2">
-                            {scores.globalAvg}
-                        </div>
-                        <div className={`text-sm font-black uppercase tracking-widest px-4 py-1 rounded-full inline-block ${scores.globalAvg >= 4 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                            }`}>
-                            {globalMsg}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Filters */}
-                <div className="flex justify-center gap-2 mb-8 overflow-x-auto pb-2 print:hidden">
-                    {['all', 'within', 'out', 'up', 'beyond'].map(f => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f as any)}
-                            className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all border ${filter === f
-                                ? 'bg-indigo-600 text-white border-indigo-600'
-                                : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'
-                                }`}
-                        >
-                            {f === 'all' ? 'Visión General' : PILLAR_INFO[f as keyof typeof PILLAR_INFO].title}
-                        </button>
-                    ))}
-                </div>
-
-                {/* DYNAMIC CONTENT AREA (Screen Only) */}
-                <div className="grid md:grid-cols-2 gap-8 mb-12 print:hidden relative">
-
-                    {/* LEFT COLUMN: CHARTS */}
-                    <div className="space-y-6">
-                        {filter === 'all' ? (
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] min-h-[400px] w-full">
-                                <h3 className="text-center font-bold text-slate-700 mb-4">Radar de Competencias</h3>
-                                <div style={{ width: '100%', height: 'calc(100% - 40px)' }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                            <PolarGrid stroke="#e2e8f0" />
-                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} />
-                                            <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
-                                            <Radar name="Usuario" dataKey="A" stroke="#6366f1" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} />
-                                            <Tooltip />
-                                        </RadarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-[400px] min-h-[400px] w-full">
-                                <h3 className="text-center font-bold text-slate-700 mb-4">{currentPillarTitle}</h3>
-                                <div style={{ width: '100%', height: 'calc(100% - 40px)' }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart layout="vertical" data={filteredComps}>
-                                            <XAxis type="number" domain={[0, 5]} hide />
-                                            <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                            <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: 12 }} />
-                                            <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
-                                                {filteredComps.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={
-                                                        filter === 'within' ? '#6366f1' :
-                                                            filter === 'out' ? '#8b5cf6' :
-                                                                filter === 'up' ? '#ec4899' : '#10b981'
-                                                    } />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* RIGHT COLUMN: AI COACH (Everywhere) */}
-                    <div className="h-full">
-                        <AiAnalysisSection
-                            // Pass reports and setter
-                            reports={reports}
-                            setReports={setReports}
-                            username={state.username}
-                            role={state.role}
-                            scores={scores}
-                            pillar={filter}
-                        />
-                    </div>
-                </div>
-
-                {/* --- PRINT ONLY: CONSOLIDATED REPORT --- */}
-                <div className="hidden print:block space-y-8">
-                    {/* PRINT HEADER */}
-                    <div className="text-center border-b-2 border-slate-900 pb-8 mb-8">
-                        <h1 className="text-4xl font-black text-slate-900 mb-2">Reporte de Liderazgo 4Shine</h1>
-                        <p className="text-xl font-bold text-slate-600 mb-1">{state.username}</p>
-                        <p className="text-sm text-slate-400 uppercase tracking-widest">{state.role} • {new Date().toLocaleDateString()}</p>
-                        <p className="mt-6 text-slate-600 max-w-2xl mx-auto italic">
-                            "Este reporte es una radiografía estratégica de tu liderazgo actual. Úsalo como un mapa para navegar tu crecimiento y amplificar tu impacto en la organización."
-                        </p>
-                    </div>
-
-                    {/* Radar Global (Print) */}
-                    <div className="break-inside-avoid mb-8 page-break-after">
-                        <h3 className="text-xl font-bold text-slate-900 mb-4 border-b border-slate-200 pb-2">Visión Estratégica Global</h3>
-                        <div className="flex gap-8 items-start">
-                            <div className="w-1/2">
-                                <ul className="space-y-4">
-                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
-                                        <span className="font-bold text-slate-700">Índice Global</span>
-                                        <span className="font-black text-2xl text-indigo-600">{scores.globalAvg}/5.0</span>
-                                    </li>
-                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
-                                        <span className="font-bold text-slate-700">Within (Autoliderazgo)</span>
-                                        <span className="font-bold text-slate-900">{scores.pillarAvg.within}</span>
-                                    </li>
-                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
-                                        <span className="font-bold text-slate-700">Out (Influencia)</span>
-                                        <span className="font-bold text-slate-900">{scores.pillarAvg.out}</span>
-                                    </li>
-                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
-                                        <span className="font-bold text-slate-700">Up (Estrategia)</span>
-                                        <span className="font-bold text-slate-900">{scores.pillarAvg.up}</span>
-                                    </li>
-                                    <li className="flex justify-between items-center border-b border-slate-100 pb-2">
-                                        <span className="font-bold text-slate-700">Beyond (Legado)</span>
-                                        <span className="font-bold text-slate-900">{scores.pillarAvg.beyond}</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="h-[300px] w-1/2 border border-slate-100 rounded-xl p-4">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                        <PolarGrid stroke="#e2e8f0" />
-                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#0f172a', fontSize: 12, fontWeight: 'bold' }} />
-                                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
-                                        <Radar name="Usuario" dataKey="A" stroke="#4f46e5" strokeWidth={3} fill="#818cf8" fillOpacity={0.3} isAnimationActive={false} />
-                                    </RadarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Pillars Loop */}
-                    {['within', 'out', 'up', 'beyond'].map(pKey => {
-                        const pInfo = PILLAR_INFO[pKey as keyof typeof PILLAR_INFO];
-                        const pScore = scores.pillarAvg[pKey];
-                        const pComps = scores.compList.filter(c => c.pillar === pKey);
-
-                        return (
-                            <div key={pKey} className="break-before-page break-inside-avoid page-break mb-8">
-                                <div className="flex items-center justify-between mb-6 border-b-2 border-slate-900 pb-2">
-                                    <div>
-                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">Pilar Estratégico</span>
-                                        <h2 className="text-3xl font-black text-indigo-600">{pInfo.title}</h2>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-4xl font-black text-slate-800">{pScore}/5.0</div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-6 mb-8">
-                                    {/* Chart & Table Side by Side for Print Compactness */}
-                                    <div className="flex gap-6 items-start">
-                                        <div className="h-[300px] w-1/2 border border-slate-100 rounded-xl p-4">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart layout="vertical" data={pComps}>
-                                                    <XAxis type="number" domain={[0, 5]} hide />
-                                                    <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 'bold' }} />
-                                                    <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20} fill="#4f46e5" label={{ position: 'right', fill: '#0f172a', fontSize: 12, fontWeight: 'bold' }} isAnimationActive={false}>
-                                                    </Bar>
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-
-                                        <div className="w-1/2 border border-slate-200 rounded-xl overflow-hidden">
-                                            <table className="w-full text-[10px] text-left">
-                                                <thead className="bg-slate-100 text-slate-700 font-bold uppercase">
-                                                    <tr>
-                                                        <th className="px-2 py-2">Competencia</th>
-                                                        <th className="px-2 py-2 text-center">Score</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100">
-                                                    {pComps.map((c, i) => (
-                                                        <tr key={i}>
-                                                            <td className="px-2 py-2 font-bold text-slate-800">{c.name}</td>
-                                                            <td className="px-2 py-2 text-center font-mono font-bold text-slate-600">{c.score}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {reports[pKey] && (
-                                    <div className="mt-6 border-t border-slate-200 pt-6 break-inside-avoid">
-                                        <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-4 text-sm uppercase tracking-wider">
-                                            <BrainCircuit size={18} className="text-indigo-600" />
-                                            Análisis Estratégico AI
-                                        </h4>
-                                        <div className="prose prose-sm prose-slate max-w-none text-justify text-slate-700">
-                                            <ReactMarkdown>{reports[pKey]}</ReactMarkdown>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Detail Table (Screen Only) */}
-                <h3 className="font-bold text-slate-700 mb-4 print:hidden">Detalle de Competencias</h3>
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-12 shadow-sm print:hidden">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
-                            <tr>
-                                <th className="px-6 py-4">Competencia</th>
-                                <th className="px-6 py-4 w-24 text-center">Puntaje</th>
-                                <th className="px-6 py-4 w-32 text-center">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {filteredComps.map((c, i) => (
-                                <tr key={i} className="hover:bg-slate-50/50 print:break-inside-avoid">
-                                    <td className="px-6 py-4">
-                                        <div className="font-bold text-slate-700">{c.name}</div>
-                                        <div className="text-xs text-slate-400">{COMP_DEFINITIONS[c.name]}</div>
-                                    </td>
-                                    <td className="px-6 py-4 text-center font-mono font-bold text-slate-600">{c.score}</td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${c.score >= 4 ? 'bg-emerald-100 text-emerald-700' :
-                                            c.score >= 2.5 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
-                                            }`}>
-                                            {c.score >= 4 ? 'Fortaleza' : c.score >= 2.5 ? 'Oportunidad' : 'Brecha'}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="text-center print:hidden">
-                    <button onClick={() => window.print()} className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold hover:bg-slate-800 transition-colors">
-                        Descargar Reporte PDF
-                    </button>
-                    <p className="text-xs text-slate-400 mt-4">4Shine Leadership Diagnosis System © 2026</p>
-                </div>
-            </main>
         </div>
     );
 }
