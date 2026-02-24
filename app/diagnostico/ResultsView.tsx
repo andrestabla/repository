@@ -10,6 +10,7 @@ import { PILLAR_INFO, COMP_DEFINITIONS, DB } from './DiagnosticsData';
 import ReactMarkdown from 'react-markdown';
 import * as htmlToImage from 'html-to-image';
 import { jsPDF } from 'jspdf';
+import { PdfReportData } from './PdfReportData';
 import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 
 // --- TYPES ---
@@ -34,6 +35,7 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
     const [isSharing, setIsSharing] = useState(false);
     const [publicId, setPublicId] = useState<string | null>(null);
     const reportRef = React.useRef<HTMLDivElement>(null);
+    const hiddenPdfRef = React.useRef<HTMLDivElement>(null);
 
     // Tour state
     const [runTour, setRunTour] = useState(false);
@@ -117,23 +119,18 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
     };
 
     const handleDownloadPDF = async () => {
-        if (!reportRef.current) return;
+        if (!hiddenPdfRef.current) return;
         setIsExporting(true);
         try {
+            // Un-hide temporarily for capture if it was using display:none, 
+            // but we use absolute positioning off-screen so it should be renderable.
             await new Promise(r => setTimeout(r, 1000));
 
-            // html-to-image as a replacement for html2canvas to safely parse modern css color functions (lab, oklch)
-            const imgData = await htmlToImage.toPng(reportRef.current, {
-                pixelRatio: 1.5,
-                backgroundColor: '#f8fafc',
-                filter: (node) => {
-                    // Hide unwanted elements (those with class .no-export)
-                    if (node instanceof HTMLElement && node.classList && node.classList.contains('no-export')) {
-                        return false;
-                    }
-                    return true;
-                }
+            const imgData = await htmlToImage.toPng(hiddenPdfRef.current, {
+                pixelRatio: 2, // Higher quality
+                backgroundColor: '#ffffff',
             });
+
             const pdf = new jsPDF({
                 orientation: 'p',
                 unit: 'mm',
@@ -142,12 +139,12 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
             });
 
             const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
 
             let heightLeft = pdfHeight;
             let position = 0;
-            const pageHeight = pdf.internal.pageSize.getHeight();
 
             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
             heightLeft -= pageHeight;
@@ -254,6 +251,17 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
 
     return (
         <div className="min-h-screen bg-slate-50 pb-20 overflow-x-hidden">
+            {/* HIDDEN PDF REPORT CONTAINER */}
+            <div className="absolute top-[-9999px] left-[-9999px] w-[210mm] z-[-1] pointer-events-none">
+                <PdfReportData
+                    ref={hiddenPdfRef}
+                    state={state}
+                    scoring={scoring}
+                    reports={reports}
+                    radarData={radarData}
+                />
+            </div>
+
             <Joyride
                 steps={tourSteps}
                 run={runTour}
