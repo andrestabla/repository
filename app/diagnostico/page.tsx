@@ -235,8 +235,8 @@ export default function DiagnosticsPage() {
     return (
         <div className="min-h-screen bg-slate-50 pb-20">
             {/* Header / Progress */}
-            <div className="sticky top-0 bg-white/80 backdrop-blur-xl border-b border-slate-100 z-10">
-                <div className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
+            <div className="sticky top-0 bg-white/80 backdrop-blur-xl border-b border-slate-100 z-10 transition-all">
+                <div className="max-w-5xl mx-auto px-6 py-6 md:py-8 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="h-10 w-10 bg-slate-950 rounded-xl flex items-center justify-center text-white font-black text-xs">4S</div>
                         <div>
@@ -253,27 +253,27 @@ export default function DiagnosticsPage() {
                 </div>
             </div>
 
-            <main className="max-w-3xl mx-auto px-6 pt-12 space-y-8">
+            <main className="max-w-5xl mx-auto px-6 pt-12 space-y-8 md:space-y-12 pb-24">
                 {pageItems.map((q, qIdx) => {
                     const ans = userState.answers[q.id];
                     const questionNumber = start + qIdx + 1;
                     return (
-                        <div key={q.id} className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${qIdx * 100}ms` }}>
-                            <div className="space-y-4">
+                        <div key={q.id} className="bg-white p-6 md:p-12 rounded-[40px] shadow-sm border border-slate-100 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${qIdx * 100}ms` }}>
+                            <div className="space-y-6">
                                 <div className="flex items-center gap-3">
                                     <span className="text-[10px] font-black px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md uppercase tracking-widest">{q.pillar}</span>
                                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${q.type === 'sjt' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'}`}>
                                         {q.type === 'sjt' ? 'Situacional' : 'Autoinforme'}
                                     </span>
                                 </div>
-                                <h4 className="text-xl font-bold text-slate-900 leading-snug">
+                                <h4 className="text-xl md:text-2xl font-bold text-slate-900 leading-snug">
                                     <span className="text-indigo-600 mr-2">{questionNumber}.</span>
                                     {q.text}
                                 </h4>
                             </div>
 
                             {q.type === 'likert' ? (
-                                <div className="grid grid-cols-5 gap-2">
+                                <div className="grid grid-cols-5 gap-3 md:gap-4">
                                     {[1, 2, 3, 4, 5].map((v) => {
                                         const labelSet = SCALES[q.scale || 'freq'];
                                         const label = labelSet[v - 1];
@@ -282,7 +282,7 @@ export default function DiagnosticsPage() {
                                                 key={v}
                                                 onClick={() => handleAnswer(q.id, v)}
                                                 className={`
-                                                    aspect-square flex flex-col items-center justify-center p-2 rounded-2xl text-[9px] font-black leading-tight text-center transition-all border
+                                                    aspect-square flex flex-col items-center justify-center p-2 md:p-4 rounded-2xl text-[10px] md:text-sm font-black leading-tight text-center transition-all border
                                                     ${ans === v
                                                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 border-indigo-600 scale-105'
                                                         : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-100'
@@ -301,14 +301,14 @@ export default function DiagnosticsPage() {
                                             key={opt.id}
                                             onClick={() => handleAnswer(q.id, opt.id)}
                                             className={`
-                                                w-full text-left p-6 rounded-3xl text-sm font-bold transition-all border flex gap-4 items-center group
+                                                w-full text-left p-6 md:p-8 rounded-[32px] text-sm md:text-base font-bold transition-all border flex gap-4 md:gap-6 items-center group
                                                 ${ans === opt.id
-                                                    ? 'bg-amber-50 border-amber-200 text-amber-900 shadow-md'
+                                                    ? 'bg-amber-50 border-amber-200 text-amber-900 shadow-md scale-[1.01]'
                                                     : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50 hover:border-slate-200'
                                                 }
                                             `}
                                         >
-                                            <div className={`h-6 w-6 rounded-full border-4 flex-shrink-0 transition-all ${ans === opt.id ? 'border-amber-400' : 'border-slate-100 group-hover:border-slate-200'}`}></div>
+                                            <div className={`h-6 w-6 rounded-full border-4 flex-shrink-0 transition-all ${ans === opt.id ? 'border-amber-400 bg-white' : 'border-slate-100 group-hover:border-slate-200'}`}></div>
                                             {opt.text}
                                         </button>
                                     ))}
