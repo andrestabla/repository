@@ -34,7 +34,17 @@ export default function DiagnosticsPage() {
 
     useEffect(() => {
         if (step === 'quiz') {
-            window.scrollTo({ top: 0, behavior: 'instant' });
+            const doScroll = () => {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTo(0, 0);
+                // Force scroll on container if needed
+                const main = document.querySelector('main');
+                if (main) main.scrollTo(0, 0);
+            };
+
+            doScroll();
+            const t = setTimeout(doScroll, 50); // 50ms to be safe with any framer-motion or layout shifts
+            return () => clearTimeout(t);
         }
     }, [userState.currentIdx, step]);
 
