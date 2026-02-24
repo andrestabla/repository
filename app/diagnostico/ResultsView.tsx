@@ -34,10 +34,10 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
     const [isSharing, setIsSharing] = useState(false);
     const [publicId, setPublicId] = useState<string | null>(null);
     const reportRef = React.useRef<HTMLDivElement>(null);
-    
+
     // Tour state
     const [runTour, setRunTour] = useState(false);
-    
+
     React.useEffect(() => {
         if (!isPublic) {
             const hasSeenTour = localStorage.getItem(`hasSeenResultsTour_${state.username}`);
@@ -295,6 +295,7 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                 showSkipButton
                 showProgress
                 hideCloseButton
+                scrollOffset={100}
                 callback={handleJoyrideCallback}
                 styles={{
                     options: {
@@ -405,22 +406,24 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                     </div>
                 </div>
 
-                <div className="tour-tabs flex flex-wrap items-center justify-center gap-3 no-export">
-                    {['all', 'within', 'out', 'up', 'beyond'].map(f => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f as any)}
-                            className={`
-                                px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all
-                                ${filter === f
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
-                                    : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-300'
-                                }
-                            `}
-                        >
-                            {f === 'all' ? 'Visión General' : PILLAR_INFO[f as keyof typeof PILLAR_INFO].title}
-                        </button>
-                    ))}
+                <div className="flex justify-center w-full no-export">
+                    <div className="tour-tabs flex flex-wrap items-center justify-center gap-3 p-2 rounded-[2rem]">
+                        {['all', 'within', 'out', 'up', 'beyond'].map(f => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f as any)}
+                                className={`
+                                    px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all
+                                    ${filter === f
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                        : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-300'
+                                    }
+                                `}
+                            >
+                                {f === 'all' ? 'Visión General' : PILLAR_INFO[f as keyof typeof PILLAR_INFO].title}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
