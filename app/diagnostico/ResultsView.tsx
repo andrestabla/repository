@@ -122,12 +122,16 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
         if (!hiddenPdfRef.current) return;
         setIsExporting(true);
         try {
-            // Un-hide temporarily for capture if it was using display:none, 
-            // but we use absolute positioning off-screen so it should be renderable.
+            const container = hiddenPdfRef.current;
             await new Promise(r => setTimeout(r, 1000));
 
-            const blocks = Array.from(hiddenPdfRef.current.querySelectorAll('.pdf-block')) as HTMLElement[];
+            const blocks = Array.from(container.querySelectorAll('.pdf-block')) as HTMLElement[];
             if (blocks.length === 0) throw new Error("No PDF blocks found");
+
+            const imgData = await htmlToImage.toPng(container, {
+                pixelRatio: 2, // Higher quality text
+                backgroundColor: '#ffffff',
+            });
 
             const pdf = new jsPDF({
                 orientation: 'p',
@@ -136,34 +140,77 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                 compress: true
             });
 
+            const imgProps = pdf.getImageProperties(imgData);
             const pdfWidth = pdf.internal.pageSize.getWidth(); // ~210
             const pageHeight = pdf.internal.pageSize.getHeight(); // ~297
-            let positionY = 0;
+
+            const containerRect = container.getBoundingClientRect();
+            const containerPxHeight = containerRect.height;
+            const pdfTotalHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            const pxToMm = (px: number) => (px / containerPxHeight) * pdfTotalHeight;
+
+            // Safe margins
+            const topMarginMm = 15;
+            const bottomMarginMm = 15;
+            const useableHeight = pageHeight - topMarginMm - bottomMarginMm; // 267mm
+
+            let currentBlockIndex = 0;
             let isFirstPage = true;
 
-            for (let i = 0; i < blocks.length; i++) {
-                const block = blocks[i];
-                const imgData = await htmlToImage.toPng(block, {
-                    pixelRatio: 2, // Higher quality for text sharpness
-                    backgroundColor: '#ffffff',
-                });
+            while (currentBlockIndex < blocks.length) {
+                let blocksInPage = 0;
+                let lastBlockBottomMm = 0;
+                // Start page precisely at the top of the first block scheduled for this page
+                let pageStartMm = pxToMm(blocks[currentBlockIndex].getBoundingClientRect().top - containerRect.top);
 
-                const imgProps = pdf.getImageProperties(imgData);
-                const blockPdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                for (let i = currentBlockIndex; i < blocks.length; i++) {
+                    const block = blocks[i];
+                    const blockRect = block.getBoundingClientRect();
+                    const blockTopPx = blockRect.top - containerRect.top;
+                    const blockHeightPx = blockRect.height;
 
-                // If adding this block exceeds the page height, push it to a new page
-                if (positionY + blockPdfHeight > pageHeight && !isFirstPage) {
-                    pdf.addPage();
-                    positionY = 0;
+                    const blockTopMm = pxToMm(blockTopPx);
+                    const blockBottomMm = pxToMm(blockTopPx + blockHeightPx);
+
+                    if (blocksInPage === 0) {
+                        lastBlockBottomMm = blockBottomMm;
+                        blocksInPage++;
+                    } else {
+                        // Check if adding this block exceeds usable page height
+                        if (blockBottomMm - pageStartMm <= useableHeight) {
+                            lastBlockBottomMm = blockBottomMm;
+                            blocksInPage++;
+                        } else {
+                            break; // Block won't fit, save for next page
+                        }
+                    }
                 }
 
-                pdf.addImage(imgData, 'PNG', 0, positionY, pdfWidth, blockPdfHeight);
-                positionY += blockPdfHeight;
+                if (!isFirstPage) {
+                    pdf.addPage();
+                }
+
+                // Draw the massive image offset so pageStart aligns with the safe topMargin
+                const yOffset = topMarginMm - pageStartMm;
+                pdf.addImage(imgData, 'PNG', 0, yOffset, pdfWidth, pdfTotalHeight);
+
+                // Draw white masking box over the bottom overflow so it doesn't bleed into margin
+                const visibleEndMm = topMarginMm + (lastBlockBottomMm - pageStartMm);
+                pdf.setFillColor(255, 255, 255);
+                pdf.rect(0, visibleEndMm, pdfWidth, pageHeight - visibleEndMm, 'F');
+
+                // Draw white masking box over the top overflow (hiding previous pages)
+                pdf.rect(0, 0, pdfWidth, topMarginMm, 'F');
+
+                currentBlockIndex += blocksInPage;
                 isFirstPage = false;
             }
 
-            // Sanitize filename
-            const cleanName = (state.username || 'Usuario').replace(/[^a-zA-Z0-9_\-]/g, '_');
+            // Clean Filename
+            let cleanName = state.username || 'Usuario';
+            cleanName = cleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // remove accents
+            cleanName = cleanName.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_');
+
             pdf.save(`Diagnostico_4Shine_${cleanName}.pdf`);
         } catch (error: any) {
             console.error('Export failed:', error);
