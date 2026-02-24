@@ -108,14 +108,14 @@ export default function DiagnosticsPage() {
             setStep('results');
         } else {
             saveState({ ...userState, currentIdx: end });
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'instant' });
         }
     };
 
     const handlePrevPage = () => {
         const newIdx = Math.max(0, userState.currentIdx - ITEMS_PER_PAGE);
         saveState({ ...userState, currentIdx: newIdx });
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: 0, behavior: 'instant' });
     };
 
     // --- RENDER HELPERS ---
@@ -180,6 +180,8 @@ export default function DiagnosticsPage() {
 
     if (step === 'instructions') {
         const features = [
+            { title: "Sinceridad", desc: "No hay respuestas \"correctas\". Responde cómo eres hoy, no cómo aspiras ser." },
+            { title: "Sin juicios", desc: "Este es un mapa de navegación, no un examen. El objetivo es identificar palancas de crecimiento." },
             { title: "Escala Likert", desc: "96 ítems para evaluar tu autopercepción conductual." },
             { title: "Juicio Situacional", desc: "29 escenarios reales con opciones de respuesta ponderadas." },
             { title: "Análisis 4 Pilares", desc: "Within, Out, Up y Beyond para una visión 360°." }
