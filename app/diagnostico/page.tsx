@@ -32,6 +32,12 @@ export default function DiagnosticsPage() {
         }
     }, []);
 
+    useEffect(() => {
+        if (step === 'quiz') {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+    }, [userState.currentIdx, step]);
+
     const saveState = (newState: UserState) => {
         setUserState(newState);
         localStorage.setItem('4shine_v2_data', JSON.stringify(newState));
@@ -47,7 +53,6 @@ export default function DiagnosticsPage() {
 
     const handleStartQuiz = () => {
         setStep('quiz');
-        window.scrollTo(0, 0);
     };
 
     const handleReset = () => {
@@ -108,14 +113,12 @@ export default function DiagnosticsPage() {
             setStep('results');
         } else {
             saveState({ ...userState, currentIdx: end });
-            window.scrollTo({ top: 0, behavior: 'instant' });
         }
     };
 
     const handlePrevPage = () => {
         const newIdx = Math.max(0, userState.currentIdx - ITEMS_PER_PAGE);
         saveState({ ...userState, currentIdx: newIdx });
-        window.scrollTo({ top: 0, behavior: 'instant' });
     };
 
     // --- RENDER HELPERS ---
