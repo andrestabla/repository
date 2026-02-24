@@ -8,7 +8,7 @@ import {
 import { RefreshCw, Download, Sparkles, BrainCircuit, Loader2, Info, Share2, ExternalLink, Copy, Mail } from 'lucide-react';
 import { PILLAR_INFO, COMP_DEFINITIONS, DB } from './DiagnosticsData';
 import ReactMarkdown from 'react-markdown';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 
@@ -122,52 +122,18 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
         try {
             await new Promise(r => setTimeout(r, 1000));
 
-            const canvas = await html2canvas(reportRef.current, {
-                scale: 1.5,
-                useCORS: true,
-                logging: true,
+            // html-to-image as a replacement for html2canvas to safely parse modern css color functions (lab, oklch)
+            const imgData = await htmlToImage.toPng(reportRef.current, {
+                pixelRatio: 1.5,
                 backgroundColor: '#f8fafc',
-                onclone: (clonedDoc) => {
-                    // 1. Hide unwanted elements
-                    clonedDoc.querySelectorAll('.no-export').forEach(el => {
-                        (el as HTMLElement).style.display = 'none';
-                    });
-
-                    // 2. SANITIZE COLORS: Modern CSS functions (lab, oklch, oklab, color-mix) crash html2canvas.
-                    const allElements = clonedDoc.getElementsByTagName("*");
-                    const problematicColors = ['lab(', 'oklch(', 'oklab(', 'color-mix('];
-                    const colorProps = [
-                        'color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderBottomColor',
-                        'borderLeftColor', 'borderRightColor', 'fill', 'stroke', 'outlineColor',
-                        'boxShadow', 'textShadow', 'columnRuleColor', 'textDecorationColor'
-                    ];
-
-                    for (let i = 0; i < allElements.length; i++) {
-                        const el = allElements[i] as HTMLElement;
-                        const style = window.getComputedStyle(el);
-
-                        // Check direct color properties
-                        colorProps.forEach(prop => {
-                            const val = (style as any)[prop];
-                            if (val && problematicColors.some(c => val.includes(c))) {
-                                el.style.setProperty(prop, 'transparent', 'important');
-                            }
-                        });
-
-                        // Check backgrounds for gradients with modern colors
-                        ['background', 'backgroundImage'].forEach(prop => {
-                            const val = (style as any)[prop];
-                            if (val && problematicColors.some(c => val.includes(c))) {
-                                el.style.setProperty(prop, 'none', 'important');
-                            }
-                        });
+                filter: (node) => {
+                    // Hide unwanted elements (those with class .no-export)
+                    if (node instanceof HTMLElement && node.classList && node.classList.contains('no-export')) {
+                        return false;
                     }
-                },
-                windowWidth: reportRef.current.scrollWidth,
-                windowHeight: reportRef.current.scrollHeight,
+                    return true;
+                }
             });
-
-            const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
                 orientation: 'p',
                 unit: 'mm',
