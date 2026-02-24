@@ -6,10 +6,11 @@ import {
     Tooltip
 } from 'recharts';
 import { RefreshCw, Download, Sparkles, BrainCircuit, Loader2, Info, Share2, ExternalLink, Copy, Mail } from 'lucide-react';
-import { DB, PILLAR_INFO, COMP_DEFINITIONS } from './DiagnosticsData';
+import { PILLAR_INFO, COMP_DEFINITIONS, DB } from './DiagnosticsData';
 import ReactMarkdown from 'react-markdown';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 
 // --- TYPES ---
 export interface UserState {
@@ -33,6 +34,51 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
     const [isSharing, setIsSharing] = useState(false);
     const [publicId, setPublicId] = useState<string | null>(null);
     const reportRef = React.useRef<HTMLDivElement>(null);
+    
+    // Tour state
+    const [runTour, setRunTour] = useState(false);
+    
+    React.useEffect(() => {
+        if (!isPublic) {
+            const hasSeenTour = localStorage.getItem(`hasSeenResultsTour_${state.username}`);
+            if (!hasSeenTour) {
+                setRunTour(true);
+            }
+        }
+    }, [isPublic, state.username]);
+
+    const tourSteps: Step[] = [
+        {
+            target: '.tour-tabs',
+            content: 'Aquí puedes navegar entre una Visión General de tus resultados o profundizar en cada uno de los 4 Pilares de Liderazgo.',
+            placement: 'top',
+            disableBeacon: true,
+        },
+        {
+            target: '.tour-ai',
+            content: '¡Usa el poder de la IA! Genera un análisis profundo y una hoja de ruta táctica basada en tus puntajes (disponible de forma global y por pilar).',
+            placement: 'left',
+        },
+        {
+            target: '.tour-share',
+            content: 'Comparte un enlace público temporal de tus resultados con tu equipo o mentores.',
+            placement: 'bottom',
+        },
+        {
+            target: '.tour-download',
+            content: 'Descarga un archivo PDF de tu reporte actual en cualquier momento.',
+            placement: 'bottom',
+        }
+    ];
+
+    const handleJoyrideCallback = (data: CallBackProps) => {
+        const { status } = data;
+        const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+        if (finishedStatuses.includes(status)) {
+            setRunTour(false);
+            localStorage.setItem(`hasSeenResultsTour_${state.username}`, 'true');
+        }
+    };
 
     const handleShare = async () => {
         if (isPublic) return;
@@ -242,6 +288,21 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
 
     return (
         <div className="min-h-screen bg-slate-50 pb-20 overflow-x-hidden">
+            <Joyride
+                steps={tourSteps}
+                run={runTour}
+                continuous
+                showSkipButton
+                showProgress
+                hideCloseButton
+                callback={handleJoyrideCallback}
+                styles={{
+                    options: {
+                        primaryColor: '#4f46e5',
+                        zIndex: 10000,
+                    }
+                }}
+            />
             <nav className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm no-export">
                 <div className="flex items-center gap-3">
                     <div className="h-10 w-10 flex items-center justify-center bg-slate-900 rounded-xl text-white font-bold text-sm">4S</div>
@@ -251,6 +312,14 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                     </div>
                 </div>
                 <div className="flex gap-2 items-center">
+                    {!isPublic && (
+                        <button
+                            onClick={() => setRunTour(true)}
+                            className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors mr-2 flex items-center gap-1"
+                        >
+                            <Info size={14} /> Tour
+                        </button>
+                    )}
                     {!isPublic && (
                         <>
                             {publicId ? (
@@ -274,7 +343,7 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                                 <button
                                     onClick={handleShare}
                                     disabled={isSharing}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-500 transition-all disabled:opacity-50"
+                                    className="tour-share flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-500 transition-all disabled:opacity-50"
                                 >
                                     {isSharing ? <Loader2 className="animate-spin" size={14} /> : <Share2 size={14} />}
                                     Compartir
@@ -287,7 +356,7 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                     <button
                         onClick={handleDownloadPDF}
                         disabled={isExporting}
-                        className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors disabled:opacity-50"
+                        className="tour-download p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors disabled:opacity-50"
                         title="Descargar PDF"
                     >
                         {isExporting ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
@@ -336,7 +405,7 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-3 no-export">
+                <div className="tour-tabs flex flex-wrap items-center justify-center gap-3 no-export">
                     {['all', 'within', 'out', 'up', 'beyond'].map(f => (
                         <button
                             key={f}
@@ -411,7 +480,7 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                         )}
                     </div>
 
-                    <div className="h-full">
+                    <div className="h-full tour-ai">
                         <AiAnalysisSection
                             reports={reports}
                             setReports={setReports}
