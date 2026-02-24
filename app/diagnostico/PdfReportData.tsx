@@ -21,7 +21,6 @@ export const PdfReportData = React.forwardRef<HTMLDivElement, PdfReportDataProps
     const globalStatus = getStatus(scoring.globalIndex);
     const pillars = ['within', 'out', 'up', 'beyond'] as const;
 
-    // Helper for pillar specific radar
     const getPillarRadarData = (pillarKey: string) => {
         return scoring.compList
             .filter((c: any) => c.pillar === pillarKey)
@@ -33,10 +32,10 @@ export const PdfReportData = React.forwardRef<HTMLDivElement, PdfReportDataProps
     };
 
     return (
-        <div ref={ref} className="bg-white" style={{ width: '210mm', minHeight: '297mm', color: '#0f172a' }}>
+        <div ref={ref} className="bg-white" style={{ width: '210mm', color: '#0f172a' }}>
 
-            {/* PAGE 1: COVER & EXECUTIVE SUMMARY */}
-            <div className="p-12 mb-8" style={{ height: '297mm', pageBreakAfter: 'always', boxSizing: 'border-box' }}>
+            {/* BLOCK 1: COVER & EXECUTIVE SUMMARY */}
+            <div className="pdf-block p-12 bg-white flex flex-col justify-center" style={{ minHeight: '290mm', boxSizing: 'border-box' }}>
                 <div className="flex items-center gap-4 mb-16 border-b border-slate-200 pb-8">
                     <div className="h-14 w-14 flex items-center justify-center bg-slate-900 rounded-xl text-white font-bold text-xl tracking-tighter">4S</div>
                     <div>
@@ -75,49 +74,50 @@ export const PdfReportData = React.forwardRef<HTMLDivElement, PdfReportDataProps
                 </div>
             </div>
 
-            {/* PAGE 2: GLOBAL AI ANALYSIS & COMPETENCIES */}
-            <div className="p-12 mb-8" style={{ minHeight: '297mm', pageBreakAfter: 'always', boxSizing: 'border-box' }}>
-                {reports['all'] && (
-                    <div className="mb-12">
+            {/* BLOCK 2: GLOBAL AI ANALYSIS */}
+            {reports['all'] && (
+                <div className="pdf-block p-12 pb-6 bg-white shrink-0" style={{ boxSizing: 'border-box' }}>
+                    <div className="mb-4">
                         <h3 className="text-2xl font-black text-slate-900 mb-6 border-b border-indigo-100 pb-4 text-indigo-900">AI Executive Consultant: Análisis Global</h3>
                         <div className="prose prose-slate prose-sm max-w-none text-justify text-slate-700">
                             <ReactMarkdown>{reports['all']}</ReactMarkdown>
                         </div>
                     </div>
-                )}
-
-                <div>
-                    <h3 className="text-xl font-black text-slate-900 mb-6 border-b border-slate-200 pb-4">Desglose por Competencia (Score 1-5)</h3>
-                    <table className="w-full text-left text-sm">
-                        <thead className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
-                            <tr>
-                                <th className="pb-3 pt-2">Competencia</th>
-                                <th className="pb-3 pt-2">Pilar</th>
-                                <th className="pb-3 pt-2 text-center">Score</th>
-                                <th className="pb-3 pt-2 text-right">Diagnóstico</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {scoring.compList.map((c: any, i: number) => {
-                                const normScore = ((c.score - 1) / 4) * 100;
-                                const stat = getStatus(normScore);
-                                return (
-                                    <tr key={i}>
-                                        <td className="py-3 font-bold text-slate-800">{c.name}</td>
-                                        <td className="py-3 text-slate-500 font-medium">{PILLAR_INFO[c.pillar as keyof typeof PILLAR_INFO].title}</td>
-                                        <td className="py-3 text-center font-black text-slate-900">{c.score}</td>
-                                        <td className="py-3 text-right">
-                                            <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: stat.hex }}>{stat.label}</span>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
-                    </table>
                 </div>
+            )}
+
+            {/* BLOCK 3: COMPETENCIES TABLE */}
+            <div className="pdf-block p-12 pt-0 bg-white shrink-0" style={{ boxSizing: 'border-box' }}>
+                <h3 className="text-xl font-black text-slate-900 mb-6 border-b border-slate-200 pb-4">Desglose por Competencia (Score 1-5)</h3>
+                <table className="w-full text-left text-sm">
+                    <thead className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
+                        <tr>
+                            <th className="pb-3 pt-2">Competencia</th>
+                            <th className="pb-3 pt-2">Pilar</th>
+                            <th className="pb-3 pt-2 text-center">Score</th>
+                            <th className="pb-3 pt-2 text-right">Diagnóstico</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {scoring.compList.map((c: any, i: number) => {
+                            const normScore = ((c.score - 1) / 4) * 100;
+                            const stat = getStatus(normScore);
+                            return (
+                                <tr key={i}>
+                                    <td className="py-3 font-bold text-slate-800">{c.name}</td>
+                                    <td className="py-3 text-slate-500 font-medium">{PILLAR_INFO[c.pillar as keyof typeof PILLAR_INFO].title}</td>
+                                    <td className="py-3 text-center font-black text-slate-900">{c.score}</td>
+                                    <td className="py-3 text-right">
+                                        <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: stat.hex }}>{stat.label}</span>
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
             </div>
 
-            {/* PAGES 3-6: INDIVIDUAL PILLAR DEEP DIVES */}
+            {/* BLOCKS 4-7: INDIVIDUAL PILLAR DEEP DIVES */}
             {pillars.map(p => {
                 const pMetrics = scoring.pillarMetrics[p];
                 const pStat = getStatus(pMetrics.total);
@@ -126,7 +126,7 @@ export const PdfReportData = React.forwardRef<HTMLDivElement, PdfReportDataProps
                 const pReport = reports[p];
 
                 return (
-                    <div key={p} className="p-12 mb-8" style={{ minHeight: '297mm', pageBreakAfter: 'always', boxSizing: 'border-box' }}>
+                    <div key={p} className="pdf-block p-12 bg-white flex flex-col justify-start" style={{ minHeight: '290mm', boxSizing: 'border-box' }}>
                         <div className="flex items-center justify-between border-b-4 border-indigo-600 pb-6 mb-10">
                             <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tight">{pName}</h2>
                             <div className="text-right">

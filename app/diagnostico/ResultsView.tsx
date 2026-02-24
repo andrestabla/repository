@@ -126,10 +126,8 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
             // but we use absolute positioning off-screen so it should be renderable.
             await new Promise(r => setTimeout(r, 1000));
 
-            const imgData = await htmlToImage.toPng(hiddenPdfRef.current, {
-                pixelRatio: 2, // Higher quality
-                backgroundColor: '#ffffff',
-            });
+            const blocks = Array.from(hiddenPdfRef.current.querySelectorAll('.pdf-block')) as HTMLElement[];
+            if (blocks.length === 0) throw new Error("No PDF blocks found");
 
             const pdf = new jsPDF({
                 orientation: 'p',
@@ -138,25 +136,35 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                 compress: true
             });
 
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
+            const pdfWidth = pdf.internal.pageSize.getWidth(); // ~210
+            const pageHeight = pdf.internal.pageSize.getHeight(); // ~297
+            let positionY = 0;
+            let isFirstPage = true;
 
-            let heightLeft = pdfHeight;
-            let position = 0;
+            for (let i = 0; i < blocks.length; i++) {
+                const block = blocks[i];
+                const imgData = await htmlToImage.toPng(block, {
+                    pixelRatio: 2, // Higher quality for text sharpness
+                    backgroundColor: '#ffffff',
+                });
 
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pageHeight;
+                const imgProps = pdf.getImageProperties(imgData);
+                const blockPdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-            while (heightLeft >= 0) {
-                position = heightLeft - pdfHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                heightLeft -= pageHeight;
+                // If adding this block exceeds the page height, push it to a new page
+                if (positionY + blockPdfHeight > pageHeight && !isFirstPage) {
+                    pdf.addPage();
+                    positionY = 0;
+                }
+
+                pdf.addImage(imgData, 'PNG', 0, positionY, pdfWidth, blockPdfHeight);
+                positionY += blockPdfHeight;
+                isFirstPage = false;
             }
 
-            pdf.save(`Diagnostico_4Shine_${state.username}.pdf`);
+            // Sanitize filename
+            const cleanName = (state.username || 'Usuario').replace(/[^a-zA-Z0-9_\-]/g, '_');
+            pdf.save(`Diagnostico_4Shine_${cleanName}.pdf`);
         } catch (error: any) {
             console.error('Export failed:', error);
             alert(`Error al generar el PDF: ${error.message || 'Error desconocido'}`);
