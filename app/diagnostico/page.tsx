@@ -162,7 +162,7 @@ export default function DiagnosticsPage() {
                                     value={userState.username}
                                     onChange={(e) => setUserState({ ...userState, username: e.target.value })}
                                     className="w-full bg-slate-900/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-bold placeholder:text-slate-700"
-                                    placeholder="Andrés Tabla"
+                                    placeholder="Escribe aquí tu nombre"
                                 />
                             </div>
                             <div className="space-y-2">
