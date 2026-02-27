@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type User = {
     email: string
@@ -55,6 +55,8 @@ type HealthInfo = {
     gemini: { status: string, details: string }
 }
 
+const LOGS_PAGE_SIZE = 100
+
 export default function AdminView() {
     const [activeTab, setActiveTab] = useState<'users' | 'settings' | 'health' | 'logs'>('users')
 
@@ -89,6 +91,48 @@ export default function AdminView() {
     const [loadingLogs, setLoadingLogs] = useState(false)
     const [autoRefresh, setAutoRefresh] = useState(true)
     const [selectedUserFilter, setSelectedUserFilter] = useState<string>('all')
+    const [logsConnectionStatus, setLogsConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected')
+    const logsStreamRef = useRef<EventSource | null>(null)
+    const latestLogIdRef = useRef(0)
+
+    const buildLogsQuery = useCallback((userFilter: string, limit = LOGS_PAGE_SIZE) => {
+        const params = new URLSearchParams({ limit: String(limit) })
+        if (userFilter !== 'all') params.set('userEmail', userFilter)
+        return params.toString()
+    }, [])
+
+    const fetchLogs = useCallback(async (userFilter: string) => {
+        setLoadingLogs(true)
+        try {
+            const res = await fetch(`/api/logs?${buildLogsQuery(userFilter)}`, { cache: 'no-store' })
+            const data = await res.json()
+            if (Array.isArray(data)) {
+                setLogs(data)
+                latestLogIdRef.current = data.length ? data[0].id : 0
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoadingLogs(false)
+        }
+    }, [buildLogsQuery])
+
+    const mergeIncomingLogs = useCallback((incomingLogs: SystemLog[]) => {
+        if (!incomingLogs.length) return
+
+        setLogs(prevLogs => {
+            const mergedById = new Map<number, SystemLog>()
+            for (const log of [...incomingLogs, ...prevLogs]) {
+                mergedById.set(log.id, log)
+            }
+            const merged = Array.from(mergedById.values())
+                .sort((a, b) => b.id - a.id)
+                .slice(0, LOGS_PAGE_SIZE)
+
+            latestLogIdRef.current = merged.length ? merged[0].id : 0
+            return merged
+        })
+    }, [])
 
     // Fetch Users
     useEffect(() => {
@@ -135,35 +179,55 @@ export default function AdminView() {
         }
     }, [activeTab])
 
-    // Fetch Logs (Initial Load)
+    // Fetch Logs (Initial + Filter changes)
     useEffect(() => {
-        if (activeTab === 'logs') {
-            setLoadingLogs(true)
-            fetch('/api/logs')
-                .then(res => res.json())
-                .then(data => {
-                    if (Array.isArray(data)) setLogs(data)
-                    setLoadingLogs(false)
-                })
-                .catch(err => { console.error(err); setLoadingLogs(false) })
+        if (activeTab !== 'logs') return
+        void fetchLogs(selectedUserFilter)
+    }, [activeTab, fetchLogs, selectedUserFilter])
+
+    // Real-time stream (Server-Sent Events)
+    useEffect(() => {
+        if (activeTab !== 'logs' || !autoRefresh) {
+            if (logsStreamRef.current) {
+                logsStreamRef.current.close()
+                logsStreamRef.current = null
+            }
+            setLogsConnectionStatus('disconnected')
+            return
         }
-    }, [activeTab])
 
-    // Auto-Refresh Logs (Polling)
-    useEffect(() => {
-        if (activeTab !== 'logs' || !autoRefresh) return
+        setLogsConnectionStatus('connecting')
 
-        const interval = setInterval(() => {
-            fetch('/api/logs')
-                .then(res => res.json())
-                .then(data => {
-                    if (Array.isArray(data)) setLogs(data)
-                })
-                .catch(err => console.error('Auto-refresh error:', err))
-        }, 5000) // 5 seconds
+        const params = new URLSearchParams()
+        if (selectedUserFilter !== 'all') params.set('userEmail', selectedUserFilter)
+        if (latestLogIdRef.current > 0) params.set('sinceId', String(latestLogIdRef.current))
 
-        return () => clearInterval(interval)
-    }, [activeTab, autoRefresh])
+        const eventSource = new EventSource(`/api/logs/stream?${params.toString()}`)
+        logsStreamRef.current = eventSource
+
+        eventSource.onopen = () => {
+            setLogsConnectionStatus('connected')
+        }
+
+        eventSource.onerror = () => {
+            setLogsConnectionStatus('error')
+        }
+
+        eventSource.addEventListener('logs', (event) => {
+            try {
+                const payload = JSON.parse((event as MessageEvent).data) as SystemLog[]
+                if (Array.isArray(payload)) mergeIncomingLogs(payload)
+            } catch (err) {
+                console.error('Logs stream parse error:', err)
+            }
+        })
+
+        return () => {
+            eventSource.close()
+            if (logsStreamRef.current === eventSource) logsStreamRef.current = null
+            setLogsConnectionStatus('disconnected')
+        }
+    }, [activeTab, autoRefresh, mergeIncomingLogs, selectedUserFilter])
 
     // --- USER HANDLERS ---
     const handleUpdateUser = async (email: string, updates: Partial<User>) => {
@@ -262,6 +326,33 @@ export default function AdminView() {
     // Filter lists
     const pendingUsers = users.filter(u => u.role === 'pending')
     const activeUsers = users.filter(u => u.role !== 'pending')
+    const userNameByEmail = useMemo(() => {
+        const lookup: Record<string, string> = {}
+        for (const user of users) {
+            if (user.name) lookup[user.email] = user.name
+        }
+        for (const log of logs) {
+            if (log.user?.name && !lookup[log.userEmail]) lookup[log.userEmail] = log.user.name
+        }
+        return lookup
+    }, [users, logs])
+    const logUserOptions = useMemo(() => {
+        const emails = new Set<string>()
+        for (const user of users) emails.add(user.email)
+        for (const log of logs) emails.add(log.userEmail)
+        return Array.from(emails).sort()
+    }, [users, logs])
+    const filteredLogs = useMemo(
+        () => logs.filter(log => selectedUserFilter === 'all' || log.userEmail === selectedUserFilter),
+        [logs, selectedUserFilter]
+    )
+    const liveStatus = !autoRefresh
+        ? { label: 'Pausado', color: 'bg-gray-500' }
+        : logsConnectionStatus === 'connected'
+            ? { label: 'En vivo', color: 'bg-green-500' }
+            : logsConnectionStatus === 'connecting'
+                ? { label: 'Conectando...', color: 'bg-amber-500' }
+                : { label: 'Reconectando...', color: 'bg-red-500' }
 
     return (
         <div className="p-8 h-full overflow-y-auto">
@@ -850,22 +941,18 @@ export default function AdminView() {
                                     <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${autoRefresh ? 'left-6' : 'left-1'}`} />
                                 </button>
                                 <span className="text-xs font-semibold text-[var(--text-muted)] flex items-center gap-1">
-                                    {autoRefresh && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
-                                    Auto-actualizar
+                                    <span className={`w-2 h-2 rounded-full ${liveStatus.color} ${autoRefresh ? 'animate-pulse' : ''}`} />
+                                    Tiempo real
+                                </span>
+                                <span className="text-[10px] uppercase font-bold tracking-wide text-[var(--text-muted)]">
+                                    {liveStatus.label}
                                 </span>
                             </div>
 
                             {/* Manual Refresh */}
                             <button
                                 onClick={() => {
-                                    setLoadingLogs(true)
-                                    fetch('/api/logs')
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            if (Array.isArray(data)) setLogs(data)
-                                            setLoadingLogs(false)
-                                        })
-                                        .catch(err => { console.error(err); setLoadingLogs(false) })
+                                    void fetchLogs(selectedUserFilter)
                                 }}
                                 disabled={loadingLogs}
                                 className="bg-[var(--panel)] border border-[var(--border)] text-[var(--text-main)] px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -880,9 +967,9 @@ export default function AdminView() {
                                 className="bg-[var(--panel)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-main)] outline-none focus:border-[var(--accent)]"
                             >
                                 <option value="all">👥 Todos los usuarios</option>
-                                {Array.from(new Set(logs.map(log => log.userEmail))).sort().map(email => (
+                                {logUserOptions.map(email => (
                                     <option key={email} value={email}>
-                                        {logs.find(l => l.userEmail === email)?.user?.name || email.split('@')[0]}
+                                        {userNameByEmail[email] || email.split('@')[0]}
                                     </option>
                                 ))}
                             </select>
@@ -902,9 +989,7 @@ export default function AdminView() {
                             </thead>
                             <tbody>
                                 {loadingLogs && <tr><td colSpan={5} className="p-5 text-center text-[var(--text-muted)]">Cargando logs...</td></tr>}
-                                {logs
-                                    .filter(log => selectedUserFilter === 'all' || log.userEmail === selectedUserFilter)
-                                    .map(log => (
+                                {filteredLogs.map(log => (
                                         <tr key={log.id} className="border-t border-[var(--border)] hover:bg-white/5 text-[11px]">
                                             <td className="p-3 text-[var(--text-muted)] whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
                                             <td className="p-3">
@@ -922,7 +1007,7 @@ export default function AdminView() {
                                             <td className="p-3 font-mono text-xs text-[var(--accent)]">{log.resourceId}</td>
                                         </tr>
                                     ))}
-                                {logs.filter(log => selectedUserFilter === 'all' || log.userEmail === selectedUserFilter).length === 0 && !loadingLogs && (
+                                {filteredLogs.length === 0 && !loadingLogs && (
                                     <tr><td colSpan={5} className="p-10 text-center italic text-[var(--text-muted)]">
                                         {selectedUserFilter === 'all'
                                             ? 'No se encontraron registros en la auditoría.'
