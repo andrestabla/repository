@@ -88,7 +88,7 @@ export const DB: Question[] = [
     { id: 72, type: 'likert', pillar: 'up', comp: 'Liderazgo en la industria 5.0', text: "Busco adaptar las prácticas de mi equipo integrando nuevas tecnologías o enfoques innovadores que aporten valor a nuestro trabajo.", scale: 'freq' },
 
     // --- PILLAR 4: SHINE BEYOND (73-96) ---
-    { id: 73, type: 'likert', pillar: 'beyond', comp: 'Mentoría y sucesión', text: "Identifico a personas con alto potencial en mi organización y dedico tiempo a mentorarlas, preparando así una posible sucesión y continuidad de liderazgo.", scale: 'freq' },
+    { id: 73, type: 'likert', pillar: 'beyond', comp: 'Mentoría y sucesión', text: "Identifico a personas con alto potencial en mi organización y dedico tiempo a orientarlas, preparando así una posible sucesión y continuidad de liderazgo.", scale: 'freq' },
     { id: 74, type: 'likert', pillar: 'beyond', comp: 'Mentoría y sucesión', text: "Comparto abiertamente mis conocimientos y experiencias con líderes emergentes de la organización, actuando como mentor para acelerar su desarrollo.", scale: 'freq' },
     { id: 75, type: 'likert', pillar: 'beyond', comp: 'Empoderamiento (empowerment)', text: "Delego en mi equipo responsabilidades desafiantes y les doy la autonomía para decidir cómo llevarlas a cabo, demostrando la confianza que tengo en ellos.", scale: 'freq' },
     { id: 76, type: 'likert', pillar: 'beyond', comp: 'Empowerment', text: "Aclaro el qué, pero permito al equipo decidir el cómo, evitando el micro-management.", scale: 'freq' },
@@ -312,7 +312,7 @@ export const DB: Question[] = [
     },
     {
         id: 125, type: 'sjt', pillar: 'beyond', comp: 'Mentoría y sucesión',
-        text: "Situación: Estás mentorando a un nuevo líder. ¿Cómo fomentas que desarrolle su propio legado?",
+        text: "Situación: Estás acompañando a un nuevo líder. ¿Cómo fomentas que desarrolle su propio legado?",
         options: [
             { id: 'A', text: "Exigir que el aprendiz replique tus métodos para asegurar la continuidad de tu éxito.", weight: 0 },
             { id: 'B', text: "Ayudarle a encontrar su propio estilo de liderazgo alentando su visión y creatividad.", weight: 3 },
