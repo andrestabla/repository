@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import prisma from "@/lib/prisma"
-import { createLog } from "@/lib/audit"
+import { createDailyAccessLog, createLog } from "@/lib/audit"
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -87,6 +87,7 @@ export const authOptions: NextAuthOptions = {
                         (session.user as any).role = String(dbUser.role).toLowerCase()
                             ; (session.user as any).isActive = (dbUser as any).isActive ?? true
                             ; (session.user as any).allowedModules = (dbUser as any).allowedModules ?? []
+                        await createDailyAccessLog(session.user.email)
                     } else if (session.user.email === 'andrestablarico@gmail.com') {
                         (session.user as any).role = 'admin'
                             ; (session.user as any).isActive = true

@@ -46,3 +46,41 @@ export async function backfillMissingUserAuditLogs() {
         return 0
     }
 }
+
+function getUtcDayRange(date = new Date()) {
+    const start = new Date(date)
+    start.setUTCHours(0, 0, 0, 0)
+    const end = new Date(start)
+    end.setUTCDate(end.getUTCDate() + 1)
+    return { start, end }
+}
+
+export async function createDailyAccessLog(email: string) {
+    try {
+        const { start, end } = getUtcDayRange()
+        const exists = await prisma.systemLog.findFirst({
+            where: {
+                userEmail: email,
+                action: 'AUTH_DAILY_ACCESS',
+                createdAt: { gte: start, lt: end }
+            },
+            select: { id: true }
+        })
+
+        if (exists) return false
+
+        await prisma.systemLog.create({
+            data: {
+                action: 'AUTH_DAILY_ACCESS',
+                userEmail: email,
+                details: 'Acceso diario detectado para sesión autenticada.',
+                resourceId: 'auth/daily-access'
+            }
+        })
+
+        return true
+    } catch (e) {
+        console.error('Failed to create daily access log:', e)
+        return false
+    }
+}

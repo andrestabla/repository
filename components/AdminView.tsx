@@ -57,6 +57,12 @@ type HealthInfo = {
 
 const LOGS_PAGE_SIZE = 100
 
+type LogsApiResponse = {
+    logs: SystemLog[]
+    hasMore: boolean
+    nextBeforeId: number | null
+}
+
 export default function AdminView() {
     const [activeTab, setActiveTab] = useState<'users' | 'settings' | 'health' | 'logs'>('users')
 
@@ -89,16 +95,41 @@ export default function AdminView() {
     // --- LOGS STATE ---
     const [logs, setLogs] = useState<SystemLog[]>([])
     const [loadingLogs, setLoadingLogs] = useState(false)
+    const [loadingMoreLogs, setLoadingMoreLogs] = useState(false)
     const [autoRefresh, setAutoRefresh] = useState(true)
     const [selectedUserFilter, setSelectedUserFilter] = useState<string>('all')
     const [logsConnectionStatus, setLogsConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected')
+    const [hasMoreLogs, setHasMoreLogs] = useState(false)
+    const [nextBeforeId, setNextBeforeId] = useState<number | null>(null)
     const logsStreamRef = useRef<EventSource | null>(null)
     const latestLogIdRef = useRef(0)
 
-    const buildLogsQuery = useCallback((userFilter: string, limit = LOGS_PAGE_SIZE) => {
+    const buildLogsQuery = useCallback((userFilter: string, limit = LOGS_PAGE_SIZE, beforeId?: number | null) => {
         const params = new URLSearchParams({ limit: String(limit) })
         if (userFilter !== 'all') params.set('userEmail', userFilter)
+        if (beforeId) params.set('beforeId', String(beforeId))
         return params.toString()
+    }, [])
+
+    const parseLogsResponse = useCallback((payload: unknown): LogsApiResponse => {
+        if (Array.isArray(payload)) {
+            return {
+                logs: payload as SystemLog[],
+                hasMore: false,
+                nextBeforeId: null
+            }
+        }
+
+        if (!payload || typeof payload !== 'object') {
+            return { logs: [], hasMore: false, nextBeforeId: null }
+        }
+
+        const obj = payload as { logs?: unknown, hasMore?: unknown, nextBeforeId?: unknown }
+        return {
+            logs: Array.isArray(obj.logs) ? (obj.logs as SystemLog[]) : [],
+            hasMore: obj.hasMore === true,
+            nextBeforeId: typeof obj.nextBeforeId === 'number' ? obj.nextBeforeId : null
+        }
     }, [])
 
     const fetchLogs = useCallback(async (userFilter: string) => {
@@ -106,16 +137,45 @@ export default function AdminView() {
         try {
             const res = await fetch(`/api/logs?${buildLogsQuery(userFilter)}`, { cache: 'no-store' })
             const data = await res.json()
-            if (Array.isArray(data)) {
-                setLogs(data)
-                latestLogIdRef.current = data.length ? data[0].id : 0
-            }
+            const parsed = parseLogsResponse(data)
+            setLogs(parsed.logs)
+            setHasMoreLogs(parsed.hasMore)
+            setNextBeforeId(parsed.nextBeforeId)
+            latestLogIdRef.current = parsed.logs.length ? parsed.logs[0].id : 0
         } catch (err) {
             console.error(err)
         } finally {
             setLoadingLogs(false)
         }
-    }, [buildLogsQuery])
+    }, [buildLogsQuery, parseLogsResponse])
+
+    const fetchMoreLogs = useCallback(async () => {
+        if (loadingMoreLogs || !hasMoreLogs || !nextBeforeId) return
+
+        setLoadingMoreLogs(true)
+        try {
+            const query = buildLogsQuery(selectedUserFilter, LOGS_PAGE_SIZE, nextBeforeId)
+            const res = await fetch(`/api/logs?${query}`, { cache: 'no-store' })
+            const data = await res.json()
+            const parsed = parseLogsResponse(data)
+
+            if (parsed.logs.length) {
+                setLogs(prevLogs => {
+                    const mergedById = new Map<number, SystemLog>()
+                    for (const log of [...prevLogs, ...parsed.logs]) {
+                        mergedById.set(log.id, log)
+                    }
+                    return Array.from(mergedById.values()).sort((a, b) => b.id - a.id)
+                })
+            }
+            setHasMoreLogs(parsed.hasMore)
+            setNextBeforeId(parsed.nextBeforeId)
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoadingMoreLogs(false)
+        }
+    }, [buildLogsQuery, hasMoreLogs, loadingMoreLogs, nextBeforeId, parseLogsResponse, selectedUserFilter])
 
     const mergeIncomingLogs = useCallback((incomingLogs: SystemLog[]) => {
         if (!incomingLogs.length) return
@@ -127,7 +187,6 @@ export default function AdminView() {
             }
             const merged = Array.from(mergedById.values())
                 .sort((a, b) => b.id - a.id)
-                .slice(0, LOGS_PAGE_SIZE)
 
             latestLogIdRef.current = merged.length ? merged[0].id : 0
             return merged
@@ -929,7 +988,9 @@ export default function AdminView() {
             {activeTab === 'logs' && (
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <h3 className="text-sm uppercase text-[var(--text-muted)] font-bold">Logs de Auditoría (Últimos 100)</h3>
+                        <h3 className="text-sm uppercase text-[var(--text-muted)] font-bold">
+                            Logs de Auditoría (Histórico)
+                        </h3>
 
                         <div className="flex gap-3 items-center">
                             {/* Auto-Refresh Toggle */}
@@ -1016,6 +1077,20 @@ export default function AdminView() {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs text-[var(--text-muted)]">
+                            Mostrando {logs.length} registros{hasMoreLogs ? ' (hay más por cargar)' : ' (histórico completo cargado)'}.
+                        </span>
+                        {hasMoreLogs && (
+                            <button
+                                onClick={() => { void fetchMoreLogs() }}
+                                disabled={loadingMoreLogs}
+                                className="bg-[var(--panel)] border border-[var(--border)] text-[var(--text-main)] px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loadingMoreLogs ? 'Cargando…' : 'Cargar más'}
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
