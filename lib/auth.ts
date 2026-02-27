@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import prisma from "@/lib/prisma"
+import { createLog } from "@/lib/audit"
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -15,7 +16,7 @@ export const authOptions: NextAuthOptions = {
         logo: "https://github.com/fluidicon.png",
     },
     callbacks: {
-        async signIn({ user }) {
+        async signIn({ user, account }) {
             try {
                 if (!user.email) return false
 
@@ -25,8 +26,24 @@ export const authOptions: NextAuthOptions = {
 
                 // Defensive check: only block if explicitly false
                 if (dbUser && (dbUser as any).isActive === false) {
+                    await createLog(
+                        'AUTH_SIGNIN_BLOCKED',
+                        user.email,
+                        'Intento de inicio de sesión bloqueado: usuario inactivo.',
+                        account?.provider || 'auth/google'
+                    )
                     return false
                 }
+
+                if (dbUser) {
+                    await createLog(
+                        'AUTH_SIGNIN_SUCCESS',
+                        user.email,
+                        `Inicio de sesión exitoso vía ${account?.provider || 'google'}.`,
+                        account?.provider || 'auth/google'
+                    )
+                }
+
                 return true
             } catch (err) {
                 console.error("SignIn Callback Error:", err)

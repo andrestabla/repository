@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { backfillMissingUserAuditLogs } from '@/lib/audit'
 
 async function isAdmin() {
     const session = await getServerSession(authOptions)
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
     if (!await isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     try {
+        const backfilled = await backfillMissingUserAuditLogs()
         const { searchParams } = new URL(req.url)
         const userEmail = parseUserEmail(searchParams.get('userEmail'))
         const limit = parseLimit(searchParams.get('limit'))
@@ -44,7 +46,8 @@ export async function GET(req: NextRequest) {
         })
         return NextResponse.json(logs, {
             headers: {
-                'Cache-Control': 'no-store'
+                'Cache-Control': 'no-store',
+                'X-Audit-Backfilled-Users': String(backfilled)
             }
         })
     } catch (e) {
