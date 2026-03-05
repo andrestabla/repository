@@ -35,6 +35,16 @@ type StoryPageFields = {
 }
 
 type StoryEventDraft = Omit<StoryEvent, 'id'>
+type StoryActHelpKey = 'acto1' | 'acto2' | 'acto3'
+type StoryActFieldKey = 'actOrigin' | 'actBreak' | 'actRebuild'
+
+type StoryActGuide = {
+    helpKey: StoryActHelpKey
+    fieldKey: StoryActFieldKey
+    title: string
+    guidingQuestions: string[]
+    example: string
+}
 
 type PageItem = {
     id: number
@@ -105,6 +115,57 @@ const EVENT_TEMPLATE_FIELDS = [
     'Que creencia se instalo'
 ]
 
+const STEP2_DISCOVERY_ACTS = [
+    'Acto 1 (origen): que identidad se formo',
+    'Acto 2 (quiebre): que creencia fue desafiada',
+    'Acto 3 (reconstruccion): que nueva version tuya emergio'
+]
+
+const STEP2_WRITING_RULES = [
+    '10-15 lineas por acto (no mas).',
+    'Escribe en primera persona (Yo...) y en hechos, no solo emociones.',
+    'En cada acto incluye 3 elementos obligatorios: contexto (donde/epoca/rol), escena clave (que paso), efecto en ti (que cambio: decision, creencia, comportamiento).'
+]
+
+const STEP2_ACT_GUIDES: StoryActGuide[] = [
+    {
+        helpKey: 'acto1',
+        fieldKey: 'actOrigin',
+        title: 'Acto 1 - Origen (que te formo)',
+        guidingQuestions: [
+            'Que tipo de entorno me moldeo (familia, escuela, trabajo, cultura)?',
+            'Que reglas no escritas aprendi?',
+            'Que gane con esas reglas? Que me costaron?'
+        ],
+        example:
+            'Creci aprendiendo que el valor personal se demuestra con resultados y responsabilidad. Desde temprano asumi tareas de adulto: resolver, responder, no fallar. En la universidad y luego en el trabajo, reforce esa idea: si entregaba rapido y bien, ganaba confianza y espacio. Empece a construir una identidad de persona confiable, pero con una condicion: casi no pedia ayuda. Me acostumbre a llevar carga extra para evitar exponer dudas. Con el tiempo, ese patron se volvio una marca: eficiencia, cumplimiento y control del detalle. La regla interna era clara: si no tengo certeza, mejor lo resuelvo yo. Esa forma de operar me dio reputacion y crecimiento, pero tambien me entreno en silencio, autosuficiencia y presion interna.'
+    },
+    {
+        helpKey: 'acto2',
+        fieldKey: 'actBreak',
+        title: 'Acto 2 - Quiebre (que me confronto)',
+        guidingQuestions: [
+            'Que evento o etapa me mostro que mi manera de operar ya no funcionaba?',
+            'Que emocion domino? Que perdi o arriesgue?',
+            'Que parte de mi quedo en evidencia (miedo, control, orgullo, inseguridad)?'
+        ],
+        example:
+            'Cuando asumi un rol con mayor visibilidad, ya no bastaba con trabajar duro: tenia que coordinar, delegar y sostener conversaciones dificiles. En una reunion importante, un par cuestiono mi propuesta frente a otros y senti que mi autoridad estaba en juego. Reaccione defendiendo mi punto con rigidez, cerrando el debate. El equipo se volvio silencioso y al final la decision no fue mejor, solo fue mas rapida. Ahi entendi el quiebre: mi necesidad de control y de no verme vulnerable estaba danando la colaboracion. En lugar de construir confianza, estaba construyendo distancia. Me confronto una verdad incomoda: el liderazgo no se mide por tener siempre la razon, sino por elevar la calidad de las decisiones y del equipo. Ese dia vi mi patron: bajo presion, me cerraba.'
+    },
+    {
+        helpKey: 'acto3',
+        fieldKey: 'actRebuild',
+        title: 'Acto 3 - Reconstruccion (que me redefinio)',
+        guidingQuestions: [
+            'Que decision tome despues del quiebre?',
+            'Que habilidad o virtud desarrolle?',
+            'Que nueva identidad empezo a aparecer? (no perfecta, pero real)'
+        ],
+        example:
+            'Despues de ese episodio decidi aprender a pausar, preguntar y pedir apoyo de forma especifica. Empece a preparar reuniones con claridad, pero abriendo espacio para perspectivas distintas. Practique decir: no lo tengo completo, necesito tu mirada en esto. Tambien aprendi a separar ser cuestionado de ser desautorizado. En vez de responder para ganar, empece a responder para construir. Descubri una nueva forma de firmeza: calma, claridad y escucha. Aun me cuesta cuando siento critica publica, pero ahora lo veo como un disparador y no como una amenaza absoluta. Me redefini desde una idea distinta: mi autoridad crece cuando hago preguntas mejores y sostengo conversaciones mas maduras. Ese cambio me devolvio energia, porque ya no tengo que cargar solo.'
+    }
+]
+
 const EVENT_TYPE_STYLE: Record<StoryEventType, { label: string; nodeClass: string; badgeClass: string }> = {
     logro: {
         label: 'Logro',
@@ -160,6 +221,11 @@ export function WB1Step1Digital() {
     const [activePage, setActivePage] = useState(1)
     const [isLocked, setIsLocked] = useState(false)
     const [showEventModal, setShowEventModal] = useState(false)
+    const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
+        acto1: false,
+        acto2: false,
+        acto3: false
+    })
     const [eventDraft, setEventDraft] = useState<StoryEventDraft>(defaultEventDraft())
     const [idFields, setIdFields] = useState<WB1IdentificationFields>({
         leaderName: '',
@@ -343,6 +409,10 @@ export function WB1Step1Digital() {
     const removeEvent = (id: string) => {
         if (isLocked) return
         setStoryEvents((prev) => prev.filter((event) => event.id !== id))
+    }
+
+    const toggleActHelp = (key: StoryActHelpKey) => {
+        setOpenActHelp((prev) => ({ ...prev, [key]: !prev[key] }))
     }
 
     return (
@@ -574,6 +644,9 @@ export function WB1Step1Digital() {
                                     <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
                                         Storytelling personal
                                     </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-3xl">
+                                        Entender como tu historia ha moldeado tu identidad y tus creencias actuales.
+                                    </p>
                                 </header>
 
                                 <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
@@ -736,34 +809,71 @@ export function WB1Step1Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2. Narrativa en 3 actos</h3>
-                                    <p className="text-sm text-slate-700">Escribe 10-15 lineas por acto.</p>
-                                    <label className="block space-y-1">
-                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Acto 1 (origen): que te formo</span>
-                                        <textarea
-                                            value={storyFields.actOrigin}
-                                            onChange={(event) => setStoryField('actOrigin', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[95px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                        />
-                                    </label>
-                                    <label className="block space-y-1">
-                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Acto 2 (quiebre): que te confronto</span>
-                                        <textarea
-                                            value={storyFields.actBreak}
-                                            onChange={(event) => setStoryField('actBreak', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[95px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                        />
-                                    </label>
-                                    <label className="block space-y-1">
-                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Acto 3 (reconstruccion): que te redefinio</span>
-                                        <textarea
-                                            value={storyFields.actRebuild}
-                                            onChange={(event) => setStoryField('actRebuild', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[95px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                        />
-                                    </label>
+                                    <p className="text-sm text-slate-700">
+                                        Convierte tu historia en una narrativa util para el liderazgo. Descubrete en 3 actos:
+                                    </p>
+                                    <ul className="space-y-1.5">
+                                        {STEP2_DISCOVERY_ACTS.map((item) => (
+                                            <li key={item} className="text-sm text-slate-700">
+                                                • {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <aside className="rounded-xl border border-slate-300 bg-slate-100 p-4 md:p-5">
+                                        <p className="text-sm font-extrabold text-slate-900">Reglas de escritura</p>
+                                        <ol className="mt-2 space-y-1.5 list-decimal pl-5">
+                                            {STEP2_WRITING_RULES.map((rule) => (
+                                                <li key={rule} className="text-sm text-slate-700 leading-relaxed">
+                                                    {rule}
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    </aside>
+
+                                    <div className="space-y-5">
+                                        {STEP2_ACT_GUIDES.map((guide) => (
+                                            <article key={guide.helpKey} className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 space-y-3">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <h4 className="text-sm md:text-base font-bold text-slate-900">{guide.title}</h4>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleActHelp(guide.helpKey)}
+                                                        className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                                    >
+                                                        {openActHelp[guide.helpKey] ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                                    </button>
+                                                </div>
+
+                                                <ul className="space-y-1.5">
+                                                    {guide.guidingQuestions.map((question) => (
+                                                        <li key={question} className="text-sm text-slate-700 flex items-start gap-2">
+                                                            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                            <span>{question}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+
+                                                {openActHelp[guide.helpKey] && (
+                                                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                                        <p className="text-xs uppercase tracking-[0.14em] text-blue-700 font-semibold">Ejemplo de referencia</p>
+                                                        <p className="mt-2 text-sm leading-relaxed text-slate-700">{guide.example}</p>
+                                                    </div>
+                                                )}
+
+                                                <label className="block space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Escribe tu narrativa</span>
+                                                    <textarea
+                                                        value={storyFields[guide.fieldKey]}
+                                                        onChange={(event) => setStoryField(guide.fieldKey, event.target.value)}
+                                                        disabled={isLocked}
+                                                        className="w-full min-h-[130px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                        placeholder="Escribe entre 10 y 15 lineas en primera persona, incorporando contexto, escena clave y efecto en ti."
+                                                    />
+                                                </label>
+                                            </article>
+                                        ))}
+                                    </div>
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
