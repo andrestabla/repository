@@ -1,40 +1,14 @@
-import prisma from '@/lib/prisma'
 import { notFound } from 'next/navigation'
-import { WorkbookDetailView } from '@/components/workbooks/WorkbookDetailView'
+import { WB1Step1Digital } from '@/components/workbooks-v2/WB1Step1Digital'
 
 export const revalidate = 0
 
 export default async function WorkbookV2Page({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
 
-    const workbook = await prisma.workbook.findFirst({
-        where: {
-            OR: [
-                { id: slug },
-                { slug }
-            ]
-        }
-    })
-
-    if (!workbook) {
-        notFound()
+    if (slug === 'wb1') {
+        return <WB1Step1Digital />
     }
 
-    const metadata = workbook.metadata ? JSON.parse(JSON.stringify(workbook.metadata)) : {}
-    if ((metadata as any)?.module !== 'v2') {
-        notFound()
-    }
-
-    const serialized = {
-        ...workbook,
-        createdAt: workbook.createdAt.toISOString(),
-        updatedAt: workbook.updatedAt.toISOString(),
-        metadata
-    } as any
-
-    return (
-        <div className="min-h-screen bg-bg">
-            <WorkbookDetailView workbook={serialized} basePath="/workbooks-v2" moduleScope="v2" />
-        </div>
-    )
+    notFound()
 }
