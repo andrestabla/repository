@@ -75,6 +75,7 @@ const IDENTITY_WHEEL_STORAGE_KEY = 'workbooks-v2-wb1-identity-wheel'
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
 const IDENTITY_BULLET_LIMIT = 3
+const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
@@ -334,6 +335,7 @@ export function WB1Step1Digital() {
     const [isLocked, setIsLocked] = useState(false)
     const [showEventModal, setShowEventModal] = useState(false)
     const [showIdentityHelp, setShowIdentityHelp] = useState(false)
+    const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
         acto2: false,
@@ -491,6 +493,8 @@ export function WB1Step1Digital() {
         return [...storyEvents].sort(sortByApproxDate)
     }, [storyEvents])
 
+    const identityWheelSize = IDENTITY_WHEEL_SIZES[identityWheelSizeIndex]
+
     const currentPageIndex = PAGES.findIndex((page) => page.id === activePage)
     const hasPrevPage = currentPageIndex > 0
     const hasNextPage = currentPageIndex >= 0 && currentPageIndex < PAGES.length - 1
@@ -570,6 +574,14 @@ export function WB1Step1Digital() {
                 [key]: nextList
             }
         })
+    }
+
+    const zoomIdentityWheelIn = () => {
+        setIdentityWheelSizeIndex((prev) => Math.min(prev + 1, IDENTITY_WHEEL_SIZES.length - 1))
+    }
+
+    const zoomIdentityWheelOut = () => {
+        setIdentityWheelSizeIndex((prev) => Math.max(prev - 1, 0))
     }
 
     const jumpToPage = (page: number) => {
@@ -1250,42 +1262,86 @@ export function WB1Step1Digital() {
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-6">
-                                    <div className="mx-auto max-w-[620px]">
-                                        <div className="relative aspect-square w-full">
-                                            <div
-                                                className="absolute inset-0 rounded-full border border-slate-300 shadow-inner"
-                                                style={{
-                                                    background: `conic-gradient(${IDENTITY_SEGMENTS.map(
-                                                        (segment, index) => `${segment.color} ${index * 45}deg ${(index + 1) * 45}deg`
-                                                    ).join(', ')})`
-                                                }}
-                                            />
-                                            <div className="absolute inset-[22%] rounded-full bg-white border border-slate-300 shadow-sm flex items-center justify-center p-4">
-                                                <div className="text-center">
-                                                    <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Identity Wheel</p>
-                                                    <p className="text-sm md:text-base font-extrabold text-slate-900 mt-1">Definición actual</p>
-                                                    <p className="text-xs text-slate-500 mt-1">
-                                                        Segmentos con contenido: {Object.values(identityWheelFields).filter((list) => list.some((item) => item.trim())).length} /{' '}
-                                                        {IDENTITY_SEGMENTS.length}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {IDENTITY_SEGMENTS.map((segment, index) => {
-                                                const angle = (index / IDENTITY_SEGMENTS.length) * Math.PI * 2 - Math.PI / 2
-                                                const x = 50 + Math.cos(angle) * 42
-                                                const y = 50 + Math.sin(angle) * 42
-                                                return (
-                                                    <div
-                                                        key={`wheel-label-${segment.key}`}
-                                                        className="absolute -translate-x-1/2 -translate-y-1/2 w-28 text-center"
-                                                        style={{ left: `${x}%`, top: `${y}%` }}
-                                                    >
-                                                        <span className="inline-block rounded-md border border-slate-300 bg-white/90 px-2 py-1 text-[10px] leading-tight font-semibold text-slate-700 shadow-sm">
-                                                            {index + 1}. {segment.title}
-                                                        </span>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={zoomIdentityWheelOut}
+                                                disabled={identityWheelSizeIndex === 0}
+                                                className="h-8 w-8 rounded-lg border border-slate-300 bg-white text-slate-700 text-lg leading-none hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                aria-label="Reducir tamaño de la rueda"
+                                            >
+                                                -
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={zoomIdentityWheelIn}
+                                                disabled={identityWheelSizeIndex === IDENTITY_WHEEL_SIZES.length - 1}
+                                                className="h-8 w-8 rounded-lg border border-slate-300 bg-white text-slate-700 text-lg leading-none hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                aria-label="Ampliar tamaño de la rueda"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+
+                                        <div className="overflow-x-auto pb-2">
+                                            <div className="relative mx-auto aspect-square" style={{ width: `${identityWheelSize}px`, minWidth: `${identityWheelSize}px` }}>
+                                                <div
+                                                    className="absolute inset-0 rounded-full border border-slate-300 shadow-inner"
+                                                    style={{
+                                                        background: `conic-gradient(${IDENTITY_SEGMENTS.map(
+                                                            (segment, index) => `${segment.color} ${index * 45}deg ${(index + 1) * 45}deg`
+                                                        ).join(', ')})`
+                                                    }}
+                                                />
+                                                <div className="absolute inset-[22%] rounded-full bg-white border border-slate-300 shadow-sm flex items-center justify-center p-4">
+                                                    <div className="text-center">
+                                                        <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Identity Wheel</p>
+                                                        <p className="text-sm md:text-base font-extrabold text-slate-900 mt-1">Definición actual</p>
+                                                        <p className="text-xs text-slate-500 mt-1">
+                                                            Segmentos con contenido: {Object.values(identityWheelFields).filter((list) => list.some((item) => item.trim())).length} /{' '}
+                                                            {IDENTITY_SEGMENTS.length}
+                                                        </p>
                                                     </div>
-                                                )
-                                            })}
+                                                </div>
+                                                {IDENTITY_SEGMENTS.map((segment, index) => {
+                                                    const labelAngle = (index / IDENTITY_SEGMENTS.length) * Math.PI * 2 - Math.PI / 2
+                                                    const labelX = 50 + Math.cos(labelAngle) * 42
+                                                    const labelY = 50 + Math.sin(labelAngle) * 42
+                                                    const contentAngle = ((index + 0.5) / IDENTITY_SEGMENTS.length) * Math.PI * 2 - Math.PI / 2
+                                                    const contentX = 50 + Math.cos(contentAngle) * 31
+                                                    const contentY = 50 + Math.sin(contentAngle) * 31
+                                                    const bullets = visibleIdentityBullets(segment.key)
+
+                                                    return (
+                                                        <div key={`wheel-layer-${segment.key}`}>
+                                                            <div
+                                                                className="absolute -translate-x-1/2 -translate-y-1/2 w-28 text-center"
+                                                                style={{ left: `${labelX}%`, top: `${labelY}%` }}
+                                                            >
+                                                                <span className="inline-block rounded-md border border-slate-300 bg-white/90 px-2 py-1 text-[10px] leading-tight font-semibold text-slate-700 shadow-sm">
+                                                                    {index + 1}. {segment.title}
+                                                                </span>
+                                                            </div>
+
+                                                            {bullets.length > 0 && (
+                                                                <div
+                                                                    className="absolute -translate-x-1/2 -translate-y-1/2 w-36 rounded-lg border border-slate-300 bg-white/95 p-2 shadow-sm"
+                                                                    style={{ left: `${contentX}%`, top: `${contentY}%` }}
+                                                                >
+                                                                    <ul className="space-y-1">
+                                                                        {bullets.map((bullet, bulletIndex) => (
+                                                                            <li key={`${segment.key}-wheel-bullet-${bulletIndex}`} className="text-[10px] leading-tight text-slate-700">
+                                                                                • {bullet}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
 
