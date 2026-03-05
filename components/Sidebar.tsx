@@ -168,7 +168,28 @@ export function Sidebar({ session, collapsed, setCollapsed, mobileMenuOpen, setM
 
                 <NavHeader label="OPERACIÓN" collapsed={collapsed} />
                 {canAccess('products') && <NavBtn id="products" label="Productos" icon={<Package size={18} />} active={pathname.startsWith('/productos')} href="/productos" collapsed={collapsed} onClick={handleNavClick} />}
-                {canAccess('workbooks') && <NavBtn id="workbooks" label="Workbooks" icon={<FileText size={18} />} active={pathname.startsWith('/workbooks')} href="/workbooks" collapsed={collapsed} onClick={handleNavClick} />}
+                {canAccess('workbooks') && (
+                    <NavBtn
+                        id="workbooks"
+                        label="Workbooks v1"
+                        icon={<FileText size={18} />}
+                        active={pathname === '/workbooks' || pathname.startsWith('/workbooks/')}
+                        href="/workbooks"
+                        collapsed={collapsed}
+                        onClick={handleNavClick}
+                    />
+                )}
+                {canAccess('workbooks-v2') && (
+                    <NavBtn
+                        id="workbooks-v2"
+                        label="Workbooks v2"
+                        icon={<FileText size={18} />}
+                        active={pathname === '/workbooks-v2' || pathname.startsWith('/workbooks-v2/')}
+                        href="/workbooks-v2"
+                        collapsed={collapsed}
+                        onClick={handleNavClick}
+                    />
+                )}
                 {canAccess('analytics') && <NavBtn id="analytics" label="Analítica" icon={<Activity size={18} />} active={pathname.startsWith('/analitica')} href="/analitica" collapsed={collapsed} onClick={handleNavClick} />}
                 {canAccess('inventory') && <NavBtn id="inventory" label="Inventario" icon={<Database size={18} />} active={pathname === '/inventario' || pathname === '/'} href="/inventario" collapsed={collapsed} onClick={handleNavClick} />}
                 {canAccess('research') && <NavBtn id="research" label="Investigación" icon={<BookOpen size={18} />} active={pathname.startsWith('/research')} href="/research" collapsed={collapsed} onClick={handleNavClick} />}

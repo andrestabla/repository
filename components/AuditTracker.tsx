@@ -47,7 +47,8 @@ const RESERVED_SEGMENTS = new Set([
     'upload',
     'users',
     'versions',
-    'workbooks'
+    'workbooks',
+    'workbooks-v2'
 ])
 
 function sendTrack(payload: TrackPayload, baseFetch?: typeof fetch) {

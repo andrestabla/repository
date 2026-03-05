@@ -1,10 +1,9 @@
-
 import prisma from '@/lib/prisma'
 import { WorkbooksView } from '@/components/workbooks/WorkbooksView'
 
 export const revalidate = 0
 
-export default async function WorkbooksPage() {
+export default async function WorkbooksV2Page() {
     const workbooks = await prisma.workbook.findMany({
         orderBy: { updatedAt: 'desc' }
     })
@@ -16,5 +15,5 @@ export default async function WorkbooksPage() {
         metadata: w.metadata ? JSON.parse(JSON.stringify(w.metadata)) : {}
     }))
 
-    return <WorkbooksView initialWorkbooks={serialized} moduleLabel="Workbooks v1" basePath="/workbooks" />
+    return <WorkbooksView initialWorkbooks={serialized} moduleLabel="Workbooks v2" basePath="/workbooks-v2" />
 }

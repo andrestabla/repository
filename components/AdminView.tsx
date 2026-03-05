@@ -14,7 +14,8 @@ type User = {
 const AVAILABLE_MODULES = [
     { id: 'inventory', label: 'Inventario' },
     { id: 'products', label: 'Productos' },
-    { id: 'workbooks', label: 'Workbooks' },
+    { id: 'workbooks', label: 'Workbooks v1' },
+    { id: 'workbooks-v2', label: 'Workbooks v2' },
     { id: 'analytics', label: 'Analítica' },
     { id: 'research', label: 'Investigación' },
     { id: 'qa', label: 'Calidad (QA)' },

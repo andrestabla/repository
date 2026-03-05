@@ -14,9 +14,17 @@ interface WorkbookFormProps {
     onSuccess: () => void
     initialWorkbook?: Workbook
     isStandalone?: boolean
+    basePath?: string
 }
 
-export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook, isStandalone }: WorkbookFormProps) {
+export function WorkbookForm({
+    isOpen,
+    onClose,
+    onSuccess,
+    initialWorkbook,
+    isStandalone,
+    basePath = '/workbooks'
+}: WorkbookFormProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [aiLoading, setAiLoading] = useState(false)
@@ -231,7 +239,7 @@ export function WorkbookForm({ isOpen, onClose, onSuccess, initialWorkbook, isSt
             const result = await res.json()
 
             if (method === 'POST') {
-                window.location.href = `/workbooks/${result.slug || result.id}`
+                window.location.href = `${basePath}/${result.slug || result.id}`
             } else {
                 onSuccess()
                 if (!isStandalone) onClose()

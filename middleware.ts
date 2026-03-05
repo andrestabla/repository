@@ -5,6 +5,7 @@ import { NextResponse } from "next/server"
 const MODULE_PATHS: Record<string, string> = {
     '/inventario': 'inventory',
     '/productos': 'products',
+    '/workbooks-v2': 'workbooks-v2',
     '/workbooks': 'workbooks',
     '/analitica': 'analytics',
     '/research': 'research',
@@ -54,6 +55,7 @@ export const config = {
     matcher: [
         '/inventario/:path*',
         '/productos/:path*',
+        '/workbooks-v2/:path*',
         '/workbooks/:path*',
         '/analitica/:path*',
         '/research/:path*',

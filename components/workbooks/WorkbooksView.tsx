@@ -7,7 +7,15 @@ import { WorkbookCard, Workbook } from './WorkbookCard'
 import { WorkbookForm } from './WorkbookForm'
 import { useRouter } from 'next/navigation'
 
-export function WorkbooksView({ initialWorkbooks }: { initialWorkbooks: Workbook[] }) {
+export function WorkbooksView({
+    initialWorkbooks,
+    moduleLabel = 'Workbooks v1',
+    basePath = '/workbooks'
+}: {
+    initialWorkbooks: Workbook[]
+    moduleLabel?: string
+    basePath?: string
+}) {
     const router = useRouter()
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingWorkbook, setEditingWorkbook] = useState<Workbook | undefined>(undefined)
@@ -55,7 +63,7 @@ export function WorkbooksView({ initialWorkbooks }: { initialWorkbooks: Workbook
                 <div>
                     <h1 className="text-3xl font-black text-text-main tracking-tight flex items-center gap-3">
                         <BookOpen className="text-accent" size={32} />
-                        Workbooks Educativos
+                        {moduleLabel}
                     </h1>
                     <p className="text-text-muted mt-2 font-medium">
                         Gestión de material didáctico y guías de trabajo 4Shine®.
@@ -111,6 +119,7 @@ export function WorkbooksView({ initialWorkbooks }: { initialWorkbooks: Workbook
                         workbook={workbook}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
+                        basePath={basePath}
                     />
                 ))}
             </div>
@@ -132,6 +141,7 @@ export function WorkbooksView({ initialWorkbooks }: { initialWorkbooks: Workbook
                 onClose={() => { setIsFormOpen(false); setEditingWorkbook(undefined); }}
                 onSuccess={handleSuccess}
                 initialWorkbook={editingWorkbook}
+                basePath={basePath}
             />
 
         </div>
