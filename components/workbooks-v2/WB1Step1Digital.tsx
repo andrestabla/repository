@@ -29,20 +29,28 @@ type StoryPageFields = {
     actOrigin: string
     actBreak: string
     actRebuild: string
-    patternDecision: string
-    patternTrigger: string
-    patternResource: string
+    patternDecision: string[]
+    patternTrigger: string[]
+    patternResource: string[]
 }
 
 type StoryEventDraft = Omit<StoryEvent, 'id'>
 type StoryActHelpKey = 'acto1' | 'acto2' | 'acto3'
 type StoryActFieldKey = 'actOrigin' | 'actBreak' | 'actRebuild'
+type StoryTextFieldKey = 'timelineRange' | 'actOrigin' | 'actBreak' | 'actRebuild'
+type PatternListKey = 'patternDecision' | 'patternTrigger' | 'patternResource'
 
 type StoryActGuide = {
     helpKey: StoryActHelpKey
     fieldKey: StoryActFieldKey
     title: string
     guidingQuestions: string[]
+    example: string
+}
+
+type PatternListConfig = {
+    key: PatternListKey
+    title: string
     example: string
 }
 
@@ -57,6 +65,7 @@ const STORY_FIELDS_STORAGE_KEY = 'workbooks-v2-wb1-story-fields'
 const STORY_EVENTS_STORAGE_KEY = 'workbooks-v2-wb1-story-events'
 
 const STORY_EVENT_LIMIT = 5
+const PATTERN_LIST_LIMIT = 10
 
 const PAGES: PageItem[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
@@ -125,6 +134,24 @@ const STEP2_WRITING_RULES = [
     '10-15 líneas por acto (no más).',
     'Escribe en primera persona (Yo...) y en hechos, no solo emociones.',
     'En cada acto incluye 3 elementos obligatorios: contexto (dónde/época/rol), escena clave (qué pasó), efecto en ti (qué cambió: decisión, creencia, comportamiento).'
+]
+
+const STEP3_EXAMPLES: PatternListConfig[] = [
+    {
+        key: 'patternDecision',
+        title: '1. Patrón que se repite en mis decisiones',
+        example: 'Bajo presión priorizo control y velocidad sobre conversación (cierro rápido).'
+    },
+    {
+        key: 'patternTrigger',
+        title: '2. Situación que más activa miedo/defensa',
+        example: 'Crítica o cuestionamiento público (especialmente frente a equipo o dirección).'
+    },
+    {
+        key: 'patternResource',
+        title: '3. Mi recurso más consistente',
+        example: 'Capacidad de análisis + disciplina para ejecutar (cuando ordeno el problema, avanzo).'
+    }
 ]
 
 const STEP2_ACT_GUIDES: StoryActGuide[] = [
@@ -205,6 +232,30 @@ const defaultEventDraft = (): StoryEventDraft => ({
     belief: ''
 })
 
+function emptyPatternList() {
+    return Array.from({ length: PATTERN_LIST_LIMIT }, () => '')
+}
+
+function normalizePatternList(value: unknown) {
+    if (Array.isArray(value)) {
+        const list = value
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .slice(0, PATTERN_LIST_LIMIT)
+        return [...list, ...Array.from({ length: PATTERN_LIST_LIMIT - list.length }, () => '')]
+    }
+
+    if (typeof value === 'string') {
+        const list = value
+            .split('\n')
+            .map((line) => line.replace(/^[\s•-]+/, '').trim())
+            .filter(Boolean)
+            .slice(0, PATTERN_LIST_LIMIT)
+        return [...list, ...Array.from({ length: PATTERN_LIST_LIMIT - list.length }, () => '')]
+    }
+
+    return emptyPatternList()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -230,6 +281,11 @@ export function WB1Step1Digital() {
         acto3: false
     })
     const [eventDraft, setEventDraft] = useState<StoryEventDraft>(defaultEventDraft())
+    const [patternEditModes, setPatternEditModes] = useState<Record<PatternListKey, boolean>>({
+        patternDecision: false,
+        patternTrigger: false,
+        patternResource: false
+    })
     const [idFields, setIdFields] = useState<WB1IdentificationFields>({
         leaderName: '',
         role: '',
@@ -241,9 +297,9 @@ export function WB1Step1Digital() {
         actOrigin: '',
         actBreak: '',
         actRebuild: '',
-        patternDecision: '',
-        patternTrigger: '',
-        patternResource: ''
+        patternDecision: emptyPatternList(),
+        patternTrigger: emptyPatternList(),
+        patternResource: emptyPatternList()
     })
     const [storyEvents, setStoryEvents] = useState<StoryEvent[]>([])
 
@@ -282,15 +338,15 @@ export function WB1Step1Digital() {
         if (!stored) return
 
         try {
-            const parsed = JSON.parse(stored) as StoryPageFields
+            const parsed = JSON.parse(stored) as Partial<StoryPageFields> & Record<string, unknown>
             setStoryFields({
                 timelineRange: parsed.timelineRange || '',
                 actOrigin: parsed.actOrigin || '',
                 actBreak: parsed.actBreak || '',
                 actRebuild: parsed.actRebuild || '',
-                patternDecision: parsed.patternDecision || '',
-                patternTrigger: parsed.patternTrigger || '',
-                patternResource: parsed.patternResource || ''
+                patternDecision: normalizePatternList(parsed.patternDecision),
+                patternTrigger: normalizePatternList(parsed.patternTrigger),
+                patternResource: normalizePatternList(parsed.patternResource)
             })
         } catch {
             // Ignore corrupted local storage and keep defaults.
@@ -322,9 +378,13 @@ export function WB1Step1Digital() {
 
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
-        const storyValues = Object.values(storyFields)
-        const total = idValues.length + storyValues.length + 1
-        const filled = [...idValues, ...storyValues].filter((value) => value.trim().length > 0).length + (storyEvents.length > 0 ? 1 : 0)
+        const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
+        const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
+        const total = idValues.length + narrativeValues.length + patternValues.length + 1
+        const filledId = idValues.filter((value) => value.trim().length > 0).length
+        const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
+        const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
+        const filled = filledId + filledNarrative + filledPatterns + (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
     }, [idFields, storyFields, storyEvents.length])
 
@@ -358,9 +418,34 @@ export function WB1Step1Digital() {
         setIdFields((prev) => ({ ...prev, [key]: value }))
     }
 
-    const setStoryField = (key: keyof StoryPageFields, value: string) => {
+    const setStoryField = (key: StoryTextFieldKey, value: string) => {
         if (isLocked) return
         setStoryFields((prev) => ({ ...prev, [key]: value }))
+    }
+
+    const editPatternList = (key: PatternListKey) => {
+        if (isLocked) return
+        setPatternEditModes((prev) => ({ ...prev, [key]: true }))
+    }
+
+    const savePatternList = (key: PatternListKey) => {
+        setStoryFields((prev) => ({
+            ...prev,
+            [key]: prev[key].map((item) => item.trim())
+        }))
+        setPatternEditModes((prev) => ({ ...prev, [key]: false }))
+    }
+
+    const setPatternBullet = (key: PatternListKey, index: number, value: string) => {
+        if (isLocked || !patternEditModes[key]) return
+        setStoryFields((prev) => {
+            const nextList = [...prev[key]]
+            nextList[index] = value
+            return {
+                ...prev,
+                [key]: nextList
+            }
+        })
     }
 
     const jumpToPage = (page: number) => {
@@ -417,6 +502,8 @@ export function WB1Step1Digital() {
     const toggleActHelp = (key: StoryActHelpKey) => {
         setOpenActHelp((prev) => ({ ...prev, [key]: !prev[key] }))
     }
+
+    const visiblePatternBullets = (key: PatternListKey) => storyFields[key].map((item) => item.trim()).filter(Boolean)
 
     return (
         <div className="min-h-screen bg-[#f4f7fb] text-[#0f172a]">
@@ -881,6 +968,9 @@ export function WB1Step1Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 3. Patrones</h3>
+                                    <p className="text-sm text-slate-700">
+                                        Extrae 3 conclusiones operativas: tu patrón, tu mayor detonante y tu recurso más confiable.
+                                    </p>
                                     <aside className="rounded-xl border border-slate-300 bg-slate-100 p-4 md:p-5">
                                         <p className="text-sm font-extrabold text-slate-900">Cómo responder (regla)</p>
                                         <ul className="mt-2 space-y-1.5">
@@ -893,42 +983,82 @@ export function WB1Step1Digital() {
                                         </ul>
                                     </aside>
 
-                                    <label className="block space-y-1">
-                                        <span className="text-sm md:text-[15px] font-semibold text-slate-900">
-                                            1. Patrón que se repite en mis decisiones:
-                                        </span>
-                                        <textarea
-                                            value={storyFields.patternDecision}
-                                            onChange={(event) => setStoryField('patternDecision', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="- Escribe tus bullets aquí..."
-                                        />
-                                    </label>
-                                    <label className="block space-y-1">
-                                        <span className="text-sm md:text-[15px] font-semibold text-slate-900">
-                                            2. Situación que más activa miedo/defensa:
-                                        </span>
-                                        <textarea
-                                            value={storyFields.patternTrigger}
-                                            onChange={(event) => setStoryField('patternTrigger', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="- Escribe tus bullets aquí..."
-                                        />
-                                    </label>
-                                    <label className="block space-y-1">
-                                        <span className="text-sm md:text-[15px] font-semibold text-slate-900">
-                                            3. Mi recurso más consistente:
-                                        </span>
-                                        <textarea
-                                            value={storyFields.patternResource}
-                                            onChange={(event) => setStoryField('patternResource', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="- Escribe tus bullets aquí..."
-                                        />
-                                    </label>
+                                    <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5">
+                                        <p className="text-sm font-extrabold text-slate-900">Ejemplo (ilustración)</p>
+                                        <ol className="mt-3 space-y-3">
+                                            {STEP3_EXAMPLES.map((item) => (
+                                                <li key={item.key} className="space-y-1">
+                                                    <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                                                    <p className="text-sm text-slate-700">• {item.example}</p>
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    </article>
+
+                                    <div className="space-y-4">
+                                        {STEP3_EXAMPLES.map((listConfig) => {
+                                            const isEditingList = patternEditModes[listConfig.key]
+                                            const savedBullets = visiblePatternBullets(listConfig.key)
+
+                                            return (
+                                                <article key={listConfig.key} className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 space-y-3">
+                                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                                        <h4 className="text-sm md:text-base font-bold text-slate-900">{listConfig.title}</h4>
+                                                        <div className="inline-flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editPatternList(listConfig.key)}
+                                                                disabled={isLocked || isEditingList}
+                                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => savePatternList(listConfig.key)}
+                                                                disabled={isLocked || !isEditingList}
+                                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Guardar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <p className="text-xs text-slate-500">
+                                                        Bullets cargados: {savedBullets.length} / {PATTERN_LIST_LIMIT}
+                                                    </p>
+
+                                                    {isEditingList ? (
+                                                        <div className="space-y-2">
+                                                            {storyFields[listConfig.key].map((bullet, index) => (
+                                                                <label key={`${listConfig.key}-${index}`} className="block">
+                                                                    <span className="sr-only">Bullet {index + 1}</span>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={bullet}
+                                                                        onChange={(event) => setPatternBullet(listConfig.key, index, event.target.value)}
+                                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                                        placeholder={`Bullet ${index + 1}`}
+                                                                    />
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    ) : savedBullets.length > 0 ? (
+                                                        <ul className="space-y-1.5">
+                                                            {savedBullets.map((bullet, index) => (
+                                                                <li key={`${listConfig.key}-view-${index}`} className="text-sm text-slate-700 flex items-start gap-2">
+                                                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                                    <span>{bullet}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : (
+                                                        <p className="text-sm text-slate-500">Sin registros en esta lista. Presiona "Editar" para comenzar.</p>
+                                                    )}
+                                                </article>
+                                            )
+                                        })}
+                                    </div>
                                 </section>
                             </article>
                         )}
