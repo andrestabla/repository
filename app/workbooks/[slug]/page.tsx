@@ -21,16 +21,21 @@ export default async function WorkbookPage({ params }: { params: Promise<{ slug:
         notFound()
     }
 
+    const metadata = workbook.metadata ? JSON.parse(JSON.stringify(workbook.metadata)) : {}
+    if ((metadata as any)?.module === 'v2') {
+        notFound()
+    }
+
     const serialized = {
         ...workbook,
         createdAt: workbook.createdAt.toISOString(),
         updatedAt: workbook.updatedAt.toISOString(),
-        metadata: workbook.metadata ? JSON.parse(JSON.stringify(workbook.metadata)) : {}
+        metadata
     } as any
 
     return (
         <div className="min-h-screen bg-bg">
-            <WorkbookDetailView workbook={serialized} />
+            <WorkbookDetailView workbook={serialized} moduleScope="v1" />
         </div>
     )
 }

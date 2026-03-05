@@ -10,11 +10,13 @@ import { useRouter } from 'next/navigation'
 export function WorkbooksView({
     initialWorkbooks,
     moduleLabel = 'Workbooks v1',
-    basePath = '/workbooks'
+    basePath = '/workbooks',
+    moduleScope = 'v1'
 }: {
     initialWorkbooks: Workbook[]
     moduleLabel?: string
     basePath?: string
+    moduleScope?: 'v1' | 'v2'
 }) {
     const router = useRouter()
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -142,6 +144,7 @@ export function WorkbooksView({
                 onSuccess={handleSuccess}
                 initialWorkbook={editingWorkbook}
                 basePath={basePath}
+                moduleScope={moduleScope}
             />
 
         </div>

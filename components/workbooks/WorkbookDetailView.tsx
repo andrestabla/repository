@@ -5,7 +5,15 @@ import { WorkbookForm } from './WorkbookForm'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 
-export function WorkbookDetailView({ workbook, basePath = '/workbooks' }: { workbook: any, basePath?: string }) {
+export function WorkbookDetailView({
+    workbook,
+    basePath = '/workbooks',
+    moduleScope = 'v1'
+}: {
+    workbook: any
+    basePath?: string
+    moduleScope?: 'v1' | 'v2'
+}) {
     const router = useRouter()
 
     return (
@@ -31,6 +39,7 @@ export function WorkbookDetailView({ workbook, basePath = '/workbooks' }: { work
                     initialWorkbook={workbook}
                     isStandalone={true}
                     basePath={basePath}
+                    moduleScope={moduleScope}
                 />
             </div>
         </div>

@@ -16,5 +16,7 @@ export default async function WorkbooksPage() {
         metadata: w.metadata ? JSON.parse(JSON.stringify(w.metadata)) : {}
     }))
 
-    return <WorkbooksView initialWorkbooks={serialized} moduleLabel="Workbooks v1" basePath="/workbooks" />
+    const v1Workbooks = serialized.filter((workbook: any) => workbook.metadata?.module !== 'v2')
+
+    return <WorkbooksView initialWorkbooks={v1Workbooks} moduleLabel="Workbooks v1" basePath="/workbooks" moduleScope="v1" />
 }

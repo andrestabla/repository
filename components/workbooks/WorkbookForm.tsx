@@ -15,6 +15,7 @@ interface WorkbookFormProps {
     initialWorkbook?: Workbook
     isStandalone?: boolean
     basePath?: string
+    moduleScope?: 'v1' | 'v2'
 }
 
 export function WorkbookForm({
@@ -23,7 +24,8 @@ export function WorkbookForm({
     onSuccess,
     initialWorkbook,
     isStandalone,
-    basePath = '/workbooks'
+    basePath = '/workbooks',
+    moduleScope = 'v1'
 }: WorkbookFormProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
@@ -212,6 +214,16 @@ export function WorkbookForm({
 
         const method = initialWorkbook ? 'PUT' : 'POST'
         const url = initialWorkbook ? `/api/workbooks/${initialWorkbook.id}` : '/api/workbooks'
+        const metadataPayload = {
+            ...extraMetadata,
+            objectives: objectives.filter(o => o.trim()),
+            takeaways: takeaways.filter(o => o.trim()),
+            audience,
+            duration,
+            difficulty,
+            prerequisites,
+            module: moduleScope
+        }
 
         try {
             const res = await fetch(url, {
@@ -223,15 +235,7 @@ export function WorkbookForm({
                     status,
                     type,
                     driveId,
-                    metadata: {
-                        ...extraMetadata,
-                        objectives: objectives.filter(o => o.trim()),
-                        takeaways: takeaways.filter(o => o.trim()),
-                        audience,
-                        duration,
-                        difficulty,
-                        prerequisites
-                    }
+                    metadata: metadataPayload
                 })
             })
 
