@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, FileText, Lock, Printer } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 
 type WB1IdentificationFields = {
     leaderName: string
@@ -196,6 +196,20 @@ export function WB1Step1Digital() {
         }
     }
 
+    const currentPageIndex = PAGES.findIndex((page) => page.id === activePage)
+    const hasPrevPage = currentPageIndex > 0
+    const hasNextPage = currentPageIndex >= 0 && currentPageIndex < PAGES.length - 1
+
+    const goPrevPage = () => {
+        if (!hasPrevPage) return
+        jumpToPage(PAGES[currentPageIndex - 1].id)
+    }
+
+    const goNextPage = () => {
+        if (!hasNextPage) return
+        jumpToPage(PAGES[currentPageIndex + 1].id)
+    }
+
     return (
         <div className="min-h-screen bg-[#f4f7fb] text-[#0f172a]">
             <header className="wb1-toolbar sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
@@ -243,8 +257,8 @@ export function WB1Step1Digital() {
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-5 md:px-8 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-[260px,1fr] gap-6 items-start">
+            <main className="max-w-7xl mx-auto px-5 md:px-8 py-8 overflow-x-auto">
+                <div className="grid grid-cols-[240px_minmax(0,1fr)] gap-6 items-start min-w-[920px]">
                     <aside className="wb1-sidebar rounded-2xl border border-slate-200 bg-white p-4 lg:sticky lg:top-24 shadow-sm">
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3">Indice</p>
                         <nav className="space-y-1.5" aria-label="Navegacion de paginas">
@@ -340,7 +354,7 @@ export function WB1Step1Digital() {
                                     <div className="mt-6 flex justify-end">
                                         <button
                                             type="button"
-                                            onClick={() => jumpToPage(2)}
+                                            onClick={goNextPage}
                                             className="rounded-xl bg-blue-700 text-white px-6 py-3 text-sm font-bold hover:bg-blue-600 transition-colors"
                                         >
                                             Empezar
@@ -542,6 +556,35 @@ export function WB1Step1Digital() {
                                 </div>
                             </article>
                         )}
+
+                        <nav className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm flex items-center justify-between">
+                            <button
+                                type="button"
+                                onClick={goPrevPage}
+                                disabled={!hasPrevPage}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                <ArrowLeft size={15} />
+                                Atras
+                            </button>
+
+                            <div className="text-center">
+                                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Navegacion</p>
+                                <p className="text-sm font-bold text-slate-900">
+                                    {PAGES[currentPageIndex]?.shortLabel || 'Pagina'}
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={goNextPage}
+                                disabled={!hasNextPage}
+                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                Adelante
+                                <ArrowRight size={15} />
+                            </button>
+                        </nav>
                     </section>
                 </div>
             </main>
