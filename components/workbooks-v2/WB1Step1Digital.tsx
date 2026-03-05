@@ -61,6 +61,14 @@ type IdentitySegmentConfig = {
     color: string
 }
 
+type IdentityMatrixFieldKey = 'say' | 'do' | 'impact'
+
+type IdentityMatrixRow = {
+    say: string
+    do: string
+    impact: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -71,10 +79,12 @@ const ID_STORAGE_KEY = 'workbooks-v2-wb1-identification'
 const STORY_FIELDS_STORAGE_KEY = 'workbooks-v2-wb1-story-fields'
 const STORY_EVENTS_STORAGE_KEY = 'workbooks-v2-wb1-story-events'
 const IDENTITY_WHEEL_STORAGE_KEY = 'workbooks-v2-wb1-identity-wheel'
+const IDENTITY_MATRIX_STORAGE_KEY = 'workbooks-v2-wb1-identity-matrix'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
 const IDENTITY_BULLET_LIMIT = 3
+const IDENTITY_MATRIX_ROWS = 10
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -176,6 +186,13 @@ const IDENTITY_SEGMENTS: IdentitySegmentConfig[] = [
     { key: 'recursos', title: 'Lo que te sostiene (recursos)', color: '#ddd6fe' }
 ]
 
+const IDENTITY_MATRIX_INSTRUCTIONS = [
+    'Escribe frases reales que tú dices como líder (promesas, principios, mensajes frecuentes).',
+    'En "Lo que hago", registra hechos recientes (últimos 20-30 días): qué hiciste/dijiste, con quién, en qué contexto.',
+    'En "Impacto", escribe el efecto observable en otras personas (conducta, clima, confianza, resultados).',
+    'Si hay incoherencia, no la justifiques: solo descríbela. Ahí está el trabajo.'
+]
+
 const STEP2_ACT_GUIDES: StoryActGuide[] = [
     {
         helpKey: 'acto1',
@@ -275,6 +292,14 @@ function defaultIdentityWheelFields() {
     } satisfies Record<IdentitySegmentKey, string[]>
 }
 
+function defaultIdentityMatrixRows() {
+    return Array.from({ length: IDENTITY_MATRIX_ROWS }, () => ({
+        say: '',
+        do: '',
+        impact: ''
+    }))
+}
+
 function normalizePatternList(value: unknown) {
     if (Array.isArray(value)) {
         const list = value
@@ -315,6 +340,28 @@ function normalizeIdentityList(value: unknown) {
     return emptyIdentityList()
 }
 
+function normalizeIdentityMatrixRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { say: '', do: '', impact: '' }
+                }
+                const candidate = row as Partial<Record<IdentityMatrixFieldKey, unknown>>
+                return {
+                    say: typeof candidate.say === 'string' ? candidate.say : '',
+                    do: typeof candidate.do === 'string' ? candidate.do : '',
+                    impact: typeof candidate.impact === 'string' ? candidate.impact : ''
+                }
+            })
+            .slice(0, IDENTITY_MATRIX_ROWS)
+
+        return [...rows, ...Array.from({ length: IDENTITY_MATRIX_ROWS - rows.length }, () => ({ say: '', do: '', impact: '' }))]
+    }
+
+    return defaultIdentityMatrixRows()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -335,6 +382,7 @@ export function WB1Step1Digital() {
     const [isLocked, setIsLocked] = useState(false)
     const [showEventModal, setShowEventModal] = useState(false)
     const [showIdentityHelp, setShowIdentityHelp] = useState(false)
+    const [showIdentityMatrixHelp, setShowIdentityMatrixHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -374,6 +422,7 @@ export function WB1Step1Digital() {
     })
     const [storyEvents, setStoryEvents] = useState<StoryEvent[]>([])
     const [identityWheelFields, setIdentityWheelFields] = useState<Record<IdentitySegmentKey, string[]>>(defaultIdentityWheelFields())
+    const [identityMatrixRows, setIdentityMatrixRows] = useState<IdentityMatrixRow[]>(defaultIdentityMatrixRows())
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -475,19 +524,42 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(IDENTITY_WHEEL_STORAGE_KEY, JSON.stringify(identityWheelFields))
     }, [identityWheelFields])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(IDENTITY_MATRIX_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setIdentityMatrixRows(normalizeIdentityMatrixRows(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(IDENTITY_MATRIX_STORAGE_KEY, JSON.stringify(identityMatrixRows))
+    }, [identityMatrixRows])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 1
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 2
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
         const filledIdentity = identityValues.filter((list) => list.some((item) => item.trim().length > 0)).length
-        const filled = filledId + filledNarrative + filledPatterns + filledIdentity + (storyEvents.length > 0 ? 1 : 0)
+        const filledMatrix = identityMatrixRows.some(
+            (row) => row.say.trim().length > 0 || row.do.trim().length > 0 || row.impact.trim().length > 0
+        )
+            ? 1
+            : 0
+        const filled = filledId + filledNarrative + filledPatterns + filledIdentity + filledMatrix + (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -573,6 +645,17 @@ export function WB1Step1Digital() {
                 ...prev,
                 [key]: nextList
             }
+        })
+    }
+
+    const setIdentityMatrixCell = (rowIndex: number, field: IdentityMatrixFieldKey, value: string) => {
+        if (isLocked) return
+        setIdentityMatrixRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
         })
     }
 
@@ -1407,6 +1490,132 @@ export function WB1Step1Digital() {
                                                 </article>
                                             )
                                         })}
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 2 - Matriz "Lo que digo / hago / impacto"
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">Completa 10 filas con evidencia reciente y observable.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowIdentityMatrixHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showIdentityMatrixHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {IDENTITY_MATRIX_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <aside className="rounded-xl border border-slate-300 bg-slate-100 p-4">
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            Regla de calidad: "Lo que hago" debe poder comprobarse con un ejemplo concreto (reunión X, mensaje Y, decisión Z).
+                                        </p>
+                                    </aside>
+
+                                    {showIdentityMatrixHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-3">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo para completar la matriz</p>
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-[720px] w-full border border-slate-300 rounded-lg overflow-hidden">
+                                                    <thead>
+                                                        <tr className="bg-slate-100">
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Lo que digo</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Lo que hago (hechos)</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Impacto en otros</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr className="bg-white">
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">"Valoro la transparencia"</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
+                                                                En la reunión del lunes compartí riesgos del proyecto y dije qué NO estaba resuelto, proponiendo opciones.
+                                                            </td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
+                                                                El equipo aportó soluciones; aumentó confianza y se redujo rumor/ansiedad.
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </article>
+                                    )}
+
+                                    <p className="text-xs text-slate-500">
+                                        Filas con contenido:{' '}
+                                        {
+                                            identityMatrixRows.filter(
+                                                (row) => row.say.trim().length > 0 || row.do.trim().length > 0 || row.impact.trim().length > 0
+                                            ).length
+                                        }{' '}
+                                        / {IDENTITY_MATRIX_ROWS}
+                                    </p>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[1020px] w-full border border-slate-300 rounded-lg overflow-hidden bg-white">
+                                            <thead>
+                                                <tr className="bg-slate-100">
+                                                    <th className="w-[60px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">#</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                        Lo que digo (mensaje)
+                                                    </th>
+                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                        Lo que hago (hechos recientes)
+                                                    </th>
+                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                        Impacto en otros (observable)
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {identityMatrixRows.map((row, rowIndex) => (
+                                                    <tr key={`matrix-row-${rowIndex}`} className="odd:bg-white even:bg-slate-50">
+                                                        <td className="px-3 py-2 text-xs font-semibold text-slate-500 align-top border-b border-slate-200">
+                                                            {rowIndex + 1}
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <textarea
+                                                                value={row.say}
+                                                                onChange={(event) => setIdentityMatrixCell(rowIndex, 'say', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full min-h-[64px] rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Mensaje o frase que dices"
+                                                            />
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <textarea
+                                                                value={row.do}
+                                                                onChange={(event) => setIdentityMatrixCell(rowIndex, 'do', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full min-h-[64px] rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Hecho concreto reciente"
+                                                            />
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <textarea
+                                                                value={row.impact}
+                                                                onChange={(event) => setIdentityMatrixCell(rowIndex, 'impact', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full min-h-[64px] rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Efecto observable en otros"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </section>
                             </article>
