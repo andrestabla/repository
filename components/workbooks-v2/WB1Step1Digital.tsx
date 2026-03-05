@@ -39,6 +39,7 @@ type StoryActHelpKey = 'acto1' | 'acto2' | 'acto3'
 type StoryActFieldKey = 'actOrigin' | 'actBreak' | 'actRebuild'
 type StoryTextFieldKey = 'timelineRange' | 'actOrigin' | 'actBreak' | 'actRebuild'
 type PatternListKey = 'patternDecision' | 'patternTrigger' | 'patternResource'
+type IdentitySegmentKey = 'roles' | 'principios' | 'presion' | 'calma' | 'aporte' | 'evito' | 'triggers' | 'recursos'
 
 type StoryActGuide = {
     helpKey: StoryActHelpKey
@@ -54,6 +55,12 @@ type PatternListConfig = {
     example: string
 }
 
+type IdentitySegmentConfig = {
+    key: IdentitySegmentKey
+    title: string
+    color: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -63,14 +70,17 @@ type PageItem = {
 const ID_STORAGE_KEY = 'workbooks-v2-wb1-identification'
 const STORY_FIELDS_STORAGE_KEY = 'workbooks-v2-wb1-story-fields'
 const STORY_EVENTS_STORAGE_KEY = 'workbooks-v2-wb1-story-events'
+const IDENTITY_WHEEL_STORAGE_KEY = 'workbooks-v2-wb1-identity-wheel'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
+const IDENTITY_BULLET_LIMIT = 3
 
 const PAGES: PageItem[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
-    { id: 3, label: '3. Storytelling personal', shortLabel: 'Storytelling' }
+    { id: 3, label: '3. Storytelling personal', shortLabel: 'Storytelling' },
+    { id: 4, label: '4. Definición de identidad actual', shortLabel: 'Identidad' }
 ]
 
 const OBJECTIVE_OUTCOMES = [
@@ -152,6 +162,17 @@ const STEP3_EXAMPLES: PatternListConfig[] = [
         title: '3. Mi recurso más consistente',
         example: 'Capacidad de análisis + disciplina para ejecutar (cuando ordeno el problema, avanzo).'
     }
+]
+
+const IDENTITY_SEGMENTS: IdentitySegmentConfig[] = [
+    { key: 'roles', title: 'Roles clave (líder, padre/madre, profesional, etc.)', color: '#dbeafe' },
+    { key: 'principios', title: 'Principios (lo que NO negocias)', color: '#e0e7ff' },
+    { key: 'presion', title: 'Estilo bajo presión', color: '#fef3c7' },
+    { key: 'calma', title: 'Estilo en calma', color: '#dcfce7' },
+    { key: 'aporte', title: 'Lo que aportas (valor)', color: '#cffafe' },
+    { key: 'evito', title: 'Lo que evitas', color: '#fee2e2' },
+    { key: 'triggers', title: 'Lo que te dispara (triggers)', color: '#fde68a' },
+    { key: 'recursos', title: 'Lo que te sostiene (recursos)', color: '#ddd6fe' }
 ]
 
 const STEP2_ACT_GUIDES: StoryActGuide[] = [
@@ -236,6 +257,23 @@ function emptyPatternList() {
     return Array.from({ length: PATTERN_LIST_LIMIT }, () => '')
 }
 
+function emptyIdentityList() {
+    return Array.from({ length: IDENTITY_BULLET_LIMIT }, () => '')
+}
+
+function defaultIdentityWheelFields() {
+    return {
+        roles: emptyIdentityList(),
+        principios: emptyIdentityList(),
+        presion: emptyIdentityList(),
+        calma: emptyIdentityList(),
+        aporte: emptyIdentityList(),
+        evito: emptyIdentityList(),
+        triggers: emptyIdentityList(),
+        recursos: emptyIdentityList()
+    } satisfies Record<IdentitySegmentKey, string[]>
+}
+
 function normalizePatternList(value: unknown) {
     if (Array.isArray(value)) {
         const list = value
@@ -254,6 +292,26 @@ function normalizePatternList(value: unknown) {
     }
 
     return emptyPatternList()
+}
+
+function normalizeIdentityList(value: unknown) {
+    if (Array.isArray(value)) {
+        const list = value
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .slice(0, IDENTITY_BULLET_LIMIT)
+        return [...list, ...Array.from({ length: IDENTITY_BULLET_LIMIT - list.length }, () => '')]
+    }
+
+    if (typeof value === 'string') {
+        const list = value
+            .split('\n')
+            .map((line) => line.replace(/^[\s•-]+/, '').trim())
+            .filter(Boolean)
+            .slice(0, IDENTITY_BULLET_LIMIT)
+        return [...list, ...Array.from({ length: IDENTITY_BULLET_LIMIT - list.length }, () => '')]
+    }
+
+    return emptyIdentityList()
 }
 
 function toMonthLabel(value: string) {
@@ -275,6 +333,7 @@ export function WB1Step1Digital() {
     const [activePage, setActivePage] = useState(1)
     const [isLocked, setIsLocked] = useState(false)
     const [showEventModal, setShowEventModal] = useState(false)
+    const [showIdentityHelp, setShowIdentityHelp] = useState(false)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
         acto2: false,
@@ -285,6 +344,16 @@ export function WB1Step1Digital() {
         patternDecision: false,
         patternTrigger: false,
         patternResource: false
+    })
+    const [identityEditModes, setIdentityEditModes] = useState<Record<IdentitySegmentKey, boolean>>({
+        roles: false,
+        principios: false,
+        presion: false,
+        calma: false,
+        aporte: false,
+        evito: false,
+        triggers: false,
+        recursos: false
     })
     const [idFields, setIdFields] = useState<WB1IdentificationFields>({
         leaderName: '',
@@ -302,6 +371,7 @@ export function WB1Step1Digital() {
         patternResource: emptyPatternList()
     })
     const [storyEvents, setStoryEvents] = useState<StoryEvent[]>([])
+    const [identityWheelFields, setIdentityWheelFields] = useState<Record<IdentitySegmentKey, string[]>>(defaultIdentityWheelFields())
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -376,17 +446,46 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(STORY_EVENTS_STORAGE_KEY, JSON.stringify(storyEvents))
     }, [storyEvents])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(IDENTITY_WHEEL_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as Partial<Record<IdentitySegmentKey, unknown>>
+            setIdentityWheelFields({
+                roles: normalizeIdentityList(parsed.roles),
+                principios: normalizeIdentityList(parsed.principios),
+                presion: normalizeIdentityList(parsed.presion),
+                calma: normalizeIdentityList(parsed.calma),
+                aporte: normalizeIdentityList(parsed.aporte),
+                evito: normalizeIdentityList(parsed.evito),
+                triggers: normalizeIdentityList(parsed.triggers),
+                recursos: normalizeIdentityList(parsed.recursos)
+            })
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(IDENTITY_WHEEL_STORAGE_KEY, JSON.stringify(identityWheelFields))
+    }, [identityWheelFields])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
-        const total = idValues.length + narrativeValues.length + patternValues.length + 1
+        const identityValues = Object.values(identityWheelFields)
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 1
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
-        const filled = filledId + filledNarrative + filledPatterns + (storyEvents.length > 0 ? 1 : 0)
+        const filledIdentity = identityValues.filter((list) => list.some((item) => item.trim().length > 0)).length
+        const filled = filledId + filledNarrative + filledPatterns + filledIdentity + (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -439,6 +538,31 @@ export function WB1Step1Digital() {
     const setPatternBullet = (key: PatternListKey, index: number, value: string) => {
         if (isLocked || !patternEditModes[key]) return
         setStoryFields((prev) => {
+            const nextList = [...prev[key]]
+            nextList[index] = value
+            return {
+                ...prev,
+                [key]: nextList
+            }
+        })
+    }
+
+    const editIdentitySegment = (key: IdentitySegmentKey) => {
+        if (isLocked) return
+        setIdentityEditModes((prev) => ({ ...prev, [key]: true }))
+    }
+
+    const saveIdentitySegment = (key: IdentitySegmentKey) => {
+        setIdentityWheelFields((prev) => ({
+            ...prev,
+            [key]: prev[key].map((item) => item.trim())
+        }))
+        setIdentityEditModes((prev) => ({ ...prev, [key]: false }))
+    }
+
+    const setIdentityBullet = (key: IdentitySegmentKey, index: number, value: string) => {
+        if (isLocked || !identityEditModes[key]) return
+        setIdentityWheelFields((prev) => {
             const nextList = [...prev[key]]
             nextList[index] = value
             return {
@@ -504,6 +628,7 @@ export function WB1Step1Digital() {
     }
 
     const visiblePatternBullets = (key: PatternListKey) => storyFields[key].map((item) => item.trim()).filter(Boolean)
+    const visibleIdentityBullets = (key: IdentitySegmentKey) => identityWheelFields[key].map((item) => item.trim()).filter(Boolean)
 
     return (
         <div className="min-h-screen bg-[#f4f7fb] text-[#0f172a]">
@@ -1054,6 +1179,174 @@ export function WB1Step1Digital() {
                                                         </ul>
                                                     ) : (
                                                         <p className="text-sm text-slate-500">Sin registros en esta lista. Presiona "Editar" para comenzar.</p>
+                                                    )}
+                                                </article>
+                                            )
+                                        })}
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {activePage === 4 && (
+                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 4</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+                                        Definición de identidad actual
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-3xl">
+                                        Definir quién eres hoy en términos de conducta y reputación, no de intención.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 1 - Rueda de identidad (Identity Wheel)
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700 max-w-3xl">
+                                                Este instrumento te ayuda a identificar quién eres hoy como líder en 8 dimensiones que determinan tu
+                                                comportamiento: lo que sostienes, lo que evitas, lo que te activa y lo que entregas.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowIdentityHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showIdentityHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <p className="text-sm text-slate-700">
+                                        En cada segmento de la rueda, escribe máximo 3 bullets con frases cortas y concretas.
+                                    </p>
+
+                                    {showIdentityHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-4">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo de referencia</p>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-900">Estilo bajo presión (máx 3 bullets):</p>
+                                                    <ul className="mt-1 space-y-1">
+                                                        <li className="text-sm text-slate-700">• Cierro rápido decisiones</li>
+                                                        <li className="text-sm text-slate-700">• Hablo más, escucho menos</li>
+                                                        <li className="text-sm text-slate-700">• Reviso detalles que podría delegar</li>
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-900">Principios (NO negociables):</p>
+                                                    <ul className="mt-1 space-y-1">
+                                                        <li className="text-sm text-slate-700">• No maquillo información</li>
+                                                        <li className="text-sm text-slate-700">• No falto al respeto en público</li>
+                                                        <li className="text-sm text-slate-700">• No prometo lo que no puedo sostener</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-6">
+                                    <div className="mx-auto max-w-[620px]">
+                                        <div className="relative aspect-square w-full">
+                                            <div
+                                                className="absolute inset-0 rounded-full border border-slate-300 shadow-inner"
+                                                style={{
+                                                    background: `conic-gradient(${IDENTITY_SEGMENTS.map(
+                                                        (segment, index) => `${segment.color} ${index * 45}deg ${(index + 1) * 45}deg`
+                                                    ).join(', ')})`
+                                                }}
+                                            />
+                                            <div className="absolute inset-[22%] rounded-full bg-white border border-slate-300 shadow-sm flex items-center justify-center p-4">
+                                                <div className="text-center">
+                                                    <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Identity Wheel</p>
+                                                    <p className="text-sm md:text-base font-extrabold text-slate-900 mt-1">Definición actual</p>
+                                                    <p className="text-xs text-slate-500 mt-1">
+                                                        Segmentos con contenido: {Object.values(identityWheelFields).filter((list) => list.some((item) => item.trim())).length} /{' '}
+                                                        {IDENTITY_SEGMENTS.length}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {IDENTITY_SEGMENTS.map((segment, index) => {
+                                                const angle = (index / IDENTITY_SEGMENTS.length) * Math.PI * 2 - Math.PI / 2
+                                                const x = 50 + Math.cos(angle) * 42
+                                                const y = 50 + Math.sin(angle) * 42
+                                                return (
+                                                    <div
+                                                        key={`wheel-label-${segment.key}`}
+                                                        className="absolute -translate-x-1/2 -translate-y-1/2 w-28 text-center"
+                                                        style={{ left: `${x}%`, top: `${y}%` }}
+                                                    >
+                                                        <span className="inline-block rounded-md border border-slate-300 bg-white/90 px-2 py-1 text-[10px] leading-tight font-semibold text-slate-700 shadow-sm">
+                                                            {index + 1}. {segment.title}
+                                                        </span>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                        {IDENTITY_SEGMENTS.map((segment) => {
+                                            const isEditing = identityEditModes[segment.key]
+                                            const bullets = visibleIdentityBullets(segment.key)
+                                            return (
+                                                <article key={segment.key} className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 space-y-3">
+                                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                                        <h4 className="text-sm md:text-base font-bold text-slate-900">{segment.title}</h4>
+                                                        <div className="inline-flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editIdentitySegment(segment.key)}
+                                                                disabled={isLocked || isEditing}
+                                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => saveIdentitySegment(segment.key)}
+                                                                disabled={isLocked || !isEditing}
+                                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Guardar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <p className="text-xs text-slate-500">
+                                                        Bullets cargados: {bullets.length} / {IDENTITY_BULLET_LIMIT}
+                                                    </p>
+
+                                                    {isEditing ? (
+                                                        <div className="space-y-2">
+                                                            {identityWheelFields[segment.key].map((bullet, index) => (
+                                                                <label key={`${segment.key}-input-${index}`} className="block">
+                                                                    <span className="sr-only">Bullet {index + 1}</span>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={bullet}
+                                                                        onChange={(event) => setIdentityBullet(segment.key, index, event.target.value)}
+                                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                                        placeholder={`Bullet ${index + 1}`}
+                                                                    />
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    ) : bullets.length > 0 ? (
+                                                        <ul className="space-y-1.5">
+                                                            {bullets.map((bullet, index) => (
+                                                                <li key={`${segment.key}-view-${index}`} className="text-sm text-slate-700 flex items-start gap-2">
+                                                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                                    <span>{bullet}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : (
+                                                        <p className="text-sm text-slate-500">Sin registros en este segmento. Presiona "Editar" para comenzar.</p>
                                                     )}
                                                 </article>
                                             )
