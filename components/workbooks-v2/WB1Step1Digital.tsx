@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Lock, Plus, Printer, X, Trash2 } from 'lucide-react'
 
 type WB1IdentificationFields = {
     leaderName: string
@@ -12,14 +12,29 @@ type WB1IdentificationFields = {
     startDate: string
 }
 
-type WB1StoryFields = {
-    timelineEvents: string
-    threeActsNarrative: string
-    patterns: string
+type StoryEventType = 'logro' | 'logro-golpe' | 'golpe'
+
+type StoryEvent = {
+    id: string
+    type: StoryEventType
+    approxDate: string
+    happened: string
+    interpreted: string
+    learned: string
+    belief: string
+}
+
+type StoryPageFields = {
+    timelineRange: string
+    actOrigin: string
+    actBreak: string
+    actRebuild: string
     patternDecision: string
     patternTrigger: string
     patternResource: string
 }
+
+type StoryEventDraft = Omit<StoryEvent, 'id'>
 
 type PageItem = {
     id: number
@@ -28,7 +43,10 @@ type PageItem = {
 }
 
 const ID_STORAGE_KEY = 'workbooks-v2-wb1-identification'
-const STORY_STORAGE_KEY = 'workbooks-v2-wb1-storytelling'
+const STORY_FIELDS_STORAGE_KEY = 'workbooks-v2-wb1-story-fields'
+const STORY_EVENTS_STORAGE_KEY = 'workbooks-v2-wb1-story-events'
+
+const STORY_EVENT_LIMIT = 5
 
 const PAGES: PageItem[] = [
     { id: 1, label: '1. Portada e identificacion', shortLabel: 'Portada' },
@@ -70,35 +88,95 @@ const OBSERVABLE_BEHAVIORS = [
     'Reflexion: conviertes experiencias en aprendizaje (registras, sintetizas y ajustas conducta).'
 ]
 
-const STORY_STEPS = [
-    'Linea de vida: registra 5 momentos clave, 3 quiebres y 3 logros de superacion.',
-    'Narrativa en 3 actos: origen, quiebre y reconstruccion (10 a 15 lineas por acto).',
-    'Patrones: identifica decisiones repetidas, disparadores de defensa y recursos consistentes.'
-]
-
 const RESPONSE_RULES = [
     'Responde con bullets concretos.',
     'Si puedes, agrega un ejemplo corto (1 linea) por bullet.',
     'No uses adjetivos (muy intenso), usa comportamiento (microgestion, evito conversar, me cierro).'
 ]
 
+const STEP1_IDENTIFICATION_POINTS = ['5 momentos clave', '3 golpes / crisis / quiebres', '3 logros (no solo exitos; tambien superaciones)']
+
+const EVENT_TEMPLATE_FIELDS = [
+    'Tipo',
+    'Fecha aproximada',
+    'Que ocurrio (hecho)',
+    'Que decidi / interprete',
+    'Que aprendi',
+    'Que creencia se instalo'
+]
+
+const EVENT_TYPE_STYLE: Record<StoryEventType, { label: string; nodeClass: string; badgeClass: string }> = {
+    logro: {
+        label: 'Logro',
+        nodeClass: 'bg-emerald-500 border-emerald-600',
+        badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200'
+    },
+    'logro-golpe': {
+        label: 'Logro / Golpe',
+        nodeClass: 'bg-amber-400 border-amber-500',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-200'
+    },
+    golpe: {
+        label: 'Golpe / Crisis / Quiebre',
+        nodeClass: 'bg-red-500 border-red-600',
+        badgeClass: 'bg-red-100 text-red-800 border-red-200'
+    }
+}
+
+const EXAMPLE_EVENT: StoryEventDraft = {
+    type: 'logro-golpe',
+    approxDate: '2021-08',
+    happened: 'Me ascendieron a un rol de mayor responsabilidad. Durante las primeras 3 semanas recibi tareas nuevas sin induccion formal. No pedi apoyo ni aclare expectativas con mi jefe, aunque tuve dudas en varios entregables.',
+    interpreted: 'Decidi que pedir ayuda o admitir dudas podia hacer que cuestionaran mi capacidad para el cargo. Interprete que un lider debe resolver solo y que mostrar incertidumbre reduce autoridad.',
+    learned: 'Aprendi que mi silencio aumento el riesgo: trabaje mas horas, cometi errores evitables y demore decisiones por miedo a preguntar. Tambien aprendi que la autoridad real se fortalece cuando pido apoyo especifico y tomo decisiones con informacion completa.',
+    belief: 'Si pido ayuda, pierdo autoridad. Un lider debe poder con todo sin mostrar vulnerabilidad.'
+}
+
+const defaultEventDraft = (): StoryEventDraft => ({
+    type: 'logro',
+    approxDate: '',
+    happened: '',
+    interpreted: '',
+    learned: '',
+    belief: ''
+})
+
+function toMonthLabel(value: string) {
+    if (!value) return 'Sin fecha'
+    const [year, month] = value.split('-')
+    if (!year || !month) return value
+    const date = new Date(Number(year), Number(month) - 1, 1)
+    return date.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+}
+
+function sortByApproxDate(a: StoryEvent, b: StoryEvent) {
+    if (!a.approxDate && !b.approxDate) return 0
+    if (!a.approxDate) return 1
+    if (!b.approxDate) return -1
+    return a.approxDate.localeCompare(b.approxDate)
+}
+
 export function WB1Step1Digital() {
     const [activePage, setActivePage] = useState(1)
     const [isLocked, setIsLocked] = useState(false)
+    const [showEventModal, setShowEventModal] = useState(false)
+    const [eventDraft, setEventDraft] = useState<StoryEventDraft>(defaultEventDraft())
     const [idFields, setIdFields] = useState<WB1IdentificationFields>({
         leaderName: '',
         role: '',
         cohort: '',
         startDate: ''
     })
-    const [storyFields, setStoryFields] = useState<WB1StoryFields>({
-        timelineEvents: '',
-        threeActsNarrative: '',
-        patterns: '',
+    const [storyFields, setStoryFields] = useState<StoryPageFields>({
+        timelineRange: '',
+        actOrigin: '',
+        actBreak: '',
+        actRebuild: '',
         patternDecision: '',
         patternTrigger: '',
         patternResource: ''
     })
+    const [storyEvents, setStoryEvents] = useState<StoryEvent[]>([])
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -131,15 +209,16 @@ export function WB1Step1Digital() {
 
     useEffect(() => {
         if (typeof window === 'undefined') return
-        const stored = window.localStorage.getItem(STORY_STORAGE_KEY)
+        const stored = window.localStorage.getItem(STORY_FIELDS_STORAGE_KEY)
         if (!stored) return
 
         try {
-            const parsed = JSON.parse(stored) as WB1StoryFields
+            const parsed = JSON.parse(stored) as StoryPageFields
             setStoryFields({
-                timelineEvents: parsed.timelineEvents || '',
-                threeActsNarrative: parsed.threeActsNarrative || '',
-                patterns: parsed.patterns || '',
+                timelineRange: parsed.timelineRange || '',
+                actOrigin: parsed.actOrigin || '',
+                actBreak: parsed.actBreak || '',
+                actRebuild: parsed.actRebuild || '',
                 patternDecision: parsed.patternDecision || '',
                 patternTrigger: parsed.patternTrigger || '',
                 patternResource: parsed.patternResource || ''
@@ -151,16 +230,42 @@ export function WB1Step1Digital() {
 
     useEffect(() => {
         if (typeof window === 'undefined') return
-        window.localStorage.setItem(STORY_STORAGE_KEY, JSON.stringify(storyFields))
+        window.localStorage.setItem(STORY_FIELDS_STORAGE_KEY, JSON.stringify(storyFields))
     }, [storyFields])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(STORY_EVENTS_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as StoryEvent[]
+            setStoryEvents(Array.isArray(parsed) ? parsed : [])
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(STORY_EVENTS_STORAGE_KEY, JSON.stringify(storyEvents))
+    }, [storyEvents])
 
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const storyValues = Object.values(storyFields)
-        const total = idValues.length + storyValues.length
-        const filled = [...idValues, ...storyValues].filter((value) => value.trim().length > 0).length
+        const total = idValues.length + storyValues.length + 1
+        const filled = [...idValues, ...storyValues].filter((value) => value.trim().length > 0).length + (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields])
+    }, [idFields, storyFields, storyEvents.length])
+
+    const orderedEvents = useMemo(() => {
+        return [...storyEvents].sort(sortByApproxDate)
+    }, [storyEvents])
+
+    const currentPageIndex = PAGES.findIndex((page) => page.id === activePage)
+    const hasPrevPage = currentPageIndex > 0
+    const hasNextPage = currentPageIndex >= 0 && currentPageIndex < PAGES.length - 1
 
     const exportPdf = () => {
         window.print()
@@ -184,7 +289,7 @@ export function WB1Step1Digital() {
         setIdFields((prev) => ({ ...prev, [key]: value }))
     }
 
-    const setStoryField = (key: keyof WB1StoryFields, value: string) => {
+    const setStoryField = (key: keyof StoryPageFields, value: string) => {
         if (isLocked) return
         setStoryFields((prev) => ({ ...prev, [key]: value }))
     }
@@ -196,10 +301,6 @@ export function WB1Step1Digital() {
         }
     }
 
-    const currentPageIndex = PAGES.findIndex((page) => page.id === activePage)
-    const hasPrevPage = currentPageIndex > 0
-    const hasNextPage = currentPageIndex >= 0 && currentPageIndex < PAGES.length - 1
-
     const goPrevPage = () => {
         if (!hasPrevPage) return
         jumpToPage(PAGES[currentPageIndex - 1].id)
@@ -208,6 +309,40 @@ export function WB1Step1Digital() {
     const goNextPage = () => {
         if (!hasNextPage) return
         jumpToPage(PAGES[currentPageIndex + 1].id)
+    }
+
+    const openEventModal = () => {
+        if (isLocked || storyEvents.length >= STORY_EVENT_LIMIT) return
+        setEventDraft(defaultEventDraft())
+        setShowEventModal(true)
+    }
+
+    const validateEventDraft = () => {
+        return (
+            eventDraft.approxDate.trim() &&
+            eventDraft.happened.trim() &&
+            eventDraft.interpreted.trim() &&
+            eventDraft.learned.trim() &&
+            eventDraft.belief.trim()
+        )
+    }
+
+    const saveEvent = () => {
+        if (isLocked || !validateEventDraft()) return
+        if (storyEvents.length >= STORY_EVENT_LIMIT) return
+
+        const nextEvent: StoryEvent = {
+            id: crypto.randomUUID(),
+            ...eventDraft
+        }
+
+        setStoryEvents((prev) => [...prev, nextEvent])
+        setShowEventModal(false)
+    }
+
+    const removeEvent = (id: string) => {
+        if (isLocked) return
+        setStoryEvents((prev) => prev.filter((event) => event.id !== id))
     }
 
     return (
@@ -433,7 +568,7 @@ export function WB1Step1Digital() {
                         )}
 
                         {activePage === 3 && (
-                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-6 shadow-sm">
+                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Pagina 3</p>
                                     <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
@@ -441,71 +576,210 @@ export function WB1Step1Digital() {
                                     </h2>
                                 </header>
 
-                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7">
-                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Proposito</h3>
-                                    <p className="mt-2 text-sm md:text-base text-slate-700 leading-relaxed">
-                                        Entender como tu historia ha moldeado tu identidad y tus creencias actuales.
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1. Linea de vida (Timeline)</h3>
+                                    <p className="text-sm text-slate-700">
+                                        Define una temporalidad y, en este lapso, identifica:
                                     </p>
-                                </section>
-
-                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7">
-                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Instrucciones</h3>
-                                    <ul className="mt-4 space-y-2.5">
-                                        {STORY_STEPS.map((item) => (
-                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
-                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-500 shrink-0" />
-                                                <span>{item}</span>
+                                    <ul className="space-y-1.5">
+                                        {STEP1_IDENTIFICATION_POINTS.map((item) => (
+                                            <li key={item} className="text-sm text-slate-700">
+                                                • {item}
                                             </li>
                                         ))}
                                     </ul>
+                                    <label className="block space-y-1">
+                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Temporalidad de trabajo</span>
+                                        <input
+                                            type="text"
+                                            value={storyFields.timelineRange}
+                                            onChange={(event) => setStoryField('timelineRange', event.target.value)}
+                                            disabled={isLocked}
+                                            className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            placeholder="Ej: Enero 2020 - Diciembre 2025"
+                                        />
+                                    </label>
                                 </section>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <label className="space-y-1 md:col-span-2">
-                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Linea de vida (eventos clave)</span>
-                                        <textarea
-                                            value={storyFields.timelineEvents}
-                                            onChange={(event) => setStoryField('timelineEvents', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[110px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="Fecha, hecho, interpretacion, aprendizaje y creencia instalada..."
-                                        />
-                                    </label>
-                                    <label className="space-y-1">
-                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Narrativa en 3 actos</span>
-                                        <textarea
-                                            value={storyFields.threeActsNarrative}
-                                            onChange={(event) => setStoryField('threeActsNarrative', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[120px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="Acto 1 (origen), Acto 2 (quiebre), Acto 3 (reconstruccion)..."
-                                        />
-                                    </label>
-                                    <label className="space-y-1">
-                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Patrones detectados</span>
-                                        <textarea
-                                            value={storyFields.patterns}
-                                            onChange={(event) => setStoryField('patterns', event.target.value)}
-                                            disabled={isLocked}
-                                            className="w-full min-h-[120px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="Resume los patrones que observas..."
-                                        />
-                                    </label>
-                                </div>
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">Registro de eventos</h3>
+                                            <p className="text-sm text-slate-600 mt-1">
+                                                Usa la plantilla: tipo, fecha aproximada, que ocurrio, que decidiste, que aprendiste y creencia instalada.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={openEventModal}
+                                            disabled={isLocked || storyEvents.length >= STORY_EVENT_LIMIT}
+                                            className="inline-flex items-center gap-2 rounded-lg bg-blue-700 text-white px-3 py-2 text-xs font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <Plus size={14} />
+                                            Agregar evento
+                                        </button>
+                                    </div>
 
-                                <aside className="rounded-xl border border-slate-300 bg-slate-100 p-4 md:p-5">
-                                    <p className="text-sm font-extrabold text-slate-900">Como responder (regla)</p>
-                                    <ul className="mt-2 space-y-1.5">
-                                        {RESPONSE_RULES.map((rule) => (
-                                            <li key={rule} className="text-sm text-slate-700 leading-relaxed flex items-start gap-2">
-                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
-                                                <span>{rule}</span>
-                                            </li>
+                                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500 font-semibold">Plantilla de registro (por evento)</p>
+                                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {EVENT_TEMPLATE_FIELDS.map((field) => (
+                                                <p key={field} className="text-sm text-slate-700">
+                                                    • {field}: ______
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-300 bg-slate-100 p-4 md:p-5">
+                                        <p className="text-sm font-extrabold text-slate-900">¿Que es una creencia?</p>
+                                        <p className="text-sm text-slate-700 mt-1">
+                                            Conviccion interna que guia el comportamiento y la toma de decisiones de un individuo.
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-300 bg-blue-50 p-4 md:p-5 space-y-2">
+                                        <p className="text-sm font-extrabold text-slate-900">Ejemplo (ilustracion)</p>
+                                        <p className="text-sm text-slate-700">• Tipo: logro/quiebre</p>
+                                        <p className="text-sm text-slate-700">• Fecha aproximada: Agosto 2021</p>
+                                        <p className="text-sm text-slate-700">• Que ocurrio (hecho): {EXAMPLE_EVENT.happened}</p>
+                                        <p className="text-sm text-slate-700">• Que decidi / interprete: {EXAMPLE_EVENT.interpreted}</p>
+                                        <p className="text-sm text-slate-700">• Que aprendi: {EXAMPLE_EVENT.learned}</p>
+                                        <p className="text-sm text-slate-700">• Que creencia se instalo: {EXAMPLE_EVENT.belief}</p>
+                                    </div>
+
+                                    <p className="text-xs text-slate-500">
+                                        Eventos registrados: {storyEvents.length} / {STORY_EVENT_LIMIT}
+                                    </p>
+                                    {storyEvents.length >= STORY_EVENT_LIMIT && (
+                                        <p className="text-xs font-semibold text-amber-700">
+                                            Alcanzaste el maximo de 5 eventos. Elimina uno para registrar otro.
+                                        </p>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-base md:text-lg font-bold text-slate-900">Linea de tiempo cronologica</h3>
+                                        <span className="text-xs font-semibold text-slate-500">Ordenada por fecha aproximada</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {Object.entries(EVENT_TYPE_STYLE).map(([key, style]) => (
+                                            <span
+                                                key={key}
+                                                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${style.badgeClass}`}
+                                            >
+                                                {style.label}
+                                            </span>
                                         ))}
-                                    </ul>
-                                </aside>
+                                    </div>
 
-                                <div className="space-y-5">
+                                    {orderedEvents.length === 0 ? (
+                                        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500 text-sm">
+                                            Aun no hay eventos. Agrega tu primer evento para visualizar la linea de tiempo.
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-300" />
+                                            <ul className="space-y-6">
+                                                {orderedEvents.map((event) => {
+                                                    const style = EVENT_TYPE_STYLE[event.type]
+                                                    return (
+                                                        <li key={event.id} className="relative pl-16">
+                                                            <span className={`absolute left-[18px] top-2 h-4 w-4 rounded-full border-2 ${style.nodeClass}`} />
+
+                                                            <article className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm">
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="space-y-1">
+                                                                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${style.badgeClass}`}>
+                                                                            {style.label}
+                                                                        </span>
+                                                                        <p className="text-sm font-bold text-slate-900">{toMonthLabel(event.approxDate)}</p>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => removeEvent(event.id)}
+                                                                        disabled={isLocked}
+                                                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                    >
+                                                                        <Trash2 size={13} />
+                                                                        Eliminar
+                                                                    </button>
+                                                                </div>
+
+                                                                <dl className="mt-3 grid grid-cols-1 gap-2">
+                                                                    <div>
+                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Que ocurrio (hecho)</dt>
+                                                                        <dd className="text-sm text-slate-700 mt-0.5">{event.happened}</dd>
+                                                                    </div>
+                                                                    <div>
+                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Que decidi / interprete</dt>
+                                                                        <dd className="text-sm text-slate-700 mt-0.5">{event.interpreted}</dd>
+                                                                    </div>
+                                                                    <div>
+                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Que aprendi</dt>
+                                                                        <dd className="text-sm text-slate-700 mt-0.5">{event.learned}</dd>
+                                                                    </div>
+                                                                    <div>
+                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Que creencia se instalo</dt>
+                                                                        <dd className="text-sm text-slate-700 mt-0.5">{event.belief}</dd>
+                                                                    </div>
+                                                                </dl>
+                                                            </article>
+                                                        </li>
+                                                    )
+                                                })}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2. Narrativa en 3 actos</h3>
+                                    <p className="text-sm text-slate-700">Escribe 10-15 lineas por acto.</p>
+                                    <label className="block space-y-1">
+                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Acto 1 (origen): que te formo</span>
+                                        <textarea
+                                            value={storyFields.actOrigin}
+                                            onChange={(event) => setStoryField('actOrigin', event.target.value)}
+                                            disabled={isLocked}
+                                            className="w-full min-h-[95px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                        />
+                                    </label>
+                                    <label className="block space-y-1">
+                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Acto 2 (quiebre): que te confronto</span>
+                                        <textarea
+                                            value={storyFields.actBreak}
+                                            onChange={(event) => setStoryField('actBreak', event.target.value)}
+                                            disabled={isLocked}
+                                            className="w-full min-h-[95px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                        />
+                                    </label>
+                                    <label className="block space-y-1">
+                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Acto 3 (reconstruccion): que te redefinio</span>
+                                        <textarea
+                                            value={storyFields.actRebuild}
+                                            onChange={(event) => setStoryField('actRebuild', event.target.value)}
+                                            disabled={isLocked}
+                                            className="w-full min-h-[95px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                        />
+                                    </label>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 3. Patrones</h3>
+                                    <aside className="rounded-xl border border-slate-300 bg-slate-100 p-4 md:p-5">
+                                        <p className="text-sm font-extrabold text-slate-900">Como responder (regla)</p>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {RESPONSE_RULES.map((rule) => (
+                                                <li key={rule} className="text-sm text-slate-700 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                    <span>{rule}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </aside>
+
                                     <label className="block space-y-1">
                                         <span className="text-sm md:text-[15px] font-semibold text-slate-900">
                                             1. Patron que se repite en mis decisiones:
@@ -517,11 +791,7 @@ export function WB1Step1Digital() {
                                             className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             placeholder="- Escribe tus bullets aqui..."
                                         />
-                                        <p className="text-xs text-slate-500">
-                                            Ejemplo: Bajo presion priorizo control y velocidad sobre conversacion.
-                                        </p>
                                     </label>
-
                                     <label className="block space-y-1">
                                         <span className="text-sm md:text-[15px] font-semibold text-slate-900">
                                             2. Situacion que mas activa miedo/defensa:
@@ -533,11 +803,7 @@ export function WB1Step1Digital() {
                                             className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             placeholder="- Escribe tus bullets aqui..."
                                         />
-                                        <p className="text-xs text-slate-500">
-                                            Ejemplo: Critica o cuestionamiento publico frente al equipo o direccion.
-                                        </p>
                                     </label>
-
                                     <label className="block space-y-1">
                                         <span className="text-sm md:text-[15px] font-semibold text-slate-900">
                                             3. Mi recurso mas consistente:
@@ -549,11 +815,8 @@ export function WB1Step1Digital() {
                                             className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             placeholder="- Escribe tus bullets aqui..."
                                         />
-                                        <p className="text-xs text-slate-500">
-                                            Ejemplo: Capacidad de analisis y disciplina para ejecutar con orden.
-                                        </p>
                                     </label>
-                                </div>
+                                </section>
                             </article>
                         )}
 
@@ -588,6 +851,103 @@ export function WB1Step1Digital() {
                     </section>
                 </div>
             </main>
+
+            {showEventModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={() => setShowEventModal(false)} />
+                    <div className="relative w-full max-w-2xl rounded-2xl border border-slate-300 bg-white shadow-2xl">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+                            <h3 className="text-base md:text-lg font-bold text-slate-900">Agregar evento de linea de vida</h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowEventModal(false)}
+                                className="rounded-lg border border-slate-300 p-1.5 text-slate-600 hover:bg-slate-100"
+                            >
+                                <X size={15} />
+                            </button>
+                        </div>
+
+                        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                            <label className="block space-y-1">
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Tipo</span>
+                                <select
+                                    value={eventDraft.type}
+                                    onChange={(event) => setEventDraft((prev) => ({ ...prev, type: event.target.value as StoryEventType }))}
+                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-300"
+                                >
+                                    <option value="logro">Logro</option>
+                                    <option value="logro-golpe">Logro / Golpe</option>
+                                    <option value="golpe">Golpe / Crisis / Quiebre</option>
+                                </select>
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Fecha aproximada</span>
+                                <input
+                                    type="month"
+                                    value={eventDraft.approxDate}
+                                    onChange={(event) => setEventDraft((prev) => ({ ...prev, approxDate: event.target.value }))}
+                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-300"
+                                />
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Que ocurrio (hecho)</span>
+                                <textarea
+                                    value={eventDraft.happened}
+                                    onChange={(event) => setEventDraft((prev) => ({ ...prev, happened: event.target.value }))}
+                                    className="w-full min-h-[90px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-300"
+                                />
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Que decidi / interprete</span>
+                                <textarea
+                                    value={eventDraft.interpreted}
+                                    onChange={(event) => setEventDraft((prev) => ({ ...prev, interpreted: event.target.value }))}
+                                    className="w-full min-h-[90px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-300"
+                                />
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Que aprendi</span>
+                                <textarea
+                                    value={eventDraft.learned}
+                                    onChange={(event) => setEventDraft((prev) => ({ ...prev, learned: event.target.value }))}
+                                    className="w-full min-h-[90px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-300"
+                                />
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Que creencia se instalo</span>
+                                <textarea
+                                    value={eventDraft.belief}
+                                    onChange={(event) => setEventDraft((prev) => ({ ...prev, belief: event.target.value }))}
+                                    className="w-full min-h-[90px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-300"
+                                />
+                            </label>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-200">
+                            <button
+                                type="button"
+                                onClick={() => setShowEventModal(false)}
+                                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={saveEvent}
+                                disabled={!validateEventDraft()}
+                                className="rounded-lg bg-blue-700 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                Guardar evento
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style jsx global>{`
                 @media print {
