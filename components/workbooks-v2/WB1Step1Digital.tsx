@@ -59,110 +59,110 @@ const STORY_EVENTS_STORAGE_KEY = 'workbooks-v2-wb1-story-events'
 const STORY_EVENT_LIMIT = 5
 
 const PAGES: PageItem[] = [
-    { id: 1, label: '1. Portada e identificacion', shortLabel: 'Portada' },
-    { id: 2, label: '2. Presentacion del workbook', shortLabel: 'Presentacion' },
+    { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
+    { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Storytelling personal', shortLabel: 'Storytelling' }
 ]
 
 const OBJECTIVE_OUTCOMES = [
-    'Tu historia personal resumida en una narrativa clara (sin victimismo ni epica vacia).',
+    'Tu historia personal resumida en una narrativa clara (sin victimismo ni épica vacía).',
     'Una identidad actual definida con hechos (no con adjetivos).',
-    'Tus valores fundamentales priorizados y tus no negociables explicitos.',
-    'Un mapa de fortalezas y areas de oportunidad con evidencia reciente.',
+    'Tus valores fundamentales priorizados y tus no negociables explícitos.',
+    'Un mapa de fortalezas y áreas de oportunidad con evidencia reciente.',
     'Un inventario de creencias limitantes (y su origen) y su reemplazo por creencias empoderadoras.',
-    'Mantras personales disenados para sostener conducta bajo presion.',
-    'Tu identidad futura 10X (vision, habitos y decisiones) y un primer plan de activacion.'
+    'Mantras personales diseñados para sostener conducta bajo presión.',
+    'Tu identidad futura 10X (visión, hábitos y decisiones) y un primer plan de activación.'
 ]
 
 const WORKBOOK_COMPONENTS = [
     'Identidad y coherencia personal',
     'Valores y principios no negociables',
     'Sistema de creencias (mindset)',
-    'Reflexion y aprendizaje (autoconciencia)'
+    'Reflexión y aprendizaje (autoconciencia)'
 ]
 
 const FOURSHINE_COMPETENCIES = [
-    'Gestion de creencias (mindset)',
+    'Gestión de creencias (mindset)',
     'Integridad y coherencia',
     'Responsabilidad radical (accountability)',
     'Autenticidad',
-    'Practica reflexiva y apertura al feedback',
-    'Claridad de proposito y valores (Ikigai como marco)'
+    'Práctica reflexiva y apertura al feedback',
+    'Claridad de propósito y valores (Ikigai como marco)'
 ]
 
 const OBSERVABLE_BEHAVIORS = [
-    'Coherencia: tomas decisiones alineadas con tus valores incluso bajo presion.',
-    'Accountability: asumes publicamente tu parte cuando algo falla y defines correcciones concretas.',
+    'Coherencia: tomas decisiones alineadas con tus valores incluso bajo presión.',
+    'Accountability: asumes públicamente tu parte cuando algo falla y defines correcciones concretas.',
     'Mindset: identificas una creencia limitante, la cuestionas y ejecutas un reemplazo conductual.',
-    'Autenticidad: sostienes tu estilo sin mascara corporativa y sin perder firmeza.',
-    'Reflexion: conviertes experiencias en aprendizaje (registras, sintetizas y ajustas conducta).'
+    'Autenticidad: sostienes tu estilo sin máscara corporativa y sin perder firmeza.',
+    'Reflexión: conviertes experiencias en aprendizaje (registras, sintetizas y ajustas conducta).'
 ]
 
 const RESPONSE_RULES = [
     'Responde con bullets concretos.',
-    'Si puedes, agrega un ejemplo corto (1 linea) por bullet.',
-    'No uses adjetivos (muy intenso), usa comportamiento (microgestion, evito conversar, me cierro).'
+    'Si puedes, agrega un ejemplo corto (1 línea) por bullet.',
+    'No uses adjetivos ("muy intenso"), usa comportamiento ("microgestión", "evito conversar", "me cierro").'
 ]
 
-const STEP1_IDENTIFICATION_POINTS = ['5 momentos clave', '3 golpes / crisis / quiebres', '3 logros (no solo exitos; tambien superaciones)']
+const STEP1_IDENTIFICATION_POINTS = ['5 momentos clave', '3 golpes / crisis / quiebres', '3 logros (no solo "éxitos"; también superaciones)']
 
 const EVENT_TEMPLATE_FIELDS = [
     'Tipo',
     'Fecha aproximada',
-    'Que ocurrio (hecho)',
-    'Que decidi / interprete',
-    'Que aprendi',
-    'Que creencia se instalo'
+    'Qué ocurrió (hecho)',
+    'Qué decidí / interpreté',
+    'Qué aprendí',
+    'Qué creencia se instaló'
 ]
 
 const STEP2_DISCOVERY_ACTS = [
-    'Acto 1 (origen): que identidad se formo',
-    'Acto 2 (quiebre): que creencia fue desafiada',
-    'Acto 3 (reconstruccion): que nueva version tuya emergio'
+    'Acto 1 (origen): qué identidad se formó',
+    'Acto 2 (quiebre): qué creencia fue desafiada',
+    'Acto 3 (reconstrucción): qué nueva versión tuya emergió'
 ]
 
 const STEP2_WRITING_RULES = [
-    '10-15 lineas por acto (no mas).',
+    '10-15 líneas por acto (no más).',
     'Escribe en primera persona (Yo...) y en hechos, no solo emociones.',
-    'En cada acto incluye 3 elementos obligatorios: contexto (donde/epoca/rol), escena clave (que paso), efecto en ti (que cambio: decision, creencia, comportamiento).'
+    'En cada acto incluye 3 elementos obligatorios: contexto (dónde/época/rol), escena clave (qué pasó), efecto en ti (qué cambió: decisión, creencia, comportamiento).'
 ]
 
 const STEP2_ACT_GUIDES: StoryActGuide[] = [
     {
         helpKey: 'acto1',
         fieldKey: 'actOrigin',
-        title: 'Acto 1 - Origen (que te formo)',
+        title: 'Acto 1 - Origen (qué te formó)',
         guidingQuestions: [
-            'Que tipo de entorno me moldeo (familia, escuela, trabajo, cultura)?',
-            'Que reglas no escritas aprendi?',
-            'Que gane con esas reglas? Que me costaron?'
+            '¿Qué tipo de entorno me moldeó (familia, escuela, trabajo, cultura)?',
+            '¿Qué reglas no escritas aprendí?',
+            '¿Qué gané con esas reglas? ¿Qué me costaron?'
         ],
         example:
-            'Creci aprendiendo que el valor personal se demuestra con resultados y responsabilidad. Desde temprano asumi tareas de adulto: resolver, responder, no fallar. En la universidad y luego en el trabajo, reforce esa idea: si entregaba rapido y bien, ganaba confianza y espacio. Empece a construir una identidad de persona confiable, pero con una condicion: casi no pedia ayuda. Me acostumbre a llevar carga extra para evitar exponer dudas. Con el tiempo, ese patron se volvio una marca: eficiencia, cumplimiento y control del detalle. La regla interna era clara: si no tengo certeza, mejor lo resuelvo yo. Esa forma de operar me dio reputacion y crecimiento, pero tambien me entreno en silencio, autosuficiencia y presion interna.'
+            'Crecí aprendiendo que el valor personal se demuestra con resultados y responsabilidad. Desde temprano asumí tareas "de adulto": resolver, responder, no fallar. En la universidad y luego en el trabajo, reforcé esa idea: si entregaba rápido y bien, ganaba confianza y espacio. Empecé a construir una identidad de "persona confiable", pero con una condición: casi no pedía ayuda. Me acostumbré a llevar carga extra para evitar exponer dudas. Con el tiempo, ese patrón se volvió una marca: eficiencia, cumplimiento y control del detalle. La regla interna era clara: "si no tengo certeza, mejor lo resuelvo yo". Esa forma de operar me dio reputación y crecimiento, pero también me entrenó en silencio, autosuficiencia y presión interna.'
     },
     {
         helpKey: 'acto2',
         fieldKey: 'actBreak',
-        title: 'Acto 2 - Quiebre (que me confronto)',
+        title: 'Acto 2 - Quiebre (qué me confrontó)',
         guidingQuestions: [
-            'Que evento o etapa me mostro que mi manera de operar ya no funcionaba?',
-            'Que emocion domino? Que perdi o arriesgue?',
-            'Que parte de mi quedo en evidencia (miedo, control, orgullo, inseguridad)?'
+            '¿Qué evento o etapa me mostró que mi manera de operar ya no funcionaba?',
+            '¿Qué emoción dominó? ¿Qué perdí o arriesgué?',
+            '¿Qué parte de mí quedó en evidencia (miedo, control, orgullo, inseguridad)?'
         ],
         example:
-            'Cuando asumi un rol con mayor visibilidad, ya no bastaba con trabajar duro: tenia que coordinar, delegar y sostener conversaciones dificiles. En una reunion importante, un par cuestiono mi propuesta frente a otros y senti que mi autoridad estaba en juego. Reaccione defendiendo mi punto con rigidez, cerrando el debate. El equipo se volvio silencioso y al final la decision no fue mejor, solo fue mas rapida. Ahi entendi el quiebre: mi necesidad de control y de no verme vulnerable estaba danando la colaboracion. En lugar de construir confianza, estaba construyendo distancia. Me confronto una verdad incomoda: el liderazgo no se mide por tener siempre la razon, sino por elevar la calidad de las decisiones y del equipo. Ese dia vi mi patron: bajo presion, me cerraba.'
+            'Cuando asumí un rol con mayor visibilidad, ya no bastaba con trabajar duro: tenía que coordinar, delegar y sostener conversaciones difíciles. En una reunión importante, un par cuestionó mi propuesta frente a otros y sentí que mi autoridad estaba en juego. Reaccioné defendiendo mi punto con rigidez, cerrando el debate. El equipo se volvió silencioso y al final la decisión no fue mejor, solo fue más rápida. Ahí entendí el quiebre: mi necesidad de control y de "no verme vulnerable" estaba dañando la colaboración. En lugar de construir confianza, estaba construyendo distancia. Me confrontó una verdad incómoda: el liderazgo no se mide por tener siempre la razón, sino por elevar la calidad de las decisiones y del equipo. Ese día vi mi patrón: bajo presión, me cerraba.'
     },
     {
         helpKey: 'acto3',
         fieldKey: 'actRebuild',
-        title: 'Acto 3 - Reconstruccion (que me redefinio)',
+        title: 'Acto 3 - Reconstrucción (qué me redefinió)',
         guidingQuestions: [
-            'Que decision tome despues del quiebre?',
-            'Que habilidad o virtud desarrolle?',
-            'Que nueva identidad empezo a aparecer? (no perfecta, pero real)'
+            '¿Qué decisión tomé después del quiebre?',
+            '¿Qué habilidad o virtud desarrollé?',
+            '¿Qué nueva identidad empezó a aparecer? (no perfecta, pero real)'
         ],
         example:
-            'Despues de ese episodio decidi aprender a pausar, preguntar y pedir apoyo de forma especifica. Empece a preparar reuniones con claridad, pero abriendo espacio para perspectivas distintas. Practique decir: no lo tengo completo, necesito tu mirada en esto. Tambien aprendi a separar ser cuestionado de ser desautorizado. En vez de responder para ganar, empece a responder para construir. Descubri una nueva forma de firmeza: calma, claridad y escucha. Aun me cuesta cuando siento critica publica, pero ahora lo veo como un disparador y no como una amenaza absoluta. Me redefini desde una idea distinta: mi autoridad crece cuando hago preguntas mejores y sostengo conversaciones mas maduras. Ese cambio me devolvio energia, porque ya no tengo que cargar solo.'
+            'Después de ese episodio decidí aprender a pausar, preguntar y pedir apoyo de forma específica. Empecé a preparar reuniones con claridad, pero abriendo espacio para perspectivas distintas. Practiqué decir: "No lo tengo completo, necesito tu mirada en esto". También aprendí a separar "ser cuestionado" de "ser desautorizado". En vez de responder para ganar, empecé a responder para construir. Descubrí una nueva forma de firmeza: calma, claridad y escucha. Aún me cuesta cuando siento crítica pública, pero ahora lo veo como un disparador y no como una amenaza absoluta. Me redefiní desde una idea distinta: "mi autoridad crece cuando hago preguntas mejores y sostengo conversaciones más maduras". Ese cambio me devolvió energía, porque ya no tengo que cargar solo.'
     }
 ]
 
@@ -187,10 +187,13 @@ const EVENT_TYPE_STYLE: Record<StoryEventType, { label: string; nodeClass: strin
 const EXAMPLE_EVENT: StoryEventDraft = {
     type: 'logro-golpe',
     approxDate: '2021-08',
-    happened: 'Me ascendieron a un rol de mayor responsabilidad. Durante las primeras 3 semanas recibi tareas nuevas sin induccion formal. No pedi apoyo ni aclare expectativas con mi jefe, aunque tuve dudas en varios entregables.',
-    interpreted: 'Decidi que pedir ayuda o admitir dudas podia hacer que cuestionaran mi capacidad para el cargo. Interprete que un lider debe resolver solo y que mostrar incertidumbre reduce autoridad.',
-    learned: 'Aprendi que mi silencio aumento el riesgo: trabaje mas horas, cometi errores evitables y demore decisiones por miedo a preguntar. Tambien aprendi que la autoridad real se fortalece cuando pido apoyo especifico y tomo decisiones con informacion completa.',
-    belief: 'Si pido ayuda, pierdo autoridad. Un lider debe poder con todo sin mostrar vulnerabilidad.'
+    happened:
+        'Me ascendieron a un rol de mayor responsabilidad. Durante las primeras 3 semanas recibí tareas nuevas sin inducción formal. No pedí apoyo ni aclaré expectativas con mi jefe, aunque tuve dudas en varios entregables.',
+    interpreted:
+        'Decidí que pedir ayuda o admitir dudas podía hacer que cuestionaran mi capacidad para el cargo. Interpreté que "un líder debe resolver solo" y que mostrar incertidumbre reduce autoridad.',
+    learned:
+        'Aprendí que mi silencio aumentó el riesgo: trabajé más horas, cometí errores evitables y demoré decisiones por miedo a preguntar. También aprendí que la autoridad real se fortalece cuando pido apoyo específico y tomo decisiones con información completa.',
+    belief: 'Si pido ayuda, pierdo autoridad. Un líder debe poder con todo sin mostrar vulnerabilidad.'
 }
 
 const defaultEventDraft = (): StoryEventDraft => ({
@@ -465,8 +468,8 @@ export function WB1Step1Digital() {
             <main className="max-w-7xl mx-auto px-5 md:px-8 py-8 overflow-x-auto">
                 <div className="grid grid-cols-[240px_minmax(0,1fr)] gap-6 items-start min-w-[920px]">
                     <aside className="wb1-sidebar rounded-2xl border border-slate-200 bg-white p-4 lg:sticky lg:top-24 shadow-sm">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3">Indice</p>
-                        <nav className="space-y-1.5" aria-label="Navegacion de paginas">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3">Índice</p>
+                        <nav className="space-y-1.5" aria-label="Navegación de páginas">
                             {PAGES.map((page) => (
                                 <button
                                     key={page.id}
@@ -509,17 +512,17 @@ export function WB1Step1Digital() {
                                 </div>
 
                                 <div className="p-6 md:p-8 border-t border-slate-200">
-                                    <h2 className="text-xl md:text-2xl font-extrabold text-slate-900">Datos de identificacion</h2>
+                                    <h2 className="text-xl md:text-2xl font-extrabold text-slate-900">Datos de identificación</h2>
                                     <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nombre del lider</span>
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nombre del líder</span>
                                             <input
                                                 type="text"
                                                 value={idFields.leaderName}
                                                 onChange={(event) => setIdField('leaderName', event.target.value)}
                                                 disabled={isLocked}
                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                                placeholder="Ej: Andres Tabla"
+                                                placeholder="Ej: Andrés Tabla"
                                             />
                                         </label>
                                         <label className="space-y-1">
@@ -530,7 +533,7 @@ export function WB1Step1Digital() {
                                                 onChange={(event) => setIdField('role', event.target.value)}
                                                 disabled={isLocked}
                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                                placeholder="Ej: Director / Lider"
+                                                placeholder="Ej: Director / Líder"
                                             />
                                         </label>
                                         <label className="space-y-1">
@@ -572,15 +575,15 @@ export function WB1Step1Digital() {
                         {activePage === 2 && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
-                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Pagina 2</p>
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 2</p>
                                     <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
-                                        Presentacion del workbook
+                                        Presentación del workbook
                                     </h2>
                                 </header>
 
                                 <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7">
                                     <h3 className="text-lg font-bold text-slate-900">Objetivo</h3>
-                                    <p className="mt-2 text-sm md:text-base text-slate-700">Al finalizar, tendras:</p>
+                                    <p className="mt-2 text-sm md:text-base text-slate-700">Al finalizar, tendrás:</p>
                                     <ul className="mt-4 space-y-2.5">
                                         {OBJECTIVE_OUTCOMES.map((item) => (
                                             <li key={item} className="flex items-start gap-3 text-sm md:text-[15px] text-slate-700 leading-relaxed">
@@ -623,7 +626,7 @@ export function WB1Step1Digital() {
 
                                 <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">
-                                        Conductas observables asociadas (que se deberia ver en tu dia a dia)
+                                        Conductas observables asociadas (que se debería ver en tu día a día)
                                     </h3>
                                     <ul className="mt-4 space-y-2.5">
                                         {OBSERVABLE_BEHAVIORS.map((item) => (
@@ -640,17 +643,17 @@ export function WB1Step1Digital() {
                         {activePage === 3 && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
-                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Pagina 3</p>
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 3</p>
                                     <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
                                         Storytelling personal
                                     </h2>
                                     <p className="text-sm md:text-base text-slate-700 max-w-3xl">
-                                        Entender como tu historia ha moldeado tu identidad y tus creencias actuales.
+                                        Entender cómo tu historia ha moldeado tu identidad y tus creencias actuales.
                                     </p>
                                 </header>
 
                                 <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
-                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1. Linea de vida (Timeline)</h3>
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1. Línea de vida (Timeline)</h3>
                                     <p className="text-sm text-slate-700">
                                         Define una temporalidad y, en este lapso, identifica:
                                     </p>
@@ -679,7 +682,7 @@ export function WB1Step1Digital() {
                                         <div>
                                             <h3 className="text-base md:text-lg font-bold text-slate-900">Registro de eventos</h3>
                                             <p className="text-sm text-slate-600 mt-1">
-                                                Usa la plantilla: tipo, fecha aproximada, que ocurrio, que decidiste, que aprendiste y creencia instalada.
+                                                Usa la plantilla: tipo, fecha aproximada, qué ocurrió, qué decidiste, qué aprendiste y creencia instalada.
                                             </p>
                                         </div>
                                         <button
@@ -705,20 +708,20 @@ export function WB1Step1Digital() {
                                     </div>
 
                                     <div className="rounded-xl border border-slate-300 bg-slate-100 p-4 md:p-5">
-                                        <p className="text-sm font-extrabold text-slate-900">¿Que es una creencia?</p>
+                                        <p className="text-sm font-extrabold text-slate-900">¿Qué es una creencia?</p>
                                         <p className="text-sm text-slate-700 mt-1">
-                                            Conviccion interna que guia el comportamiento y la toma de decisiones de un individuo.
+                                            Convicción interna que guía el comportamiento y la toma de decisiones de un individuo.
                                         </p>
                                     </div>
 
                                     <div className="rounded-xl border border-slate-300 bg-blue-50 p-4 md:p-5 space-y-2">
-                                        <p className="text-sm font-extrabold text-slate-900">Ejemplo (ilustracion)</p>
+                                        <p className="text-sm font-extrabold text-slate-900">Ejemplo (ilustración)</p>
                                         <p className="text-sm text-slate-700">• Tipo: logro/quiebre</p>
                                         <p className="text-sm text-slate-700">• Fecha aproximada: Agosto 2021</p>
-                                        <p className="text-sm text-slate-700">• Que ocurrio (hecho): {EXAMPLE_EVENT.happened}</p>
-                                        <p className="text-sm text-slate-700">• Que decidi / interprete: {EXAMPLE_EVENT.interpreted}</p>
-                                        <p className="text-sm text-slate-700">• Que aprendi: {EXAMPLE_EVENT.learned}</p>
-                                        <p className="text-sm text-slate-700">• Que creencia se instalo: {EXAMPLE_EVENT.belief}</p>
+                                        <p className="text-sm text-slate-700">• Qué ocurrió (hecho): {EXAMPLE_EVENT.happened}</p>
+                                        <p className="text-sm text-slate-700">• Qué decidí / interpreté: {EXAMPLE_EVENT.interpreted}</p>
+                                        <p className="text-sm text-slate-700">• Qué aprendí: {EXAMPLE_EVENT.learned}</p>
+                                        <p className="text-sm text-slate-700">• Qué creencia se instaló: {EXAMPLE_EVENT.belief}</p>
                                     </div>
 
                                     <p className="text-xs text-slate-500">
@@ -726,14 +729,14 @@ export function WB1Step1Digital() {
                                     </p>
                                     {storyEvents.length >= STORY_EVENT_LIMIT && (
                                         <p className="text-xs font-semibold text-amber-700">
-                                            Alcanzaste el maximo de 5 eventos. Elimina uno para registrar otro.
+                                            Alcanzaste el máximo de 5 eventos. Elimina uno para registrar otro.
                                         </p>
                                     )}
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex items-center justify-between gap-3">
-                                        <h3 className="text-base md:text-lg font-bold text-slate-900">Linea de tiempo cronologica</h3>
+                                        <h3 className="text-base md:text-lg font-bold text-slate-900">Línea de tiempo cronológica</h3>
                                         <span className="text-xs font-semibold text-slate-500">Ordenada por fecha aproximada</span>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
@@ -749,7 +752,7 @@ export function WB1Step1Digital() {
 
                                     {orderedEvents.length === 0 ? (
                                         <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500 text-sm">
-                                            Aun no hay eventos. Agrega tu primer evento para visualizar la linea de tiempo.
+                                            Aún no hay eventos. Agrega tu primer evento para visualizar la línea de tiempo.
                                         </div>
                                     ) : (
                                         <div className="relative">
@@ -782,19 +785,19 @@ export function WB1Step1Digital() {
 
                                                                 <dl className="mt-3 grid grid-cols-1 gap-2">
                                                                     <div>
-                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Que ocurrio (hecho)</dt>
+                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Qué ocurrió (hecho)</dt>
                                                                         <dd className="text-sm text-slate-700 mt-0.5">{event.happened}</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Que decidi / interprete</dt>
+                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Qué decidí / interpreté</dt>
                                                                         <dd className="text-sm text-slate-700 mt-0.5">{event.interpreted}</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Que aprendi</dt>
+                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Qué aprendí</dt>
                                                                         <dd className="text-sm text-slate-700 mt-0.5">{event.learned}</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Que creencia se instalo</dt>
+                                                                        <dt className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Qué creencia se instaló</dt>
                                                                         <dd className="text-sm text-slate-700 mt-0.5">{event.belief}</dd>
                                                                     </div>
                                                                 </dl>
@@ -810,7 +813,7 @@ export function WB1Step1Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2. Narrativa en 3 actos</h3>
                                     <p className="text-sm text-slate-700">
-                                        Convierte tu historia en una narrativa util para el liderazgo. Descubrete en 3 actos:
+                                        Convierte tu historia en una narrativa útil para el liderazgo. Descúbrete en 3 actos:
                                     </p>
                                     <ul className="space-y-1.5">
                                         {STEP2_DISCOVERY_ACTS.map((item) => (
@@ -868,7 +871,7 @@ export function WB1Step1Digital() {
                                                         onChange={(event) => setStoryField(guide.fieldKey, event.target.value)}
                                                         disabled={isLocked}
                                                         className="w-full min-h-[130px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                                        placeholder="Escribe entre 10 y 15 lineas en primera persona, incorporando contexto, escena clave y efecto en ti."
+                                                        placeholder="Escribe entre 10 y 15 líneas en primera persona, incorporando contexto, escena clave y efecto en ti."
                                                     />
                                                 </label>
                                             </article>
@@ -879,7 +882,7 @@ export function WB1Step1Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 3. Patrones</h3>
                                     <aside className="rounded-xl border border-slate-300 bg-slate-100 p-4 md:p-5">
-                                        <p className="text-sm font-extrabold text-slate-900">Como responder (regla)</p>
+                                        <p className="text-sm font-extrabold text-slate-900">Cómo responder (regla)</p>
                                         <ul className="mt-2 space-y-1.5">
                                             {RESPONSE_RULES.map((rule) => (
                                                 <li key={rule} className="text-sm text-slate-700 leading-relaxed flex items-start gap-2">
@@ -892,38 +895,38 @@ export function WB1Step1Digital() {
 
                                     <label className="block space-y-1">
                                         <span className="text-sm md:text-[15px] font-semibold text-slate-900">
-                                            1. Patron que se repite en mis decisiones:
+                                            1. Patrón que se repite en mis decisiones:
                                         </span>
                                         <textarea
                                             value={storyFields.patternDecision}
                                             onChange={(event) => setStoryField('patternDecision', event.target.value)}
                                             disabled={isLocked}
                                             className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="- Escribe tus bullets aqui..."
+                                            placeholder="- Escribe tus bullets aquí..."
                                         />
                                     </label>
                                     <label className="block space-y-1">
                                         <span className="text-sm md:text-[15px] font-semibold text-slate-900">
-                                            2. Situacion que mas activa miedo/defensa:
+                                            2. Situación que más activa miedo/defensa:
                                         </span>
                                         <textarea
                                             value={storyFields.patternTrigger}
                                             onChange={(event) => setStoryField('patternTrigger', event.target.value)}
                                             disabled={isLocked}
                                             className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="- Escribe tus bullets aqui..."
+                                            placeholder="- Escribe tus bullets aquí..."
                                         />
                                     </label>
                                     <label className="block space-y-1">
                                         <span className="text-sm md:text-[15px] font-semibold text-slate-900">
-                                            3. Mi recurso mas consistente:
+                                            3. Mi recurso más consistente:
                                         </span>
                                         <textarea
                                             value={storyFields.patternResource}
                                             onChange={(event) => setStoryField('patternResource', event.target.value)}
                                             disabled={isLocked}
                                             className="w-full min-h-[86px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            placeholder="- Escribe tus bullets aqui..."
+                                            placeholder="- Escribe tus bullets aquí..."
                                         />
                                     </label>
                                 </section>
@@ -938,13 +941,13 @@ export function WB1Step1Digital() {
                                 className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 <ArrowLeft size={15} />
-                                Atras
+                                Atrás
                             </button>
 
                             <div className="text-center">
-                                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Navegacion</p>
+                                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Navegación</p>
                                 <p className="text-sm font-bold text-slate-900">
-                                    {PAGES[currentPageIndex]?.shortLabel || 'Pagina'}
+                                    {PAGES[currentPageIndex]?.shortLabel || 'Página'}
                                 </p>
                             </div>
 
@@ -967,7 +970,7 @@ export function WB1Step1Digital() {
                     <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={() => setShowEventModal(false)} />
                     <div className="relative w-full max-w-2xl rounded-2xl border border-slate-300 bg-white shadow-2xl">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-                            <h3 className="text-base md:text-lg font-bold text-slate-900">Agregar evento de linea de vida</h3>
+                            <h3 className="text-base md:text-lg font-bold text-slate-900">Agregar evento de línea de vida</h3>
                             <button
                                 type="button"
                                 onClick={() => setShowEventModal(false)}
@@ -1002,7 +1005,7 @@ export function WB1Step1Digital() {
                             </label>
 
                             <label className="block space-y-1">
-                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Que ocurrio (hecho)</span>
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué ocurrió (hecho)</span>
                                 <textarea
                                     value={eventDraft.happened}
                                     onChange={(event) => setEventDraft((prev) => ({ ...prev, happened: event.target.value }))}
@@ -1011,7 +1014,7 @@ export function WB1Step1Digital() {
                             </label>
 
                             <label className="block space-y-1">
-                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Que decidi / interprete</span>
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué decidí / interpreté</span>
                                 <textarea
                                     value={eventDraft.interpreted}
                                     onChange={(event) => setEventDraft((prev) => ({ ...prev, interpreted: event.target.value }))}
@@ -1020,7 +1023,7 @@ export function WB1Step1Digital() {
                             </label>
 
                             <label className="block space-y-1">
-                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Que aprendi</span>
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué aprendí</span>
                                 <textarea
                                     value={eventDraft.learned}
                                     onChange={(event) => setEventDraft((prev) => ({ ...prev, learned: event.target.value }))}
@@ -1029,7 +1032,7 @@ export function WB1Step1Digital() {
                             </label>
 
                             <label className="block space-y-1">
-                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Que creencia se instalo</span>
+                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué creencia se instaló</span>
                                 <textarea
                                     value={eventDraft.belief}
                                     onChange={(event) => setEventDraft((prev) => ({ ...prev, belief: event.target.value }))}
