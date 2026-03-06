@@ -161,6 +161,15 @@ type BridgeExperimentRow = {
     indicator: string
 }
 
+type MantraCardFieldKey = 'mantra' | 'situation' | 'behavior' | 'signal'
+
+type MantraCardRow = {
+    mantra: string
+    situation: string
+    behavior: string
+    signal: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -183,6 +192,7 @@ const BELIEF_EVIDENCE_STORAGE_KEY = 'workbooks-v2-wb1-belief-evidence'
 const BELIEF_IMPACT_STORAGE_KEY = 'workbooks-v2-wb1-belief-impact'
 const EMPOWERING_BELIEF_STORAGE_KEY = 'workbooks-v2-wb1-empowering-beliefs'
 const BRIDGE_EXPERIMENT_STORAGE_KEY = 'workbooks-v2-wb1-bridge-experiment'
+const MANTRA_CARDS_STORAGE_KEY = 'workbooks-v2-wb1-mantras'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -200,6 +210,7 @@ const BELIEF_IMPACT_BULLETS = 5
 const BELIEF_IMPACT_AFFECTED_ROWS = 3
 const EMPOWERING_BELIEF_ROWS = 3
 const BRIDGE_EXPERIMENT_ROWS = 3
+const MANTRA_ROWS = 3
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -210,7 +221,8 @@ const PAGES: PageItem[] = [
     { id: 5, label: '5. Valores fundamentales', shortLabel: 'Valores' },
     { id: 6, label: '6. Fortalezas y áreas de oportunidad', shortLabel: 'FOA' },
     { id: 7, label: '7. Creencias limitantes (PNL)', shortLabel: 'Creencias PNL' },
-    { id: 8, label: '8. Nuevas creencias empoderadoras', shortLabel: 'Empoderadoras' }
+    { id: 8, label: '8. Nuevas creencias empoderadoras', shortLabel: 'Empoderadoras' },
+    { id: 9, label: '9. Mantras personales', shortLabel: 'Mantras' }
 ]
 
 const OBJECTIVE_OUTCOMES = [
@@ -383,6 +395,18 @@ const BRIDGE_EXPERIMENT_INSTRUCTIONS = [
     'La evidencia debe ser observable (mensaje enviado, conversación realizada, registro hecho, decisión tomada).',
     'El indicador debe ser medible (conteo o escala 0-10).'
 ]
+
+const MANTRA_INSTRUCTIONS = [
+    'Propósito: crear frases cortas que activen tu identidad cuando el contexto te presiona.',
+    'Fórmula recomendada: “Yo soy + acción + valor + impacto”.'
+]
+
+const MANTRA_EXAMPLES = [
+    '“Yo soy un líder que decide con integridad y protege la confianza.”',
+    '“Yo soy un líder que aprende rápido y convierte errores en mejora.”'
+]
+
+const MANTRA_SIGNAL_HINT = 'Ejemplos rápidos: alarma, nota en pantalla, sticker, fondo de pantalla, pulsera, post-it.'
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
     {
@@ -643,6 +667,15 @@ function defaultBridgeExperimentRows() {
         dailyBehavior: '',
         evidence: '',
         indicator: ''
+    }))
+}
+
+function defaultMantraRows() {
+    return Array.from({ length: MANTRA_ROWS }, () => ({
+        mantra: '',
+        situation: '',
+        behavior: '',
+        signal: ''
     }))
 }
 
@@ -1043,6 +1076,77 @@ function normalizeBridgeExperimentRows(value: unknown) {
     return defaultBridgeExperimentRows()
 }
 
+function normalizeMantraRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { mantra: '', situation: '', behavior: '', signal: '' }
+                }
+
+                const candidate = row as Partial<Record<MantraCardFieldKey, unknown>>
+                return {
+                    mantra: typeof candidate.mantra === 'string' ? candidate.mantra : '',
+                    situation: typeof candidate.situation === 'string' ? candidate.situation : '',
+                    behavior: typeof candidate.behavior === 'string' ? candidate.behavior : '',
+                    signal: typeof candidate.signal === 'string' ? candidate.signal : ''
+                }
+            })
+            .slice(0, MANTRA_ROWS)
+
+        return [
+            ...rows,
+            ...Array.from({ length: MANTRA_ROWS - rows.length }, () => ({
+                mantra: '',
+                situation: '',
+                behavior: '',
+                signal: ''
+            }))
+        ]
+    }
+
+    return defaultMantraRows()
+}
+
+function isMantraCardComplete(row: MantraCardRow) {
+    return [row.mantra, row.situation, row.behavior, row.signal].every((value) => {
+        const normalized = value.trim()
+        return normalized.length > 0 && !/\bcompletar\b/i.test(normalized)
+    })
+}
+
+function getMantraSuggestions(row: MantraCardRow) {
+    const suggestions: string[] = []
+    const mantraValue = row.mantra.trim()
+    const situationValue = row.situation.trim()
+    const behaviorValue = row.behavior.trim()
+
+    if (mantraValue && !/^yo soy\b/i.test(mantraValue)) {
+        suggestions.push('El mantra puede iniciar con “Yo soy…” para mantener la fórmula sugerida.')
+    }
+
+    if (
+        behaviorValue &&
+        (/^(ser|estar)\b/i.test(behaviorValue) ||
+            /(ser mejor|ser más|mejor persona|mejor líder|tener actitud|dar lo mejor|ser excelente)/i.test(behaviorValue))
+    ) {
+        suggestions.push('En conducta visible, describe una acción observable (ej.: “hago 1 pregunta antes de responder”).')
+    }
+
+    const hasSpecificContext = /(reunión|feedback|crisis|cliente|equipo|comité|junta|llamada|presentación|dirección|sponsor|conflicto)/i.test(
+        situationValue
+    )
+    if (
+        situationValue &&
+        (!hasSpecificContext ||
+            /(cuando estoy estresad|cuando hay presión|en general|siempre|cuando me siento)/i.test(situationValue))
+    ) {
+        suggestions.push('En situación, especifica contexto concreto (reunión, feedback, crisis, cliente, etc.).')
+    }
+
+    return suggestions
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -1074,6 +1178,7 @@ export function WB1Step1Digital() {
     const [showBeliefImpactHelp, setShowBeliefImpactHelp] = useState(false)
     const [showEmpoweringBeliefHelp, setShowEmpoweringBeliefHelp] = useState(false)
     const [showBridgeExperimentHelp, setShowBridgeExperimentHelp] = useState(false)
+    const [showMantraHelp, setShowMantraHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -1146,6 +1251,9 @@ export function WB1Step1Digital() {
     const [bridgeExperimentEditModes, setBridgeExperimentEditModes] = useState<boolean[]>(
         Array.from({ length: BRIDGE_EXPERIMENT_ROWS }, () => false)
     )
+    const [mantraRows, setMantraRows] = useState<MantraCardRow[]>(defaultMantraRows())
+    const [mantraEditModes, setMantraEditModes] = useState<boolean[]>(Array.from({ length: MANTRA_ROWS }, () => false))
+    const [mantraSuggestions, setMantraSuggestions] = useState<string[][]>(Array.from({ length: MANTRA_ROWS }, () => []))
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -1550,12 +1658,30 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(BRIDGE_EXPERIMENT_STORAGE_KEY, JSON.stringify(bridgeExperimentRows))
     }, [bridgeExperimentRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(MANTRA_CARDS_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setMantraRows(normalizeMantraRows(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(MANTRA_CARDS_STORAGE_KEY, JSON.stringify(mantraRows))
+    }, [mantraRows])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 18
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 19
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -1636,6 +1762,7 @@ export function WB1Step1Digital() {
         )
             ? 1
             : 0
+        const filledMantras = mantraRows.every((row) => isMantraCardComplete(row)) ? 1 : 0
         const filled =
             filledId +
             filledNarrative +
@@ -1656,9 +1783,10 @@ export function WB1Step1Digital() {
             filledBeliefImpact +
             filledEmpoweringBeliefs +
             filledBridgeExperiment +
+            filledMantras +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -2075,6 +2203,45 @@ export function WB1Step1Digital() {
         })
     }
 
+    const editMantraRow = (rowIndex: number) => {
+        if (isLocked) return
+        setMantraEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? true : mode)))
+        setMantraSuggestions((prev) => prev.map((list, index) => (index === rowIndex ? [] : list)))
+    }
+
+    const saveMantraRow = (rowIndex: number) => {
+        const targetRow = mantraRows[rowIndex]
+        if (!targetRow) return
+
+        const trimmedRow: MantraCardRow = {
+            mantra: targetRow.mantra.trim(),
+            situation: targetRow.situation.trim(),
+            behavior: targetRow.behavior.trim(),
+            signal: targetRow.signal.trim()
+        }
+
+        setMantraRows((prev) => {
+            const nextRows = [...prev]
+            if (!nextRows[rowIndex]) return prev
+            nextRows[rowIndex] = trimmedRow
+            return nextRows
+        })
+
+        setMantraSuggestions((prev) => prev.map((list, index) => (index === rowIndex ? getMantraSuggestions(trimmedRow) : list)))
+        setMantraEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? false : mode)))
+    }
+
+    const setMantraCell = (rowIndex: number, field: MantraCardFieldKey, value: string) => {
+        if (isLocked || !mantraEditModes[rowIndex]) return
+        setMantraRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -2222,6 +2389,7 @@ export function WB1Step1Digital() {
             row.evidence.trim().length > 0 &&
             row.indicator.trim().length > 0
     ).length
+    const completedMantraRows = mantraRows.filter((row) => isMantraCardComplete(row)).length
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
@@ -4870,6 +5038,211 @@ export function WB1Step1Digital() {
                                                             <span className="font-semibold text-slate-900">Indicador de progreso (medible):</span>{' '}
                                                             {row.indicator || '______________________________'}
                                                         </p>
+                                                    </div>
+                                                )}
+                                            </article>
+                                        )
+                                    })}
+                                </section>
+                            </article>
+                        )}
+
+                        {activePage === 9 && (
+                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 9</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">Mantras personales</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-3xl">
+                                        Crear frases cortas que activen tu identidad cuando el contexto te presiona.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">Marco de trabajo</h3>
+                                            <p className="mt-1 text-sm text-slate-700">Fórmula recomendada: “Yo soy + acción + valor + impacto”.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMantraHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showMantraHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {MANTRA_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <article className="rounded-xl border border-slate-200 bg-white p-4 md:p-5 space-y-2">
+                                        <p className="text-sm font-bold text-slate-900">Ejemplos</p>
+                                        {MANTRA_EXAMPLES.map((example) => (
+                                            <p key={example} className="text-sm text-slate-700">
+                                                • {example}
+                                            </p>
+                                        ))}
+                                    </article>
+
+                                    {showMantraHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-2">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo completo</p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Mantra:</span> “Yo soy un líder que escucha con respeto y
+                                                decide con claridad.”
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Situación donde lo necesito:</span> “Cuando cuestionan mi
+                                                propuesta en público o hay tensión en reunión.”
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Conducta visible que lo demuestra:</span> “Hago 1 pausa,
+                                                formulo 1 pregunta antes de responder y resumo lo que entendí en 1 frase.”
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Recordatorio (señal):</span> “Sticky en el portátil:
+                                                ‘PAUSA + 1 PREGUNTA’.”
+                                            </p>
+                                        </article>
+                                    )}
+                                </section>
+
+                                <p className="text-xs text-slate-500">
+                                    Tarjetas completadas: {completedMantraRows} / {MANTRA_ROWS}
+                                </p>
+
+                                <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                                    {mantraRows.map((row, rowIndex) => {
+                                        const isEditing = mantraEditModes[rowIndex]
+                                        const rowDisabled = isLocked || !isEditing
+                                        const isComplete = isMantraCardComplete(row)
+                                        const rowSuggestions = mantraSuggestions[rowIndex] || []
+
+                                        return (
+                                            <article
+                                                key={`mantra-card-${rowIndex}`}
+                                                className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <h4 className="text-sm md:text-base font-bold text-slate-900">Tarjeta {rowIndex + 1} (Mantra {rowIndex + 1})</h4>
+                                                    <span
+                                                        className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                            isComplete
+                                                                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                                : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                        }`}
+                                                    >
+                                                        {isComplete ? 'Completado' : 'Pendiente'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="inline-flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => editMantraRow(rowIndex)}
+                                                        disabled={isLocked || isEditing}
+                                                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Editar
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => saveMantraRow(rowIndex)}
+                                                        disabled={isLocked || !isEditing}
+                                                        className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Guardar cambios
+                                                    </button>
+                                                </div>
+
+                                                {isEditing ? (
+                                                    <div className="space-y-3">
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Mantra</span>
+                                                            <textarea
+                                                                value={row.mantra}
+                                                                onChange={(event) => setMantraCell(rowIndex, 'mantra', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[84px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Escribe tu mantra"
+                                                            />
+                                                            <p className="text-[11px] text-slate-500">Formato sugerido: “Yo soy + acción + valor + impacto”.</p>
+                                                        </label>
+
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Situación donde lo necesito</span>
+                                                            <textarea
+                                                                value={row.situation}
+                                                                onChange={(event) => setMantraCell(rowIndex, 'situation', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[84px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Ej.: Cuando hay tensión en reunión con cliente y equipo"
+                                                            />
+                                                        </label>
+
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Conducta visible que lo demuestra</span>
+                                                            <textarea
+                                                                value={row.behavior}
+                                                                onChange={(event) => setMantraCell(rowIndex, 'behavior', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[84px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Describe una conducta observable"
+                                                            />
+                                                        </label>
+
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Recordatorio (señal)</span>
+                                                            <textarea
+                                                                value={row.signal}
+                                                                onChange={(event) => setMantraCell(rowIndex, 'signal', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[84px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Define tu recordatorio"
+                                                            />
+                                                            <p className="text-[11px] text-slate-500">{MANTRA_SIGNAL_HINT}</p>
+                                                        </label>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Mantra:</span>{' '}
+                                                            {row.mantra ? `“${row.mantra}”` : '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Situación donde lo necesito:</span>{' '}
+                                                            {row.situation || '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Conducta visible que lo demuestra:</span>{' '}
+                                                            {row.behavior || '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Recordatorio (señal):</span>{' '}
+                                                            {row.signal || '______________________________'}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {rowSuggestions.length > 0 && (
+                                                    <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                        <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                            Sugerencias (puedes ignorarlas)
+                                                        </p>
+                                                        <ul className="space-y-1">
+                                                            {rowSuggestions.map((suggestion) => (
+                                                                <li key={`${rowIndex}-${suggestion}`} className="text-xs text-amber-800 flex items-start gap-2">
+                                                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-700 shrink-0" />
+                                                                    <span>{suggestion}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
                                                     </div>
                                                 )}
                                             </article>
