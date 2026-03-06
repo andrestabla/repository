@@ -107,6 +107,20 @@ type FoaQuadrantConfig = {
     containerClassName: string
 }
 
+type EnergySign = '' | '+' | '-'
+
+type EnergyAdjust = '' | 'Más' | 'Menos' | 'Rediseñar'
+
+type EnergyMapFieldKey = 'activity' | 'sign' | 'energy' | 'reason' | 'adjust'
+
+type EnergyMapRow = {
+    activity: string
+    sign: EnergySign
+    energy: string
+    reason: string
+    adjust: EnergyAdjust
+}
+
 type PageItem = {
     id: number
     label: string
@@ -123,6 +137,7 @@ const FUNDAMENTAL_VALUES_STORAGE_KEY = 'workbooks-v2-wb1-fundamental-values'
 const VALUE_DECISIONS_STORAGE_KEY = 'workbooks-v2-wb1-value-decisions'
 const NO_NEGOTIABLE_PHRASES_STORAGE_KEY = 'workbooks-v2-wb1-no-negotiable-phrases'
 const FOA_STORAGE_KEY = 'workbooks-v2-wb1-foa'
+const ENERGY_MAP_STORAGE_KEY = 'workbooks-v2-wb1-energy-map'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -132,6 +147,8 @@ const STAKEHOLDER_ROWS = 3
 const VALUE_DECISION_ROWS = 5
 const NO_NEGOTIABLE_ROWS = 3
 const FOA_BULLET_LIMIT = 5
+const ENERGY_MAP_ROWS = 20
+const ENERGY_PATTERN_BULLETS = 3
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -266,6 +283,17 @@ const FOA_INSTRUCTIONS = [
     'Áreas de oportunidad = externas o potenciales (dónde crecer o capturar valor).',
     'Amenazas = externas (riesgos que pueden frenarte).'
 ]
+
+const ENERGY_MAP_INSTRUCTIONS = [
+    'Lista tus actividades típicas de una semana (mínimo 12, máximo 20).',
+    'Marca cada actividad con: + si te carga (te da energía); - si te drena (te consume).',
+    'Asigna Energía 0-10 para mayor precisión.',
+    'Escribe el por qué (causa concreta).',
+    'Define el ajuste: Más / Menos / Rediseñar.',
+    'Rediseñar = cambiar cómo la haces (duración, horario, con quién, formato), no eliminarla.'
+]
+
+const ENERGY_ADJUST_OPTIONS: EnergyAdjust[] = ['', 'Más', 'Menos', 'Rediseñar']
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
     {
@@ -469,6 +497,20 @@ function defaultFoaFields() {
     } satisfies Record<FoaQuadrantKey, string[]>
 }
 
+function emptyEnergyPatternList() {
+    return Array.from({ length: ENERGY_PATTERN_BULLETS }, () => '')
+}
+
+function defaultEnergyMapRows() {
+    return Array.from({ length: ENERGY_MAP_ROWS }, () => ({
+        activity: '',
+        sign: '' as EnergySign,
+        energy: '',
+        reason: '',
+        adjust: '' as EnergyAdjust
+    }))
+}
+
 function normalizePatternList(value: unknown) {
     if (Array.isArray(value)) {
         const list = value
@@ -643,6 +685,69 @@ function normalizeFoaList(value: unknown) {
     return emptyFoaList()
 }
 
+function normalizeEnergyPatternList(value: unknown) {
+    if (Array.isArray(value)) {
+        const list = value
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .slice(0, ENERGY_PATTERN_BULLETS)
+        return [...list, ...Array.from({ length: ENERGY_PATTERN_BULLETS - list.length }, () => '')]
+    }
+
+    if (typeof value === 'string') {
+        const list = value
+            .split('\n')
+            .map((line) => line.replace(/^[\s•-]+/, '').trim())
+            .filter(Boolean)
+            .slice(0, ENERGY_PATTERN_BULLETS)
+        return [...list, ...Array.from({ length: ENERGY_PATTERN_BULLETS - list.length }, () => '')]
+    }
+
+    return emptyEnergyPatternList()
+}
+
+function normalizeEnergyMapRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { activity: '', sign: '' as EnergySign, energy: '', reason: '', adjust: '' as EnergyAdjust }
+                }
+                const candidate = row as Partial<Record<EnergyMapFieldKey, unknown>>
+                const sign: EnergySign = candidate.sign === '+' || candidate.sign === '-' ? candidate.sign : ''
+                const energy =
+                    typeof candidate.energy === 'string' && /^([0-9]|10)$/.test(candidate.energy)
+                        ? candidate.energy
+                        : ''
+                const adjust: EnergyAdjust =
+                    candidate.adjust === 'Más' || candidate.adjust === 'Menos' || candidate.adjust === 'Rediseñar'
+                        ? candidate.adjust
+                        : ''
+                const normalizedRow: EnergyMapRow = {
+                    activity: typeof candidate.activity === 'string' ? candidate.activity : '',
+                    sign,
+                    energy,
+                    reason: typeof candidate.reason === 'string' ? candidate.reason : '',
+                    adjust
+                }
+                return normalizedRow
+            })
+            .slice(0, ENERGY_MAP_ROWS)
+
+        return [
+            ...rows,
+            ...Array.from({ length: ENERGY_MAP_ROWS - rows.length }, () => ({
+                activity: '',
+                sign: '' as EnergySign,
+                energy: '',
+                reason: '',
+                adjust: '' as EnergyAdjust
+            }))
+        ]
+    }
+
+    return defaultEnergyMapRows()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -668,6 +773,7 @@ export function WB1Step1Digital() {
     const [showValueDecisionHelp, setShowValueDecisionHelp] = useState(false)
     const [showNoNegotiableHelp, setShowNoNegotiableHelp] = useState(false)
     const [showFoaHelp, setShowFoaHelp] = useState(false)
+    const [showEnergyHelp, setShowEnergyHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -721,6 +827,11 @@ export function WB1Step1Digital() {
         opportunities: false,
         threats: false
     })
+    const [energyMapRows, setEnergyMapRows] = useState<EnergyMapRow[]>(defaultEnergyMapRows())
+    const [energyPatternBullets, setEnergyPatternBullets] = useState<string[]>(emptyEnergyPatternList())
+    const [energyDoMore, setEnergyDoMore] = useState('')
+    const [energyDoLess, setEnergyDoLess] = useState('')
+    const [energyRedesign, setEnergyRedesign] = useState('')
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -982,12 +1093,49 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(FOA_STORAGE_KEY, JSON.stringify(foaFields))
     }, [foaFields])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(ENERGY_MAP_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as {
+                rows?: unknown
+                patternBullets?: unknown
+                doMore?: unknown
+                doLess?: unknown
+                redesign?: unknown
+            }
+            setEnergyMapRows(normalizeEnergyMapRows(parsed.rows))
+            setEnergyPatternBullets(normalizeEnergyPatternList(parsed.patternBullets))
+            setEnergyDoMore(typeof parsed.doMore === 'string' ? parsed.doMore : '')
+            setEnergyDoLess(typeof parsed.doLess === 'string' ? parsed.doLess : '')
+            setEnergyRedesign(typeof parsed.redesign === 'string' ? parsed.redesign : '')
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(
+            ENERGY_MAP_STORAGE_KEY,
+            JSON.stringify({
+                rows: energyMapRows,
+                patternBullets: energyPatternBullets,
+                doMore: energyDoMore,
+                doLess: energyDoLess,
+                redesign: energyRedesign
+            })
+        )
+    }, [energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 11
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 13
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -1016,6 +1164,15 @@ export function WB1Step1Digital() {
             ? 1
             : 0
         const filledFoa = Object.values(foaFields).filter((list) => list.some((item) => item.trim().length > 0)).length
+        const filledEnergyRows =
+            energyMapRows.filter((row) => row.activity.trim().length > 0).length >= 12 ? 1 : 0
+        const filledEnergyClosure =
+            energyPatternBullets.some((item) => item.trim().length > 0) &&
+            energyDoMore.trim().length > 0 &&
+            energyDoLess.trim().length > 0 &&
+            energyRedesign.trim().length > 0
+                ? 1
+                : 0
         const filled =
             filledId +
             filledNarrative +
@@ -1029,9 +1186,11 @@ export function WB1Step1Digital() {
             filledValueDecisionMatrix +
             filledNoNegotiablePhrases +
             filledFoa +
+            filledEnergyRows +
+            filledEnergyClosure +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -1209,6 +1368,45 @@ export function WB1Step1Digital() {
         })
     }
 
+    const setEnergyMapCell = (rowIndex: number, field: EnergyMapFieldKey, value: string) => {
+        if (isLocked) return
+        setEnergyMapRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+
+            if (field === 'sign') {
+                nextRows[rowIndex] = { ...target, sign: value === '+' || value === '-' ? value : '' }
+                return nextRows
+            }
+
+            if (field === 'energy') {
+                nextRows[rowIndex] = { ...target, energy: /^([0-9]|10)$/.test(value) ? value : '' }
+                return nextRows
+            }
+
+            if (field === 'adjust') {
+                nextRows[rowIndex] = {
+                    ...target,
+                    adjust: value === 'Más' || value === 'Menos' || value === 'Rediseñar' ? value : ''
+                }
+                return nextRows
+            }
+
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
+    const setEnergyPatternBullet = (index: number, value: string) => {
+        if (isLocked) return
+        setEnergyPatternBullets((prev) => {
+            const next = [...prev]
+            next[index] = value
+            return next
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -1323,6 +1521,7 @@ export function WB1Step1Digital() {
     const visiblePatternBullets = (key: PatternListKey) => storyFields[key].map((item) => item.trim()).filter(Boolean)
     const visibleIdentityBullets = (key: IdentitySegmentKey) => identityWheelFields[key].map((item) => item.trim()).filter(Boolean)
     const visibleFoaBullets = (key: FoaQuadrantKey) => foaFields[key].map((item) => item.trim()).filter(Boolean)
+    const energyRowsWithActivity = energyMapRows.filter((row) => row.activity.trim().length > 0).length
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
@@ -2922,6 +3121,239 @@ export function WB1Step1Digital() {
                                             </article>
                                         )
                                     })}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 2 - Mapa de energía
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Identifica qué actividades te cargan y cuáles te drenan, para ajustar tu semana y sostener tu desempeño como líder.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEnergyHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showEnergyHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {ENERGY_MAP_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showEnergyHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-3">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo para completar este ejercicio</p>
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-[980px] w-full border border-slate-300 rounded-lg overflow-hidden">
+                                                    <thead>
+                                                        <tr className="bg-slate-100">
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Actividad semanal</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">+ / -</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Energía</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">¿Por qué?</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Ajuste</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr className="bg-white">
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Diseñar estrategia / plan</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">+</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">8</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">siento claridad y control</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Más</td>
+                                                        </tr>
+                                                        <tr className="bg-white">
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Reuniones largas sin agenda</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">-</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">3</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">desgaste + poca decisión</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Menos</td>
+                                                        </tr>
+                                                        <tr className="bg-white">
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Conversación 1:1 con equipo</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">+</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">7</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">genera conexión y avance</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Más</td>
+                                                        </tr>
+                                                        <tr className="bg-white">
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Resolver urgencias para ayer</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">-</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">2</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">reactivo, sin foco</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Rediseñar</td>
+                                                        </tr>
+                                                        <tr className="bg-white">
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Escribir / documentar</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">+</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">7</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">ordena ideas y mejora calidad</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Más</td>
+                                                        </tr>
+                                                        <tr className="bg-white">
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Revisar detalles micro</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">-</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">4</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">me vuelve cuello de botella</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Menos</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </article>
+                                    )}
+
+                                    <p className="text-xs text-slate-500">
+                                        Actividades registradas: {energyRowsWithActivity} / {ENERGY_MAP_ROWS} (mínimo recomendado: 12)
+                                    </p>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[1180px] w-full border border-slate-300 rounded-lg overflow-hidden bg-white">
+                                            <thead>
+                                                <tr className="bg-slate-100">
+                                                    <th className="w-[280px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Actividad semanal</th>
+                                                    <th className="w-[90px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">+ / -</th>
+                                                    <th className="w-[120px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Energía (0-10)</th>
+                                                    <th className="w-[340px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">¿Por qué? (1 línea)</th>
+                                                    <th className="w-[180px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">Ajuste (Más / Menos / Rediseñar)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {energyMapRows.map((row, rowIndex) => (
+                                                    <tr key={`energy-row-${rowIndex}`} className="odd:bg-white even:bg-slate-50">
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <input
+                                                                type="text"
+                                                                value={row.activity}
+                                                                onChange={(event) => setEnergyMapCell(rowIndex, 'activity', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder={`Actividad ${rowIndex + 1}`}
+                                                            />
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <select
+                                                                value={row.sign}
+                                                                onChange={(event) => setEnergyMapCell(rowIndex, 'sign', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                            >
+                                                                <option value="">Seleccionar</option>
+                                                                <option value="+">+</option>
+                                                                <option value="-">-</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <select
+                                                                value={row.energy}
+                                                                onChange={(event) => setEnergyMapCell(rowIndex, 'energy', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                            >
+                                                                <option value="">Seleccionar</option>
+                                                                {Array.from({ length: 11 }, (_, option) => (
+                                                                    <option key={`energy-${option}`} value={String(option)}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <input
+                                                                type="text"
+                                                                value={row.reason}
+                                                                onChange={(event) => setEnergyMapCell(rowIndex, 'reason', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Causa concreta"
+                                                            />
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <select
+                                                                value={row.adjust}
+                                                                onChange={(event) => setEnergyMapCell(rowIndex, 'adjust', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                            >
+                                                                <option value="">Seleccionar</option>
+                                                                {ENERGY_ADJUST_OPTIONS.filter(Boolean).map((option) => (
+                                                                    <option key={option} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <article className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
+                                        <h4 className="text-sm md:text-base font-bold text-slate-900">Cierre del instrumento</h4>
+
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-semibold text-slate-900">Patrón que aparece (3 bullets)</p>
+                                            {energyPatternBullets.map((bullet, index) => (
+                                                <input
+                                                    key={`energy-pattern-${index}`}
+                                                    type="text"
+                                                    value={bullet}
+                                                    onChange={(event) => setEnergyPatternBullet(index, event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                    placeholder={`Bullet ${index + 1}`}
+                                                />
+                                            ))}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Qué harás más</span>
+                                                <input
+                                                    type="text"
+                                                    value={energyDoMore}
+                                                    onChange={(event) => !isLocked && setEnergyDoMore(event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                    placeholder="1 acción"
+                                                />
+                                            </label>
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Qué harás menos</span>
+                                                <input
+                                                    type="text"
+                                                    value={energyDoLess}
+                                                    onChange={(event) => !isLocked && setEnergyDoLess(event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                    placeholder="1 acción"
+                                                />
+                                            </label>
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Qué rediseñarás</span>
+                                                <input
+                                                    type="text"
+                                                    value={energyRedesign}
+                                                    onChange={(event) => !isLocked && setEnergyRedesign(event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                    placeholder="1 acción"
+                                                />
+                                            </label>
+                                        </div>
+                                    </article>
                                 </section>
                             </article>
                         )}
