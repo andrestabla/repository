@@ -77,6 +77,12 @@ type StakeholderRow = {
     blindspot: string
 }
 
+type FundamentalValuesFields = {
+    selected10: string[]
+    selected5: string[]
+    selected3: string[]
+}
+
 type PageItem = {
     id: number
     label: string
@@ -89,6 +95,7 @@ const STORY_EVENTS_STORAGE_KEY = 'workbooks-v2-wb1-story-events'
 const IDENTITY_WHEEL_STORAGE_KEY = 'workbooks-v2-wb1-identity-wheel'
 const IDENTITY_MATRIX_STORAGE_KEY = 'workbooks-v2-wb1-identity-matrix'
 const STAKEHOLDER_MIRROR_STORAGE_KEY = 'workbooks-v2-wb1-stakeholder-mirror'
+const FUNDAMENTAL_VALUES_STORAGE_KEY = 'workbooks-v2-wb1-fundamental-values'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -101,7 +108,8 @@ const PAGES: PageItem[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Storytelling personal', shortLabel: 'Storytelling' },
-    { id: 4, label: '4. Definición de identidad actual', shortLabel: 'Identidad' }
+    { id: 4, label: '4. Definición de identidad actual', shortLabel: 'Identidad' },
+    { id: 5, label: '5. Valores fundamentales', shortLabel: 'Valores' }
 ]
 
 const OBJECTIVE_OUTCOMES = [
@@ -208,6 +216,39 @@ const STAKEHOLDER_MIRROR_INSTRUCTIONS = [
     'Para cada persona, escribe tu hipótesis en 2 frases: "Mi fortaleza, según esta persona, sería..." y "Mi punto ciego, según esta persona, sería...".',
     'Sé concreto: describe conductas, no adjetivos.'
 ]
+
+const FUNDAMENTAL_VALUES = [
+    'Integridad',
+    'Honestidad',
+    'Responsabilidad',
+    'Coherencia',
+    'Justicia',
+    'Respeto',
+    'Humildad',
+    'Valentía',
+    'Disciplina',
+    'Excelencia',
+    'Servicio',
+    'Impacto',
+    'Contribución',
+    'Compasión',
+    'Empatía',
+    'Lealtad',
+    'Confianza',
+    'Transparencia',
+    'Autonomía',
+    'Libertad',
+    'Seguridad',
+    'Estabilidad',
+    'Aprendizaje',
+    'Crecimiento',
+    'Innovación',
+    'Creatividad',
+    'Colaboración',
+    'Familia',
+    'Bienestar',
+    'Espiritualidad / Sentido'
+] as const
 
 const STEP2_ACT_GUIDES: StoryActGuide[] = [
     {
@@ -324,6 +365,14 @@ function defaultStakeholderRows() {
     }))
 }
 
+function defaultFundamentalValuesFields(): FundamentalValuesFields {
+    return {
+        selected10: [],
+        selected5: [],
+        selected3: []
+    }
+}
+
 function normalizePatternList(value: unknown) {
     if (Array.isArray(value)) {
         const list = value
@@ -408,6 +457,25 @@ function normalizeStakeholderRows(value: unknown) {
     return defaultStakeholderRows()
 }
 
+function normalizeFundamentalValuesList(value: unknown, max: number) {
+    if (!Array.isArray(value)) return []
+
+    const allowed = new Set<string>(FUNDAMENTAL_VALUES)
+    const seen = new Set<string>()
+    const next: string[] = []
+
+    for (const item of value) {
+        if (typeof item !== 'string') continue
+        const trimmed = item.trim()
+        if (!allowed.has(trimmed) || seen.has(trimmed)) continue
+        seen.add(trimmed)
+        next.push(trimmed)
+        if (next.length >= max) break
+    }
+
+    return next
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -471,6 +539,7 @@ export function WB1Step1Digital() {
     const [identityWheelFields, setIdentityWheelFields] = useState<Record<IdentitySegmentKey, string[]>>(defaultIdentityWheelFields())
     const [identityMatrixRows, setIdentityMatrixRows] = useState<IdentityMatrixRow[]>(defaultIdentityMatrixRows())
     const [stakeholderRows, setStakeholderRows] = useState<StakeholderRow[]>(defaultStakeholderRows())
+    const [fundamentalValues, setFundamentalValues] = useState<FundamentalValuesFields>(defaultFundamentalValuesFields())
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -608,12 +677,37 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(STAKEHOLDER_MIRROR_STORAGE_KEY, JSON.stringify(stakeholderRows))
     }, [stakeholderRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(FUNDAMENTAL_VALUES_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as Partial<FundamentalValuesFields> & Record<string, unknown>
+            const selected10 = normalizeFundamentalValuesList(parsed.selected10, 10)
+            const selected5 = normalizeFundamentalValuesList(parsed.selected5, 5).filter((value) => selected10.includes(value))
+            const selected3 = normalizeFundamentalValuesList(parsed.selected3, 3).filter((value) => selected5.includes(value))
+            setFundamentalValues({
+                selected10,
+                selected5,
+                selected3
+            })
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(FUNDAMENTAL_VALUES_STORAGE_KEY, JSON.stringify(fundamentalValues))
+    }, [fundamentalValues])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 3
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 6
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -628,9 +722,22 @@ export function WB1Step1Digital() {
         )
             ? 1
             : 0
-        const filled = filledId + filledNarrative + filledPatterns + filledIdentity + filledMatrix + filledStakeholders + (storyEvents.length > 0 ? 1 : 0)
+        const filledValues10 = fundamentalValues.selected10.length === 10 ? 1 : 0
+        const filledValues5 = fundamentalValues.selected5.length === 5 ? 1 : 0
+        const filledValues3 = fundamentalValues.selected3.length === 3 ? 1 : 0
+        const filled =
+            filledId +
+            filledNarrative +
+            filledPatterns +
+            filledIdentity +
+            filledMatrix +
+            filledStakeholders +
+            filledValues10 +
+            filledValues5 +
+            filledValues3 +
+            (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -741,6 +848,54 @@ export function WB1Step1Digital() {
         })
     }
 
+    const toggleFundamentalValue10 = (value: string) => {
+        if (isLocked) return
+        setFundamentalValues((prev) => {
+            const isSelected = prev.selected10.includes(value)
+            if (isSelected) {
+                const selected10 = prev.selected10.filter((item) => item !== value)
+                const selected5 = prev.selected5.filter((item) => selected10.includes(item))
+                const selected3 = prev.selected3.filter((item) => selected5.includes(item))
+                return { selected10, selected5, selected3 }
+            }
+
+            if (prev.selected10.length >= 10) return prev
+            return { ...prev, selected10: [...prev.selected10, value] }
+        })
+    }
+
+    const toggleFundamentalValue5 = (value: string) => {
+        if (isLocked) return
+        setFundamentalValues((prev) => {
+            if (!prev.selected10.includes(value)) return prev
+            const isSelected = prev.selected5.includes(value)
+
+            if (isSelected) {
+                const selected5 = prev.selected5.filter((item) => item !== value)
+                const selected3 = prev.selected3.filter((item) => selected5.includes(item))
+                return { ...prev, selected5, selected3 }
+            }
+
+            if (prev.selected5.length >= 5) return prev
+            return { ...prev, selected5: [...prev.selected5, value] }
+        })
+    }
+
+    const toggleFundamentalValue3 = (value: string) => {
+        if (isLocked) return
+        setFundamentalValues((prev) => {
+            if (!prev.selected5.includes(value)) return prev
+            const isSelected = prev.selected3.includes(value)
+
+            if (isSelected) {
+                return { ...prev, selected3: prev.selected3.filter((item) => item !== value) }
+            }
+
+            if (prev.selected3.length >= 3) return prev
+            return { ...prev, selected3: [...prev.selected3, value] }
+        })
+    }
+
     const zoomIdentityWheelIn = () => {
         setIdentityWheelSizeIndex((prev) => Math.min(prev + 1, IDENTITY_WHEEL_SIZES.length - 1))
     }
@@ -806,6 +961,8 @@ export function WB1Step1Digital() {
 
     const visiblePatternBullets = (key: PatternListKey) => storyFields[key].map((item) => item.trim()).filter(Boolean)
     const visibleIdentityBullets = (key: IdentitySegmentKey) => identityWheelFields[key].map((item) => item.trim()).filter(Boolean)
+    const canSelectTop5 = fundamentalValues.selected10.length === 10
+    const canSelectTop3 = fundamentalValues.selected5.length === 5
 
     return (
         <div className="min-h-screen bg-[#f4f7fb] text-[#0f172a]">
@@ -1834,6 +1991,158 @@ export function WB1Step1Digital() {
                                             </tbody>
                                         </table>
                                     </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {activePage === 5 && (
+                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 5</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+                                        Valores fundamentales
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-3xl">
+                                        Convertir valores en criterios de decisión.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                        Instrumento 1 - Selección y priorización (card sorting)
+                                    </h3>
+                                    <p className="text-sm text-slate-700">Instrucciones:</p>
+                                    <ol className="space-y-1.5 list-decimal pl-5">
+                                        <li className="text-sm text-slate-700">
+                                            Revisa la lista de valores y marca 10 que realmente guían tu vida (no los deseables).
+                                        </li>
+                                        <li className="text-sm text-slate-700">Reduce a 5 (los más determinantes).</li>
+                                        <li className="text-sm text-slate-700">
+                                            Reduce a 3 no negociables (los que defenderías bajo presión).
+                                        </li>
+                                    </ol>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                            1) 10 valores que guían mi vida
+                                        </h3>
+                                        <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                            Seleccionados: {fundamentalValues.selected10.length} / 10
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-slate-600">Haz clic para seleccionar o deseleccionar valores.</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {FUNDAMENTAL_VALUES.map((value) => {
+                                            const selected = fundamentalValues.selected10.includes(value)
+                                            const disabled = isLocked || (!selected && fundamentalValues.selected10.length >= 10)
+
+                                            return (
+                                                <button
+                                                    key={`value-10-${value}`}
+                                                    type="button"
+                                                    onClick={() => toggleFundamentalValue10(value)}
+                                                    disabled={disabled}
+                                                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                                        selected
+                                                            ? 'bg-emerald-500 text-white border-emerald-600'
+                                                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                                                    } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    {value}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                            2) Los más determinantes (elige 5 de tus 10)
+                                        </h3>
+                                        <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                            Seleccionados: {fundamentalValues.selected5.length} / 5
+                                        </span>
+                                    </div>
+
+                                    {!canSelectTop5 && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                            Completa primero los 10 valores de la sección anterior para habilitar esta selección.
+                                        </p>
+                                    )}
+
+                                    {fundamentalValues.selected10.length === 0 ? (
+                                        <p className="text-sm text-slate-500">Aún no hay valores seleccionados en el paso 1.</p>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            {fundamentalValues.selected10.map((value) => {
+                                                const selected = fundamentalValues.selected5.includes(value)
+                                                const disabled = isLocked || !canSelectTop5 || (!selected && fundamentalValues.selected5.length >= 5)
+
+                                                return (
+                                                    <button
+                                                        key={`value-5-${value}`}
+                                                        type="button"
+                                                        onClick={() => toggleFundamentalValue5(value)}
+                                                        disabled={disabled}
+                                                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                                            selected
+                                                                ? 'bg-emerald-500 text-white border-emerald-600'
+                                                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                                                        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    >
+                                                        {value}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                            3) No negociables (elige 3 de tus 5)
+                                        </h3>
+                                        <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                            Seleccionados: {fundamentalValues.selected3.length} / 3
+                                        </span>
+                                    </div>
+
+                                    {!canSelectTop3 && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                            Completa primero los 5 valores determinantes para habilitar esta selección.
+                                        </p>
+                                    )}
+
+                                    {fundamentalValues.selected5.length === 0 ? (
+                                        <p className="text-sm text-slate-500">Aún no hay valores seleccionados en el paso 2.</p>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            {fundamentalValues.selected5.map((value) => {
+                                                const selected = fundamentalValues.selected3.includes(value)
+                                                const disabled = isLocked || !canSelectTop3 || (!selected && fundamentalValues.selected3.length >= 3)
+
+                                                return (
+                                                    <button
+                                                        key={`value-3-${value}`}
+                                                        type="button"
+                                                        onClick={() => toggleFundamentalValue3(value)}
+                                                        disabled={disabled}
+                                                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                                            selected
+                                                                ? 'bg-emerald-500 text-white border-emerald-600'
+                                                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                                                        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    >
+                                                        {value}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
                                 </section>
                             </article>
                         )}
