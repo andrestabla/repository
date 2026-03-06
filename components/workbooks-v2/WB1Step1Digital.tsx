@@ -130,6 +130,15 @@ type BeliefAbcRow = {
     action: string
 }
 
+type BeliefEvidenceFieldKey = 'limitingBelief' | 'evidenceFor' | 'evidenceAgainst' | 'newMeaning'
+
+type BeliefEvidenceRow = {
+    limitingBelief: string
+    evidenceFor: string
+    evidenceAgainst: string
+    newMeaning: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -148,6 +157,7 @@ const NO_NEGOTIABLE_PHRASES_STORAGE_KEY = 'workbooks-v2-wb1-no-negotiable-phrase
 const FOA_STORAGE_KEY = 'workbooks-v2-wb1-foa'
 const ENERGY_MAP_STORAGE_KEY = 'workbooks-v2-wb1-energy-map'
 const BELIEF_ABC_STORAGE_KEY = 'workbooks-v2-wb1-belief-abc'
+const BELIEF_EVIDENCE_STORAGE_KEY = 'workbooks-v2-wb1-belief-evidence'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -160,6 +170,7 @@ const FOA_BULLET_LIMIT = 5
 const ENERGY_MAP_ROWS = 20
 const ENERGY_PATTERN_BULLETS = 3
 const BELIEF_ABC_ROWS = 3
+const BELIEF_EVIDENCE_ROWS = 5
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -313,6 +324,14 @@ const BELIEF_ABC_INSTRUCTIONS = [
     'B (Belief / Creencia): qué te dijiste en ese momento (frase interna).',
     'C (Consecuencia): qué sentiste (emoción + intensidad 0-10) y qué hiciste (conducta observable).',
     'Regla: en A no escribas opiniones. En C describe conducta: tono, palabras, decisión, silencio, control, etc.'
+]
+
+const BELIEF_EVIDENCE_INSTRUCTIONS = [
+    'Escribe una creencia limitante (en primera persona, como pensamiento automático).',
+    'Registra evidencia a favor (hechos reales que parecen confirmarla).',
+    'Registra evidencia en contra (hechos reales que la contradicen).',
+    'Escribe un nuevo significado posible (reencuadre creíble, no positivo vacío).',
+    'Regla: evidencia = hechos observables (situación, fecha aproximada, resultado). No opiniones.'
 ]
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
@@ -537,6 +556,15 @@ function defaultBeliefAbcRows() {
         belief: '',
         emotion: '',
         action: ''
+    }))
+}
+
+function defaultBeliefEvidenceRows() {
+    return Array.from({ length: BELIEF_EVIDENCE_ROWS }, () => ({
+        limitingBelief: '',
+        evidenceFor: '',
+        evidenceAgainst: '',
+        newMeaning: ''
     }))
 }
 
@@ -801,6 +829,38 @@ function normalizeBeliefAbcRows(value: unknown) {
     return defaultBeliefAbcRows()
 }
 
+function normalizeBeliefEvidenceRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { limitingBelief: '', evidenceFor: '', evidenceAgainst: '', newMeaning: '' }
+                }
+
+                const candidate = row as Partial<Record<BeliefEvidenceFieldKey, unknown>>
+                return {
+                    limitingBelief: typeof candidate.limitingBelief === 'string' ? candidate.limitingBelief : '',
+                    evidenceFor: typeof candidate.evidenceFor === 'string' ? candidate.evidenceFor : '',
+                    evidenceAgainst: typeof candidate.evidenceAgainst === 'string' ? candidate.evidenceAgainst : '',
+                    newMeaning: typeof candidate.newMeaning === 'string' ? candidate.newMeaning : ''
+                }
+            })
+            .slice(0, BELIEF_EVIDENCE_ROWS)
+
+        return [
+            ...rows,
+            ...Array.from({ length: BELIEF_EVIDENCE_ROWS - rows.length }, () => ({
+                limitingBelief: '',
+                evidenceFor: '',
+                evidenceAgainst: '',
+                newMeaning: ''
+            }))
+        ]
+    }
+
+    return defaultBeliefEvidenceRows()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -828,6 +888,7 @@ export function WB1Step1Digital() {
     const [showFoaHelp, setShowFoaHelp] = useState(false)
     const [showEnergyHelp, setShowEnergyHelp] = useState(false)
     const [showBeliefAbcHelp, setShowBeliefAbcHelp] = useState(false)
+    const [showBeliefEvidenceHelp, setShowBeliefEvidenceHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -888,6 +949,7 @@ export function WB1Step1Digital() {
     const [energyRedesign, setEnergyRedesign] = useState('')
     const [beliefAbcRows, setBeliefAbcRows] = useState<BeliefAbcRow[]>(defaultBeliefAbcRows())
     const [beliefAbcEditModes, setBeliefAbcEditModes] = useState<boolean[]>(Array.from({ length: BELIEF_ABC_ROWS }, () => false))
+    const [beliefEvidenceRows, setBeliefEvidenceRows] = useState<BeliefEvidenceRow[]>(defaultBeliefEvidenceRows())
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -1204,12 +1266,30 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(BELIEF_ABC_STORAGE_KEY, JSON.stringify(beliefAbcRows))
     }, [beliefAbcRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(BELIEF_EVIDENCE_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setBeliefEvidenceRows(normalizeBeliefEvidenceRows(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(BELIEF_EVIDENCE_STORAGE_KEY, JSON.stringify(beliefEvidenceRows))
+    }, [beliefEvidenceRows])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 14
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 15
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -1256,6 +1336,16 @@ export function WB1Step1Digital() {
         )
             ? 1
             : 0
+        const filledBeliefEvidence =
+            beliefEvidenceRows.filter(
+                (row) =>
+                    row.limitingBelief.trim().length > 0 &&
+                    row.evidenceFor.trim().length > 0 &&
+                    row.evidenceAgainst.trim().length > 0 &&
+                    row.newMeaning.trim().length > 0
+            ).length > 0
+                ? 1
+                : 0
         const filled =
             filledId +
             filledNarrative +
@@ -1272,9 +1362,10 @@ export function WB1Step1Digital() {
             filledEnergyRows +
             filledEnergyClosure +
             filledBeliefAbc +
+            filledBeliefEvidence +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -1523,6 +1614,17 @@ export function WB1Step1Digital() {
         })
     }
 
+    const setBeliefEvidenceCell = (rowIndex: number, field: BeliefEvidenceFieldKey, value: string) => {
+        if (isLocked) return
+        setBeliefEvidenceRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -1644,6 +1746,13 @@ export function WB1Step1Digital() {
             row.belief.trim().length > 0 &&
             row.emotion.trim().length > 0 &&
             row.action.trim().length > 0
+    ).length
+    const completedBeliefEvidenceRows = beliefEvidenceRows.filter(
+        (row) =>
+            row.limitingBelief.trim().length > 0 &&
+            row.evidenceFor.trim().length > 0 &&
+            row.evidenceAgainst.trim().length > 0 &&
+            row.newMeaning.trim().length > 0
     ).length
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
@@ -3642,6 +3751,144 @@ export function WB1Step1Digital() {
                                             </article>
                                         )
                                     })}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 2 - Matriz de evidencia (clave para desarmar creencias)
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Contrasta tu creencia con hechos observables a favor y en contra para construir un nuevo significado creíble.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBeliefEvidenceHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showBeliefEvidenceHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {BELIEF_EVIDENCE_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showBeliefEvidenceHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-3">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo para completar este ejercicio</p>
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-[980px] w-full border border-slate-300 rounded-lg overflow-hidden">
+                                                    <thead>
+                                                        <tr className="bg-slate-100">
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                                Creencia limitante
+                                                            </th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                                Evidencia a favor
+                                                            </th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                                Evidencia en contra
+                                                            </th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                                Nuevo significado posible
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr className="bg-white">
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
+                                                                “Si pido ayuda pierdo autoridad”
+                                                            </td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
+                                                                Feb: evité preguntar en público y quedé callado; después hubo correcciones y me vi inseguro.
+                                                            </td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
+                                                                Mar: pedí apoyo específico antes de presentar y la entrega salió mejor; el equipo valoró la claridad.
+                                                            </td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
+                                                                “La autoridad crece cuando pido apoyo con claridad y responsabilidad; no es debilidad, es criterio.”
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </article>
+                                    )}
+
+                                    <p className="text-xs text-slate-500">
+                                        Filas completas: {completedBeliefEvidenceRows} / {BELIEF_EVIDENCE_ROWS}
+                                    </p>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[1200px] w-full border border-slate-300 rounded-lg overflow-hidden bg-white">
+                                            <thead>
+                                                <tr className="bg-slate-100">
+                                                    <th className="w-[250px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                        Creencia limitante
+                                                    </th>
+                                                    <th className="w-[300px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                        Evidencia a favor (hechos)
+                                                    </th>
+                                                    <th className="w-[300px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                        Evidencia en contra (hechos)
+                                                    </th>
+                                                    <th className="w-[320px] px-3 py-2 text-left text-xs font-bold text-slate-700 border-b border-slate-300">
+                                                        Nuevo significado posible (creíble)
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {beliefEvidenceRows.map((row, rowIndex) => (
+                                                    <tr key={`belief-evidence-${rowIndex}`} className="odd:bg-white even:bg-slate-50">
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <textarea
+                                                                value={row.limitingBelief}
+                                                                onChange={(event) => setBeliefEvidenceCell(rowIndex, 'limitingBelief', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full min-h-[90px] rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder={`Creencia ${rowIndex + 1}`}
+                                                            />
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <textarea
+                                                                value={row.evidenceFor}
+                                                                onChange={(event) => setBeliefEvidenceCell(rowIndex, 'evidenceFor', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full min-h-[90px] rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Hechos que parecen confirmar la creencia"
+                                                            />
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <textarea
+                                                                value={row.evidenceAgainst}
+                                                                onChange={(event) => setBeliefEvidenceCell(rowIndex, 'evidenceAgainst', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full min-h-[90px] rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Hechos que contradicen la creencia"
+                                                            />
+                                                        </td>
+                                                        <td className="p-2 align-top border-b border-slate-200">
+                                                            <textarea
+                                                                value={row.newMeaning}
+                                                                onChange={(event) => setBeliefEvidenceCell(rowIndex, 'newMeaning', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full min-h-[90px] rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Reencuadre creíble"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </section>
                             </article>
                         )}
