@@ -208,6 +208,30 @@ type FutureLetterChecklistKey = 'nonNegotiables' | 'habit' | 'decision' | 'impac
 
 type FutureLetterChecklist = Record<FutureLetterChecklistKey, boolean>
 
+type MentorCriterionLevel = '' | 'N1' | 'N2' | 'N3' | 'N4'
+
+type MentorCriterionDecision = '' | 'Consolidado' | 'En desarrollo' | 'Prioritario'
+
+type MentorCriterionFieldKey = 'level' | 'evidence' | 'decision'
+
+type MentorCriterionRow = {
+    criterion: string
+    level: MentorCriterionLevel
+    evidence: string
+    decision: MentorCriterionDecision
+}
+
+type LeaderEvaluationFieldKey = 'response' | 'evidence' | 'action'
+
+type LeaderEvaluationRow = {
+    question: string
+    response: string
+    evidence: string
+    action: string
+}
+
+type EvaluationStageKey = 'mentor' | 'leader' | 'synthesis' | 'final'
+
 type FutureSelfFields = {
     identity: string[]
     values: string[]
@@ -254,6 +278,9 @@ const MANTRA_CARDS_STORAGE_KEY = 'workbooks-v2-wb1-mantras'
 const FUTURE_SELF_STORAGE_KEY = 'workbooks-v2-wb1-future-self'
 const BACKCASTING_STORAGE_KEY = 'workbooks-v2-wb1-backcasting'
 const FUTURE_LETTER_STORAGE_KEY = 'workbooks-v2-wb1-future-letter'
+const EVALUATION_MENTOR_STORAGE_KEY = 'workbooks-v2-wb1-evaluation-mentor'
+const EVALUATION_LEADER_STORAGE_KEY = 'workbooks-v2-wb1-evaluation-leader'
+const EVALUATION_SYNTHESIS_STORAGE_KEY = 'workbooks-v2-wb1-evaluation-synthesis'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -280,6 +307,8 @@ const FUTURE_SELF_SKILLS_ROWS = 3
 const FUTURE_SELF_METRICS_ROWS = 3
 const FUTURE_SELF_RISK_ROWS = 3
 const BACKCASTING_ROWS = 4
+const MENTOR_CRITERIA_ROWS = 5
+const LEADER_EVALUATION_ROWS = 7
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -292,7 +321,8 @@ const PAGES: PageItem[] = [
     { id: 7, label: '7. Creencias limitantes (PNL)', shortLabel: 'Creencias PNL' },
     { id: 8, label: '8. Nuevas creencias empoderadoras', shortLabel: 'Empoderadoras' },
     { id: 9, label: '9. Mantras personales', shortLabel: 'Mantras' },
-    { id: 10, label: '10. Identidad futura 10X', shortLabel: 'Futuro 10X' }
+    { id: 10, label: '10. Identidad futura 10X', shortLabel: 'Futuro 10X' },
+    { id: 11, label: '11. Evaluación', shortLabel: 'Evaluación' }
 ]
 
 const OBJECTIVE_OUTCOMES = [
@@ -530,6 +560,95 @@ const FUTURE_LETTER_CHECK_LABELS: Record<FutureLetterChecklistKey, string> = {
     decision: 'Menciona una decisión concreta de cambio',
     impact: 'Menciona el impacto y a quién sirves'
 }
+
+const MENTOR_EVALUATION_INSTRUCTIONS = [
+    'Evalúa con evidencia observable (ideal: últimos 20 días).',
+    'Marca un solo nivel por criterio (N1-N4).',
+    'Registra comentario/evidencia observable y define decisión por criterio.',
+    'Cierra con observaciones generales y decisión global.',
+    'Si falta evidencia, puedes escribir “Completar”.'
+]
+
+const MENTOR_CRITERIA = [
+    'Coherencia entre discurso y decisiones',
+    'Identificación real de creencias limitantes',
+    'Nivel de responsabilidad asumida',
+    'Claridad en valores no negociables',
+    'Evidencia de cambio conductual inicial'
+] as const
+
+const MENTOR_LEVEL_OPTIONS: MentorCriterionLevel[] = ['N1', 'N2', 'N3', 'N4']
+
+const MENTOR_DECISION_OPTIONS: MentorCriterionDecision[] = ['Consolidado', 'En desarrollo', 'Prioritario']
+
+const MENTOR_LEVEL_INDICATORS = [
+    'N1 Declarativo: describe conceptos sin ejemplos verificables; justifica incoherencias.',
+    'N2 Consciente: reconoce contradicciones; cambio frágil bajo presión.',
+    'N3 Integrado: muestra decisiones reales alineadas con identidad/valores.',
+    'N4 Alineación estratégica: coherencia sostenida incluso bajo presión; modela para otros.'
+]
+
+const LEADER_EVALUATION_INSTRUCTIONS = [
+    'Responde desde hechos recientes, no desde intención.',
+    'Incluye al menos 1 evidencia por respuesta.',
+    'Define una acción/compromiso de 30 días por pregunta.',
+    'Usa este bloque para acordar tu plan con el mentor.'
+]
+
+const LEADER_EVALUATION_QUESTIONS = [
+    '¿Qué creencia limitante identifiqué que estaba afectando mi liderazgo?',
+    '¿Dónde sigo negociando mis valores bajo presión?',
+    '¿Qué decisión reciente demuestra mayor coherencia interna?',
+    '¿Qué resistencia interna aún no logro transformar?',
+    '¿Qué conversación evité por miedo a sostener mi identidad?',
+    '¿Qué patrón repetitivo revela incoherencia entre lo que digo y lo que hago?',
+    '¿Qué decisión estratégica futura pondrá a prueba mis valores?'
+] as const
+
+const LEADER_HELP_EXAMPLES: Array<{ response: string; evidence: string; action: string }> = [
+    {
+        response: '“Identifiqué la creencia: si pido apoyo pierdo autoridad.”',
+        evidence: '“En comité del 12 mar evité pedir contexto y luego rehice el entregable.”',
+        action: '“Durante 30 días pediré 1 apoyo específico por semana y registraré resultado.”'
+    },
+    {
+        response: '“Sigo negociando la transparencia cuando hay presión por resultados.”',
+        evidence: '“En la reunión X omití un riesgo para evitar fricción.”',
+        action: '“Cada semana registraré 1 riesgo clave y lo comunicaré en la reunión de seguimiento.”'
+    },
+    {
+        response: '“Una decisión reciente fue decir no a un plazo inviable y renegociar alcance.”',
+        evidence: '“Correo del 21 feb con nuevo acuerdo y aprobación del sponsor.”',
+        action: '“Aplicaré este criterio en cada planificación semanal del próximo mes.”'
+    },
+    {
+        response: '“Aún me cuesta tolerar el desacuerdo en público sin acelerar el cierre.”',
+        evidence: '“En sesión del equipo interrumpí dos veces para cerrar rápido.”',
+        action: '“Practicaré una pausa de 20 segundos antes de responder en reuniones críticas.”'
+    },
+    {
+        response: '“Evité una conversación de feedback con un par por temor a conflicto.”',
+        evidence: '“Tenía la reunión pendiente desde hace 3 semanas y la reprogramé dos veces.”',
+        action: '“Agendaré esa conversación esta semana con guion de hechos + pedido claro.”'
+    },
+    {
+        response: '“Repito el patrón de prometer velocidad y luego microgestionar ejecución.”',
+        evidence: '“En sprint pasado revisé tareas delegadas tres veces por día.”',
+        action: '“Definiré 2 puntos de control semanales en lugar de seguimiento diario.”'
+    },
+    {
+        response: '“La decisión futura será priorizar integridad de datos sobre urgencia comercial.”',
+        evidence: '“Caso reciente: rechacé ajustar cifras sin trazabilidad y propuse alternativa.”',
+        action: '“En 30 días aplicaré checklist ético antes de cerrar reportes sensibles.”'
+    }
+]
+
+const EVALUATION_STAGES: Array<{ key: EvaluationStageKey; label: string }> = [
+    { key: 'mentor', label: 'Pantalla 1 - Mentor' },
+    { key: 'leader', label: 'Pantalla 2 - Líder' },
+    { key: 'synthesis', label: 'Pantalla 3 - Síntesis' },
+    { key: 'final', label: 'Cierre' }
+]
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
     {
@@ -840,6 +959,24 @@ function defaultBackcastingRows() {
         achievement: '',
         habit: '',
         evidence: ''
+    }))
+}
+
+function defaultMentorCriteriaRows(): MentorCriterionRow[] {
+    return MENTOR_CRITERIA.map((criterion) => ({
+        criterion,
+        level: '',
+        evidence: '',
+        decision: ''
+    }))
+}
+
+function defaultLeaderEvaluationRows(): LeaderEvaluationRow[] {
+    return LEADER_EVALUATION_QUESTIONS.map((question) => ({
+        question,
+        response: '',
+        evidence: '',
+        action: ''
     }))
 }
 
@@ -1399,6 +1536,48 @@ function normalizeBackcastingRows(value: unknown) {
     return defaultBackcastingRows()
 }
 
+function normalizeMentorCriteriaRows(value: unknown) {
+    const defaults = defaultMentorCriteriaRows()
+    if (!Array.isArray(value)) return defaults
+
+    return defaults.map((fallback, index) => {
+        const row = value[index]
+        if (!row || typeof row !== 'object') return fallback
+        const candidate = row as Partial<Record<MentorCriterionFieldKey | 'criterion', unknown>>
+        return {
+            criterion: fallback.criterion,
+            level:
+                candidate.level === 'N1' || candidate.level === 'N2' || candidate.level === 'N3' || candidate.level === 'N4'
+                    ? candidate.level
+                    : '',
+            evidence: typeof candidate.evidence === 'string' ? candidate.evidence : '',
+            decision:
+                candidate.decision === 'Consolidado' ||
+                candidate.decision === 'En desarrollo' ||
+                candidate.decision === 'Prioritario'
+                    ? candidate.decision
+                    : ''
+        } satisfies MentorCriterionRow
+    })
+}
+
+function normalizeLeaderEvaluationRows(value: unknown) {
+    const defaults = defaultLeaderEvaluationRows()
+    if (!Array.isArray(value)) return defaults
+
+    return defaults.map((fallback, index) => {
+        const row = value[index]
+        if (!row || typeof row !== 'object') return fallback
+        const candidate = row as Partial<Record<LeaderEvaluationFieldKey | 'question', unknown>>
+        return {
+            question: fallback.question,
+            response: typeof candidate.response === 'string' ? candidate.response : '',
+            evidence: typeof candidate.evidence === 'string' ? candidate.evidence : '',
+            action: typeof candidate.action === 'string' ? candidate.action : ''
+        } satisfies LeaderEvaluationRow
+    })
+}
+
 function isMantraCardComplete(row: MantraCardRow) {
     return [row.mantra, row.situation, row.behavior, row.signal].every((value) => {
         const normalized = value.trim()
@@ -1544,6 +1723,43 @@ function detectFutureLetterChecklist(text: string): FutureLetterChecklist {
 
 function isFutureLetterComplete(checklist: FutureLetterChecklist, manuallyMarked: boolean) {
     return manuallyMarked || Object.values(checklist).every(Boolean)
+}
+
+function isMentorCriterionComplete(row: MentorCriterionRow) {
+    return row.level !== '' && row.decision !== '' && row.evidence.trim().length > 0
+}
+
+function getMentorCriterionSuggestions(row: MentorCriterionRow) {
+    const suggestions: string[] = []
+    const evidence = row.evidence.trim()
+
+    if (!evidence) {
+        suggestions.push('Registra 1 hecho observable (qué pasó + cuándo).')
+    }
+
+    if ((row.level === 'N3' || row.level === 'N4') && evidence.length > 0 && evidence.length < 60) {
+        suggestions.push('Para N3 o N4, agrega un ejemplo verificable con contexto y resultado.')
+    }
+
+    return suggestions
+}
+
+function isLeaderEvaluationRowComplete(row: LeaderEvaluationRow) {
+    return row.response.trim().length > 0 && row.evidence.trim().length > 0 && row.action.trim().length > 0
+}
+
+function getLeaderEvaluationSuggestions(row: LeaderEvaluationRow) {
+    const suggestions: string[] = []
+
+    if (!row.evidence.trim()) {
+        suggestions.push('Agrega 1 hecho observable en evidencia.')
+    }
+
+    if (!row.action.trim()) {
+        suggestions.push('Define 1 acción semanal o diaria para los próximos 30 días.')
+    }
+
+    return suggestions
 }
 
 function trimFutureSelfFields(fields: FutureSelfFields): FutureSelfFields {
@@ -1699,6 +1915,29 @@ export function WB1Step1Digital() {
     const [futureLetterText, setFutureLetterText] = useState('')
     const [futureLetterIsEditing, setFutureLetterIsEditing] = useState(false)
     const [futureLetterManualComplete, setFutureLetterManualComplete] = useState(false)
+    const [evaluationStage, setEvaluationStage] = useState<EvaluationStageKey>('mentor')
+    const [openMentorIndicatorRow, setOpenMentorIndicatorRow] = useState<number | null>(null)
+    const [openLeaderHelpRow, setOpenLeaderHelpRow] = useState<number | null>(null)
+    const [mentorCriteriaRows, setMentorCriteriaRows] = useState<MentorCriterionRow[]>(defaultMentorCriteriaRows())
+    const [mentorCriteriaEditModes, setMentorCriteriaEditModes] = useState<boolean[]>(Array.from({ length: MENTOR_CRITERIA_ROWS }, () => false))
+    const [mentorCriteriaSuggestions, setMentorCriteriaSuggestions] = useState<string[][]>(
+        Array.from({ length: MENTOR_CRITERIA_ROWS }, () => [])
+    )
+    const [mentorGeneralNotes, setMentorGeneralNotes] = useState('')
+    const [mentorGlobalDecision, setMentorGlobalDecision] = useState<MentorCriterionDecision>('')
+    const [mentorClosureIsEditing, setMentorClosureIsEditing] = useState(false)
+    const [leaderEvaluationRows, setLeaderEvaluationRows] = useState<LeaderEvaluationRow[]>(defaultLeaderEvaluationRows())
+    const [leaderEvaluationEditModes, setLeaderEvaluationEditModes] = useState<boolean[]>(
+        Array.from({ length: LEADER_EVALUATION_ROWS }, () => false)
+    )
+    const [leaderEvaluationSuggestions, setLeaderEvaluationSuggestions] = useState<string[][]>(
+        Array.from({ length: LEADER_EVALUATION_ROWS }, () => [])
+    )
+    const [synthesisText, setSynthesisText] = useState('')
+    const [synthesisFocus30Days, setSynthesisFocus30Days] = useState('')
+    const [synthesisWeeklyAction, setSynthesisWeeklyAction] = useState('')
+    const [synthesisIndicator, setSynthesisIndicator] = useState('')
+    const [synthesisIsEditing, setSynthesisIsEditing] = useState(false)
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -2182,12 +2421,101 @@ export function WB1Step1Digital() {
         )
     }, [futureLetterText, futureLetterManualComplete])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(EVALUATION_MENTOR_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as {
+                criteriaRows?: unknown
+                notes?: unknown
+                globalDecision?: unknown
+            }
+            setMentorCriteriaRows(normalizeMentorCriteriaRows(parsed.criteriaRows))
+            setMentorGeneralNotes(typeof parsed.notes === 'string' ? parsed.notes : '')
+            setMentorGlobalDecision(
+                parsed.globalDecision === 'Consolidado' ||
+                    parsed.globalDecision === 'En desarrollo' ||
+                    parsed.globalDecision === 'Prioritario'
+                    ? parsed.globalDecision
+                    : ''
+            )
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(
+            EVALUATION_MENTOR_STORAGE_KEY,
+            JSON.stringify({
+                criteriaRows: mentorCriteriaRows,
+                notes: mentorGeneralNotes,
+                globalDecision: mentorGlobalDecision
+            })
+        )
+    }, [mentorCriteriaRows, mentorGeneralNotes, mentorGlobalDecision])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(EVALUATION_LEADER_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setLeaderEvaluationRows(normalizeLeaderEvaluationRows(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(EVALUATION_LEADER_STORAGE_KEY, JSON.stringify(leaderEvaluationRows))
+    }, [leaderEvaluationRows])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(EVALUATION_SYNTHESIS_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as {
+                text?: unknown
+                focus30Days?: unknown
+                weeklyAction?: unknown
+                indicator?: unknown
+            }
+            setSynthesisText(typeof parsed.text === 'string' ? parsed.text : '')
+            setSynthesisFocus30Days(typeof parsed.focus30Days === 'string' ? parsed.focus30Days : '')
+            setSynthesisWeeklyAction(typeof parsed.weeklyAction === 'string' ? parsed.weeklyAction : '')
+            setSynthesisIndicator(typeof parsed.indicator === 'string' ? parsed.indicator : '')
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(
+            EVALUATION_SYNTHESIS_STORAGE_KEY,
+            JSON.stringify({
+                text: synthesisText,
+                focus30Days: synthesisFocus30Days,
+                weeklyAction: synthesisWeeklyAction,
+                indicator: synthesisIndicator
+            })
+        )
+    }, [synthesisText, synthesisFocus30Days, synthesisWeeklyAction, synthesisIndicator])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 22
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 25
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -2273,6 +2601,14 @@ export function WB1Step1Digital() {
         const filledBackcasting = backcastingRows.every((row) => isBackcastingRowComplete(row)) ? 1 : 0
         const futureLetterChecklist = detectFutureLetterChecklist(futureLetterText)
         const filledFutureLetter = isFutureLetterComplete(futureLetterChecklist, futureLetterManualComplete) ? 1 : 0
+        const filledEvaluationMentor =
+            mentorCriteriaRows.every((row) => isMentorCriterionComplete(row)) &&
+            mentorGeneralNotes.trim().length > 0 &&
+            mentorGlobalDecision !== ''
+                ? 1
+                : 0
+        const filledEvaluationLeader = leaderEvaluationRows.every((row) => isLeaderEvaluationRowComplete(row)) ? 1 : 0
+        const filledEvaluationSynthesis = synthesisText.trim().length > 0 ? 1 : 0
         const filled =
             filledId +
             filledNarrative +
@@ -2297,9 +2633,12 @@ export function WB1Step1Digital() {
             filledFutureSelf +
             filledBackcasting +
             filledFutureLetter +
+            filledEvaluationMentor +
+            filledEvaluationLeader +
+            filledEvaluationSynthesis +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, futureSelfFields, backcastingRows, futureLetterText, futureLetterManualComplete, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, futureSelfFields, backcastingRows, futureLetterText, futureLetterManualComplete, mentorCriteriaRows, mentorGeneralNotes, mentorGlobalDecision, leaderEvaluationRows, synthesisText, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -2338,6 +2677,32 @@ export function WB1Step1Digital() {
     const futureLetterCompleted = useMemo(
         () => isFutureLetterComplete(futureLetterChecklist, futureLetterManualComplete),
         [futureLetterChecklist, futureLetterManualComplete]
+    )
+    const mentorCompletedRows = useMemo(
+        () => mentorCriteriaRows.filter((row) => isMentorCriterionComplete(row)).length,
+        [mentorCriteriaRows]
+    )
+    const mentorSectionCompleted = useMemo(
+        () => mentorCompletedRows === MENTOR_CRITERIA_ROWS && mentorGlobalDecision !== '' && mentorGeneralNotes.trim().length > 0,
+        [mentorCompletedRows, mentorGlobalDecision, mentorGeneralNotes]
+    )
+    const leaderCompletedRows = useMemo(
+        () => leaderEvaluationRows.filter((row) => isLeaderEvaluationRowComplete(row)).length,
+        [leaderEvaluationRows]
+    )
+    const leaderSectionCompleted = useMemo(() => leaderCompletedRows === LEADER_EVALUATION_ROWS, [leaderCompletedRows])
+    const synthesisSectionCompleted = useMemo(() => synthesisText.trim().length > 0, [synthesisText])
+    const evaluationCompleted = useMemo(
+        () => mentorSectionCompleted && leaderSectionCompleted && synthesisSectionCompleted,
+        [mentorSectionCompleted, leaderSectionCompleted, synthesisSectionCompleted]
+    )
+    const extractedCommitments = useMemo(
+        () =>
+            leaderEvaluationRows
+                .map((row) => row.action.trim())
+                .filter((action) => action.length > 0)
+                .slice(0, 3),
+        [leaderEvaluationRows]
     )
 
     useEffect(() => {
@@ -2867,6 +3232,153 @@ export function WB1Step1Digital() {
         setFutureLetterManualComplete((prev) => !prev)
     }
 
+    const changeEvaluationStage = (stage: EvaluationStageKey) => {
+        setEvaluationStage(stage)
+    }
+
+    const goPrevEvaluationStage = () => {
+        const currentIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+        if (currentIndex <= 0) return
+        setEvaluationStage(EVALUATION_STAGES[currentIndex - 1].key)
+    }
+
+    const goNextEvaluationStage = () => {
+        const currentIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+        if (currentIndex < 0 || currentIndex >= EVALUATION_STAGES.length - 1) return
+        setEvaluationStage(EVALUATION_STAGES[currentIndex + 1].key)
+    }
+
+    const toggleMentorIndicators = (rowIndex: number) => {
+        setOpenMentorIndicatorRow((prev) => (prev === rowIndex ? null : rowIndex))
+    }
+
+    const editMentorCriterionRow = (rowIndex: number) => {
+        if (isLocked) return
+        setMentorCriteriaEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? true : mode)))
+        setMentorCriteriaSuggestions((prev) => prev.map((list, index) => (index === rowIndex ? [] : list)))
+    }
+
+    const saveMentorCriterionRow = (rowIndex: number) => {
+        const targetRow = mentorCriteriaRows[rowIndex]
+        if (!targetRow) return
+        const trimmedRow: MentorCriterionRow = {
+            criterion: targetRow.criterion,
+            level: targetRow.level,
+            evidence: targetRow.evidence.trim(),
+            decision: targetRow.decision
+        }
+
+        setMentorCriteriaRows((prev) => {
+            const nextRows = [...prev]
+            if (!nextRows[rowIndex]) return prev
+            nextRows[rowIndex] = trimmedRow
+            return nextRows
+        })
+        setMentorCriteriaSuggestions((prev) => prev.map((list, index) => (index === rowIndex ? getMentorCriterionSuggestions(trimmedRow) : list)))
+        setMentorCriteriaEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? false : mode)))
+    }
+
+    const setMentorCriterionField = (rowIndex: number, field: MentorCriterionFieldKey, value: string) => {
+        if (isLocked || !mentorCriteriaEditModes[rowIndex]) return
+        setMentorCriteriaRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+
+            if (field === 'level') {
+                const level: MentorCriterionLevel =
+                    value === 'N1' || value === 'N2' || value === 'N3' || value === 'N4' ? value : ''
+                nextRows[rowIndex] = { ...target, level }
+                return nextRows
+            }
+
+            if (field === 'decision') {
+                const decision: MentorCriterionDecision =
+                    value === 'Consolidado' || value === 'En desarrollo' || value === 'Prioritario' ? value : ''
+                nextRows[rowIndex] = { ...target, decision }
+                return nextRows
+            }
+
+            nextRows[rowIndex] = { ...target, evidence: value }
+            return nextRows
+        })
+    }
+
+    const editMentorClosure = () => {
+        if (isLocked) return
+        setMentorClosureIsEditing(true)
+    }
+
+    const saveMentorClosure = () => {
+        if (isLocked) return
+        setMentorGeneralNotes((prev) => prev.trim())
+        setMentorClosureIsEditing(false)
+    }
+
+    const setMentorGlobalDecisionValue = (value: string) => {
+        if (isLocked || !mentorClosureIsEditing) return
+        const decision: MentorCriterionDecision =
+            value === 'Consolidado' || value === 'En desarrollo' || value === 'Prioritario' ? value : ''
+        setMentorGlobalDecision(decision)
+    }
+
+    const toggleLeaderHelp = (rowIndex: number) => {
+        setOpenLeaderHelpRow((prev) => (prev === rowIndex ? null : rowIndex))
+    }
+
+    const editLeaderEvaluationRow = (rowIndex: number) => {
+        if (isLocked) return
+        setLeaderEvaluationEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? true : mode)))
+        setLeaderEvaluationSuggestions((prev) => prev.map((list, index) => (index === rowIndex ? [] : list)))
+    }
+
+    const saveLeaderEvaluationRow = (rowIndex: number) => {
+        const targetRow = leaderEvaluationRows[rowIndex]
+        if (!targetRow) return
+        const trimmedRow: LeaderEvaluationRow = {
+            question: targetRow.question,
+            response: targetRow.response.trim(),
+            evidence: targetRow.evidence.trim(),
+            action: targetRow.action.trim()
+        }
+
+        setLeaderEvaluationRows((prev) => {
+            const nextRows = [...prev]
+            if (!nextRows[rowIndex]) return prev
+            nextRows[rowIndex] = trimmedRow
+            return nextRows
+        })
+        setLeaderEvaluationSuggestions((prev) =>
+            prev.map((list, index) => (index === rowIndex ? getLeaderEvaluationSuggestions(trimmedRow) : list))
+        )
+        setLeaderEvaluationEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? false : mode)))
+    }
+
+    const setLeaderEvaluationField = (rowIndex: number, field: LeaderEvaluationFieldKey, value: string) => {
+        if (isLocked || !leaderEvaluationEditModes[rowIndex]) return
+        setLeaderEvaluationRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
+    const editSynthesisBlock = () => {
+        if (isLocked) return
+        setSynthesisIsEditing(true)
+    }
+
+    const saveSynthesisBlock = () => {
+        if (isLocked) return
+        setSynthesisText((prev) => prev.trim())
+        setSynthesisFocus30Days((prev) => prev.trim())
+        setSynthesisWeeklyAction((prev) => prev.trim())
+        setSynthesisIndicator((prev) => prev.trim())
+        setSynthesisIsEditing(false)
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -3020,6 +3532,15 @@ export function WB1Step1Digital() {
     const completedFutureLetterChecks = Object.values(futureLetterChecklist).filter(Boolean).length
     const futureLetterWithinSuggestedRange =
         futureLetterWordCount >= FUTURE_LETTER_WORD_MIN && futureLetterWordCount <= FUTURE_LETTER_WORD_MAX
+    const evaluationStageIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+    const hasPrevEvaluationStage = evaluationStageIndex > 0
+    const hasNextEvaluationStage = evaluationStageIndex >= 0 && evaluationStageIndex < EVALUATION_STAGES.length - 1
+    const evaluationStageCompletionMap: Record<EvaluationStageKey, boolean> = {
+        mentor: mentorSectionCompleted,
+        leader: leaderSectionCompleted,
+        synthesis: synthesisSectionCompleted,
+        final: evaluationCompleted
+    }
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
@@ -6936,6 +7457,644 @@ export function WB1Step1Digital() {
                                         <p className="text-xs text-slate-500">Criterios detectados: {completedFutureLetterChecks} / 4</p>
                                     </article>
                                 </section>
+                            </article>
+                        )}
+
+                        {activePage === 11 && (
+                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 11</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">Evaluación</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-4xl">
+                                        Objetivo: permitir que mentor y líder evalúen con evidencia, definan decisiones por criterio y cierren con
+                                        síntesis de acuerdos de 30 días.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                        {EVALUATION_STAGES.map((stage) => {
+                                            const isActive = evaluationStage === stage.key
+                                            const isComplete = evaluationStageCompletionMap[stage.key]
+                                            return (
+                                                <button
+                                                    key={stage.key}
+                                                    type="button"
+                                                    onClick={() => changeEvaluationStage(stage.key)}
+                                                    className={`rounded-xl border px-3 py-2 text-xs md:text-sm font-semibold text-left transition-colors ${
+                                                        isActive
+                                                            ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                                                    }`}
+                                                >
+                                                    <p>{stage.label}</p>
+                                                    <p className={`mt-1 text-[11px] ${isComplete ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                                        {isComplete ? 'Completado' : 'Pendiente'}
+                                                    </p>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={goPrevEvaluationStage}
+                                            disabled={!hasPrevEvaluationStage}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            Atrás
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={goNextEvaluationStage}
+                                            disabled={!hasNextEvaluationStage}
+                                            className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            Siguiente
+                                        </button>
+                                    </div>
+                                </section>
+
+                                {evaluationStage === 'mentor' && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-3">
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">A) Modo Mentor - Rúbricas</h3>
+                                            <ul className="space-y-1.5">
+                                                {MENTOR_EVALUATION_INSTRUCTIONS.map((instruction) => (
+                                                    <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                        <span>{instruction}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </article>
+
+                                        <p className="text-xs text-slate-500">Criterios completados: {mentorCompletedRows} / {MENTOR_CRITERIA_ROWS}</p>
+
+                                        <section className="space-y-4">
+                                            {mentorCriteriaRows.map((row, rowIndex) => {
+                                                const isEditing = mentorCriteriaEditModes[rowIndex]
+                                                const rowDisabled = isLocked || !isEditing
+                                                const isComplete = isMentorCriterionComplete(row)
+                                                const rowSuggestions = mentorCriteriaSuggestions[rowIndex] || []
+                                                const showIndicators = openMentorIndicatorRow === rowIndex
+
+                                                return (
+                                                    <article
+                                                        key={`mentor-criterion-${rowIndex}`}
+                                                        className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4"
+                                                    >
+                                                        <div className="flex flex-wrap items-start justify-between gap-2">
+                                                            <div>
+                                                                <h4 className="text-sm md:text-base font-bold text-slate-900">{row.criterion}</h4>
+                                                                <p className="text-xs text-slate-500 mt-1">Criterio {rowIndex + 1} de {MENTOR_CRITERIA_ROWS}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => toggleMentorIndicators(rowIndex)}
+                                                                    className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                                                                >
+                                                                    {showIndicators ? 'Ocultar indicadores' : 'Ver indicadores N1-N4'}
+                                                                </button>
+                                                                <span
+                                                                    className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                                        isComplete
+                                                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                                            : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                                    }`}
+                                                                >
+                                                                    {isComplete ? 'Completado' : 'Pendiente'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {showIndicators && (
+                                                            <article className="rounded-xl border border-blue-200 bg-blue-50 p-3 space-y-1">
+                                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-blue-800">{row.criterion}</p>
+                                                                {MENTOR_LEVEL_INDICATORS.map((indicator) => (
+                                                                    <p key={`${row.criterion}-${indicator}`} className="text-xs text-blue-900">
+                                                                        • {indicator}
+                                                                    </p>
+                                                                ))}
+                                                            </article>
+                                                        )}
+
+                                                        <div className="inline-flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editMentorCriterionRow(rowIndex)}
+                                                                disabled={isLocked || isEditing}
+                                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => saveMentorCriterionRow(rowIndex)}
+                                                                disabled={isLocked || !isEditing}
+                                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Guardar fila
+                                                            </button>
+                                                        </div>
+
+                                                        {isEditing ? (
+                                                            <div className="space-y-4">
+                                                                <fieldset className="space-y-2">
+                                                                    <legend className="text-xs uppercase tracking-[0.12em] text-slate-500">Nivel</legend>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {MENTOR_LEVEL_OPTIONS.map((level) => (
+                                                                            <label
+                                                                                key={`mentor-level-${rowIndex}-${level}`}
+                                                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                                                                            >
+                                                                                <input
+                                                                                    type="radio"
+                                                                                    name={`mentor-level-${rowIndex}`}
+                                                                                    value={level}
+                                                                                    checked={row.level === level}
+                                                                                    onChange={(event) =>
+                                                                                        setMentorCriterionField(rowIndex, 'level', event.target.value)
+                                                                                    }
+                                                                                    disabled={rowDisabled}
+                                                                                    className="h-3.5 w-3.5"
+                                                                                />
+                                                                                <span>{level}</span>
+                                                                            </label>
+                                                                        ))}
+                                                                    </div>
+                                                                </fieldset>
+
+                                                                <label className="block space-y-1">
+                                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                                        Comentario / evidencia observable
+                                                                    </span>
+                                                                    <textarea
+                                                                        value={row.evidence}
+                                                                        onChange={(event) => setMentorCriterionField(rowIndex, 'evidence', event.target.value)}
+                                                                        disabled={rowDisabled}
+                                                                        className="w-full min-h-[88px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                        placeholder='Describe hechos observables (si falta evidencia, escribe "Completar").'
+                                                                    />
+                                                                </label>
+
+                                                                <fieldset className="space-y-2">
+                                                                    <legend className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                                        Decisión del mentor
+                                                                    </legend>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                                            <label
+                                                                                key={`mentor-decision-${rowIndex}-${decision}`}
+                                                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                                                                            >
+                                                                                <input
+                                                                                    type="radio"
+                                                                                    name={`mentor-decision-${rowIndex}`}
+                                                                                    value={decision}
+                                                                                    checked={row.decision === decision}
+                                                                                    onChange={(event) =>
+                                                                                        setMentorCriterionField(rowIndex, 'decision', event.target.value)
+                                                                                    }
+                                                                                    disabled={rowDisabled}
+                                                                                    className="h-3.5 w-3.5"
+                                                                                />
+                                                                                <span>{decision}</span>
+                                                                            </label>
+                                                                        ))}
+                                                                    </div>
+                                                                </fieldset>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-2 text-sm text-slate-700">
+                                                                <p>
+                                                                    <span className="font-semibold text-slate-900">Nivel:</span> {row.level || 'Pendiente'}
+                                                                </p>
+                                                                <p>
+                                                                    <span className="font-semibold text-slate-900">Comentario / evidencia:</span>{' '}
+                                                                    {row.evidence || 'Pendiente'}
+                                                                </p>
+                                                                <p>
+                                                                    <span className="font-semibold text-slate-900">Decisión:</span>{' '}
+                                                                    {row.decision || 'Pendiente'}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {rowSuggestions.length > 0 && (
+                                                            <article className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                                    Sugerencias (puedes guardar igual)
+                                                                </p>
+                                                                {rowSuggestions.map((suggestion) => (
+                                                                    <p key={`mentor-suggestion-${rowIndex}-${suggestion}`} className="text-xs text-amber-800">
+                                                                        • {suggestion}
+                                                                    </p>
+                                                                ))}
+                                                            </article>
+                                                        )}
+                                                    </article>
+                                                )
+                                            })}
+                                        </section>
+
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <h4 className="text-base font-bold text-slate-900">Panel de cierre Mentor</h4>
+                                                <span
+                                                    className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                        mentorSectionCompleted
+                                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                            : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {mentorSectionCompleted ? 'Completado' : 'Pendiente'}
+                                                </span>
+                                            </div>
+
+                                            <div className="inline-flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={editMentorClosure}
+                                                    disabled={isLocked || mentorClosureIsEditing}
+                                                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={saveMentorClosure}
+                                                    disabled={isLocked || !mentorClosureIsEditing}
+                                                    className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Guardar panel
+                                                </button>
+                                            </div>
+
+                                            <label className="block space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                    Observaciones generales del mentor
+                                                </span>
+                                                <textarea
+                                                    value={mentorGeneralNotes}
+                                                    onChange={(event) => {
+                                                        if (!mentorClosureIsEditing || isLocked) return
+                                                        setMentorGeneralNotes(event.target.value)
+                                                    }}
+                                                    disabled={isLocked || !mentorClosureIsEditing}
+                                                    className="w-full min-h-[120px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                    placeholder='Registra observaciones globales (si falta evidencia, escribe "Completar").'
+                                                />
+                                            </label>
+
+                                            <fieldset className="space-y-2">
+                                                <legend className="text-xs uppercase tracking-[0.12em] text-slate-500">Decisión global del WB</legend>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                        <label
+                                                            key={`mentor-global-${decision}`}
+                                                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                                                        >
+                                                            <input
+                                                                type="radio"
+                                                                name="mentor-global-decision"
+                                                                value={decision}
+                                                                checked={mentorGlobalDecision === decision}
+                                                                onChange={(event) => setMentorGlobalDecisionValue(event.target.value)}
+                                                                disabled={isLocked || !mentorClosureIsEditing}
+                                                                className="h-3.5 w-3.5"
+                                                            />
+                                                            <span>{decision}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </fieldset>
+                                        </article>
+                                    </section>
+                                )}
+
+                                {evaluationStage === 'leader' && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-3">
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">B) Modo Líder - Autoevaluación</h3>
+                                            <ul className="space-y-1.5">
+                                                {LEADER_EVALUATION_INSTRUCTIONS.map((instruction) => (
+                                                    <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                        <span>{instruction}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </article>
+
+                                        <p className="text-xs text-slate-500">Preguntas completadas: {leaderCompletedRows} / {LEADER_EVALUATION_ROWS}</p>
+
+                                        <section className="space-y-4">
+                                            {leaderEvaluationRows.map((row, rowIndex) => {
+                                                const isEditing = leaderEvaluationEditModes[rowIndex]
+                                                const rowDisabled = isLocked || !isEditing
+                                                const isComplete = isLeaderEvaluationRowComplete(row)
+                                                const rowSuggestions = leaderEvaluationSuggestions[rowIndex] || []
+                                                const showHelp = openLeaderHelpRow === rowIndex
+                                                const example = LEADER_HELP_EXAMPLES[rowIndex]
+
+                                                return (
+                                                    <article key={`leader-evaluation-${rowIndex}`} className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4">
+                                                        <div className="flex flex-wrap items-start justify-between gap-2">
+                                                            <div>
+                                                                <h4 className="text-sm md:text-base font-bold text-slate-900">{row.question}</h4>
+                                                                <p className="text-xs text-slate-500 mt-1">
+                                                                    Pregunta {rowIndex + 1} de {LEADER_EVALUATION_ROWS}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => toggleLeaderHelp(rowIndex)}
+                                                                    className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                                                                >
+                                                                    {showHelp ? 'Ocultar ejemplo' : 'Ayuda / Ver ejemplo'}
+                                                                </button>
+                                                                <span
+                                                                    className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                                        isComplete
+                                                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                                            : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                                    }`}
+                                                                >
+                                                                    {isComplete ? 'Completado' : 'Pendiente'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {showHelp && (
+                                                            <article className="rounded-xl border border-blue-200 bg-blue-50 p-3 space-y-1.5">
+                                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-blue-800">Ejemplo de referencia</p>
+                                                                <p className="text-xs text-blue-900">
+                                                                    <span className="font-semibold">Respuesta:</span> {example.response}
+                                                                </p>
+                                                                <p className="text-xs text-blue-900">
+                                                                    <span className="font-semibold">Evidencia:</span> {example.evidence}
+                                                                </p>
+                                                                <p className="text-xs text-blue-900">
+                                                                    <span className="font-semibold">Acción 30 días:</span> {example.action}
+                                                                </p>
+                                                            </article>
+                                                        )}
+
+                                                        <div className="inline-flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editLeaderEvaluationRow(rowIndex)}
+                                                                disabled={isLocked || isEditing}
+                                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => saveLeaderEvaluationRow(rowIndex)}
+                                                                disabled={isLocked || !isEditing}
+                                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Guardar fila
+                                                            </button>
+                                                        </div>
+
+                                                        {isEditing ? (
+                                                            <div className="space-y-3">
+                                                                <label className="block space-y-1">
+                                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Respuesta del líder</span>
+                                                                    <textarea
+                                                                        value={row.response}
+                                                                        onChange={(event) => setLeaderEvaluationField(rowIndex, 'response', event.target.value)}
+                                                                        disabled={rowDisabled}
+                                                                        className="w-full min-h-[90px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                        placeholder="Respuesta basada en hechos recientes."
+                                                                    />
+                                                                </label>
+                                                                <label className="block space-y-1">
+                                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                                        Evidencia / Ejemplo
+                                                                    </span>
+                                                                    <textarea
+                                                                        value={row.evidence}
+                                                                        onChange={(event) => setLeaderEvaluationField(rowIndex, 'evidence', event.target.value)}
+                                                                        disabled={rowDisabled}
+                                                                        className="w-full min-h-[80px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                        placeholder="Hecho + contexto."
+                                                                    />
+                                                                </label>
+                                                                <label className="block space-y-1">
+                                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                                        Acción o compromiso (30 días)
+                                                                    </span>
+                                                                    <textarea
+                                                                        value={row.action}
+                                                                        onChange={(event) => setLeaderEvaluationField(rowIndex, 'action', event.target.value)}
+                                                                        disabled={rowDisabled}
+                                                                        className="w-full min-h-[80px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                        placeholder="Acción específica y frecuencia."
+                                                                    />
+                                                                </label>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-2 text-sm text-slate-700">
+                                                                <p>
+                                                                    <span className="font-semibold text-slate-900">Respuesta:</span> {row.response || 'Pendiente'}
+                                                                </p>
+                                                                <p>
+                                                                    <span className="font-semibold text-slate-900">Evidencia:</span> {row.evidence || 'Pendiente'}
+                                                                </p>
+                                                                <p>
+                                                                    <span className="font-semibold text-slate-900">Acción 30 días:</span> {row.action || 'Pendiente'}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {rowSuggestions.length > 0 && (
+                                                            <article className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                                    Sugerencias (puedes guardar igual)
+                                                                </p>
+                                                                {rowSuggestions.map((suggestion) => (
+                                                                    <p key={`leader-suggestion-${rowIndex}-${suggestion}`} className="text-xs text-amber-800">
+                                                                        • {suggestion}
+                                                                    </p>
+                                                                ))}
+                                                            </article>
+                                                        )}
+                                                    </article>
+                                                )
+                                            })}
+                                        </section>
+                                    </section>
+                                )}
+
+                                {evaluationStage === 'synthesis' && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <h3 className="text-base md:text-lg font-bold text-slate-900">C) Síntesis de acuerdos Mentor-Líder</h3>
+                                                <span
+                                                    className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                        synthesisSectionCompleted
+                                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                            : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {synthesisSectionCompleted ? 'Completado' : 'Pendiente'}
+                                                </span>
+                                            </div>
+
+                                            <div className="inline-flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={editSynthesisBlock}
+                                                    disabled={isLocked || synthesisIsEditing}
+                                                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={saveSynthesisBlock}
+                                                    disabled={isLocked || !synthesisIsEditing}
+                                                    className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Guardar síntesis
+                                                </button>
+                                            </div>
+
+                                            <label className="block space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Síntesis de acuerdos Mentor-Líder</span>
+                                                <textarea
+                                                    value={synthesisText}
+                                                    onChange={(event) => {
+                                                        if (!synthesisIsEditing || isLocked) return
+                                                        setSynthesisText(event.target.value)
+                                                    }}
+                                                    disabled={isLocked || !synthesisIsEditing}
+                                                    className="w-full min-h-[150px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                    placeholder='Síntesis del acuerdo conjunto (si falta información, escribe "Completar").'
+                                                />
+                                            </label>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <label className="space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                        Foco de los próximos 30 días
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        value={synthesisFocus30Days}
+                                                        onChange={(event) => {
+                                                            if (!synthesisIsEditing || isLocked) return
+                                                            setSynthesisFocus30Days(event.target.value)
+                                                        }}
+                                                        disabled={isLocked || !synthesisIsEditing}
+                                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                        placeholder="Foco 30 días"
+                                                    />
+                                                </label>
+                                                <label className="space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                        Hábito/acción semanal acordada
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        value={synthesisWeeklyAction}
+                                                        onChange={(event) => {
+                                                            if (!synthesisIsEditing || isLocked) return
+                                                            setSynthesisWeeklyAction(event.target.value)
+                                                        }}
+                                                        disabled={isLocked || !synthesisIsEditing}
+                                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                        placeholder="Hábito semanal"
+                                                    />
+                                                </label>
+                                                <label className="space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                        Cómo se evidenciará (indicador)
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        value={synthesisIndicator}
+                                                        onChange={(event) => {
+                                                            if (!synthesisIsEditing || isLocked) return
+                                                            setSynthesisIndicator(event.target.value)
+                                                        }}
+                                                        disabled={isLocked || !synthesisIsEditing}
+                                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                        placeholder="Indicador"
+                                                    />
+                                                </label>
+                                            </div>
+                                        </article>
+                                    </section>
+                                )}
+
+                                {evaluationStage === 'final' && (
+                                    <section className="space-y-5">
+                                        <article
+                                            className={`rounded-2xl border p-5 md:p-6 ${
+                                                evaluationCompleted
+                                                    ? 'border-emerald-300 bg-emerald-50'
+                                                    : 'border-amber-300 bg-amber-50'
+                                            }`}
+                                        >
+                                            <h3 className={`text-lg md:text-xl font-extrabold ${evaluationCompleted ? 'text-emerald-800' : 'text-amber-800'}`}>
+                                                {evaluationCompleted ? 'WB1 Evaluación completada' : 'WB1 Evaluación en progreso'}
+                                            </h3>
+                                            <p className={`mt-2 text-sm ${evaluationCompleted ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                                {evaluationCompleted
+                                                    ? 'Mentor y líder cerraron rúbrica, autoevaluación y síntesis.'
+                                                    : 'Completa los bloques pendientes para cerrar la evaluación.'}
+                                            </p>
+                                        </article>
+
+                                        <article className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
+                                            <h4 className="text-base md:text-lg font-bold text-slate-900">Resumen automático</h4>
+                                            <div className="space-y-2">
+                                                {mentorCriteriaRows.map((row, index) => (
+                                                    <div
+                                                        key={`evaluation-summary-criterion-${index}`}
+                                                        className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700"
+                                                    >
+                                                        <p className="font-semibold text-slate-900">{row.criterion}</p>
+                                                        <p>
+                                                            Nivel: <span className="font-medium text-slate-900">{row.level || 'Pendiente'}</span>
+                                                        </p>
+                                                        <p>
+                                                            Decisión: <span className="font-medium text-slate-900">{row.decision || 'Pendiente'}</span>
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Decisión global:</span> {mentorGlobalDecision || 'Pendiente'}
+                                            </p>
+                                        </article>
+
+                                        <article className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-3">
+                                            <h4 className="text-base md:text-lg font-bold text-slate-900">Compromisos 30 días (extraídos)</h4>
+                                            {extractedCommitments.length > 0 ? (
+                                                <ul className="space-y-1.5">
+                                                    {extractedCommitments.map((commitment, index) => (
+                                                        <li key={`commitment-${index}`} className="text-sm text-slate-700 flex items-start gap-2">
+                                                            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                            <span>{commitment}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="text-sm text-slate-500">Aún no hay compromisos registrados en la autoevaluación.</p>
+                                            )}
+                                        </article>
+                                    </section>
+                                )}
                             </article>
                         )}
 
