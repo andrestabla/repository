@@ -170,6 +170,50 @@ type MantraCardRow = {
     signal: string
 }
 
+type FutureSelfBlockKey =
+    | 'identity'
+    | 'values'
+    | 'habits'
+    | 'decisions'
+    | 'skills'
+    | 'environment'
+    | 'impact'
+    | 'metrics'
+    | 'risks'
+
+type FutureSelfListBlockKey = 'identity' | 'values' | 'habits' | 'decisions' | 'skills' | 'metrics'
+
+type FutureSelfEnvironmentFieldKey = 'surround' | 'eliminate' | 'protect'
+
+type FutureSelfImpactFieldKey = 'serve' | 'transform' | 'result'
+
+type FutureSelfRiskFieldKey = 'risk' | 'prevention'
+
+type FutureSelfRiskRow = {
+    risk: string
+    prevention: string
+}
+
+type FutureSelfFields = {
+    identity: string[]
+    values: string[]
+    habits: string[]
+    decisions: string[]
+    skills: string[]
+    environment: {
+        surround: string
+        eliminate: string
+        protect: string
+    }
+    impact: {
+        serve: string
+        transform: string
+        result: string
+    }
+    metrics: string[]
+    risks: FutureSelfRiskRow[]
+}
+
 type PageItem = {
     id: number
     label: string
@@ -193,6 +237,7 @@ const BELIEF_IMPACT_STORAGE_KEY = 'workbooks-v2-wb1-belief-impact'
 const EMPOWERING_BELIEF_STORAGE_KEY = 'workbooks-v2-wb1-empowering-beliefs'
 const BRIDGE_EXPERIMENT_STORAGE_KEY = 'workbooks-v2-wb1-bridge-experiment'
 const MANTRA_CARDS_STORAGE_KEY = 'workbooks-v2-wb1-mantras'
+const FUTURE_SELF_STORAGE_KEY = 'workbooks-v2-wb1-future-self'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -211,6 +256,13 @@ const BELIEF_IMPACT_AFFECTED_ROWS = 3
 const EMPOWERING_BELIEF_ROWS = 3
 const BRIDGE_EXPERIMENT_ROWS = 3
 const MANTRA_ROWS = 3
+const FUTURE_SELF_IDENTITY_ROWS = 2
+const FUTURE_SELF_VALUES_ROWS = 3
+const FUTURE_SELF_HABITS_ROWS = 5
+const FUTURE_SELF_DECISIONS_ROWS = 3
+const FUTURE_SELF_SKILLS_ROWS = 3
+const FUTURE_SELF_METRICS_ROWS = 3
+const FUTURE_SELF_RISK_ROWS = 3
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -222,7 +274,8 @@ const PAGES: PageItem[] = [
     { id: 6, label: '6. Fortalezas y áreas de oportunidad', shortLabel: 'FOA' },
     { id: 7, label: '7. Creencias limitantes (PNL)', shortLabel: 'Creencias PNL' },
     { id: 8, label: '8. Nuevas creencias empoderadoras', shortLabel: 'Empoderadoras' },
-    { id: 9, label: '9. Mantras personales', shortLabel: 'Mantras' }
+    { id: 9, label: '9. Mantras personales', shortLabel: 'Mantras' },
+    { id: 10, label: '10. Identidad futura 10X', shortLabel: 'Futuro 10X' }
 ]
 
 const OBJECTIVE_OUTCOMES = [
@@ -407,6 +460,24 @@ const MANTRA_EXAMPLES = [
 ]
 
 const MANTRA_SIGNAL_HINT = 'Ejemplos rápidos: alarma, nota en pantalla, sticker, fondo de pantalla, pulsera, post-it.'
+
+const FUTURE_SELF_INSTRUCTIONS = [
+    'Propósito: diseñar quién serás, no solo lo que lograrás.',
+    'Regla: escribe en presente (como si ya fueras tu versión 10X).',
+    'Completa cada bloque con bullets y hechos concretos.'
+]
+
+const FUTURE_SELF_BLOCK_ORDER: FutureSelfBlockKey[] = [
+    'identity',
+    'values',
+    'habits',
+    'decisions',
+    'skills',
+    'environment',
+    'impact',
+    'metrics',
+    'risks'
+]
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
     {
@@ -677,6 +748,53 @@ function defaultMantraRows() {
         behavior: '',
         signal: ''
     }))
+}
+
+function emptyFutureSelfList(limit: number) {
+    return Array.from({ length: limit }, () => '')
+}
+
+function defaultFutureSelfRiskRows() {
+    return Array.from({ length: FUTURE_SELF_RISK_ROWS }, () => ({
+        risk: '',
+        prevention: ''
+    }))
+}
+
+function defaultFutureSelfFields(): FutureSelfFields {
+    return {
+        identity: emptyFutureSelfList(FUTURE_SELF_IDENTITY_ROWS),
+        values: emptyFutureSelfList(FUTURE_SELF_VALUES_ROWS),
+        habits: emptyFutureSelfList(FUTURE_SELF_HABITS_ROWS),
+        decisions: emptyFutureSelfList(FUTURE_SELF_DECISIONS_ROWS),
+        skills: emptyFutureSelfList(FUTURE_SELF_SKILLS_ROWS),
+        environment: {
+            surround: '',
+            eliminate: '',
+            protect: ''
+        },
+        impact: {
+            serve: '',
+            transform: '',
+            result: ''
+        },
+        metrics: emptyFutureSelfList(FUTURE_SELF_METRICS_ROWS),
+        risks: defaultFutureSelfRiskRows()
+    }
+}
+
+function defaultFutureSelfSuggestions(): Record<FutureSelfBlockKey, string[]> {
+    return {
+        identity: [],
+        values: [],
+        habits: [],
+        decisions: [],
+        skills: [],
+        environment: [],
+        impact: [],
+        metrics: [],
+        risks: []
+    }
 }
 
 function normalizePatternList(value: unknown) {
@@ -1108,6 +1226,89 @@ function normalizeMantraRows(value: unknown) {
     return defaultMantraRows()
 }
 
+function normalizeFutureSelfList(value: unknown, limit: number) {
+    if (Array.isArray(value)) {
+        const list = value
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .slice(0, limit)
+        return [...list, ...Array.from({ length: limit - list.length }, () => '')]
+    }
+
+    if (typeof value === 'string') {
+        const list = value
+            .split('\n')
+            .map((line) => line.replace(/^[\s•-]+/, '').trim())
+            .filter(Boolean)
+            .slice(0, limit)
+        return [...list, ...Array.from({ length: limit - list.length }, () => '')]
+    }
+
+    return emptyFutureSelfList(limit)
+}
+
+function normalizeFutureSelfRiskRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { risk: '', prevention: '' }
+                }
+                const candidate = row as Partial<Record<FutureSelfRiskFieldKey, unknown>>
+                return {
+                    risk: typeof candidate.risk === 'string' ? candidate.risk : '',
+                    prevention: typeof candidate.prevention === 'string' ? candidate.prevention : ''
+                }
+            })
+            .slice(0, FUTURE_SELF_RISK_ROWS)
+
+        return [
+            ...rows,
+            ...Array.from({ length: FUTURE_SELF_RISK_ROWS - rows.length }, () => ({
+                risk: '',
+                prevention: ''
+            }))
+        ]
+    }
+
+    return defaultFutureSelfRiskRows()
+}
+
+function normalizeFutureSelfFields(value: unknown): FutureSelfFields {
+    if (!value || typeof value !== 'object') {
+        return defaultFutureSelfFields()
+    }
+
+    const candidate = value as Partial<Record<FutureSelfBlockKey, unknown>>
+    const environmentSource =
+        candidate.environment && typeof candidate.environment === 'object'
+            ? (candidate.environment as Partial<Record<FutureSelfEnvironmentFieldKey, unknown>>)
+            : {}
+    const impactSource =
+        candidate.impact && typeof candidate.impact === 'object'
+            ? (candidate.impact as Partial<Record<FutureSelfImpactFieldKey, unknown>>)
+            : {}
+
+    return {
+        identity: normalizeFutureSelfList(candidate.identity, FUTURE_SELF_IDENTITY_ROWS),
+        values: normalizeFutureSelfList(candidate.values, FUTURE_SELF_VALUES_ROWS),
+        habits: normalizeFutureSelfList(candidate.habits, FUTURE_SELF_HABITS_ROWS),
+        decisions: normalizeFutureSelfList(candidate.decisions, FUTURE_SELF_DECISIONS_ROWS),
+        skills: normalizeFutureSelfList(candidate.skills, FUTURE_SELF_SKILLS_ROWS),
+        environment: {
+            surround: typeof environmentSource.surround === 'string' ? environmentSource.surround : '',
+            eliminate: typeof environmentSource.eliminate === 'string' ? environmentSource.eliminate : '',
+            protect: typeof environmentSource.protect === 'string' ? environmentSource.protect : ''
+        },
+        impact: {
+            serve: typeof impactSource.serve === 'string' ? impactSource.serve : '',
+            transform: typeof impactSource.transform === 'string' ? impactSource.transform : '',
+            result: typeof impactSource.result === 'string' ? impactSource.result : ''
+        },
+        metrics: normalizeFutureSelfList(candidate.metrics, FUTURE_SELF_METRICS_ROWS),
+        risks: normalizeFutureSelfRiskRows(candidate.risks)
+    }
+}
+
 function isMantraCardComplete(row: MantraCardRow) {
     return [row.mantra, row.situation, row.behavior, row.signal].every((value) => {
         const normalized = value.trim()
@@ -1147,6 +1348,111 @@ function getMantraSuggestions(row: MantraCardRow) {
     return suggestions
 }
 
+function countFilledFutureSelfItems(items: string[]) {
+    return items.filter((item) => item.trim().length > 0 && !/\bcompletar\b/i.test(item)).length
+}
+
+function isFutureSelfBlockComplete(key: FutureSelfBlockKey, fields: FutureSelfFields) {
+    switch (key) {
+        case 'identity':
+            return countFilledFutureSelfItems(fields.identity) >= 1
+        case 'values':
+            return countFilledFutureSelfItems(fields.values) >= 3
+        case 'habits':
+            return countFilledFutureSelfItems(fields.habits) >= 5
+        case 'decisions':
+            return countFilledFutureSelfItems(fields.decisions) >= 3
+        case 'skills':
+            return countFilledFutureSelfItems(fields.skills) >= 3
+        case 'environment':
+            return fields.environment.surround.trim().length > 0 && fields.environment.eliminate.trim().length > 0
+        case 'impact':
+            return fields.impact.serve.trim().length > 0 && fields.impact.transform.trim().length > 0
+        case 'metrics':
+            return countFilledFutureSelfItems(fields.metrics) >= 2
+        case 'risks':
+            return fields.risks.filter((row) => row.risk.trim().length > 0 && row.prevention.trim().length > 0).length >= 2
+        default:
+            return false
+    }
+}
+
+function futureSelfHasFutureTense(text: string) {
+    return /(seré|estaré|haré|tendré|lograré|voy a|deberé)/i.test(text)
+}
+
+function getFutureSelfBlockSuggestions(key: FutureSelfBlockKey, fields: FutureSelfFields) {
+    const suggestions: string[] = []
+
+    if (key === 'identity' && countFilledFutureSelfItems(fields.identity) < 1) {
+        suggestions.push('Completa al menos 1 bullet en Identidad.')
+    }
+    if (key === 'values' && countFilledFutureSelfItems(fields.values) < 3) {
+        suggestions.push('Completa al menos 3 bullets en Valores no negociables.')
+    }
+    if (key === 'habits' && countFilledFutureSelfItems(fields.habits) < 5) {
+        suggestions.push('Completa al menos 5 bullets en Hábitos diarios.')
+    }
+    if (key === 'decisions' && countFilledFutureSelfItems(fields.decisions) < 3) {
+        suggestions.push('Completa al menos 3 bullets en Decisiones.')
+    }
+    if (key === 'skills' && countFilledFutureSelfItems(fields.skills) < 3) {
+        suggestions.push('Completa al menos 3 bullets en Habilidades.')
+    }
+    if (key === 'environment' && !isFutureSelfBlockComplete('environment', fields)) {
+        suggestions.push('Completa mínimo “Me rodeo de” y “Elimino”.')
+    }
+    if (key === 'impact' && !isFutureSelfBlockComplete('impact', fields)) {
+        suggestions.push('Completa mínimo “Sirvo a” y “Transformo”.')
+    }
+    if (key === 'metrics' && countFilledFutureSelfItems(fields.metrics) < 2) {
+        suggestions.push('Completa al menos 2 métricas personales.')
+    }
+    if (key === 'risks' && !isFutureSelfBlockComplete('risks', fields)) {
+        suggestions.push('Completa al menos 2 pares de riesgo + prevención.')
+    }
+
+    const blockText =
+        key === 'environment'
+            ? [fields.environment.surround, fields.environment.eliminate, fields.environment.protect].join(' ')
+            : key === 'impact'
+              ? [fields.impact.serve, fields.impact.transform, fields.impact.result].join(' ')
+              : key === 'risks'
+                ? fields.risks.map((row) => `${row.risk} ${row.prevention}`).join(' ')
+                : fields[key].join(' ')
+
+    if (blockText.trim().length > 0 && futureSelfHasFutureTense(blockText)) {
+        suggestions.push('Recuerda escribir en presente, como si ya fueras tu versión 10X.')
+    }
+
+    return suggestions
+}
+
+function trimFutureSelfFields(fields: FutureSelfFields): FutureSelfFields {
+    return {
+        identity: fields.identity.map((item) => item.trim()),
+        values: fields.values.map((item) => item.trim()),
+        habits: fields.habits.map((item) => item.trim()),
+        decisions: fields.decisions.map((item) => item.trim()),
+        skills: fields.skills.map((item) => item.trim()),
+        environment: {
+            surround: fields.environment.surround.trim(),
+            eliminate: fields.environment.eliminate.trim(),
+            protect: fields.environment.protect.trim()
+        },
+        impact: {
+            serve: fields.impact.serve.trim(),
+            transform: fields.impact.transform.trim(),
+            result: fields.impact.result.trim()
+        },
+        metrics: fields.metrics.map((item) => item.trim()),
+        risks: fields.risks.map((row) => ({
+            risk: row.risk.trim(),
+            prevention: row.prevention.trim()
+        }))
+    }
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -1179,6 +1485,7 @@ export function WB1Step1Digital() {
     const [showEmpoweringBeliefHelp, setShowEmpoweringBeliefHelp] = useState(false)
     const [showBridgeExperimentHelp, setShowBridgeExperimentHelp] = useState(false)
     const [showMantraHelp, setShowMantraHelp] = useState(false)
+    const [showFutureSelfHelp, setShowFutureSelfHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -1254,6 +1561,19 @@ export function WB1Step1Digital() {
     const [mantraRows, setMantraRows] = useState<MantraCardRow[]>(defaultMantraRows())
     const [mantraEditModes, setMantraEditModes] = useState<boolean[]>(Array.from({ length: MANTRA_ROWS }, () => false))
     const [mantraSuggestions, setMantraSuggestions] = useState<string[][]>(Array.from({ length: MANTRA_ROWS }, () => []))
+    const [futureSelfFields, setFutureSelfFields] = useState<FutureSelfFields>(defaultFutureSelfFields())
+    const [futureSelfEditModes, setFutureSelfEditModes] = useState<Record<FutureSelfBlockKey, boolean>>({
+        identity: false,
+        values: false,
+        habits: false,
+        decisions: false,
+        skills: false,
+        environment: false,
+        impact: false,
+        metrics: false,
+        risks: false
+    })
+    const [futureSelfSuggestions, setFutureSelfSuggestions] = useState<Record<FutureSelfBlockKey, string[]>>(defaultFutureSelfSuggestions())
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -1676,12 +1996,30 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(MANTRA_CARDS_STORAGE_KEY, JSON.stringify(mantraRows))
     }, [mantraRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(FUTURE_SELF_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setFutureSelfFields(normalizeFutureSelfFields(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(FUTURE_SELF_STORAGE_KEY, JSON.stringify(futureSelfFields))
+    }, [futureSelfFields])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 19
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 20
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -1763,6 +2101,7 @@ export function WB1Step1Digital() {
             ? 1
             : 0
         const filledMantras = mantraRows.every((row) => isMantraCardComplete(row)) ? 1 : 0
+        const filledFutureSelf = FUTURE_SELF_BLOCK_ORDER.every((key) => isFutureSelfBlockComplete(key, futureSelfFields)) ? 1 : 0
         const filled =
             filledId +
             filledNarrative +
@@ -1784,9 +2123,10 @@ export function WB1Step1Digital() {
             filledEmpoweringBeliefs +
             filledBridgeExperiment +
             filledMantras +
+            filledFutureSelf +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, futureSelfFields, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -2242,6 +2582,64 @@ export function WB1Step1Digital() {
         })
     }
 
+    const editFutureSelfBlock = (key: FutureSelfBlockKey) => {
+        if (isLocked) return
+        setFutureSelfEditModes((prev) => ({ ...prev, [key]: true }))
+        setFutureSelfSuggestions((prev) => ({ ...prev, [key]: [] }))
+    }
+
+    const saveFutureSelfBlock = (key: FutureSelfBlockKey) => {
+        const trimmedFields = trimFutureSelfFields(futureSelfFields)
+        setFutureSelfFields(trimmedFields)
+        setFutureSelfSuggestions((prev) => ({ ...prev, [key]: getFutureSelfBlockSuggestions(key, trimmedFields) }))
+        setFutureSelfEditModes((prev) => ({ ...prev, [key]: false }))
+    }
+
+    const setFutureSelfListItem = (key: FutureSelfListBlockKey, index: number, value: string) => {
+        if (isLocked || !futureSelfEditModes[key]) return
+        setFutureSelfFields((prev) => {
+            const nextList = [...prev[key]]
+            nextList[index] = value
+            return { ...prev, [key]: nextList }
+        })
+    }
+
+    const setFutureSelfEnvironmentField = (field: FutureSelfEnvironmentFieldKey, value: string) => {
+        if (isLocked || !futureSelfEditModes.environment) return
+        setFutureSelfFields((prev) => ({
+            ...prev,
+            environment: {
+                ...prev.environment,
+                [field]: value
+            }
+        }))
+    }
+
+    const setFutureSelfImpactField = (field: FutureSelfImpactFieldKey, value: string) => {
+        if (isLocked || !futureSelfEditModes.impact) return
+        setFutureSelfFields((prev) => ({
+            ...prev,
+            impact: {
+                ...prev.impact,
+                [field]: value
+            }
+        }))
+    }
+
+    const setFutureSelfRiskField = (rowIndex: number, field: FutureSelfRiskFieldKey, value: string) => {
+        if (isLocked || !futureSelfEditModes.risks) return
+        setFutureSelfFields((prev) => {
+            const nextRows = [...prev.risks]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return {
+                ...prev,
+                risks: nextRows
+            }
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -2390,6 +2788,7 @@ export function WB1Step1Digital() {
             row.indicator.trim().length > 0
     ).length
     const completedMantraRows = mantraRows.filter((row) => isMantraCardComplete(row)).length
+    const completedFutureSelfBlocks = FUTURE_SELF_BLOCK_ORDER.filter((key) => isFutureSelfBlockComplete(key, futureSelfFields)).length
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
@@ -5248,6 +5647,736 @@ export function WB1Step1Digital() {
                                             </article>
                                         )
                                     })}
+                                </section>
+                            </article>
+                        )}
+
+                        {activePage === 10 && (
+                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 10</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">Identidad futura 10X</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-3xl">
+                                        Diseñar quién serás, no solo lo que lograrás.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">Instrumento 1 - Future Self Canvas 10X</h3>
+                                            <p className="mt-1 text-sm text-slate-700">Regla: escribe en presente, como si ya fueras tu versión 10X.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowFutureSelfHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showFutureSelfHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {FUTURE_SELF_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showFutureSelfHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-2">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo breve</p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Identidad:</span> “Soy el tipo de líder que decide con calma
+                                                bajo presión y sostiene conversaciones difíciles.”
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Valores:</span> Integridad / Respeto / Excelencia sostenible
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Hábitos:</span> Plan semanal / 2 bloques deep work / ejercicio
+                                                / bitácora / pausa antes de responder
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Decisiones:</span> digo no a urgencias no críticas / delego
+                                                ejecución / priorizo calidad mínima
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Métricas:</span> 10h deep work/semana / 4 conversaciones
+                                                difíciles/mes / estrés baja 2 puntos
+                                            </p>
+                                        </article>
+                                    )}
+                                </section>
+
+                                <p className="text-xs text-slate-500">
+                                    Bloques completados: {completedFutureSelfBlocks} / {FUTURE_SELF_BLOCK_ORDER.length}
+                                </p>
+
+                                <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">Bloque 1 - Identidad</h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('identity', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('identity', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('identity')}
+                                                disabled={isLocked || futureSelfEditModes.identity}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('identity')}
+                                                disabled={isLocked || !futureSelfEditModes.identity}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.identity ? (
+                                            <div className="space-y-2">
+                                                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Soy el tipo de líder que...</p>
+                                                {futureSelfFields.identity.map((item, index) => (
+                                                    <label key={`future-identity-${index}`} className="flex items-start gap-2">
+                                                        <span className="mt-2 text-slate-500">•</span>
+                                                        <input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(event) => setFutureSelfListItem('identity', index, event.target.value)}
+                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                            placeholder={`Bullet ${index + 1}`}
+                                                        />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                {futureSelfFields.identity.map((item, index) => (
+                                                    <p key={`future-identity-view-${index}`} className="text-sm text-slate-700">
+                                                        • {item || '__________________________________'}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.identity.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.identity.map((suggestion) => (
+                                                    <p key={`future-suggestion-identity-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">Bloque 2 - Valores no negociables (3)</h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('values', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('values', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('values')}
+                                                disabled={isLocked || futureSelfEditModes.values}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('values')}
+                                                disabled={isLocked || !futureSelfEditModes.values}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.values ? (
+                                            <div className="space-y-2">
+                                                {futureSelfFields.values.map((item, index) => (
+                                                    <label key={`future-values-${index}`} className="flex items-start gap-2">
+                                                        <span className="mt-2 text-slate-500">•</span>
+                                                        <input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(event) => setFutureSelfListItem('values', index, event.target.value)}
+                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                            placeholder={`Valor ${index + 1}`}
+                                                        />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                {futureSelfFields.values.map((item, index) => (
+                                                    <p key={`future-values-view-${index}`} className="text-sm text-slate-700">
+                                                        • {item || '__________________________________'}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.values.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.values.map((suggestion) => (
+                                                    <p key={`future-suggestion-values-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">Bloque 3 - Hábitos diarios (5)</h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('habits', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('habits', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('habits')}
+                                                disabled={isLocked || futureSelfEditModes.habits}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('habits')}
+                                                disabled={isLocked || !futureSelfEditModes.habits}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.habits ? (
+                                            <div className="space-y-2">
+                                                {futureSelfFields.habits.map((item, index) => (
+                                                    <label key={`future-habits-${index}`} className="flex items-start gap-2">
+                                                        <span className="mt-2 text-slate-500">•</span>
+                                                        <input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(event) => setFutureSelfListItem('habits', index, event.target.value)}
+                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                            placeholder={`Hábito ${index + 1}`}
+                                                        />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                {futureSelfFields.habits.map((item, index) => (
+                                                    <p key={`future-habits-view-${index}`} className="text-sm text-slate-700">
+                                                        • {item || '__________________________________'}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.habits.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.habits.map((suggestion) => (
+                                                    <p key={`future-suggestion-habits-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">
+                                                Bloque 4 - Decisiones que tomaré distinto (3)
+                                            </h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('decisions', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('decisions', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('decisions')}
+                                                disabled={isLocked || futureSelfEditModes.decisions}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('decisions')}
+                                                disabled={isLocked || !futureSelfEditModes.decisions}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.decisions ? (
+                                            <div className="space-y-2">
+                                                {futureSelfFields.decisions.map((item, index) => (
+                                                    <label key={`future-decisions-${index}`} className="flex items-start gap-2">
+                                                        <span className="mt-2 text-slate-500">•</span>
+                                                        <input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(event) => setFutureSelfListItem('decisions', index, event.target.value)}
+                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                            placeholder={`Decisión ${index + 1}`}
+                                                        />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                {futureSelfFields.decisions.map((item, index) => (
+                                                    <p key={`future-decisions-view-${index}`} className="text-sm text-slate-700">
+                                                        • {item || '__________________________________'}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.decisions.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.decisions.map((suggestion) => (
+                                                    <p key={`future-suggestion-decisions-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">Bloque 5 - Habilidades clave a desarrollar (3)</h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('skills', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('skills', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('skills')}
+                                                disabled={isLocked || futureSelfEditModes.skills}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('skills')}
+                                                disabled={isLocked || !futureSelfEditModes.skills}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.skills ? (
+                                            <div className="space-y-2">
+                                                {futureSelfFields.skills.map((item, index) => (
+                                                    <label key={`future-skills-${index}`} className="flex items-start gap-2">
+                                                        <span className="mt-2 text-slate-500">•</span>
+                                                        <input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(event) => setFutureSelfListItem('skills', index, event.target.value)}
+                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                            placeholder={`Habilidad ${index + 1}`}
+                                                        />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                {futureSelfFields.skills.map((item, index) => (
+                                                    <p key={`future-skills-view-${index}`} className="text-sm text-slate-700">
+                                                        • {item || '__________________________________'}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.skills.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.skills.map((suggestion) => (
+                                                    <p key={`future-suggestion-skills-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">Bloque 6 - Entorno (rodeos / elimino)</h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('environment', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('environment', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('environment')}
+                                                disabled={isLocked || futureSelfEditModes.environment}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('environment')}
+                                                disabled={isLocked || !futureSelfEditModes.environment}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.environment ? (
+                                            <div className="space-y-2">
+                                                <label className="block space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Me rodeo de</span>
+                                                    <input
+                                                        type="text"
+                                                        value={futureSelfFields.environment.surround}
+                                                        onChange={(event) => setFutureSelfEnvironmentField('surround', event.target.value)}
+                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                                <label className="block space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Elimino</span>
+                                                    <input
+                                                        type="text"
+                                                        value={futureSelfFields.environment.eliminate}
+                                                        onChange={(event) => setFutureSelfEnvironmentField('eliminate', event.target.value)}
+                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                                <label className="block space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Protejo (opcional)</span>
+                                                    <input
+                                                        type="text"
+                                                        value={futureSelfFields.environment.protect}
+                                                        onChange={(event) => setFutureSelfEnvironmentField('protect', event.target.value)}
+                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                <p className="text-sm text-slate-700">• Me rodeo de: {futureSelfFields.environment.surround || '___________________'}</p>
+                                                <p className="text-sm text-slate-700">• Elimino: {futureSelfFields.environment.eliminate || '___________________'}</p>
+                                                <p className="text-sm text-slate-700">• Protejo: {futureSelfFields.environment.protect || '___________________'}</p>
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.environment.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.environment.map((suggestion) => (
+                                                    <p key={`future-suggestion-environment-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">Bloque 7 - Impacto (sirvo / transformo)</h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('impact', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('impact', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('impact')}
+                                                disabled={isLocked || futureSelfEditModes.impact}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('impact')}
+                                                disabled={isLocked || !futureSelfEditModes.impact}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.impact ? (
+                                            <div className="space-y-2">
+                                                <label className="block space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Sirvo a</span>
+                                                    <input
+                                                        type="text"
+                                                        value={futureSelfFields.impact.serve}
+                                                        onChange={(event) => setFutureSelfImpactField('serve', event.target.value)}
+                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                                <label className="block space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Transformo</span>
+                                                    <input
+                                                        type="text"
+                                                        value={futureSelfFields.impact.transform}
+                                                        onChange={(event) => setFutureSelfImpactField('transform', event.target.value)}
+                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                                <label className="block space-y-1">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Resultado que dejo (opcional)</span>
+                                                    <input
+                                                        type="text"
+                                                        value={futureSelfFields.impact.result}
+                                                        onChange={(event) => setFutureSelfImpactField('result', event.target.value)}
+                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                <p className="text-sm text-slate-700">• Sirvo a: {futureSelfFields.impact.serve || '___________________'}</p>
+                                                <p className="text-sm text-slate-700">• Transformo: {futureSelfFields.impact.transform || '___________________'}</p>
+                                                <p className="text-sm text-slate-700">
+                                                    • Resultado que dejo: {futureSelfFields.impact.result || '___________________'}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.impact.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.impact.map((suggestion) => (
+                                                    <p key={`future-suggestion-impact-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">
+                                                Bloque 8 - Métricas personales (cómo mediré avance)
+                                            </h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('metrics', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('metrics', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('metrics')}
+                                                disabled={isLocked || futureSelfEditModes.metrics}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('metrics')}
+                                                disabled={isLocked || !futureSelfEditModes.metrics}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.metrics ? (
+                                            <div className="space-y-2">
+                                                {futureSelfFields.metrics.map((item, index) => (
+                                                    <label key={`future-metrics-${index}`} className="flex items-start gap-2">
+                                                        <span className="mt-2 text-slate-500">•</span>
+                                                        <input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(event) => setFutureSelfListItem('metrics', index, event.target.value)}
+                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                            placeholder={`Métrica ${index + 1}`}
+                                                        />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                {futureSelfFields.metrics.map((item, index) => (
+                                                    <p key={`future-metrics-view-${index}`} className="text-sm text-slate-700">
+                                                        • {item || '__________________________________'}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.metrics.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.metrics.map((suggestion) => (
+                                                    <p key={`future-suggestion-metrics-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm xl:col-span-2">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h4 className="text-sm md:text-base font-bold text-slate-900">
+                                                Bloque 9 - Riesgos (sabotaje + prevención)
+                                            </h4>
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                    isFutureSelfBlockComplete('risks', futureSelfFields)
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {isFutureSelfBlockComplete('risks', futureSelfFields) ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => editFutureSelfBlock('risks')}
+                                                disabled={isLocked || futureSelfEditModes.risks}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => saveFutureSelfBlock('risks')}
+                                                disabled={isLocked || !futureSelfEditModes.risks}
+                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                        {futureSelfEditModes.risks ? (
+                                            <div className="space-y-2">
+                                                {futureSelfFields.risks.map((row, index) => (
+                                                    <div key={`future-risks-${index}`} className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={row.risk}
+                                                            onChange={(event) => setFutureSelfRiskField(index, 'risk', event.target.value)}
+                                                            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                            placeholder={`Riesgo ${index + 1}`}
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={row.prevention}
+                                                            onChange={(event) => setFutureSelfRiskField(index, 'prevention', event.target.value)}
+                                                            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                            placeholder={`Prevención ${index + 1}`}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                {futureSelfFields.risks.map((row, index) => (
+                                                    <p key={`future-risks-view-${index}`} className="text-sm text-slate-700">
+                                                        • Riesgo: {row.risk || '___________'} | Prevención: {row.prevention || '___________'}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {futureSelfSuggestions.risks.length > 0 && (
+                                            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-amber-800">
+                                                    Sugerencias (puedes ignorarlas)
+                                                </p>
+                                                {futureSelfSuggestions.risks.map((suggestion) => (
+                                                    <p key={`future-suggestion-risks-${suggestion}`} className="text-xs text-amber-800">
+                                                        • {suggestion}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
                                 </section>
                             </article>
                         )}
