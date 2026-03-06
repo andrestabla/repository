@@ -139,6 +139,11 @@ type BeliefEvidenceRow = {
     newMeaning: string
 }
 
+type BeliefImpactAffectedRow = {
+    person: string
+    impact: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -158,6 +163,7 @@ const FOA_STORAGE_KEY = 'workbooks-v2-wb1-foa'
 const ENERGY_MAP_STORAGE_KEY = 'workbooks-v2-wb1-energy-map'
 const BELIEF_ABC_STORAGE_KEY = 'workbooks-v2-wb1-belief-abc'
 const BELIEF_EVIDENCE_STORAGE_KEY = 'workbooks-v2-wb1-belief-evidence'
+const BELIEF_IMPACT_STORAGE_KEY = 'workbooks-v2-wb1-belief-impact'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -171,6 +177,8 @@ const ENERGY_MAP_ROWS = 20
 const ENERGY_PATTERN_BULLETS = 3
 const BELIEF_ABC_ROWS = 3
 const BELIEF_EVIDENCE_ROWS = 5
+const BELIEF_IMPACT_BULLETS = 5
+const BELIEF_IMPACT_AFFECTED_ROWS = 3
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -332,6 +340,11 @@ const BELIEF_EVIDENCE_INSTRUCTIONS = [
     'Registra evidencia en contra (hechos reales que la contradicen).',
     'Escribe un nuevo significado posible (reencuadre creíble, no positivo vacío).',
     'Regla: evidencia = hechos observables (situación, fecha aproximada, resultado). No opiniones.'
+]
+
+const BELIEF_IMPACT_INSTRUCTIONS = [
+    'Elige 1 creencia limitante (la más relevante) y responde con bullets concretos.',
+    'No expliques por qué; describe costos, oportunidades perdidas y afectados.'
 ]
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
@@ -565,6 +578,17 @@ function defaultBeliefEvidenceRows() {
         evidenceFor: '',
         evidenceAgainst: '',
         newMeaning: ''
+    }))
+}
+
+function emptyBeliefImpactBullets() {
+    return Array.from({ length: BELIEF_IMPACT_BULLETS }, () => '')
+}
+
+function defaultBeliefImpactAffectedRows() {
+    return Array.from({ length: BELIEF_IMPACT_AFFECTED_ROWS }, () => ({
+        person: '',
+        impact: ''
     }))
 }
 
@@ -861,6 +885,48 @@ function normalizeBeliefEvidenceRows(value: unknown) {
     return defaultBeliefEvidenceRows()
 }
 
+function normalizeBeliefImpactBullets(value: unknown) {
+    if (Array.isArray(value)) {
+        const list = value
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .slice(0, BELIEF_IMPACT_BULLETS)
+        return [...list, ...Array.from({ length: BELIEF_IMPACT_BULLETS - list.length }, () => '')]
+    }
+
+    if (typeof value === 'string') {
+        const list = value
+            .split('\n')
+            .map((line) => line.replace(/^[\s•-]+/, '').trim())
+            .filter(Boolean)
+            .slice(0, BELIEF_IMPACT_BULLETS)
+        return [...list, ...Array.from({ length: BELIEF_IMPACT_BULLETS - list.length }, () => '')]
+    }
+
+    return emptyBeliefImpactBullets()
+}
+
+function normalizeBeliefImpactAffectedRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { person: '', impact: '' }
+                }
+
+                const candidate = row as Partial<Record<'person' | 'impact', unknown>>
+                return {
+                    person: typeof candidate.person === 'string' ? candidate.person : '',
+                    impact: typeof candidate.impact === 'string' ? candidate.impact : ''
+                }
+            })
+            .slice(0, BELIEF_IMPACT_AFFECTED_ROWS)
+
+        return [...rows, ...Array.from({ length: BELIEF_IMPACT_AFFECTED_ROWS - rows.length }, () => ({ person: '', impact: '' }))]
+    }
+
+    return defaultBeliefImpactAffectedRows()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -889,6 +955,7 @@ export function WB1Step1Digital() {
     const [showEnergyHelp, setShowEnergyHelp] = useState(false)
     const [showBeliefAbcHelp, setShowBeliefAbcHelp] = useState(false)
     const [showBeliefEvidenceHelp, setShowBeliefEvidenceHelp] = useState(false)
+    const [showBeliefImpactHelp, setShowBeliefImpactHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -950,6 +1017,11 @@ export function WB1Step1Digital() {
     const [beliefAbcRows, setBeliefAbcRows] = useState<BeliefAbcRow[]>(defaultBeliefAbcRows())
     const [beliefAbcEditModes, setBeliefAbcEditModes] = useState<boolean[]>(Array.from({ length: BELIEF_ABC_ROWS }, () => false))
     const [beliefEvidenceRows, setBeliefEvidenceRows] = useState<BeliefEvidenceRow[]>(defaultBeliefEvidenceRows())
+    const [beliefImpactSelected, setBeliefImpactSelected] = useState('')
+    const [beliefImpactCosts, setBeliefImpactCosts] = useState<string[]>(emptyBeliefImpactBullets())
+    const [beliefImpactLostOpportunities, setBeliefImpactLostOpportunities] = useState<string[]>(emptyBeliefImpactBullets())
+    const [beliefImpactAffectedRows, setBeliefImpactAffectedRows] = useState<BeliefImpactAffectedRow[]>(defaultBeliefImpactAffectedRows())
+    const [beliefImpactIsEditing, setBeliefImpactIsEditing] = useState(false)
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -1284,12 +1356,46 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(BELIEF_EVIDENCE_STORAGE_KEY, JSON.stringify(beliefEvidenceRows))
     }, [beliefEvidenceRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(BELIEF_IMPACT_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as {
+                selectedBelief?: unknown
+                costs?: unknown
+                opportunities?: unknown
+                affected?: unknown
+            }
+            setBeliefImpactSelected(typeof parsed.selectedBelief === 'string' ? parsed.selectedBelief : '')
+            setBeliefImpactCosts(normalizeBeliefImpactBullets(parsed.costs))
+            setBeliefImpactLostOpportunities(normalizeBeliefImpactBullets(parsed.opportunities))
+            setBeliefImpactAffectedRows(normalizeBeliefImpactAffectedRows(parsed.affected))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(
+            BELIEF_IMPACT_STORAGE_KEY,
+            JSON.stringify({
+                selectedBelief: beliefImpactSelected,
+                costs: beliefImpactCosts,
+                opportunities: beliefImpactLostOpportunities,
+                affected: beliefImpactAffectedRows
+            })
+        )
+    }, [beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 15
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 16
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -1346,6 +1452,13 @@ export function WB1Step1Digital() {
             ).length > 0
                 ? 1
                 : 0
+        const filledBeliefImpact =
+            beliefImpactSelected.trim().length > 0 &&
+            beliefImpactCosts.filter((item) => item.trim().length > 0).length >= 3 &&
+            beliefImpactLostOpportunities.filter((item) => item.trim().length > 0).length >= 3 &&
+            beliefImpactAffectedRows.every((row) => row.person.trim().length > 0 && row.impact.trim().length > 0)
+                ? 1
+                : 0
         const filled =
             filledId +
             filledNarrative +
@@ -1363,13 +1476,34 @@ export function WB1Step1Digital() {
             filledEnergyClosure +
             filledBeliefAbc +
             filledBeliefEvidence +
+            filledBeliefImpact +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
     }, [storyEvents])
+
+    const limitingBeliefOptions = useMemo(() => {
+        const seen = new Set<string>()
+        const options: string[] = []
+
+        beliefEvidenceRows.forEach((row) => {
+            const value = row.limitingBelief.trim()
+            if (!value || seen.has(value)) return
+            seen.add(value)
+            options.push(value)
+        })
+
+        return options
+    }, [beliefEvidenceRows])
+
+    useEffect(() => {
+        if (!beliefImpactSelected) return
+        if (limitingBeliefOptions.includes(beliefImpactSelected)) return
+        setBeliefImpactSelected('')
+    }, [beliefImpactSelected, limitingBeliefOptions])
 
     const identityWheelSize = IDENTITY_WHEEL_SIZES[identityWheelSizeIndex]
 
@@ -1625,6 +1759,52 @@ export function WB1Step1Digital() {
         })
     }
 
+    const startBeliefImpactEdit = () => {
+        if (isLocked) return
+        setBeliefImpactIsEditing(true)
+    }
+
+    const saveBeliefImpact = () => {
+        setBeliefImpactCosts((prev) => prev.map((item) => item.trim()))
+        setBeliefImpactLostOpportunities((prev) => prev.map((item) => item.trim()))
+        setBeliefImpactAffectedRows((prev) =>
+            prev.map((row) => ({
+                person: row.person.trim(),
+                impact: row.impact.trim()
+            }))
+        )
+        setBeliefImpactIsEditing(false)
+    }
+
+    const setBeliefImpactCost = (index: number, value: string) => {
+        if (isLocked || !beliefImpactIsEditing) return
+        setBeliefImpactCosts((prev) => {
+            const next = [...prev]
+            next[index] = value
+            return next
+        })
+    }
+
+    const setBeliefImpactOpportunity = (index: number, value: string) => {
+        if (isLocked || !beliefImpactIsEditing) return
+        setBeliefImpactLostOpportunities((prev) => {
+            const next = [...prev]
+            next[index] = value
+            return next
+        })
+    }
+
+    const setBeliefImpactAffectedCell = (rowIndex: number, field: keyof BeliefImpactAffectedRow, value: string) => {
+        if (isLocked || !beliefImpactIsEditing) return
+        setBeliefImpactAffectedRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -1753,6 +1933,11 @@ export function WB1Step1Digital() {
             row.evidenceFor.trim().length > 0 &&
             row.evidenceAgainst.trim().length > 0 &&
             row.newMeaning.trim().length > 0
+    ).length
+    const beliefImpactCostsCount = beliefImpactCosts.filter((item) => item.trim().length > 0).length
+    const beliefImpactOpportunitiesCount = beliefImpactLostOpportunities.filter((item) => item.trim().length > 0).length
+    const beliefImpactAffectedCount = beliefImpactAffectedRows.filter(
+        (row) => row.person.trim().length > 0 && row.impact.trim().length > 0
     ).length
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
@@ -3203,6 +3388,189 @@ export function WB1Step1Digital() {
                                             )
                                         })}
                                     </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 3 - Costo oculto (impacto)
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Elige una creencia limitante y describe costos, oportunidades perdidas y personas afectadas.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBeliefImpactHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showBeliefImpactHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {BELIEF_IMPACT_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showBeliefImpactHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-3">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo para completar este ejercicio</p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Creencia limitante:</span> “Si pido ayuda, pierdo autoridad.”
+                                            </p>
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-semibold text-slate-900">1) ¿Qué me cuesta sostener esta creencia?</p>
+                                                <p className="text-sm text-slate-700">• Sobrecarga y cansancio (hago más trabajo del necesario).</p>
+                                                <p className="text-sm text-slate-700">• Decisiones más lentas (evito preguntar y tardo en resolver).</p>
+                                                <p className="text-sm text-slate-700">• Estrés y tensión interna antes de reuniones clave.</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-semibold text-slate-900">2) ¿Qué oportunidades pierdo por esta creencia?</p>
+                                                <p className="text-sm text-slate-700">• Aprender más rápido con apoyo experto.</p>
+                                                <p className="text-sm text-slate-700">• Delegar y desarrollar al equipo en tareas críticas.</p>
+                                                <p className="text-sm text-slate-700">• Construir confianza real con pares y líderes (por apertura).</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-semibold text-slate-900">3) ¿A quién afecta?</p>
+                                                <p className="text-sm text-slate-700">• A mi equipo: menos autonomía y crecimiento (yo centralizo).</p>
+                                                <p className="text-sm text-slate-700">• A mis pares: baja colaboración (no pido ni ofrezco apoyo).</p>
+                                                <p className="text-sm text-slate-700">• A mí: desgaste y menor claridad mental bajo presión.</p>
+                                            </div>
+                                        </article>
+                                    )}
+
+                                    <article className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
+                                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-end">
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Creencia limitante</span>
+                                                <select
+                                                    value={beliefImpactSelected}
+                                                    onChange={(event) => !isLocked && setBeliefImpactSelected(event.target.value)}
+                                                    disabled={isLocked || limitingBeliefOptions.length === 0}
+                                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                >
+                                                    <option value="">
+                                                        {limitingBeliefOptions.length > 0
+                                                            ? 'Selecciona una creencia'
+                                                            : 'Primero define creencias en el Instrumento 2'}
+                                                    </option>
+                                                    {limitingBeliefOptions.map((belief) => (
+                                                        <option key={belief} value={belief}>
+                                                            {belief}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                            <div className="inline-flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={startBeliefImpactEdit}
+                                                    disabled={isLocked || beliefImpactIsEditing || !beliefImpactSelected}
+                                                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={saveBeliefImpact}
+                                                    disabled={isLocked || !beliefImpactIsEditing}
+                                                    className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Guardar
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {beliefImpactSelected ? (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <p className="text-sm font-semibold text-slate-900">
+                                                        1) ¿Qué me cuesta sostener esta creencia? (3-5 bullets)
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">Bullets cargados: {beliefImpactCostsCount} / {BELIEF_IMPACT_BULLETS}</p>
+                                                    <div className="space-y-2">
+                                                        {beliefImpactCosts.map((item, index) => (
+                                                            <label key={`impact-cost-${index}`} className="flex items-start gap-2">
+                                                                <span className="mt-2 text-slate-500">•</span>
+                                                                <input
+                                                                    type="text"
+                                                                    value={item}
+                                                                    onChange={(event) => setBeliefImpactCost(index, event.target.value)}
+                                                                    disabled={isLocked || !beliefImpactIsEditing}
+                                                                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                    placeholder={`Costo ${index + 1}`}
+                                                                />
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <p className="text-sm font-semibold text-slate-900">
+                                                        2) ¿Qué oportunidades pierdo por esta creencia? (3-5 bullets)
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        Bullets cargados: {beliefImpactOpportunitiesCount} / {BELIEF_IMPACT_BULLETS}
+                                                    </p>
+                                                    <div className="space-y-2">
+                                                        {beliefImpactLostOpportunities.map((item, index) => (
+                                                            <label key={`impact-opportunity-${index}`} className="flex items-start gap-2">
+                                                                <span className="mt-2 text-slate-500">•</span>
+                                                                <input
+                                                                    type="text"
+                                                                    value={item}
+                                                                    onChange={(event) => setBeliefImpactOpportunity(index, event.target.value)}
+                                                                    disabled={isLocked || !beliefImpactIsEditing}
+                                                                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                    placeholder={`Oportunidad ${index + 1}`}
+                                                                />
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <p className="text-sm font-semibold text-slate-900">3) ¿A quién afecta? (personas/roles + cómo)</p>
+                                                    <p className="text-xs text-slate-500">
+                                                        Filas completas: {beliefImpactAffectedCount} / {BELIEF_IMPACT_AFFECTED_ROWS}
+                                                    </p>
+                                                    <div className="space-y-2">
+                                                        {beliefImpactAffectedRows.map((row, rowIndex) => (
+                                                            <div key={`impact-affected-${rowIndex}`} className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-2 items-center">
+                                                                <label className="sr-only">Persona o rol {rowIndex + 1}</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={row.person}
+                                                                    onChange={(event) => setBeliefImpactAffectedCell(rowIndex, 'person', event.target.value)}
+                                                                    disabled={isLocked || !beliefImpactIsEditing}
+                                                                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                    placeholder={`A ${rowIndex + 1} (rol/persona)`}
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    value={row.impact}
+                                                                    onChange={(event) => setBeliefImpactAffectedCell(rowIndex, 'impact', event.target.value)}
+                                                                    disabled={isLocked || !beliefImpactIsEditing}
+                                                                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                    placeholder="¿Cómo afecta?"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <p className="text-sm text-slate-500">
+                                                Selecciona una creencia limitante del Instrumento 2 para habilitar este análisis.
+                                            </p>
+                                        )}
+                                    </article>
                                 </section>
                             </article>
                         )}
