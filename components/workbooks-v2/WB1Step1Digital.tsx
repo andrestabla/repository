@@ -91,6 +91,14 @@ type ValueDecisionRow = {
     decision2: string
 }
 
+type NoNegotiableFieldKey = 'behavior' | 'implication'
+
+type NoNegotiableRow = {
+    value: string
+    behavior: string
+    implication: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -105,6 +113,7 @@ const IDENTITY_MATRIX_STORAGE_KEY = 'workbooks-v2-wb1-identity-matrix'
 const STAKEHOLDER_MIRROR_STORAGE_KEY = 'workbooks-v2-wb1-stakeholder-mirror'
 const FUNDAMENTAL_VALUES_STORAGE_KEY = 'workbooks-v2-wb1-fundamental-values'
 const VALUE_DECISIONS_STORAGE_KEY = 'workbooks-v2-wb1-value-decisions'
+const NO_NEGOTIABLE_PHRASES_STORAGE_KEY = 'workbooks-v2-wb1-no-negotiable-phrases'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -112,6 +121,7 @@ const IDENTITY_BULLET_LIMIT = 3
 const IDENTITY_MATRIX_ROWS = 10
 const STAKEHOLDER_ROWS = 3
 const VALUE_DECISION_ROWS = 5
+const NO_NEGOTIABLE_ROWS = 3
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -230,6 +240,11 @@ const STAKEHOLDER_MIRROR_INSTRUCTIONS = [
 const VALUE_DECISION_INSTRUCTIONS = [
     'Para cada valor seleccionado previamente como más determinante, escribe 2 decisiones recientes (últimos 20-40 días) que lo demuestren.',
     'Regla: una decisión debe ser observable: elegiste, priorizaste, dijiste no, actuaste, corregiste, conversaste.'
+]
+
+const NO_NEGOTIABLE_INSTRUCTIONS = [
+    'Para cada uno de tus 3 valores no negociables, completa esta frase: "Bajo presión, yo NO ______ aunque eso implique ______."',
+    'Regla: el primer espacio debe ser un comportamiento concreto (no un valor abstracto).'
 ]
 
 const FUNDAMENTAL_VALUES = [
@@ -396,6 +411,14 @@ function defaultValueDecisionRows() {
     }))
 }
 
+function defaultNoNegotiableRows() {
+    return Array.from({ length: NO_NEGOTIABLE_ROWS }, () => ({
+        value: '',
+        behavior: '',
+        implication: ''
+    }))
+}
+
 function normalizePatternList(value: unknown) {
     if (Array.isArray(value)) {
         const list = value
@@ -521,6 +544,35 @@ function normalizeValueDecisionRows(value: unknown) {
     return defaultValueDecisionRows()
 }
 
+function normalizeNoNegotiableRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { value: '', behavior: '', implication: '' }
+                }
+                const candidate = row as Partial<Record<'value' | NoNegotiableFieldKey, unknown>>
+                return {
+                    value: typeof candidate.value === 'string' ? candidate.value : '',
+                    behavior: typeof candidate.behavior === 'string' ? candidate.behavior : '',
+                    implication: typeof candidate.implication === 'string' ? candidate.implication : ''
+                }
+            })
+            .slice(0, NO_NEGOTIABLE_ROWS)
+
+        return [
+            ...rows,
+            ...Array.from({ length: NO_NEGOTIABLE_ROWS - rows.length }, () => ({
+                value: '',
+                behavior: '',
+                implication: ''
+            }))
+        ]
+    }
+
+    return defaultNoNegotiableRows()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -544,6 +596,7 @@ export function WB1Step1Digital() {
     const [showIdentityMatrixHelp, setShowIdentityMatrixHelp] = useState(false)
     const [showStakeholderHelp, setShowStakeholderHelp] = useState(false)
     const [showValueDecisionHelp, setShowValueDecisionHelp] = useState(false)
+    const [showNoNegotiableHelp, setShowNoNegotiableHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -587,6 +640,10 @@ export function WB1Step1Digital() {
     const [stakeholderRows, setStakeholderRows] = useState<StakeholderRow[]>(defaultStakeholderRows())
     const [fundamentalValues, setFundamentalValues] = useState<FundamentalValuesFields>(defaultFundamentalValuesFields())
     const [valueDecisionRows, setValueDecisionRows] = useState<ValueDecisionRow[]>(defaultValueDecisionRows())
+    const [noNegotiableRows, setNoNegotiableRows] = useState<NoNegotiableRow[]>(defaultNoNegotiableRows())
+    const [noNegotiableEditModes, setNoNegotiableEditModes] = useState<boolean[]>(
+        Array.from({ length: NO_NEGOTIABLE_ROWS }, () => false)
+    )
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -787,12 +844,51 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(VALUE_DECISIONS_STORAGE_KEY, JSON.stringify(valueDecisionRows))
     }, [valueDecisionRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(NO_NEGOTIABLE_PHRASES_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setNoNegotiableRows(normalizeNoNegotiableRows(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        setNoNegotiableRows((prev) => {
+            const previousByValue = new Map(
+                prev
+                    .filter((row) => row.value.trim().length > 0)
+                    .map((row) => [row.value, row] as const)
+            )
+
+            return Array.from({ length: NO_NEGOTIABLE_ROWS }, (_, index) => {
+                const value = fundamentalValues.selected3[index] || ''
+                const previous = previousByValue.get(value)
+                return {
+                    value,
+                    behavior: previous?.behavior || '',
+                    implication: previous?.implication || ''
+                }
+            })
+        })
+        setNoNegotiableEditModes(Array.from({ length: NO_NEGOTIABLE_ROWS }, () => false))
+    }, [fundamentalValues.selected3])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(NO_NEGOTIABLE_PHRASES_STORAGE_KEY, JSON.stringify(noNegotiableRows))
+    }, [noNegotiableRows])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 7
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 8
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -815,6 +911,11 @@ export function WB1Step1Digital() {
         )
             ? 1
             : 0
+        const filledNoNegotiablePhrases = noNegotiableRows.every(
+            (row) => row.value.trim().length > 0 && row.behavior.trim().length > 0 && row.implication.trim().length > 0
+        )
+            ? 1
+            : 0
         const filled =
             filledId +
             filledNarrative +
@@ -826,9 +927,10 @@ export function WB1Step1Digital() {
             filledValues5 +
             filledValues3 +
             filledValueDecisionMatrix +
+            filledNoNegotiablePhrases +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -942,6 +1044,37 @@ export function WB1Step1Digital() {
     const setValueDecisionCell = (rowIndex: number, field: ValueDecisionFieldKey, value: string) => {
         if (isLocked) return
         setValueDecisionRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target || target.value.trim().length === 0) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
+    const editNoNegotiableRow = (rowIndex: number) => {
+        if (isLocked) return
+        setNoNegotiableEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? true : mode)))
+    }
+
+    const saveNoNegotiableRow = (rowIndex: number) => {
+        setNoNegotiableRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = {
+                ...target,
+                behavior: target.behavior.trim(),
+                implication: target.implication.trim()
+            }
+            return nextRows
+        })
+        setNoNegotiableEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? false : mode)))
+    }
+
+    const setNoNegotiableCell = (rowIndex: number, field: NoNegotiableFieldKey, value: string) => {
+        if (isLocked || !noNegotiableEditModes[rowIndex]) return
+        setNoNegotiableRows((prev) => {
             const nextRows = [...prev]
             const target = nextRows[rowIndex]
             if (!target || target.value.trim().length === 0) return prev
@@ -1066,6 +1199,7 @@ export function WB1Step1Digital() {
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
+    const canUseNoNegotiablePhrases = fundamentalValues.selected3.length === 3
 
     return (
         <div className="min-h-screen bg-[#f4f7fb] text-[#0f172a]">
@@ -1622,6 +1756,7 @@ export function WB1Step1Digital() {
                                         })}
                                     </div>
                                 </section>
+
                             </article>
                         )}
 
@@ -2095,6 +2230,7 @@ export function WB1Step1Digital() {
                                         </table>
                                     </div>
                                 </section>
+
                             </article>
                         )}
 
@@ -2380,6 +2516,134 @@ export function WB1Step1Digital() {
                                                 })}
                                             </tbody>
                                         </table>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 3 - No negociables en formato operativo
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Completa una frase operativa por cada valor no negociable seleccionado.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNoNegotiableHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showNoNegotiableHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {NO_NEGOTIABLE_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {!canUseNoNegotiablePhrases && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                            Para completar este instrumento, primero define tus 3 valores no negociables en el Instrumento 1.
+                                        </p>
+                                    )}
+
+                                    {showNoNegotiableHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-2">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplos</p>
+                                            <p className="text-sm text-slate-700">
+                                                • Bajo presión, yo NO manipulo datos aunque eso implique una conversación incómoda.
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                • Bajo presión, yo NO falto al respeto aunque eso implique perder la discusión.
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                • Bajo presión, yo NO acepto plazos imposibles aunque eso implique decir no a una autoridad.
+                                            </p>
+                                        </article>
+                                    )}
+
+                                    <p className="text-xs text-slate-500">
+                                        Frases completas:{' '}
+                                        {
+                                            noNegotiableRows.filter(
+                                                (row) =>
+                                                    row.value.trim().length > 0 &&
+                                                    row.behavior.trim().length > 0 &&
+                                                    row.implication.trim().length > 0
+                                            ).length
+                                        }{' '}
+                                        / {NO_NEGOTIABLE_ROWS}
+                                    </p>
+
+                                    <div className="space-y-3">
+                                        {noNegotiableRows.map((row, rowIndex) => {
+                                            const rowDisabled = isLocked || row.value.trim().length === 0 || !canUseNoNegotiablePhrases
+                                            const isEditing = noNegotiableEditModes[rowIndex]
+                                            return (
+                                                <article key={`no-negotiable-row-${rowIndex}`} className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                                        <p className="text-sm font-bold text-slate-900">
+                                                            {row.value || `Valor no negociable ${rowIndex + 1} (por seleccionar)`}
+                                                        </p>
+                                                        <div className="inline-flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editNoNegotiableRow(rowIndex)}
+                                                                disabled={rowDisabled || isEditing}
+                                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => saveNoNegotiableRow(rowIndex)}
+                                                                disabled={rowDisabled || !isEditing}
+                                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Guardar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {isEditing ? (
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                            <label className="space-y-1">
+                                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Bajo presión, yo NO...</span>
+                                                                <input
+                                                                    type="text"
+                                                                    value={row.behavior}
+                                                                    onChange={(event) => setNoNegotiableCell(rowIndex, 'behavior', event.target.value)}
+                                                                    disabled={rowDisabled}
+                                                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                    placeholder="Comportamiento concreto"
+                                                                />
+                                                            </label>
+                                                            <label className="space-y-1">
+                                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Aunque eso implique...</span>
+                                                                <input
+                                                                    type="text"
+                                                                    value={row.implication}
+                                                                    onChange={(event) => setNoNegotiableCell(rowIndex, 'implication', event.target.value)}
+                                                                    disabled={rowDisabled}
+                                                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                    placeholder="Costo o consecuencia asumida"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                                                            Bajo presión, yo NO {row.behavior || '______'} aunque eso implique {row.implication || '______'}.
+                                                        </p>
+                                                    )}
+                                                </article>
+                                            )
+                                        })}
                                     </div>
                                 </section>
                             </article>
