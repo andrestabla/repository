@@ -1805,6 +1805,8 @@ function sortByApproxDate(a: StoryEvent, b: StoryEvent) {
 export function WB1Step1Digital() {
     const [activePage, setActivePage] = useState(1)
     const [isLocked, setIsLocked] = useState(false)
+    const [isExportingAll, setIsExportingAll] = useState(false)
+    const [isExporting, setIsExporting] = useState(false)
     const [showEventModal, setShowEventModal] = useState(false)
     const [showIdentityHelp, setShowIdentityHelp] = useState(false)
     const [showIdentityMatrixHelp, setShowIdentityMatrixHelp] = useState(false)
@@ -2730,22 +2732,101 @@ export function WB1Step1Digital() {
     const currentPageIndex = PAGES.findIndex((page) => page.id === activePage)
     const hasPrevPage = currentPageIndex > 0
     const hasNextPage = currentPageIndex >= 0 && currentPageIndex < PAGES.length - 1
+    const isPageVisible = (pageId: number) => isExportingAll || activePage === pageId
 
-    const exportPdf = () => {
-        window.print()
+    const waitForRenderCycle = () =>
+        new Promise<void>((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        })
+
+    const createHtmlSnapshotWithFormState = () => {
+        const originalRoot = document.documentElement
+        const clonedRoot = originalRoot.cloneNode(true) as HTMLElement
+
+        const originalFields = Array.from(originalRoot.querySelectorAll('input, textarea, select'))
+        const clonedFields = Array.from(clonedRoot.querySelectorAll('input, textarea, select'))
+
+        clonedFields.forEach((field, index) => {
+            const originalField = originalFields[index]
+            if (!originalField) return
+
+            if (field instanceof HTMLInputElement && originalField instanceof HTMLInputElement) {
+                field.value = originalField.value
+                if (originalField.type !== 'file') {
+                    field.setAttribute('value', originalField.value)
+                }
+
+                if (originalField.type === 'checkbox' || originalField.type === 'radio') {
+                    if (originalField.checked) {
+                        field.setAttribute('checked', 'checked')
+                    } else {
+                        field.removeAttribute('checked')
+                    }
+                }
+                return
+            }
+
+            if (field instanceof HTMLTextAreaElement && originalField instanceof HTMLTextAreaElement) {
+                field.value = originalField.value
+                field.textContent = originalField.value
+                return
+            }
+
+            if (field instanceof HTMLSelectElement && originalField instanceof HTMLSelectElement) {
+                field.value = originalField.value
+                Array.from(field.options).forEach((option) => {
+                    option.selected = option.value === originalField.value
+                    if (option.selected) {
+                        option.setAttribute('selected', 'selected')
+                    } else {
+                        option.removeAttribute('selected')
+                    }
+                })
+            }
+        })
+
+        return '<!doctype html>\n' + clonedRoot.outerHTML
     }
 
-    const exportHtml = () => {
-        const htmlContent = '<!doctype html>\n' + document.documentElement.outerHTML
-        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = 'WB1-digital-interactivo.html'
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        URL.revokeObjectURL(url)
+    const exportPdf = async () => {
+        if (isExporting) return
+        setIsExporting(true)
+        setIsExportingAll(true)
+
+        try {
+            await waitForRenderCycle()
+            window.print()
+        } finally {
+            setIsExportingAll(false)
+            setIsExporting(false)
+        }
+    }
+
+    const exportHtml = async () => {
+        if (isExporting) return
+        setIsExporting(true)
+        setIsExportingAll(true)
+
+        try {
+            await waitForRenderCycle()
+
+            const origin = window.location.origin
+            let htmlContent = createHtmlSnapshotWithFormState()
+            htmlContent = htmlContent.replace(/\b(href|src)=\"\/(?!\/)/g, `$1="${origin}/`)
+
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = 'WB1-completo-digital-interactivo.html'
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+            URL.revokeObjectURL(url)
+        } finally {
+            setIsExportingAll(false)
+            setIsExporting(false)
+        }
     }
 
     const setIdField = (key: keyof WB1IdentificationFields, value: string) => {
@@ -2753,9 +2834,125 @@ export function WB1Step1Digital() {
         setIdFields((prev) => ({ ...prev, [key]: value }))
     }
 
+    const saveIdentificationFields = () => {
+        if (isLocked) return
+        setIdFields((prev) => ({
+            leaderName: prev.leaderName.trim(),
+            role: prev.role.trim(),
+            cohort: prev.cohort.trim(),
+            startDate: prev.startDate.trim()
+        }))
+    }
+
     const setStoryField = (key: StoryTextFieldKey, value: string) => {
         if (isLocked) return
         setStoryFields((prev) => ({ ...prev, [key]: value }))
+    }
+
+    const saveStoryStep1 = () => {
+        if (isLocked) return
+        setStoryFields((prev) => ({
+            ...prev,
+            timelineRange: prev.timelineRange.trim()
+        }))
+    }
+
+    const saveStoryStep2 = () => {
+        if (isLocked) return
+        setStoryFields((prev) => ({
+            ...prev,
+            actOrigin: prev.actOrigin.trim(),
+            actBreak: prev.actBreak.trim(),
+            actRebuild: prev.actRebuild.trim()
+        }))
+    }
+
+    const saveIdentityMatrix = () => {
+        if (isLocked) return
+        setIdentityMatrixRows((prev) =>
+            prev.map((row) => ({
+                say: row.say.trim(),
+                do: row.do.trim(),
+                impact: row.impact.trim()
+            }))
+        )
+    }
+
+    const saveStakeholderMirror = () => {
+        if (isLocked) return
+        setStakeholderRows((prev) =>
+            prev.map((row) => ({
+                personRole: row.personRole.trim(),
+                strength: row.strength.trim(),
+                blindspot: row.blindspot.trim()
+            }))
+        )
+    }
+
+    const saveFundamentalValueSelection = () => {
+        if (isLocked) return
+        setFundamentalValues((prev) => {
+            const selected10 = normalizeFundamentalValuesList(prev.selected10, 10)
+            const selected5 = normalizeFundamentalValuesList(
+                prev.selected5.filter((value) => selected10.includes(value)),
+                5
+            )
+            const selected3 = normalizeFundamentalValuesList(
+                prev.selected3.filter((value) => selected5.includes(value)),
+                3
+            )
+            return { selected10, selected5, selected3 }
+        })
+    }
+
+    const saveValueDecisionMatrix = () => {
+        if (isLocked) return
+        setValueDecisionRows((prev) =>
+            prev.map((row) => ({
+                value: row.value.trim(),
+                decision1: row.decision1.trim(),
+                decision2: row.decision2.trim()
+            }))
+        )
+    }
+
+    const saveEnergyMap = () => {
+        if (isLocked) return
+        setEnergyMapRows((prev) =>
+            prev.map((row) => ({
+                activity: row.activity.trim(),
+                sign: row.sign,
+                energy: row.energy,
+                reason: row.reason.trim(),
+                adjust: row.adjust
+            }))
+        )
+    }
+
+    const saveEnergyClosure = () => {
+        if (isLocked) return
+        setEnergyPatternBullets((prev) => prev.map((item) => item.trim()))
+        setEnergyDoMore((prev) => prev.trim())
+        setEnergyDoLess((prev) => prev.trim())
+        setEnergyRedesign((prev) => prev.trim())
+    }
+
+    const saveEnergyInstrument = () => {
+        if (isLocked) return
+        saveEnergyMap()
+        saveEnergyClosure()
+    }
+
+    const saveBeliefEvidenceMatrix = () => {
+        if (isLocked) return
+        setBeliefEvidenceRows((prev) =>
+            prev.map((row) => ({
+                limitingBelief: row.limitingBelief.trim(),
+                evidenceFor: row.evidenceFor.trim(),
+                evidenceAgainst: row.evidenceAgainst.trim(),
+                newMeaning: row.newMeaning.trim()
+            }))
+        )
     }
 
     const editPatternList = (key: PatternListKey) => {
@@ -3566,6 +3763,11 @@ export function WB1Step1Digital() {
                     <span className="rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-[11px] font-semibold text-blue-700">
                         Avance: {completion}%
                     </span>
+                    {isExporting && (
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">
+                            Preparando exportación completa...
+                        </span>
+                    )}
                     <button
                         type="button"
                         onClick={() => setIsLocked((prev) => !prev)}
@@ -3577,25 +3779,35 @@ export function WB1Step1Digital() {
                     <button
                         type="button"
                         onClick={exportPdf}
-                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-bold hover:bg-slate-800 transition-colors"
+                        disabled={isExporting}
+                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-bold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Printer size={14} />
-                        Descargar PDF
+                        {isExporting ? 'Preparando PDF...' : 'Descargar PDF'}
                     </button>
                     <button
                         type="button"
                         onClick={exportHtml}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                        disabled={isExporting}
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <FileText size={14} />
-                        Descargar HTML
+                        {isExporting ? 'Preparando HTML...' : 'Descargar HTML'}
                     </button>
                 </div>
             </header>
 
             <main className="max-w-7xl mx-auto px-5 md:px-8 py-8 overflow-x-auto">
-                <div className="grid grid-cols-[240px_minmax(0,1fr)] gap-6 items-start min-w-[920px]">
-                    <aside className="wb1-sidebar rounded-2xl border border-slate-200 bg-white p-4 lg:sticky lg:top-24 shadow-sm">
+                <div
+                    className={`grid gap-6 items-start ${
+                        isExportingAll ? 'grid-cols-1 min-w-0' : 'grid-cols-[240px_minmax(0,1fr)] min-w-[920px]'
+                    }`}
+                >
+                    <aside
+                        className={`wb1-sidebar rounded-2xl border border-slate-200 bg-white p-4 lg:sticky lg:top-24 shadow-sm ${
+                            isExportingAll ? 'hidden' : ''
+                        }`}
+                    >
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3">Índice</p>
                         <nav className="space-y-1.5" aria-label="Navegación de páginas">
                             {PAGES.map((page) => (
@@ -3616,7 +3828,7 @@ export function WB1Step1Digital() {
                     </aside>
 
                     <section className="space-y-6">
-                        {activePage === 1 && (
+                        {isPageVisible(1) && (
                             <article className="rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-sm">
                                 <div className="relative min-h-[56vh] md:min-h-[62vh] flex items-center justify-center px-6 py-12 bg-gradient-to-b from-[#f8fbff] to-[#eaf1fb]">
                                     <div className="absolute inset-x-0 top-[58%] h-px bg-blue-200" />
@@ -3687,10 +3899,21 @@ export function WB1Step1Digital() {
                                         </label>
                                     </div>
 
-                                    <div className="mt-6 flex justify-end">
+                                    <div className="mt-6 flex flex-wrap justify-end gap-2">
                                         <button
                                             type="button"
-                                            onClick={goNextPage}
+                                            onClick={saveIdentificationFields}
+                                            disabled={isLocked}
+                                            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar datos
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                saveIdentificationFields()
+                                                goNextPage()
+                                            }}
                                             className="rounded-xl bg-blue-700 text-white px-6 py-3 text-sm font-bold hover:bg-blue-600 transition-colors"
                                         >
                                             Empezar
@@ -3700,7 +3923,7 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        {activePage === 2 && (
+                        {isPageVisible(2) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 2</p>
@@ -3754,7 +3977,7 @@ export function WB1Step1Digital() {
 
                                 <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">
-                                        Conductas observables asociadas (que se debería ver en tu día a día)
+                                        Conductas observables asociadas (que deberías ver en tu día a día)
                                     </h3>
                                     <ul className="mt-4 space-y-2.5">
                                         {OBSERVABLE_BEHAVIORS.map((item) => (
@@ -3768,7 +3991,7 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        {activePage === 3 && (
+                        {isPageVisible(3) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 3</p>
@@ -3803,6 +4026,16 @@ export function WB1Step1Digital() {
                                             placeholder="Ej: Enero 2020 - Diciembre 2025"
                                         />
                                     </label>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={saveStoryStep1}
+                                            disabled={isLocked}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar paso 1
+                                        </button>
+                                    </div>
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
@@ -3810,7 +4043,7 @@ export function WB1Step1Digital() {
                                         <div>
                                             <h3 className="text-base md:text-lg font-bold text-slate-900">Registro de eventos</h3>
                                             <p className="text-sm text-slate-600 mt-1">
-                                                Usa la plantilla: tipo, fecha aproximada, qué ocurrió, qué decidiste, qué aprendiste y creencia instalada.
+                                                Usa la plantilla: tipo, fecha aproximada, qué ocurrió, qué decidí/interpreté, qué aprendí y qué creencia se instaló.
                                             </p>
                                         </div>
                                         <button
@@ -3972,7 +4205,7 @@ export function WB1Step1Digital() {
                                                         onClick={() => toggleActHelp(guide.helpKey)}
                                                         className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                                     >
-                                                        {openActHelp[guide.helpKey] ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                                        {openActHelp[guide.helpKey] ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                                     </button>
                                                 </div>
 
@@ -4004,6 +4237,16 @@ export function WB1Step1Digital() {
                                                 </label>
                                             </article>
                                         ))}
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={saveStoryStep2}
+                                            disabled={isLocked}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar paso 2
+                                        </button>
                                     </div>
                                 </section>
 
@@ -4105,7 +4348,7 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        {activePage === 4 && (
+                        {isPageVisible(4) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 4</p>
@@ -4133,7 +4376,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowIdentityHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showIdentityHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showIdentityHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -4328,7 +4571,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowIdentityMatrixHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showIdentityMatrixHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showIdentityMatrixHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -4439,6 +4682,16 @@ export function WB1Step1Digital() {
                                             </tbody>
                                         </table>
                                     </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={saveIdentityMatrix}
+                                            disabled={isLocked}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar instrumento 2
+                                        </button>
+                                    </div>
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
@@ -4454,7 +4707,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowStakeholderHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showStakeholderHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showStakeholderHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -4574,12 +4827,22 @@ export function WB1Step1Digital() {
                                             </tbody>
                                         </table>
                                     </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={saveStakeholderMirror}
+                                            disabled={isLocked}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar instrumento 3
+                                        </button>
+                                    </div>
                                 </section>
 
                             </article>
                         )}
 
-                        {activePage === 5 && (
+                        {isPageVisible(5) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 5</p>
@@ -4587,7 +4850,7 @@ export function WB1Step1Digital() {
                                         Valores fundamentales
                                     </h2>
                                     <p className="text-sm md:text-base text-slate-700 max-w-3xl">
-                                        Convertir valores en criterios de decisión.
+                                        Convertir "valores" en criterios de decisión.
                                     </p>
                                 </header>
 
@@ -4727,6 +4990,16 @@ export function WB1Step1Digital() {
                                             })}
                                         </div>
                                     )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={saveFundamentalValueSelection}
+                                            disabled={isLocked}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar instrumento 1
+                                        </button>
+                                    </div>
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
@@ -4744,7 +5017,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowValueDecisionHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showValueDecisionHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showValueDecisionHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -4862,6 +5135,16 @@ export function WB1Step1Digital() {
                                             </tbody>
                                         </table>
                                     </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={saveValueDecisionMatrix}
+                                            disabled={isLocked || !canUseValueDecisionMatrix}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar instrumento 2
+                                        </button>
+                                    </div>
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
@@ -4879,7 +5162,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowNoNegotiableHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showNoNegotiableHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showNoNegotiableHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -4995,7 +5278,7 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        {activePage === 6 && (
+                        {isPageVisible(6) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 6</p>
@@ -5022,7 +5305,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowFoaHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showFoaHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showFoaHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -5158,7 +5441,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowEnergyHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showEnergyHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showEnergyHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -5374,11 +5657,21 @@ export function WB1Step1Digital() {
                                             </label>
                                         </div>
                                     </article>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={saveEnergyInstrument}
+                                            disabled={isLocked}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar instrumento 2
+                                        </button>
+                                    </div>
                                 </section>
                             </article>
                         )}
 
-                        {activePage === 7 && (
+                        {isPageVisible(7) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 7</p>
@@ -5405,7 +5698,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowBeliefAbcHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showBeliefAbcHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showBeliefAbcHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -5556,7 +5849,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowBeliefEvidenceHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showBeliefEvidenceHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showBeliefEvidenceHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -5677,6 +5970,16 @@ export function WB1Step1Digital() {
                                             </tbody>
                                         </table>
                                     </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={saveBeliefEvidenceMatrix}
+                                            disabled={isLocked}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar instrumento 2
+                                        </button>
+                                    </div>
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
@@ -5694,7 +5997,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowBeliefImpactHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showBeliefImpactHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showBeliefImpactHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -5864,7 +6167,7 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        {activePage === 8 && (
+                        {isPageVisible(8) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 8</p>
@@ -5872,7 +6175,7 @@ export function WB1Step1Digital() {
                                         Nuevas creencias empoderadoras
                                     </h2>
                                     <p className="text-sm md:text-base text-slate-700 max-w-3xl">
-                                        No basta pensar positivo: necesitas creencias que se prueben con conducta.
+                                        No basta con pensar positivo: necesitas creencias que se prueben con conducta.
                                     </p>
                                 </header>
 
@@ -5891,7 +6194,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowEmpoweringBeliefHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showEmpoweringBeliefHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showEmpoweringBeliefHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -6034,7 +6337,7 @@ export function WB1Step1Digital() {
                                             onClick={() => setShowBridgeExperimentHelp((prev) => !prev)}
                                             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                                         >
-                                            {showBridgeExperimentHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                            {showBridgeExperimentHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
                                         </button>
                                     </div>
 
@@ -6198,7 +6501,7 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        {activePage === 9 && (
+                        {isPageVisible(9) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 9</p>
@@ -6403,7 +6706,7 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        {activePage === 10 && (
+                        {isPageVisible(10) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 10</p>
@@ -7460,7 +7763,7 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        {activePage === 11 && (
+                        {isPageVisible(11) && (
                             <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 11</p>
@@ -7471,52 +7774,54 @@ export function WB1Step1Digital() {
                                     </p>
                                 </header>
 
-                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                                        {EVALUATION_STAGES.map((stage) => {
-                                            const isActive = evaluationStage === stage.key
-                                            const isComplete = evaluationStageCompletionMap[stage.key]
-                                            return (
-                                                <button
-                                                    key={stage.key}
-                                                    type="button"
-                                                    onClick={() => changeEvaluationStage(stage.key)}
-                                                    className={`rounded-xl border px-3 py-2 text-xs md:text-sm font-semibold text-left transition-colors ${
-                                                        isActive
-                                                            ? 'border-blue-300 bg-blue-50 text-blue-800'
-                                                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                                                    }`}
-                                                >
-                                                    <p>{stage.label}</p>
-                                                    <p className={`mt-1 text-[11px] ${isComplete ? 'text-emerald-700' : 'text-slate-500'}`}>
-                                                        {isComplete ? 'Completado' : 'Pendiente'}
-                                                    </p>
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
+                                {!isExportingAll && (
+                                    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                            {EVALUATION_STAGES.map((stage) => {
+                                                const isActive = evaluationStage === stage.key
+                                                const isComplete = evaluationStageCompletionMap[stage.key]
+                                                return (
+                                                    <button
+                                                        key={stage.key}
+                                                        type="button"
+                                                        onClick={() => changeEvaluationStage(stage.key)}
+                                                        className={`rounded-xl border px-3 py-2 text-xs md:text-sm font-semibold text-left transition-colors ${
+                                                            isActive
+                                                                ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                                                        }`}
+                                                    >
+                                                        <p>{stage.label}</p>
+                                                        <p className={`mt-1 text-[11px] ${isComplete ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                                            {isComplete ? 'Completado' : 'Pendiente'}
+                                                        </p>
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
 
-                                    <div className="flex items-center justify-between gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={goPrevEvaluationStage}
-                                            disabled={!hasPrevEvaluationStage}
-                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                                        >
-                                            Atrás
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={goNextEvaluationStage}
-                                            disabled={!hasNextEvaluationStage}
-                                            className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                                        >
-                                            Siguiente
-                                        </button>
-                                    </div>
-                                </section>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={goPrevEvaluationStage}
+                                                disabled={!hasPrevEvaluationStage}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            >
+                                                Atrás
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={goNextEvaluationStage}
+                                                disabled={!hasNextEvaluationStage}
+                                                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            >
+                                                Siguiente
+                                            </button>
+                                        </div>
+                                    </section>
+                                )}
 
-                                {evaluationStage === 'mentor' && (
+                                {(evaluationStage === 'mentor' || isExportingAll) && (
                                     <section className="space-y-5">
                                         <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-3">
                                             <h3 className="text-base md:text-lg font-bold text-slate-900">A) Modo Mentor - Rúbricas</h3>
@@ -7775,7 +8080,7 @@ export function WB1Step1Digital() {
                                     </section>
                                 )}
 
-                                {evaluationStage === 'leader' && (
+                                {(evaluationStage === 'leader' || isExportingAll) && (
                                     <section className="space-y-5">
                                         <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-3">
                                             <h3 className="text-base md:text-lg font-bold text-slate-900">B) Modo Líder - Autoevaluación</h3>
@@ -7933,7 +8238,7 @@ export function WB1Step1Digital() {
                                     </section>
                                 )}
 
-                                {evaluationStage === 'synthesis' && (
+                                {(evaluationStage === 'synthesis' || isExportingAll) && (
                                     <section className="space-y-5">
                                         <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -8036,7 +8341,7 @@ export function WB1Step1Digital() {
                                     </section>
                                 )}
 
-                                {evaluationStage === 'final' && (
+                                {(evaluationStage === 'final' || isExportingAll) && (
                                     <section className="space-y-5">
                                         <article
                                             className={`rounded-2xl border p-5 md:p-6 ${
@@ -8098,40 +8403,42 @@ export function WB1Step1Digital() {
                             </article>
                         )}
 
-                        <nav className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm flex items-center justify-between">
-                            <button
-                                type="button"
-                                onClick={goPrevPage}
-                                disabled={!hasPrevPage}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                <ArrowLeft size={15} />
-                                Atrás
-                            </button>
+                        {!isExportingAll && (
+                            <nav className="wb1-page-nav rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm flex items-center justify-between">
+                                <button
+                                    type="button"
+                                    onClick={goPrevPage}
+                                    disabled={!hasPrevPage}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    <ArrowLeft size={15} />
+                                    Atrás
+                                </button>
 
-                            <div className="text-center">
-                                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Navegación</p>
-                                <p className="text-sm font-bold text-slate-900">
-                                    {PAGES[currentPageIndex]?.shortLabel || 'Página'}
-                                </p>
-                            </div>
+                                <div className="text-center">
+                                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Navegación</p>
+                                    <p className="text-sm font-bold text-slate-900">
+                                        {PAGES[currentPageIndex]?.shortLabel || 'Página'}
+                                    </p>
+                                </div>
 
-                            <button
-                                type="button"
-                                onClick={goNextPage}
-                                disabled={!hasNextPage}
-                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                Adelante
-                                <ArrowRight size={15} />
-                            </button>
-                        </nav>
+                                <button
+                                    type="button"
+                                    onClick={goNextPage}
+                                    disabled={!hasNextPage}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    Adelante
+                                    <ArrowRight size={15} />
+                                </button>
+                            </nav>
+                        )}
                     </section>
                 </div>
             </main>
 
             {showEventModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="wb1-modal fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={() => setShowEventModal(false)} />
                     <div className="relative w-full max-w-2xl rounded-2xl border border-slate-300 bg-white shadow-2xl">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
@@ -8230,14 +8537,52 @@ export function WB1Step1Digital() {
             <style jsx global>{`
                 @media print {
                     .wb1-toolbar,
-                    .wb1-sidebar {
+                    .wb1-sidebar,
+                    .wb1-page-nav,
+                    .wb1-modal {
+                        display: none !important;
+                    }
+                    button {
                         display: none !important;
                     }
                     body {
                         background: #fff !important;
                     }
                     main {
-                        padding-top: 0 !important;
+                        padding: 0 !important;
+                    }
+                    main > div {
+                        display: block !important;
+                        min-width: 0 !important;
+                    }
+                    main section {
+                        min-width: 0 !important;
+                    }
+                    .overflow-x-auto {
+                        overflow: visible !important;
+                    }
+                    table {
+                        min-width: 0 !important;
+                        width: 100% !important;
+                    }
+                    input,
+                    textarea,
+                    select {
+                        border: 1px solid #cbd5e1 !important;
+                        background: #fff !important;
+                        color: #0f172a !important;
+                        box-shadow: none !important;
+                    }
+                    main section > article.rounded-3xl {
+                        break-after: page;
+                        page-break-after: always;
+                        box-shadow: none !important;
+                        border: 1px solid #cbd5e1 !important;
+                        margin-bottom: 10mm !important;
+                    }
+                    main section > article.rounded-3xl:last-of-type {
+                        break-after: auto;
+                        page-break-after: auto;
                     }
                 }
             `}</style>
