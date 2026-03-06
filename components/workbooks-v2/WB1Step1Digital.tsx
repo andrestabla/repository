@@ -194,6 +194,16 @@ type FutureSelfRiskRow = {
     prevention: string
 }
 
+type BackcastingPeriodKey = 'year10' | 'year3' | 'year1' | 'days30'
+
+type BackcastingFieldKey = 'achievement' | 'habit' | 'evidence'
+
+type BackcastingRow = {
+    achievement: string
+    habit: string
+    evidence: string
+}
+
 type FutureSelfFields = {
     identity: string[]
     values: string[]
@@ -238,6 +248,7 @@ const EMPOWERING_BELIEF_STORAGE_KEY = 'workbooks-v2-wb1-empowering-beliefs'
 const BRIDGE_EXPERIMENT_STORAGE_KEY = 'workbooks-v2-wb1-bridge-experiment'
 const MANTRA_CARDS_STORAGE_KEY = 'workbooks-v2-wb1-mantras'
 const FUTURE_SELF_STORAGE_KEY = 'workbooks-v2-wb1-future-self'
+const BACKCASTING_STORAGE_KEY = 'workbooks-v2-wb1-backcasting'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -263,6 +274,7 @@ const FUTURE_SELF_DECISIONS_ROWS = 3
 const FUTURE_SELF_SKILLS_ROWS = 3
 const FUTURE_SELF_METRICS_ROWS = 3
 const FUTURE_SELF_RISK_ROWS = 3
+const BACKCASTING_ROWS = 4
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -477,6 +489,18 @@ const FUTURE_SELF_BLOCK_ORDER: FutureSelfBlockKey[] = [
     'impact',
     'metrics',
     'risks'
+]
+
+const BACKCASTING_PERIODS: Array<{ key: BackcastingPeriodKey; label: string; shortLabel: string }> = [
+    { key: 'year10', label: 'Año 10', shortLabel: 'Año 10' },
+    { key: 'year3', label: 'Año 3', shortLabel: 'Año 3' },
+    { key: 'year1', label: 'Año 1', shortLabel: 'Año 1' },
+    { key: 'days30', label: 'Próximos 30 días', shortLabel: '30 días' }
+]
+
+const BACKCASTING_INSTRUCTIONS = [
+    'Dibuja una línea hacia atrás: Año 10 -> Año 3 -> Año 1 -> Próximos 30 días.',
+    'En cada punto define 3 cosas: logro, hábito y evidencia concreta.'
 ]
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
@@ -781,6 +805,14 @@ function defaultFutureSelfFields(): FutureSelfFields {
         metrics: emptyFutureSelfList(FUTURE_SELF_METRICS_ROWS),
         risks: defaultFutureSelfRiskRows()
     }
+}
+
+function defaultBackcastingRows() {
+    return Array.from({ length: BACKCASTING_ROWS }, () => ({
+        achievement: '',
+        habit: '',
+        evidence: ''
+    }))
 }
 
 function defaultFutureSelfSuggestions(): Record<FutureSelfBlockKey, string[]> {
@@ -1309,6 +1341,36 @@ function normalizeFutureSelfFields(value: unknown): FutureSelfFields {
     }
 }
 
+function normalizeBackcastingRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { achievement: '', habit: '', evidence: '' }
+                }
+
+                const candidate = row as Partial<Record<BackcastingFieldKey, unknown>>
+                return {
+                    achievement: typeof candidate.achievement === 'string' ? candidate.achievement : '',
+                    habit: typeof candidate.habit === 'string' ? candidate.habit : '',
+                    evidence: typeof candidate.evidence === 'string' ? candidate.evidence : ''
+                }
+            })
+            .slice(0, BACKCASTING_ROWS)
+
+        return [
+            ...rows,
+            ...Array.from({ length: BACKCASTING_ROWS - rows.length }, () => ({
+                achievement: '',
+                habit: '',
+                evidence: ''
+            }))
+        ]
+    }
+
+    return defaultBackcastingRows()
+}
+
 function isMantraCardComplete(row: MantraCardRow) {
     return [row.mantra, row.situation, row.behavior, row.signal].every((value) => {
         const normalized = value.trim()
@@ -1428,6 +1490,10 @@ function getFutureSelfBlockSuggestions(key: FutureSelfBlockKey, fields: FutureSe
     return suggestions
 }
 
+function isBackcastingRowComplete(row: BackcastingRow) {
+    return row.achievement.trim().length > 0 && row.habit.trim().length > 0 && row.evidence.trim().length > 0
+}
+
 function trimFutureSelfFields(fields: FutureSelfFields): FutureSelfFields {
     return {
         identity: fields.identity.map((item) => item.trim()),
@@ -1486,6 +1552,7 @@ export function WB1Step1Digital() {
     const [showBridgeExperimentHelp, setShowBridgeExperimentHelp] = useState(false)
     const [showMantraHelp, setShowMantraHelp] = useState(false)
     const [showFutureSelfHelp, setShowFutureSelfHelp] = useState(false)
+    const [showBackcastingHelp, setShowBackcastingHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -1574,6 +1641,8 @@ export function WB1Step1Digital() {
         risks: false
     })
     const [futureSelfSuggestions, setFutureSelfSuggestions] = useState<Record<FutureSelfBlockKey, string[]>>(defaultFutureSelfSuggestions())
+    const [backcastingRows, setBackcastingRows] = useState<BackcastingRow[]>(defaultBackcastingRows())
+    const [backcastingEditModes, setBackcastingEditModes] = useState<boolean[]>(Array.from({ length: BACKCASTING_ROWS }, () => false))
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -2014,12 +2083,30 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(FUTURE_SELF_STORAGE_KEY, JSON.stringify(futureSelfFields))
     }, [futureSelfFields])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(BACKCASTING_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setBackcastingRows(normalizeBackcastingRows(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(BACKCASTING_STORAGE_KEY, JSON.stringify(backcastingRows))
+    }, [backcastingRows])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 20
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 21
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -2102,6 +2189,7 @@ export function WB1Step1Digital() {
             : 0
         const filledMantras = mantraRows.every((row) => isMantraCardComplete(row)) ? 1 : 0
         const filledFutureSelf = FUTURE_SELF_BLOCK_ORDER.every((key) => isFutureSelfBlockComplete(key, futureSelfFields)) ? 1 : 0
+        const filledBackcasting = backcastingRows.every((row) => isBackcastingRowComplete(row)) ? 1 : 0
         const filled =
             filledId +
             filledNarrative +
@@ -2124,9 +2212,10 @@ export function WB1Step1Digital() {
             filledBridgeExperiment +
             filledMantras +
             filledFutureSelf +
+            filledBackcasting +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, futureSelfFields, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, futureSelfFields, backcastingRows, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -2640,6 +2729,37 @@ export function WB1Step1Digital() {
         })
     }
 
+    const editBackcastingRow = (rowIndex: number) => {
+        if (isLocked) return
+        setBackcastingEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? true : mode)))
+    }
+
+    const saveBackcastingRow = (rowIndex: number) => {
+        setBackcastingRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = {
+                achievement: target.achievement.trim(),
+                habit: target.habit.trim(),
+                evidence: target.evidence.trim()
+            }
+            return nextRows
+        })
+        setBackcastingEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? false : mode)))
+    }
+
+    const setBackcastingCell = (rowIndex: number, field: BackcastingFieldKey, value: string) => {
+        if (isLocked || !backcastingEditModes[rowIndex]) return
+        setBackcastingRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -2789,6 +2909,7 @@ export function WB1Step1Digital() {
     ).length
     const completedMantraRows = mantraRows.filter((row) => isMantraCardComplete(row)).length
     const completedFutureSelfBlocks = FUTURE_SELF_BLOCK_ORDER.filter((key) => isFutureSelfBlockComplete(key, futureSelfFields)).length
+    const completedBackcastingRows = backcastingRows.filter((row) => isBackcastingRowComplete(row)).length
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
@@ -6377,6 +6498,200 @@ export function WB1Step1Digital() {
                                             </div>
                                         )}
                                     </article>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 2 - Backcasting (de futuro a presente)
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Dibuja una línea hacia atrás: Año 10 → Año 3 → Año 1 → Próximos 30 días.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBackcastingHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showBackcastingHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {BACKCASTING_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showBackcastingHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-2">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo breve</p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Año 1:</span> Logro “lidero 2 proyectos estratégicos”; Hábito
+                                                “2 bloques deep work/día”; Evidencia “agenda + entregables + feedback”.
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">30 días:</span> Logro “delegué 1 tarea crítica”; Hábito
+                                                “check-in semanal 20 min”; Evidencia “delegación documentada + resultado”.
+                                            </p>
+                                        </article>
+                                    )}
+                                </section>
+
+                                <p className="text-xs text-slate-500">
+                                    Tarjetas completadas: {completedBackcastingRows} / {BACKCASTING_ROWS}
+                                </p>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm space-y-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h4 className="text-sm md:text-base font-bold text-slate-900">Línea de tiempo Backcasting</h4>
+                                        <span className="text-xs font-semibold text-slate-500">Se actualiza con cada guardado</span>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <div className="min-w-[860px] relative px-2 pb-2">
+                                            <div className="absolute left-12 right-12 top-5 h-0.5 bg-slate-300" />
+                                            <div className="grid grid-cols-4 gap-4 relative">
+                                                {BACKCASTING_PERIODS.map((period, rowIndex) => {
+                                                    const row = backcastingRows[rowIndex]
+                                                    const isComplete = row ? isBackcastingRowComplete(row) : false
+
+                                                    return (
+                                                        <article key={`backcasting-timeline-${period.key}`} className="pt-1">
+                                                            <div className="flex flex-col items-center text-center">
+                                                                <span
+                                                                    className={`h-4 w-4 rounded-full border-2 ${
+                                                                        isComplete
+                                                                            ? 'bg-emerald-500 border-emerald-600'
+                                                                            : 'bg-slate-200 border-slate-400'
+                                                                    }`}
+                                                                />
+                                                                <p className="mt-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-700">
+                                                                    {period.shortLabel}
+                                                                </p>
+                                                            </div>
+                                                            <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-1.5">
+                                                                <p className="text-xs text-slate-700">
+                                                                    <span className="font-semibold text-slate-900">Logro:</span>{' '}
+                                                                    {(row && row.achievement) || 'Pendiente'}
+                                                                </p>
+                                                                <p className="text-xs text-slate-700">
+                                                                    <span className="font-semibold text-slate-900">Hábito:</span>{' '}
+                                                                    {(row && row.habit) || 'Pendiente'}
+                                                                </p>
+                                                                <p className="text-xs text-slate-700">
+                                                                    <span className="font-semibold text-slate-900">Evidencia:</span>{' '}
+                                                                    {(row && row.evidence) || 'Pendiente'}
+                                                                </p>
+                                                            </div>
+                                                        </article>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                    {BACKCASTING_PERIODS.map((period, rowIndex) => {
+                                        const row = backcastingRows[rowIndex]
+                                        const isEditing = backcastingEditModes[rowIndex]
+                                        const rowDisabled = isLocked || !isEditing
+                                        const isComplete = row ? isBackcastingRowComplete(row) : false
+
+                                        return (
+                                            <article
+                                                key={`backcasting-card-${period.key}`}
+                                                className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <h4 className="text-sm md:text-base font-bold text-slate-900">{period.label}</h4>
+                                                    <span
+                                                        className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                            isComplete
+                                                                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                                : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                        }`}
+                                                    >
+                                                        {isComplete ? 'Completado' : 'Pendiente'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="inline-flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => editBackcastingRow(rowIndex)}
+                                                        disabled={isLocked || isEditing}
+                                                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Editar
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => saveBackcastingRow(rowIndex)}
+                                                        disabled={isLocked || !isEditing}
+                                                        className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Guardar cambios
+                                                    </button>
+                                                </div>
+
+                                                {isEditing ? (
+                                                    <div className="space-y-3">
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Logro</span>
+                                                            <textarea
+                                                                value={row?.achievement || ''}
+                                                                onChange={(event) => setBackcastingCell(rowIndex, 'achievement', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[84px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Qué se habrá conseguido"
+                                                            />
+                                                        </label>
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Hábito</span>
+                                                            <textarea
+                                                                value={row?.habit || ''}
+                                                                onChange={(event) => setBackcastingCell(rowIndex, 'habit', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[84px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Qué se habrá instalado"
+                                                            />
+                                                        </label>
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Evidencia concreta</span>
+                                                            <textarea
+                                                                value={row?.evidence || ''}
+                                                                onChange={(event) => setBackcastingCell(rowIndex, 'evidence', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[84px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Qué verás por escrito/medible"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Logro:</span>{' '}
+                                                            {row?.achievement || '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Hábito:</span>{' '}
+                                                            {row?.habit || '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Evidencia concreta:</span>{' '}
+                                                            {row?.evidence || '______________________________'}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </article>
+                                        )
+                                    })}
                                 </section>
                             </article>
                         )}
