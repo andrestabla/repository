@@ -204,6 +204,10 @@ type BackcastingRow = {
     evidence: string
 }
 
+type FutureLetterChecklistKey = 'nonNegotiables' | 'habit' | 'decision' | 'impact'
+
+type FutureLetterChecklist = Record<FutureLetterChecklistKey, boolean>
+
 type FutureSelfFields = {
     identity: string[]
     values: string[]
@@ -249,6 +253,7 @@ const BRIDGE_EXPERIMENT_STORAGE_KEY = 'workbooks-v2-wb1-bridge-experiment'
 const MANTRA_CARDS_STORAGE_KEY = 'workbooks-v2-wb1-mantras'
 const FUTURE_SELF_STORAGE_KEY = 'workbooks-v2-wb1-future-self'
 const BACKCASTING_STORAGE_KEY = 'workbooks-v2-wb1-backcasting'
+const FUTURE_LETTER_STORAGE_KEY = 'workbooks-v2-wb1-future-letter'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -502,6 +507,29 @@ const BACKCASTING_INSTRUCTIONS = [
     'Dibuja una línea hacia atrás: Año 10 -> Año 3 -> Año 1 -> Próximos 30 días.',
     'En cada punto define 3 cosas: logro, hábito y evidencia concreta.'
 ]
+
+const FUTURE_LETTER_WORD_MIN = 500
+const FUTURE_LETTER_WORD_MAX = 700
+
+const FUTURE_LETTER_INSTRUCTIONS = [
+    'Escribe una carta de 1 página comenzando así: “Hoy te escribo desde mi identidad 10X... Esto fue lo que dejé de negociar...”.',
+    'Incluye obligatoriamente: qué dejaste de negociar (3 bullets), qué hábito te transformó, qué decisión marcó el cambio y qué impacto estás generando.'
+]
+
+const FUTURE_LETTER_EXAMPLE = `Hoy te escribo desde mi identidad 10X. No llegué aquí por suerte: llegué por coherencia. Hubo un momento en que entendí que mi vida y mi liderazgo no podían seguir siendo negociables según el contexto. Esto fue lo que dejé de negociar:
+• Mi integridad: no maquillo información ni tomo atajos éticos, incluso si eso me cuesta aprobación o velocidad.
+• Mi energía y salud: no vivo en modo urgencia permanente; protejo descanso, foco y recuperación como parte del trabajo.
+• El respeto en la conversación: no elevo el tono ni cierro por control; sostengo firmeza con calma y escucha.
+El hábito que me transformó fue simple pero decisivo: dos bloques diarios de trabajo profundo (sin interrupciones) y una pausa de 20 segundos antes de responder bajo presión. Ese hábito me devolvió claridad mental, bajó mi reactividad y elevó la calidad de mis decisiones. Dejé de reaccionar para “salvar el día” y empecé a construir semana a semana.
+La decisión que marcó el cambio fue concreta: renuncié a decir “sí” a urgencias no críticas y empecé a delegar ejecución con criterios claros, aunque al inicio me diera miedo “perder control”. La primera vez que lo hice, sentí incomodidad, pero también libertad. Entendí que mi rol no era demostrar que podía con todo, sino crear condiciones para que el equipo funcionara sin depender de mí.
+Hoy mi impacto se ve en a quién sirvo: lidero y acompaño a personas y equipos que necesitan claridad, confianza y dirección para crecer. Sirvo a líderes que quieren ser consistentes, no perfectos; a equipos que quieren autonomía real; a organizaciones que buscan resultados sostenibles sin quemar a su gente. Mi trabajo ya no es solo entregar: es instalar capacidades, elevar conversaciones y dejar estructuras que siguen funcionando cuando yo no estoy.`
+
+const FUTURE_LETTER_CHECK_LABELS: Record<FutureLetterChecklistKey, string> = {
+    nonNegotiables: 'Incluye 3 bullets de no negociables',
+    habit: 'Menciona el hábito clave que te transformó',
+    decision: 'Menciona una decisión concreta de cambio',
+    impact: 'Menciona el impacto y a quién sirves'
+}
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
     {
@@ -1494,6 +1522,30 @@ function isBackcastingRowComplete(row: BackcastingRow) {
     return row.achievement.trim().length > 0 && row.habit.trim().length > 0 && row.evidence.trim().length > 0
 }
 
+function countWords(text: string) {
+    return text
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean).length
+}
+
+function detectFutureLetterChecklist(text: string): FutureLetterChecklist {
+    const normalized = text.trim()
+    const bulletMatches = normalized.match(/^\s*[•*-]\s+/gm)
+    const bulletCount = bulletMatches ? bulletMatches.length : 0
+
+    return {
+        nonNegotiables: bulletCount >= 3,
+        habit: /\bh[aá]bito\b/i.test(normalized),
+        decision: /\bdecisi[oó]n\b/i.test(normalized),
+        impact: /\bimpacto\b/i.test(normalized) || /\bsirv[oe]\b/i.test(normalized)
+    }
+}
+
+function isFutureLetterComplete(checklist: FutureLetterChecklist, manuallyMarked: boolean) {
+    return manuallyMarked || Object.values(checklist).every(Boolean)
+}
+
 function trimFutureSelfFields(fields: FutureSelfFields): FutureSelfFields {
     return {
         identity: fields.identity.map((item) => item.trim()),
@@ -1553,6 +1605,7 @@ export function WB1Step1Digital() {
     const [showMantraHelp, setShowMantraHelp] = useState(false)
     const [showFutureSelfHelp, setShowFutureSelfHelp] = useState(false)
     const [showBackcastingHelp, setShowBackcastingHelp] = useState(false)
+    const [showFutureLetterHelp, setShowFutureLetterHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -1643,6 +1696,9 @@ export function WB1Step1Digital() {
     const [futureSelfSuggestions, setFutureSelfSuggestions] = useState<Record<FutureSelfBlockKey, string[]>>(defaultFutureSelfSuggestions())
     const [backcastingRows, setBackcastingRows] = useState<BackcastingRow[]>(defaultBackcastingRows())
     const [backcastingEditModes, setBackcastingEditModes] = useState<boolean[]>(Array.from({ length: BACKCASTING_ROWS }, () => false))
+    const [futureLetterText, setFutureLetterText] = useState('')
+    const [futureLetterIsEditing, setFutureLetterIsEditing] = useState(false)
+    const [futureLetterManualComplete, setFutureLetterManualComplete] = useState(false)
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -2101,12 +2157,37 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(BACKCASTING_STORAGE_KEY, JSON.stringify(backcastingRows))
     }, [backcastingRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(FUTURE_LETTER_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as { text?: unknown; manualComplete?: unknown }
+            setFutureLetterText(typeof parsed.text === 'string' ? parsed.text : '')
+            setFutureLetterManualComplete(parsed.manualComplete === true)
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(
+            FUTURE_LETTER_STORAGE_KEY,
+            JSON.stringify({
+                text: futureLetterText,
+                manualComplete: futureLetterManualComplete
+            })
+        )
+    }, [futureLetterText, futureLetterManualComplete])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 21
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 22
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -2190,6 +2271,8 @@ export function WB1Step1Digital() {
         const filledMantras = mantraRows.every((row) => isMantraCardComplete(row)) ? 1 : 0
         const filledFutureSelf = FUTURE_SELF_BLOCK_ORDER.every((key) => isFutureSelfBlockComplete(key, futureSelfFields)) ? 1 : 0
         const filledBackcasting = backcastingRows.every((row) => isBackcastingRowComplete(row)) ? 1 : 0
+        const futureLetterChecklist = detectFutureLetterChecklist(futureLetterText)
+        const filledFutureLetter = isFutureLetterComplete(futureLetterChecklist, futureLetterManualComplete) ? 1 : 0
         const filled =
             filledId +
             filledNarrative +
@@ -2213,9 +2296,10 @@ export function WB1Step1Digital() {
             filledMantras +
             filledFutureSelf +
             filledBackcasting +
+            filledFutureLetter +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, futureSelfFields, backcastingRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, mantraRows, futureSelfFields, backcastingRows, futureLetterText, futureLetterManualComplete, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -2248,6 +2332,13 @@ export function WB1Step1Digital() {
 
         return options
     }, [empoweringBeliefRows])
+
+    const futureLetterChecklist = useMemo(() => detectFutureLetterChecklist(futureLetterText), [futureLetterText])
+    const futureLetterWordCount = useMemo(() => countWords(futureLetterText), [futureLetterText])
+    const futureLetterCompleted = useMemo(
+        () => isFutureLetterComplete(futureLetterChecklist, futureLetterManualComplete),
+        [futureLetterChecklist, futureLetterManualComplete]
+    )
 
     useEffect(() => {
         if (!beliefImpactSelected) return
@@ -2760,6 +2851,22 @@ export function WB1Step1Digital() {
         })
     }
 
+    const editFutureLetter = () => {
+        if (isLocked) return
+        setFutureLetterIsEditing(true)
+    }
+
+    const saveFutureLetter = () => {
+        if (isLocked) return
+        setFutureLetterText((prev) => prev.trim())
+        setFutureLetterIsEditing(false)
+    }
+
+    const toggleFutureLetterManualComplete = () => {
+        if (isLocked) return
+        setFutureLetterManualComplete((prev) => !prev)
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -2910,6 +3017,9 @@ export function WB1Step1Digital() {
     const completedMantraRows = mantraRows.filter((row) => isMantraCardComplete(row)).length
     const completedFutureSelfBlocks = FUTURE_SELF_BLOCK_ORDER.filter((key) => isFutureSelfBlockComplete(key, futureSelfFields)).length
     const completedBackcastingRows = backcastingRows.filter((row) => isBackcastingRowComplete(row)).length
+    const completedFutureLetterChecks = Object.values(futureLetterChecklist).filter(Boolean).length
+    const futureLetterWithinSuggestedRange =
+        futureLetterWordCount >= FUTURE_LETTER_WORD_MIN && futureLetterWordCount <= FUTURE_LETTER_WORD_MAX
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
@@ -6692,6 +6802,139 @@ export function WB1Step1Digital() {
                                             </article>
                                         )
                                     })}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 3 - Carta desde tu futuro (1 página)
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Escribe una carta iniciando así: “Hoy te escribo desde mi identidad 10X... Esto fue lo que dejé de
+                                                negociar...”.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowFutureLetterHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showFutureLetterHelp ? 'Ocultar ayuda' : 'Ayuda / Ver ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {FUTURE_LETTER_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showFutureLetterHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-2">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo de carta</p>
+                                            <div className="rounded-lg border border-blue-200 bg-white p-4">
+                                                <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">{FUTURE_LETTER_EXAMPLE}</p>
+                                            </div>
+                                        </article>
+                                    )}
+
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <span
+                                            className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                futureLetterCompleted
+                                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                    : 'border-amber-300 bg-amber-50 text-amber-700'
+                                            }`}
+                                        >
+                                            {futureLetterCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <p
+                                            className={`text-xs font-semibold ${
+                                                futureLetterWithinSuggestedRange ? 'text-blue-700' : 'text-slate-500'
+                                            }`}
+                                        >
+                                            Palabras: {futureLetterWordCount} (recomendado {FUTURE_LETTER_WORD_MIN}-{FUTURE_LETTER_WORD_MAX}, no
+                                            bloqueante)
+                                        </p>
+                                    </div>
+
+                                    <div className="inline-flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={editFutureLetter}
+                                            disabled={isLocked || futureLetterIsEditing}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Editar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={saveFutureLetter}
+                                            disabled={isLocked || !futureLetterIsEditing}
+                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar cambios
+                                        </button>
+                                    </div>
+
+                                    {futureLetterIsEditing ? (
+                                        <textarea
+                                            value={futureLetterText}
+                                            onChange={(event) => setFutureLetterText(event.target.value)}
+                                            disabled={isLocked || !futureLetterIsEditing}
+                                            className="w-full min-h-[340px] rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                            placeholder="Escribe aquí tu carta desde la identidad 10X..."
+                                        />
+                                    ) : (
+                                        <div className="min-h-[220px] rounded-xl border border-slate-200 bg-white p-4">
+                                            {futureLetterText.trim().length > 0 ? (
+                                                <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">{futureLetterText}</p>
+                                            ) : (
+                                                <p className="text-sm italic text-slate-500">
+                                                    Presiona “Editar” para escribir tu carta de 1 página (500-700 palabras sugeridas).
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <label className="inline-flex items-start gap-2 text-sm text-slate-700">
+                                        <input
+                                            type="checkbox"
+                                            checked={futureLetterManualComplete}
+                                            onChange={toggleFutureLetterManualComplete}
+                                            disabled={isLocked}
+                                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-300 disabled:opacity-50"
+                                        />
+                                        <span>Marcar como completo (incluí no negociables + hábito + decisión + impacto).</span>
+                                    </label>
+
+                                    <article className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
+                                        <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
+                                            Detección automática (puedes sobrescribirla con el check manual)
+                                        </p>
+                                        <ul className="space-y-1.5">
+                                            {(Object.keys(FUTURE_LETTER_CHECK_LABELS) as FutureLetterChecklistKey[]).map((key) => {
+                                                const ok = futureLetterChecklist[key]
+                                                return (
+                                                    <li key={key} className="flex items-start gap-2 text-sm">
+                                                        <span
+                                                            className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
+                                                                ok ? 'bg-emerald-500' : 'bg-slate-300'
+                                                            }`}
+                                                        />
+                                                        <span className={ok ? 'text-emerald-700 font-medium' : 'text-slate-600'}>
+                                                            {FUTURE_LETTER_CHECK_LABELS[key]}
+                                                        </span>
+                                                    </li>
+                                                )
+                                            })}
+                                        </ul>
+                                        <p className="text-xs text-slate-500">Criterios detectados: {completedFutureLetterChecks} / 4</p>
+                                    </article>
                                 </section>
                             </article>
                         )}
