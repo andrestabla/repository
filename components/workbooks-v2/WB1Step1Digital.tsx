@@ -121,6 +121,15 @@ type EnergyMapRow = {
     adjust: EnergyAdjust
 }
 
+type BeliefAbcFieldKey = 'activator' | 'belief' | 'emotion' | 'action'
+
+type BeliefAbcRow = {
+    activator: string
+    belief: string
+    emotion: string
+    action: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -138,6 +147,7 @@ const VALUE_DECISIONS_STORAGE_KEY = 'workbooks-v2-wb1-value-decisions'
 const NO_NEGOTIABLE_PHRASES_STORAGE_KEY = 'workbooks-v2-wb1-no-negotiable-phrases'
 const FOA_STORAGE_KEY = 'workbooks-v2-wb1-foa'
 const ENERGY_MAP_STORAGE_KEY = 'workbooks-v2-wb1-energy-map'
+const BELIEF_ABC_STORAGE_KEY = 'workbooks-v2-wb1-belief-abc'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -149,6 +159,7 @@ const NO_NEGOTIABLE_ROWS = 3
 const FOA_BULLET_LIMIT = 5
 const ENERGY_MAP_ROWS = 20
 const ENERGY_PATTERN_BULLETS = 3
+const BELIEF_ABC_ROWS = 3
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -157,7 +168,8 @@ const PAGES: PageItem[] = [
     { id: 3, label: '3. Storytelling personal', shortLabel: 'Storytelling' },
     { id: 4, label: '4. Definición de identidad actual', shortLabel: 'Identidad' },
     { id: 5, label: '5. Valores fundamentales', shortLabel: 'Valores' },
-    { id: 6, label: '6. Fortalezas y áreas de oportunidad', shortLabel: 'FOA' }
+    { id: 6, label: '6. Fortalezas y áreas de oportunidad', shortLabel: 'FOA' },
+    { id: 7, label: '7. Creencias limitantes (PNL)', shortLabel: 'Creencias PNL' }
 ]
 
 const OBJECTIVE_OUTCOMES = [
@@ -294,6 +306,14 @@ const ENERGY_MAP_INSTRUCTIONS = [
 ]
 
 const ENERGY_ADJUST_OPTIONS: EnergyAdjust[] = ['', 'Más', 'Menos', 'Rediseñar']
+
+const BELIEF_ABC_INSTRUCTIONS = [
+    'Completa el modelo para 3 situaciones reales recientes (últimos 20-30 días).',
+    'A (Activador): qué pasó (hecho observable, sin interpretación).',
+    'B (Belief / Creencia): qué te dijiste en ese momento (frase interna).',
+    'C (Consecuencia): qué sentiste (emoción + intensidad 0-10) y qué hiciste (conducta observable).',
+    'Regla: en A no escribas opiniones. En C describe conducta: tono, palabras, decisión, silencio, control, etc.'
+]
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
     {
@@ -508,6 +528,15 @@ function defaultEnergyMapRows() {
         energy: '',
         reason: '',
         adjust: '' as EnergyAdjust
+    }))
+}
+
+function defaultBeliefAbcRows() {
+    return Array.from({ length: BELIEF_ABC_ROWS }, () => ({
+        activator: '',
+        belief: '',
+        emotion: '',
+        action: ''
     }))
 }
 
@@ -748,6 +777,30 @@ function normalizeEnergyMapRows(value: unknown) {
     return defaultEnergyMapRows()
 }
 
+function normalizeBeliefAbcRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { activator: '', belief: '', emotion: '', action: '' }
+                }
+
+                const candidate = row as Partial<Record<BeliefAbcFieldKey, unknown>>
+                return {
+                    activator: typeof candidate.activator === 'string' ? candidate.activator : '',
+                    belief: typeof candidate.belief === 'string' ? candidate.belief : '',
+                    emotion: typeof candidate.emotion === 'string' ? candidate.emotion : '',
+                    action: typeof candidate.action === 'string' ? candidate.action : ''
+                }
+            })
+            .slice(0, BELIEF_ABC_ROWS)
+
+        return [...rows, ...Array.from({ length: BELIEF_ABC_ROWS - rows.length }, () => ({ activator: '', belief: '', emotion: '', action: '' }))]
+    }
+
+    return defaultBeliefAbcRows()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -774,6 +827,7 @@ export function WB1Step1Digital() {
     const [showNoNegotiableHelp, setShowNoNegotiableHelp] = useState(false)
     const [showFoaHelp, setShowFoaHelp] = useState(false)
     const [showEnergyHelp, setShowEnergyHelp] = useState(false)
+    const [showBeliefAbcHelp, setShowBeliefAbcHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -832,6 +886,8 @@ export function WB1Step1Digital() {
     const [energyDoMore, setEnergyDoMore] = useState('')
     const [energyDoLess, setEnergyDoLess] = useState('')
     const [energyRedesign, setEnergyRedesign] = useState('')
+    const [beliefAbcRows, setBeliefAbcRows] = useState<BeliefAbcRow[]>(defaultBeliefAbcRows())
+    const [beliefAbcEditModes, setBeliefAbcEditModes] = useState<boolean[]>(Array.from({ length: BELIEF_ABC_ROWS }, () => false))
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -1130,12 +1186,30 @@ export function WB1Step1Digital() {
         )
     }, [energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(BELIEF_ABC_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setBeliefAbcRows(normalizeBeliefAbcRows(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(BELIEF_ABC_STORAGE_KEY, JSON.stringify(beliefAbcRows))
+    }, [beliefAbcRows])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 13
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 14
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -1173,6 +1247,15 @@ export function WB1Step1Digital() {
             energyRedesign.trim().length > 0
                 ? 1
                 : 0
+        const filledBeliefAbc = beliefAbcRows.every(
+            (row) =>
+                row.activator.trim().length > 0 &&
+                row.belief.trim().length > 0 &&
+                row.emotion.trim().length > 0 &&
+                row.action.trim().length > 0
+        )
+            ? 1
+            : 0
         const filled =
             filledId +
             filledNarrative +
@@ -1188,9 +1271,10 @@ export function WB1Step1Digital() {
             filledFoa +
             filledEnergyRows +
             filledEnergyClosure +
+            filledBeliefAbc +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -1407,6 +1491,38 @@ export function WB1Step1Digital() {
         })
     }
 
+    const editBeliefAbcRow = (rowIndex: number) => {
+        if (isLocked) return
+        setBeliefAbcEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? true : mode)))
+    }
+
+    const saveBeliefAbcRow = (rowIndex: number) => {
+        setBeliefAbcRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = {
+                activator: target.activator.trim(),
+                belief: target.belief.trim(),
+                emotion: target.emotion.trim(),
+                action: target.action.trim()
+            }
+            return nextRows
+        })
+        setBeliefAbcEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? false : mode)))
+    }
+
+    const setBeliefAbcCell = (rowIndex: number, field: BeliefAbcFieldKey, value: string) => {
+        if (isLocked || !beliefAbcEditModes[rowIndex]) return
+        setBeliefAbcRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -1522,6 +1638,13 @@ export function WB1Step1Digital() {
     const visibleIdentityBullets = (key: IdentitySegmentKey) => identityWheelFields[key].map((item) => item.trim()).filter(Boolean)
     const visibleFoaBullets = (key: FoaQuadrantKey) => foaFields[key].map((item) => item.trim()).filter(Boolean)
     const energyRowsWithActivity = energyMapRows.filter((row) => row.activity.trim().length > 0).length
+    const completedBeliefAbcRows = beliefAbcRows.filter(
+        (row) =>
+            row.activator.trim().length > 0 &&
+            row.belief.trim().length > 0 &&
+            row.emotion.trim().length > 0 &&
+            row.action.trim().length > 0
+    ).length
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
@@ -3354,6 +3477,171 @@ export function WB1Step1Digital() {
                                             </label>
                                         </div>
                                     </article>
+                                </section>
+                            </article>
+                        )}
+
+                        {activePage === 7 && (
+                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 7</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+                                        Creencias limitantes (PNL)
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-3xl">
+                                        Identificar la creencia que gobierna tu conducta sin que lo notes.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 1 - Modelo ABC (Activador-Creencia-Consecuencia)
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Completa el modelo para 3 situaciones reales recientes y registra activador, creencia y consecuencia observable.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBeliefAbcHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showBeliefAbcHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {BELIEF_ABC_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showBeliefAbcHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-2">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo para completar este ejercicio</p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">A:</span> En la reunión, un colega cuestionó mi propuesta frente al equipo.
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">B:</span> “Me está desautorizando; si no respondo fuerte, pierdo autoridad.”
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">C (emoción + 0-10):</span> Irritación 8/10
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">C (acción observable):</span> Subí el tono, interrumpí y cerré la decisión sin preguntas.
+                                            </p>
+                                        </article>
+                                    )}
+                                </section>
+
+                                <p className="text-xs text-slate-500">
+                                    Situaciones completas: {completedBeliefAbcRows} / {BELIEF_ABC_ROWS}
+                                </p>
+
+                                <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                                    {beliefAbcRows.map((row, rowIndex) => {
+                                        const isEditing = beliefAbcEditModes[rowIndex]
+                                        const rowDisabled = isLocked || !isEditing
+
+                                        return (
+                                            <article
+                                                key={`belief-abc-${rowIndex}`}
+                                                className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <h4 className="text-sm md:text-base font-bold text-slate-900">Situación {rowIndex + 1}</h4>
+                                                    <div className="inline-flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => editBeliefAbcRow(rowIndex)}
+                                                            disabled={isLocked || isEditing}
+                                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            Editar
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => saveBeliefAbcRow(rowIndex)}
+                                                            disabled={isLocked || !isEditing}
+                                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            Guardar
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {isEditing ? (
+                                                    <div className="space-y-3">
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">A (Activador)</span>
+                                                            <textarea
+                                                                value={row.activator}
+                                                                onChange={(event) => setBeliefAbcCell(rowIndex, 'activator', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[90px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Qué pasó (hecho observable, sin interpretación)"
+                                                            />
+                                                        </label>
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">B (Belief / Creencia)</span>
+                                                            <textarea
+                                                                value={row.belief}
+                                                                onChange={(event) => setBeliefAbcCell(rowIndex, 'belief', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[90px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder='Frase interna. Ejemplo: "..."'
+                                                            />
+                                                        </label>
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">C (emoción + 0-10)</span>
+                                                            <input
+                                                                type="text"
+                                                                value={row.emotion}
+                                                                onChange={(event) => setBeliefAbcCell(rowIndex, 'emotion', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Ejemplo: Irritación 8/10"
+                                                            />
+                                                        </label>
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">C (acción observable)</span>
+                                                            <textarea
+                                                                value={row.action}
+                                                                onChange={(event) => setBeliefAbcCell(rowIndex, 'action', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[90px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Describe tono, palabras, decisión, silencio o control"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">A:</span> {row.activator || '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">B:</span>{' '}
+                                                            {row.belief ? `“${row.belief}”` : '“______________________________”'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">C (emoción + 0-10):</span>{' '}
+                                                            {row.emotion || '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">C (acción observable):</span>{' '}
+                                                            {row.action || '______________________________'}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </article>
+                                        )
+                                    })}
                                 </section>
                             </article>
                         )}
