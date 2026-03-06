@@ -99,6 +99,14 @@ type NoNegotiableRow = {
     implication: string
 }
 
+type FoaQuadrantKey = 'strengths' | 'opportunities' | 'threats'
+
+type FoaQuadrantConfig = {
+    key: FoaQuadrantKey
+    title: string
+    containerClassName: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -114,6 +122,7 @@ const STAKEHOLDER_MIRROR_STORAGE_KEY = 'workbooks-v2-wb1-stakeholder-mirror'
 const FUNDAMENTAL_VALUES_STORAGE_KEY = 'workbooks-v2-wb1-fundamental-values'
 const VALUE_DECISIONS_STORAGE_KEY = 'workbooks-v2-wb1-value-decisions'
 const NO_NEGOTIABLE_PHRASES_STORAGE_KEY = 'workbooks-v2-wb1-no-negotiable-phrases'
+const FOA_STORAGE_KEY = 'workbooks-v2-wb1-foa'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -122,6 +131,7 @@ const IDENTITY_MATRIX_ROWS = 10
 const STAKEHOLDER_ROWS = 3
 const VALUE_DECISION_ROWS = 5
 const NO_NEGOTIABLE_ROWS = 3
+const FOA_BULLET_LIMIT = 5
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -129,7 +139,8 @@ const PAGES: PageItem[] = [
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Storytelling personal', shortLabel: 'Storytelling' },
     { id: 4, label: '4. Definición de identidad actual', shortLabel: 'Identidad' },
-    { id: 5, label: '5. Valores fundamentales', shortLabel: 'Valores' }
+    { id: 5, label: '5. Valores fundamentales', shortLabel: 'Valores' },
+    { id: 6, label: '6. Fortalezas y áreas de oportunidad', shortLabel: 'FOA' }
 ]
 
 const OBJECTIVE_OUTCOMES = [
@@ -245,6 +256,33 @@ const VALUE_DECISION_INSTRUCTIONS = [
 const NO_NEGOTIABLE_INSTRUCTIONS = [
     'Para cada uno de tus 3 valores no negociables, completa esta frase: "Bajo presión, yo NO ______ aunque eso implique ______."',
     'Regla: el primer espacio debe ser un comportamiento concreto (no un valor abstracto).'
+]
+
+const FOA_INSTRUCTIONS = [
+    'Completa cada sección con bullets concretos (máx. 5 por sección).',
+    'Escribe hechos o situaciones observables, no adjetivos vagos.',
+    'Si puedes, añade una evidencia breve (proyecto, fecha, resultado).',
+    'Fortalezas = internas (lo que ya tienes y funciona).',
+    'Áreas de oportunidad = externas o potenciales (dónde crecer o capturar valor).',
+    'Amenazas = externas (riesgos que pueden frenarte).'
+]
+
+const FOA_QUADRANTS: FoaQuadrantConfig[] = [
+    {
+        key: 'strengths',
+        title: 'Fortalezas',
+        containerClassName: 'border-emerald-200 bg-emerald-50'
+    },
+    {
+        key: 'opportunities',
+        title: 'Áreas de oportunidad',
+        containerClassName: 'border-amber-200 bg-amber-50'
+    },
+    {
+        key: 'threats',
+        title: 'Amenazas',
+        containerClassName: 'border-red-200 bg-red-50'
+    }
 ]
 
 const FUNDAMENTAL_VALUES = [
@@ -419,6 +457,18 @@ function defaultNoNegotiableRows() {
     }))
 }
 
+function emptyFoaList() {
+    return Array.from({ length: FOA_BULLET_LIMIT }, () => '')
+}
+
+function defaultFoaFields() {
+    return {
+        strengths: emptyFoaList(),
+        opportunities: emptyFoaList(),
+        threats: emptyFoaList()
+    } satisfies Record<FoaQuadrantKey, string[]>
+}
+
 function normalizePatternList(value: unknown) {
     if (Array.isArray(value)) {
         const list = value
@@ -573,6 +623,26 @@ function normalizeNoNegotiableRows(value: unknown) {
     return defaultNoNegotiableRows()
 }
 
+function normalizeFoaList(value: unknown) {
+    if (Array.isArray(value)) {
+        const list = value
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .slice(0, FOA_BULLET_LIMIT)
+        return [...list, ...Array.from({ length: FOA_BULLET_LIMIT - list.length }, () => '')]
+    }
+
+    if (typeof value === 'string') {
+        const list = value
+            .split('\n')
+            .map((line) => line.replace(/^[\s•-]+/, '').trim())
+            .filter(Boolean)
+            .slice(0, FOA_BULLET_LIMIT)
+        return [...list, ...Array.from({ length: FOA_BULLET_LIMIT - list.length }, () => '')]
+    }
+
+    return emptyFoaList()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -597,6 +667,7 @@ export function WB1Step1Digital() {
     const [showStakeholderHelp, setShowStakeholderHelp] = useState(false)
     const [showValueDecisionHelp, setShowValueDecisionHelp] = useState(false)
     const [showNoNegotiableHelp, setShowNoNegotiableHelp] = useState(false)
+    const [showFoaHelp, setShowFoaHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -644,6 +715,12 @@ export function WB1Step1Digital() {
     const [noNegotiableEditModes, setNoNegotiableEditModes] = useState<boolean[]>(
         Array.from({ length: NO_NEGOTIABLE_ROWS }, () => false)
     )
+    const [foaFields, setFoaFields] = useState<Record<FoaQuadrantKey, string[]>>(defaultFoaFields())
+    const [foaEditModes, setFoaEditModes] = useState<Record<FoaQuadrantKey, boolean>>({
+        strengths: false,
+        opportunities: false,
+        threats: false
+    })
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -883,12 +960,34 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(NO_NEGOTIABLE_PHRASES_STORAGE_KEY, JSON.stringify(noNegotiableRows))
     }, [noNegotiableRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(FOA_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as Partial<Record<FoaQuadrantKey, unknown>>
+            setFoaFields({
+                strengths: normalizeFoaList(parsed.strengths),
+                opportunities: normalizeFoaList(parsed.opportunities),
+                threats: normalizeFoaList(parsed.threats)
+            })
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(FOA_STORAGE_KEY, JSON.stringify(foaFields))
+    }, [foaFields])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 8
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 11
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -916,6 +1015,7 @@ export function WB1Step1Digital() {
         )
             ? 1
             : 0
+        const filledFoa = Object.values(foaFields).filter((list) => list.some((item) => item.trim().length > 0)).length
         const filled =
             filledId +
             filledNarrative +
@@ -928,9 +1028,10 @@ export function WB1Step1Digital() {
             filledValues3 +
             filledValueDecisionMatrix +
             filledNoNegotiablePhrases +
+            filledFoa +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -1083,6 +1184,31 @@ export function WB1Step1Digital() {
         })
     }
 
+    const editFoaQuadrant = (key: FoaQuadrantKey) => {
+        if (isLocked) return
+        setFoaEditModes((prev) => ({ ...prev, [key]: true }))
+    }
+
+    const saveFoaQuadrant = (key: FoaQuadrantKey) => {
+        setFoaFields((prev) => ({
+            ...prev,
+            [key]: prev[key].map((item) => item.trim())
+        }))
+        setFoaEditModes((prev) => ({ ...prev, [key]: false }))
+    }
+
+    const setFoaBullet = (key: FoaQuadrantKey, index: number, value: string) => {
+        if (isLocked || !foaEditModes[key]) return
+        setFoaFields((prev) => {
+            const nextList = [...prev[key]]
+            nextList[index] = value
+            return {
+                ...prev,
+                [key]: nextList
+            }
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -1196,6 +1322,7 @@ export function WB1Step1Digital() {
 
     const visiblePatternBullets = (key: PatternListKey) => storyFields[key].map((item) => item.trim()).filter(Boolean)
     const visibleIdentityBullets = (key: IdentitySegmentKey) => identityWheelFields[key].map((item) => item.trim()).filter(Boolean)
+    const visibleFoaBullets = (key: FoaQuadrantKey) => foaFields[key].map((item) => item.trim()).filter(Boolean)
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
     const canUseValueDecisionMatrix = fundamentalValues.selected5.length === 5
@@ -2645,6 +2772,156 @@ export function WB1Step1Digital() {
                                             )
                                         })}
                                     </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {activePage === 6 && (
+                            <article className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 space-y-8 shadow-sm">
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 6</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+                                        Fortalezas y áreas de oportunidad
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-3xl">
+                                        Ver tu perfil con realismo: qué te potencia y qué te frena.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 1 - F.O.A. personal
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Fortalezas / Áreas de oportunidad / Amenazas
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowFoaHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showFoaHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {FOA_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showFoaHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-4">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo para completar este ejercicio</p>
+
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-900">Fortalezas:</p>
+                                                <ul className="mt-1 space-y-1">
+                                                    <li className="text-sm text-slate-700">
+                                                        • Convierto problemas complejos en planes ejecutables (roadmaps claros).
+                                                    </li>
+                                                    <li className="text-sm text-slate-700">
+                                                        • Alta disciplina de entrega (cumplí 3 hitos críticos en el último mes).
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-900">Áreas de oportunidad:</p>
+                                                <ul className="mt-1 space-y-1">
+                                                    <li className="text-sm text-slate-700">
+                                                        • Mayor demanda de liderazgo con IA y analítica en mi industria.
+                                                    </li>
+                                                    <li className="text-sm text-slate-700">
+                                                        • Posibilidad de fortalecer red estratégica (alianzas / comunidades).
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-900">Amenazas:</p>
+                                                <ul className="mt-1 space-y-1">
+                                                    <li className="text-sm text-slate-700">
+                                                        • Sobrecarga que reduce enfoque estratégico y energía.
+                                                    </li>
+                                                    <li className="text-sm text-slate-700">
+                                                        • Competencia creciente con perfiles híbridos (liderazgo + datos).
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </article>
+                                    )}
+                                </section>
+
+                                <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                                    {FOA_QUADRANTS.map((quadrant) => {
+                                        const isEditing = foaEditModes[quadrant.key]
+                                        const savedBullets = visibleFoaBullets(quadrant.key)
+
+                                        return (
+                                            <article key={quadrant.key} className={`rounded-xl border p-4 md:p-5 space-y-3 ${quadrant.containerClassName}`}>
+                                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                                    <h4 className="text-sm md:text-base font-bold text-slate-900">{quadrant.title}</h4>
+                                                    <div className="inline-flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => editFoaQuadrant(quadrant.key)}
+                                                            disabled={isLocked || isEditing}
+                                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            Editar
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => saveFoaQuadrant(quadrant.key)}
+                                                            disabled={isLocked || !isEditing}
+                                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            Guardar
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-xs text-slate-500">
+                                                    Bullets cargados: {savedBullets.length} / {FOA_BULLET_LIMIT}
+                                                </p>
+
+                                                {isEditing ? (
+                                                    <div className="space-y-2">
+                                                        {foaFields[quadrant.key].map((bullet, index) => (
+                                                            <label key={`${quadrant.key}-input-${index}`} className="block">
+                                                                <span className="sr-only">Bullet {index + 1}</span>
+                                                                <input
+                                                                    type="text"
+                                                                    value={bullet}
+                                                                    onChange={(event) => setFoaBullet(quadrant.key, index, event.target.value)}
+                                                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300"
+                                                                    placeholder={`${index + 1}.`}
+                                                                />
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                ) : savedBullets.length > 0 ? (
+                                                    <ol className="space-y-1.5">
+                                                        {savedBullets.map((bullet, index) => (
+                                                            <li key={`${quadrant.key}-view-${index}`} className="text-sm text-slate-700 flex items-start gap-2">
+                                                                <span className="text-slate-500">{index + 1}.</span>
+                                                                <span>{bullet}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ol>
+                                                ) : (
+                                                    <p className="text-sm text-slate-500">Sin registros en este cuadrante. Presiona "Editar" para comenzar.</p>
+                                                )}
+                                            </article>
+                                        )
+                                    })}
                                 </section>
                             </article>
                         )}
