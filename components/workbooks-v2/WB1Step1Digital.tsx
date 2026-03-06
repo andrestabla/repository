@@ -152,6 +152,15 @@ type EmpoweringBeliefRow = {
     bridgeBelief: string
 }
 
+type BridgeExperimentFieldKey = 'bridgeBelief' | 'dailyBehavior' | 'evidence' | 'indicator'
+
+type BridgeExperimentRow = {
+    bridgeBelief: string
+    dailyBehavior: string
+    evidence: string
+    indicator: string
+}
+
 type PageItem = {
     id: number
     label: string
@@ -173,6 +182,7 @@ const BELIEF_ABC_STORAGE_KEY = 'workbooks-v2-wb1-belief-abc'
 const BELIEF_EVIDENCE_STORAGE_KEY = 'workbooks-v2-wb1-belief-evidence'
 const BELIEF_IMPACT_STORAGE_KEY = 'workbooks-v2-wb1-belief-impact'
 const EMPOWERING_BELIEF_STORAGE_KEY = 'workbooks-v2-wb1-empowering-beliefs'
+const BRIDGE_EXPERIMENT_STORAGE_KEY = 'workbooks-v2-wb1-bridge-experiment'
 
 const STORY_EVENT_LIMIT = 5
 const PATTERN_LIST_LIMIT = 10
@@ -189,6 +199,7 @@ const BELIEF_EVIDENCE_ROWS = 5
 const BELIEF_IMPACT_BULLETS = 5
 const BELIEF_IMPACT_AFFECTED_ROWS = 3
 const EMPOWERING_BELIEF_ROWS = 3
+const BRIDGE_EXPERIMENT_ROWS = 3
 const IDENTITY_WHEEL_SIZES = [620, 760, 920] as const
 
 const PAGES: PageItem[] = [
@@ -363,6 +374,14 @@ const EMPOWERING_BELIEF_INSTRUCTIONS = [
     'Escribe una creencia ideal (tu versión más alta).',
     'Crea una creencia puente: debe ser creíble hoy y accionable (algo que puedas probar con conducta).',
     'Regla: la creencia puente no suena perfecta; suena realista y ejecutable.'
+]
+
+const BRIDGE_EXPERIMENT_INSTRUCTIONS = [
+    'Para cada nueva creencia empoderadora (o creencia puente), diseña un experimento de 7 días.',
+    'El objetivo es probarla con conducta, no repetirla mentalmente.',
+    'La conducta debe ser mínima (5-10 min) y diaria.',
+    'La evidencia debe ser observable (mensaje enviado, conversación realizada, registro hecho, decisión tomada).',
+    'El indicador debe ser medible (conteo o escala 0-10).'
 ]
 
 const FOA_QUADRANTS: FoaQuadrantConfig[] = [
@@ -615,6 +634,15 @@ function defaultEmpoweringBeliefRows() {
         limitingBelief: '',
         idealBelief: '',
         bridgeBelief: ''
+    }))
+}
+
+function defaultBridgeExperimentRows() {
+    return Array.from({ length: BRIDGE_EXPERIMENT_ROWS }, () => ({
+        bridgeBelief: '',
+        dailyBehavior: '',
+        evidence: '',
+        indicator: ''
     }))
 }
 
@@ -983,6 +1011,38 @@ function normalizeEmpoweringBeliefRows(value: unknown) {
     return defaultEmpoweringBeliefRows()
 }
 
+function normalizeBridgeExperimentRows(value: unknown) {
+    if (Array.isArray(value)) {
+        const rows = value
+            .map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return { bridgeBelief: '', dailyBehavior: '', evidence: '', indicator: '' }
+                }
+
+                const candidate = row as Partial<Record<BridgeExperimentFieldKey, unknown>>
+                return {
+                    bridgeBelief: typeof candidate.bridgeBelief === 'string' ? candidate.bridgeBelief : '',
+                    dailyBehavior: typeof candidate.dailyBehavior === 'string' ? candidate.dailyBehavior : '',
+                    evidence: typeof candidate.evidence === 'string' ? candidate.evidence : '',
+                    indicator: typeof candidate.indicator === 'string' ? candidate.indicator : ''
+                }
+            })
+            .slice(0, BRIDGE_EXPERIMENT_ROWS)
+
+        return [
+            ...rows,
+            ...Array.from({ length: BRIDGE_EXPERIMENT_ROWS - rows.length }, () => ({
+                bridgeBelief: '',
+                dailyBehavior: '',
+                evidence: '',
+                indicator: ''
+            }))
+        ]
+    }
+
+    return defaultBridgeExperimentRows()
+}
+
 function toMonthLabel(value: string) {
     if (!value) return 'Sin fecha'
     const [year, month] = value.split('-')
@@ -1013,6 +1073,7 @@ export function WB1Step1Digital() {
     const [showBeliefEvidenceHelp, setShowBeliefEvidenceHelp] = useState(false)
     const [showBeliefImpactHelp, setShowBeliefImpactHelp] = useState(false)
     const [showEmpoweringBeliefHelp, setShowEmpoweringBeliefHelp] = useState(false)
+    const [showBridgeExperimentHelp, setShowBridgeExperimentHelp] = useState(false)
     const [identityWheelSizeIndex, setIdentityWheelSizeIndex] = useState(0)
     const [openActHelp, setOpenActHelp] = useState<Record<StoryActHelpKey, boolean>>({
         acto1: false,
@@ -1081,6 +1142,10 @@ export function WB1Step1Digital() {
     const [beliefImpactIsEditing, setBeliefImpactIsEditing] = useState(false)
     const [empoweringBeliefRows, setEmpoweringBeliefRows] = useState<EmpoweringBeliefRow[]>(defaultEmpoweringBeliefRows())
     const [empoweringBeliefEditModes, setEmpoweringBeliefEditModes] = useState<boolean[]>(Array.from({ length: EMPOWERING_BELIEF_ROWS }, () => false))
+    const [bridgeExperimentRows, setBridgeExperimentRows] = useState<BridgeExperimentRow[]>(defaultBridgeExperimentRows())
+    const [bridgeExperimentEditModes, setBridgeExperimentEditModes] = useState<boolean[]>(
+        Array.from({ length: BRIDGE_EXPERIMENT_ROWS }, () => false)
+    )
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -1467,12 +1532,30 @@ export function WB1Step1Digital() {
         window.localStorage.setItem(EMPOWERING_BELIEF_STORAGE_KEY, JSON.stringify(empoweringBeliefRows))
     }, [empoweringBeliefRows])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(BRIDGE_EXPERIMENT_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as unknown
+            setBridgeExperimentRows(normalizeBridgeExperimentRows(parsed))
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(BRIDGE_EXPERIMENT_STORAGE_KEY, JSON.stringify(bridgeExperimentRows))
+    }, [bridgeExperimentRows])
+
     const completion = useMemo(() => {
         const idValues = Object.values(idFields)
         const narrativeValues = [storyFields.timelineRange, storyFields.actOrigin, storyFields.actBreak, storyFields.actRebuild]
         const patternValues = [storyFields.patternDecision, storyFields.patternTrigger, storyFields.patternResource]
         const identityValues = Object.values(identityWheelFields)
-        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 17
+        const total = idValues.length + narrativeValues.length + patternValues.length + identityValues.length + 18
         const filledId = idValues.filter((value) => value.trim().length > 0).length
         const filledNarrative = narrativeValues.filter((value) => value.trim().length > 0).length
         const filledPatterns = patternValues.filter((list) => list.some((item) => item.trim().length > 0)).length
@@ -1544,6 +1627,15 @@ export function WB1Step1Digital() {
         )
             ? 1
             : 0
+        const filledBridgeExperiment = bridgeExperimentRows.every(
+            (row) =>
+                row.bridgeBelief.trim().length > 0 &&
+                row.dailyBehavior.trim().length > 0 &&
+                row.evidence.trim().length > 0 &&
+                row.indicator.trim().length > 0
+        )
+            ? 1
+            : 0
         const filled =
             filledId +
             filledNarrative +
@@ -1563,9 +1655,10 @@ export function WB1Step1Digital() {
             filledBeliefEvidence +
             filledBeliefImpact +
             filledEmpoweringBeliefs +
+            filledBridgeExperiment +
             (storyEvents.length > 0 ? 1 : 0)
         return Math.round((filled / total) * 100)
-    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, storyEvents.length])
+    }, [idFields, storyFields, identityWheelFields, identityMatrixRows, stakeholderRows, fundamentalValues, valueDecisionRows, noNegotiableRows, foaFields, energyMapRows, energyPatternBullets, energyDoMore, energyDoLess, energyRedesign, beliefAbcRows, beliefEvidenceRows, beliefImpactSelected, beliefImpactCosts, beliefImpactLostOpportunities, beliefImpactAffectedRows, empoweringBeliefRows, bridgeExperimentRows, storyEvents.length])
 
     const orderedEvents = useMemo(() => {
         return [...storyEvents].sort(sortByApproxDate)
@@ -1585,11 +1678,39 @@ export function WB1Step1Digital() {
         return options
     }, [beliefEvidenceRows])
 
+    const bridgeBeliefOptions = useMemo(() => {
+        const seen = new Set<string>()
+        const options: string[] = []
+
+        empoweringBeliefRows.forEach((row) => {
+            const value = row.bridgeBelief.trim()
+            if (!value || seen.has(value)) return
+            seen.add(value)
+            options.push(value)
+        })
+
+        return options
+    }, [empoweringBeliefRows])
+
     useEffect(() => {
         if (!beliefImpactSelected) return
         if (limitingBeliefOptions.includes(beliefImpactSelected)) return
         setBeliefImpactSelected('')
     }, [beliefImpactSelected, limitingBeliefOptions])
+
+    useEffect(() => {
+        setBridgeExperimentRows((prev) => {
+            let changed = false
+            const next = prev.map((row) => {
+                const value = row.bridgeBelief.trim()
+                if (!value || bridgeBeliefOptions.includes(value)) return row
+                changed = true
+                return { ...row, bridgeBelief: '' }
+            })
+
+            return changed ? next : prev
+        })
+    }, [bridgeBeliefOptions])
 
     const identityWheelSize = IDENTITY_WHEEL_SIZES[identityWheelSizeIndex]
 
@@ -1922,6 +2043,38 @@ export function WB1Step1Digital() {
         })
     }
 
+    const editBridgeExperimentRow = (rowIndex: number) => {
+        if (isLocked) return
+        setBridgeExperimentEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? true : mode)))
+    }
+
+    const saveBridgeExperimentRow = (rowIndex: number) => {
+        setBridgeExperimentRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = {
+                bridgeBelief: target.bridgeBelief.trim(),
+                dailyBehavior: target.dailyBehavior.trim(),
+                evidence: target.evidence.trim(),
+                indicator: target.indicator.trim()
+            }
+            return nextRows
+        })
+        setBridgeExperimentEditModes((prev) => prev.map((mode, index) => (index === rowIndex ? false : mode)))
+    }
+
+    const setBridgeExperimentCell = (rowIndex: number, field: BridgeExperimentFieldKey, value: string) => {
+        if (isLocked || !bridgeExperimentEditModes[rowIndex]) return
+        setBridgeExperimentRows((prev) => {
+            const nextRows = [...prev]
+            const target = nextRows[rowIndex]
+            if (!target) return prev
+            nextRows[rowIndex] = { ...target, [field]: value }
+            return nextRows
+        })
+    }
+
     const toggleFundamentalValue10 = (value: string) => {
         if (isLocked) return
         setFundamentalValues((prev) => {
@@ -2061,6 +2214,13 @@ export function WB1Step1Digital() {
             row.limitingBelief.trim().length > 0 &&
             row.idealBelief.trim().length > 0 &&
             row.bridgeBelief.trim().length > 0
+    ).length
+    const completedBridgeExperimentRows = bridgeExperimentRows.filter(
+        (row) =>
+            row.bridgeBelief.trim().length > 0 &&
+            row.dailyBehavior.trim().length > 0 &&
+            row.evidence.trim().length > 0 &&
+            row.indicator.trim().length > 0
     ).length
     const canSelectTop5 = fundamentalValues.selected10.length === 10
     const canSelectTop3 = fundamentalValues.selected5.length === 5
@@ -4532,6 +4692,183 @@ export function WB1Step1Digital() {
                                                         <p className="text-sm text-slate-700">
                                                             <span className="font-semibold text-slate-900">Creencia puente:</span>{' '}
                                                             {row.bridgeBelief ? `“${row.bridgeBelief}”` : '______________________________'}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </article>
+                                        )
+                                    })}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">
+                                                Instrumento 2 - Plan de prueba (experimento de 7 días)
+                                            </h3>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                Diseña una práctica diaria para comprobar cada creencia puente con hechos observables y métricas concretas.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBridgeExperimentHelp((prev) => !prev)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            {showBridgeExperimentHelp ? 'Ocultar ayuda' : 'Ayuda + ejemplo'}
+                                        </button>
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                        {BRIDGE_EXPERIMENT_INSTRUCTIONS.map((instruction) => (
+                                            <li key={instruction} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {showBridgeExperimentHelp && (
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-2">
+                                            <p className="text-sm font-extrabold text-slate-900">Ejemplo</p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Nueva creencia (puente):</span>{' '}
+                                                “Puedo pedir ayuda específica sin perder autoridad.”
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Conducta mínima diaria (5-10 min):</span>{' '}
+                                                Cada día pediré apoyo específico en 1 punto (pregunta concreta) a un par/equipo y registraré la respuesta.
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Evidencia que buscaré (hechos):</span>{' '}
+                                                7 solicitudes realizadas (chat/correo/reunión) + 7 respuestas recibidas + 1 mejora aplicada en mi
+                                                entrega.
+                                            </p>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Indicador de progreso (medible):</span>{' '}
+                                                Número de veces que pedí ayuda (meta: 7/7) y ansiedad antes de pedirla (0-10, meta: bajar al menos 2
+                                                puntos al día 7).
+                                            </p>
+                                        </article>
+                                    )}
+                                </section>
+
+                                <p className="text-xs text-slate-500">
+                                    Tarjetas completas: {completedBridgeExperimentRows} / {BRIDGE_EXPERIMENT_ROWS}
+                                </p>
+
+                                <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                                    {bridgeExperimentRows.map((row, rowIndex) => {
+                                        const isEditing = bridgeExperimentEditModes[rowIndex]
+                                        const rowDisabled = isLocked || !isEditing
+                                        const rowBridgeOptions =
+                                            row.bridgeBelief && !bridgeBeliefOptions.includes(row.bridgeBelief)
+                                                ? [row.bridgeBelief, ...bridgeBeliefOptions]
+                                                : bridgeBeliefOptions
+
+                                        return (
+                                            <article
+                                                key={`bridge-experiment-${rowIndex}`}
+                                                className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-sm"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <h4 className="text-sm md:text-base font-bold text-slate-900">Experimento {rowIndex + 1}</h4>
+                                                    <div className="inline-flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => editBridgeExperimentRow(rowIndex)}
+                                                            disabled={isLocked || isEditing}
+                                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            Editar
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => saveBridgeExperimentRow(rowIndex)}
+                                                            disabled={isLocked || !isEditing}
+                                                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            Guardar
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {isEditing ? (
+                                                    <div className="space-y-3">
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Nueva creencia (o puente)</span>
+                                                            <select
+                                                                value={row.bridgeBelief}
+                                                                onChange={(event) => setBridgeExperimentCell(rowIndex, 'bridgeBelief', event.target.value)}
+                                                                disabled={rowDisabled || rowBridgeOptions.length === 0}
+                                                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                            >
+                                                                <option value="">
+                                                                    {rowBridgeOptions.length > 0
+                                                                        ? 'Selecciona una creencia puente'
+                                                                        : 'Primero define creencias puente en el Instrumento 1'}
+                                                                </option>
+                                                                {rowBridgeOptions.map((belief) => (
+                                                                    <option key={belief} value={belief}>
+                                                                        {belief}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </label>
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                                Conducta mínima diaria (5-10 min)
+                                                            </span>
+                                                            <textarea
+                                                                value={row.dailyBehavior}
+                                                                onChange={(event) => setBridgeExperimentCell(rowIndex, 'dailyBehavior', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[96px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="¿Qué harás cada día?"
+                                                            />
+                                                        </label>
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                                Evidencia que buscaré (hechos)
+                                                            </span>
+                                                            <textarea
+                                                                value={row.evidence}
+                                                                onChange={(event) => setBridgeExperimentCell(rowIndex, 'evidence', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[96px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="¿Qué señales observables confirmarían el avance?"
+                                                            />
+                                                        </label>
+                                                        <label className="block space-y-1">
+                                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                                Indicador de progreso (medible)
+                                                            </span>
+                                                            <textarea
+                                                                value={row.indicator}
+                                                                onChange={(event) => setBridgeExperimentCell(rowIndex, 'indicator', event.target.value)}
+                                                                disabled={rowDisabled}
+                                                                className="w-full min-h-[96px] rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                                placeholder="Define meta y escala (conteo o 0-10)."
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Nueva creencia (o puente):</span>{' '}
+                                                            {row.bridgeBelief ? `“${row.bridgeBelief}”` : '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Conducta mínima diaria (5-10 min):</span>{' '}
+                                                            {row.dailyBehavior || '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Evidencia que buscaré (hechos):</span>{' '}
+                                                            {row.evidence || '______________________________'}
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">
+                                                            <span className="font-semibold text-slate-900">Indicador de progreso (medible):</span>{' '}
+                                                            {row.indicator || '______________________________'}
                                                         </p>
                                                     </div>
                                                 )}
