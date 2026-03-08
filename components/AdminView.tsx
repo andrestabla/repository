@@ -528,7 +528,7 @@ export default function AdminView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {loadingUsers && <tr><td colSpan={5} className="p-5 text-center text-[var(--text-muted)]">Cargando...</td></tr>}
+                                {loadingUsers && <tr><td colSpan={6} className="p-5 text-center text-[var(--text-muted)]">Cargando...</td></tr>}
                                 {activeUsers.map(u => (
                                     <tr key={u.email} className={`border-t border-[var(--border)] hover:bg-white/5 ${!u.isActive ? 'opacity-50 grayscale' : ''}`}>
                                         <td className="p-3">
@@ -563,7 +563,7 @@ export default function AdminView() {
                                         <td className="p-3">
                                             <button
                                                 onClick={() => { setSelectedUserForPermissions(u); setPermissionsModalOpen(true); }}
-                                                className="flex items-center gap-1.5 px-2 py-1 bg-bg border border-[var(--border)] rounded text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--accent)] transition-all"
+                                                className="flex items-center gap-1.5 px-2 py-1 bg-[var(--panel)] border border-[var(--border)] rounded text-[10px] font-bold text-[var(--text-main)] hover:border-[var(--accent)] transition-all"
                                             >
                                                 <span>🔑</span>
                                                 <span className="hidden xl:inline">{u.allowedModules?.length || 0} Módulos</span>
@@ -583,73 +583,102 @@ export default function AdminView() {
 
                     {/* Permissions Modal */}
                     {permissionsModalOpen && selectedUserForPermissions && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                            <div className="bg-[#161b22] border border-[var(--border)] rounded-xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                                <h3 className="text-lg font-bold text-[var(--text-main)] mb-1">Permisos de Acceso</h3>
-                                <p className="text-xs text-[var(--text-muted)] mb-6">
-                                    Configura los módulos disponibles para <span className="text-[var(--accent)]">{selectedUserForPermissions.email}</span>.
-                                </p>
-
-                                <div className="grid grid-cols-2 gap-3 mb-6 max-h-[300px] overflow-y-auto">
-                                    {AVAILABLE_MODULES.map(mod => {
-                                        const isChecked = (selectedUserForPermissions.allowedModules || []).includes(mod.id)
-                                        return (
-                                            <button
-                                                key={mod.id}
-                                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all text-left ${isChecked
-                                                        ? 'bg-[var(--accent)]/10 border-[var(--accent)]'
-                                                        : 'bg-bg border-[var(--border)] hover:border-[var(--text-muted)]'
-                                                    }`}
-                                                onClick={() => {
-                                                    const current = selectedUserForPermissions.allowedModules || []
-                                                    const newModules = isChecked
-                                                        ? current.filter(m => m !== mod.id)
-                                                        : [...current, mod.id]
-                                                    setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: newModules })
-                                                }}
-                                            >
-                                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isChecked ? 'bg-[var(--accent)] border-[var(--accent)]' : 'border-[var(--text-muted)]'
-                                                    }`}>
-                                                    {isChecked && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                                </div>
-                                                <span className={`text-xs font-bold ${isChecked ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>
-                                                    {mod.label}
-                                                </span>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-
-                                <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
-                                    <div className="flex-1 flex gap-2">
-                                        <button
-                                            onClick={() => setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: AVAILABLE_MODULES.map(m => m.id) })}
-                                            className="text-[10px] text-[var(--accent)] hover:underline font-bold"
-                                        >
-                                            Todos
-                                        </button>
-                                        <button
-                                            onClick={() => setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: [] })}
-                                            className="text-[10px] text-[var(--text-muted)] hover:underline font-bold"
-                                        >
-                                            Ninguno
-                                        </button>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 backdrop-blur-sm p-4">
+                            <div className="w-full max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--panel)] text-[var(--text-main)] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                                <div className="flex items-start justify-between gap-4 px-6 pt-6">
+                                    <div>
+                                        <h3 className="text-xl font-extrabold leading-tight">Permisos de acceso</h3>
+                                        <p className="text-sm text-[var(--text-muted)] mt-1">
+                                            Configura los módulos disponibles para{' '}
+                                            <span className="font-semibold text-[var(--accent)] break-all">{selectedUserForPermissions.email}</span>.
+                                        </p>
                                     </div>
                                     <button
                                         onClick={() => setPermissionsModalOpen(false)}
-                                        className="px-4 py-2 text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                                        className="shrink-0 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--accent)] transition-colors"
                                     >
-                                        Cancelar
+                                        Cerrar
                                     </button>
-                                    <button
-                                        onClick={() => {
-                                            handleUpdateUser(selectedUserForPermissions.email, { allowedModules: selectedUserForPermissions.allowedModules })
-                                            setPermissionsModalOpen(false)
-                                        }}
-                                        className="px-6 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-[var(--accent)]/20"
-                                    >
-                                        Guardar Permisos
-                                    </button>
+                                </div>
+
+                                <div className="px-6 pb-6">
+                                    <div className="mt-4 mb-4 flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2">
+                                        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Módulos habilitados</span>
+                                        <span className="rounded-full bg-[var(--accent)]/12 px-2.5 py-1 text-xs font-bold text-[var(--accent)]">
+                                            {(selectedUserForPermissions.allowedModules || []).length} / {AVAILABLE_MODULES.length}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 max-h-[320px] overflow-y-auto pr-1">
+                                        {AVAILABLE_MODULES.map(mod => {
+                                            const isChecked = (selectedUserForPermissions.allowedModules || []).includes(mod.id)
+                                            return (
+                                                <button
+                                                    key={mod.id}
+                                                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${isChecked
+                                                        ? 'bg-[var(--accent)]/12 border-[var(--accent)] shadow-sm'
+                                                        : 'bg-[var(--bg)] border-[var(--border)] hover:border-[var(--accent)]/70'
+                                                        }`}
+                                                    onClick={() => {
+                                                        const current = selectedUserForPermissions.allowedModules || []
+                                                        const newModules = isChecked
+                                                            ? current.filter(m => m !== mod.id)
+                                                            : [...current, mod.id]
+                                                        setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: newModules })
+                                                    }}
+                                                    aria-pressed={isChecked}
+                                                >
+                                                    <div
+                                                        className={`h-5 w-5 rounded border flex items-center justify-center transition-colors ${isChecked
+                                                            ? 'bg-[var(--accent)] border-[var(--accent)]'
+                                                            : 'border-[var(--text-muted)] bg-white'
+                                                            }`}
+                                                    >
+                                                        {isChecked && (
+                                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-sm font-semibold text-[var(--text-main)]">{mod.label}</span>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[var(--border)]">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: AVAILABLE_MODULES.map(m => m.id) })}
+                                                className="text-xs text-[var(--accent)] hover:underline font-semibold"
+                                            >
+                                                Seleccionar todo
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedUserForPermissions({ ...selectedUserForPermissions, allowedModules: [] })}
+                                                className="text-xs text-[var(--text-muted)] hover:underline font-semibold"
+                                            >
+                                                Limpiar selección
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setPermissionsModalOpen(false)}
+                                                className="px-4 py-2 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    handleUpdateUser(selectedUserForPermissions.email, { allowedModules: selectedUserForPermissions.allowedModules })
+                                                    setPermissionsModalOpen(false)
+                                                }}
+                                                className="px-5 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-[var(--accent)]/20"
+                                            >
+                                                Guardar permisos
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
