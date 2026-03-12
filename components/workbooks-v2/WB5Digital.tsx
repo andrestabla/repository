@@ -21,42 +21,55 @@ type WB5State = {
         cohort: string
         startDate: string
     }
-    communicationImpactSection: {
-        matrix: {
-            centralMessage: string
-            audience: string
-            needsToUnderstand: string
-            needsToFeel: string
-            needsToDo: string
-        }
-        structure: {
-            context: string
-            centralIdea: string
+    executiveMessageSection: {
+        bluf: {
+            bottomLine: string
             whyItMatters: string
-            expectedAction: string
+            nowWhat: string
+            supportOne: string
+            supportTwo: string
+            supportThree: string
         }
-        clarityCheck: Array<{
+        pyramid: {
+            motherIdea: string
+            argumentOne: string
+            proofOne: string
+            argumentTwo: string
+            proofTwo: string
+            argumentThree: string
+            proofThree: string
+        }
+        scqa: {
+            situation: string
+            complication: string
+            question: string
+            answer: string
+        }
+        clarityTest: Array<{
             question: string
             verdict: YesNoAnswer
             adjustment: string
         }>
-        reformulation: {
-            executiveVersion: string
-            explanatoryVersion: string
-        }
     }
 }
 
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
-    { id: 3, label: '3. Comunicación de impacto', shortLabel: 'Comunicación de impacto' }
+    { id: 3, label: '3. Estructura de mensaje ejecutivo', shortLabel: 'Mensaje ejecutivo' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb5-state'
 const PAGE_STORAGE_KEY = 'workbooks-v2-wb5-active-page'
 const VISITED_STORAGE_KEY = 'workbooks-v2-wb5-visited'
 const INTRO_SEEN_KEY = 'workbooks-v2-wb5-presentation-seen'
+const EXECUTIVE_TEST_QUESTIONS = [
+    '¿La idea principal aparece rápido?',
+    '¿La lógica del mensaje se sostiene?',
+    '¿Queda claro qué debe pasar después?',
+    '¿El mensaje es creíble y verificable?',
+    '¿El nivel de detalle está bien calibrado?'
+]
 
 const DEFAULT_STATE: WB5State = {
     identification: {
@@ -65,30 +78,69 @@ const DEFAULT_STATE: WB5State = {
         cohort: '',
         startDate: ''
     },
-    communicationImpactSection: {
-        matrix: {
-            centralMessage: '',
-            audience: '',
-            needsToUnderstand: '',
-            needsToFeel: '',
-            needsToDo: ''
-        },
-        structure: {
-            context: '',
-            centralIdea: '',
+    executiveMessageSection: {
+        bluf: {
+            bottomLine: '',
             whyItMatters: '',
-            expectedAction: ''
+            nowWhat: '',
+            supportOne: '',
+            supportTwo: '',
+            supportThree: ''
         },
-        clarityCheck: [
-            { question: '¿Mi mensaje deja clara la idea principal?', verdict: '', adjustment: '' },
-            { question: '¿Se entiende por qué importa?', verdict: '', adjustment: '' },
-            { question: '¿Se entiende qué espero del otro?', verdict: '', adjustment: '' },
-            { question: '¿Está adaptado al lenguaje de esta audiencia?', verdict: '', adjustment: '' },
-            { question: '¿Deja espacio para escuchar y verificar comprensión?', verdict: '', adjustment: '' }
-        ],
-        reformulation: {
-            executiveVersion: '',
-            explanatoryVersion: ''
+        pyramid: {
+            motherIdea: '',
+            argumentOne: '',
+            proofOne: '',
+            argumentTwo: '',
+            proofTwo: '',
+            argumentThree: '',
+            proofThree: ''
+        },
+        scqa: {
+            situation: '',
+            complication: '',
+            question: '',
+            answer: ''
+        },
+        clarityTest: EXECUTIVE_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '',
+            adjustment: ''
+        }))
+    }
+}
+
+const normalizeState = (raw: unknown): WB5State => {
+    const parsed = typeof raw === 'object' && raw !== null ? (raw as Record<string, any>) : {}
+    const executiveRaw = parsed.executiveMessageSection ?? {}
+    const clarityRaw = Array.isArray(executiveRaw.clarityTest) ? executiveRaw.clarityTest : []
+
+    return {
+        identification: {
+            ...DEFAULT_STATE.identification,
+            ...(parsed.identification ?? {})
+        },
+        executiveMessageSection: {
+            bluf: {
+                ...DEFAULT_STATE.executiveMessageSection.bluf,
+                ...(executiveRaw.bluf ?? {})
+            },
+            pyramid: {
+                ...DEFAULT_STATE.executiveMessageSection.pyramid,
+                ...(executiveRaw.pyramid ?? {})
+            },
+            scqa: {
+                ...DEFAULT_STATE.executiveMessageSection.scqa,
+                ...(executiveRaw.scqa ?? {})
+            },
+            clarityTest: EXECUTIVE_TEST_QUESTIONS.map((question, index) => {
+                const candidate = clarityRaw[index]
+                return {
+                    question,
+                    verdict: candidate?.verdict === 'yes' || candidate?.verdict === 'no' ? candidate.verdict : '',
+                    adjustment: typeof candidate?.adjustment === 'string' ? candidate.adjustment : ''
+                }
+            })
         }
     }
 }
@@ -103,11 +155,11 @@ export function WB5Digital() {
     const [isHydrated, setIsHydrated] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
     const [isExportingAll, setIsExportingAll] = useState(false)
-    const [showCommunicationHelp, setShowCommunicationHelp] = useState(false)
-    const [showCommunicationExampleStep1, setShowCommunicationExampleStep1] = useState(false)
-    const [showCommunicationExampleStep2, setShowCommunicationExampleStep2] = useState(false)
-    const [showCommunicationExampleStep3, setShowCommunicationExampleStep3] = useState(false)
-    const [showCommunicationExampleStep4, setShowCommunicationExampleStep4] = useState(false)
+    const [showExecutiveHelp, setShowExecutiveHelp] = useState(false)
+    const [showExecutiveExampleStep1, setShowExecutiveExampleStep1] = useState(false)
+    const [showExecutiveExampleStep2, setShowExecutiveExampleStep2] = useState(false)
+    const [showExecutiveExampleStep3, setShowExecutiveExampleStep3] = useState(false)
+    const [showExecutiveExampleStep4, setShowExecutiveExampleStep4] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -117,7 +169,7 @@ export function WB5Digital() {
         try {
             const rawState = window.localStorage.getItem(STORAGE_KEY)
             if (rawState) {
-                setState({ ...DEFAULT_STATE, ...JSON.parse(rawState) })
+                setState(normalizeState(JSON.parse(rawState)))
             }
 
             const introSeen = window.localStorage.getItem(INTRO_SEEN_KEY) === '1'
@@ -244,51 +296,68 @@ export function WB5Digital() {
         }))
     }
 
-    const updateCommunicationMatrix = (
-        field: keyof WB5State['communicationImpactSection']['matrix'],
+    const updateBluf = (
+        field: keyof WB5State['executiveMessageSection']['bluf'],
         value: string
     ) => {
         if (isLocked) return
         setState((prev) => ({
             ...prev,
-            communicationImpactSection: {
-                ...prev.communicationImpactSection,
-                matrix: {
-                    ...prev.communicationImpactSection.matrix,
+            executiveMessageSection: {
+                ...prev.executiveMessageSection,
+                bluf: {
+                    ...prev.executiveMessageSection.bluf,
                     [field]: value
                 }
             }
         }))
     }
 
-    const updateCommunicationStructure = (
-        field: keyof WB5State['communicationImpactSection']['structure'],
+    const updatePyramid = (
+        field: keyof WB5State['executiveMessageSection']['pyramid'],
         value: string
     ) => {
         if (isLocked) return
         setState((prev) => ({
             ...prev,
-            communicationImpactSection: {
-                ...prev.communicationImpactSection,
-                structure: {
-                    ...prev.communicationImpactSection.structure,
+            executiveMessageSection: {
+                ...prev.executiveMessageSection,
+                pyramid: {
+                    ...prev.executiveMessageSection.pyramid,
                     [field]: value
                 }
             }
         }))
     }
 
-    const updateCommunicationCheck = (
+    const updateScqa = (
+        field: keyof WB5State['executiveMessageSection']['scqa'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            executiveMessageSection: {
+                ...prev.executiveMessageSection,
+                scqa: {
+                    ...prev.executiveMessageSection.scqa,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateExecutiveTest = (
         rowIndex: number,
-        field: keyof WB5State['communicationImpactSection']['clarityCheck'][number],
+        field: keyof WB5State['executiveMessageSection']['clarityTest'][number],
         value: string
     ) => {
         if (isLocked) return
         setState((prev) => ({
             ...prev,
-            communicationImpactSection: {
-                ...prev.communicationImpactSection,
-                clarityCheck: prev.communicationImpactSection.clarityCheck.map((row, index) =>
+            executiveMessageSection: {
+                ...prev.executiveMessageSection,
+                clarityTest: prev.executiveMessageSection.clarityTest.map((row, index) =>
                     index === rowIndex
                         ? { ...row, [field]: field === 'verdict' ? (value as YesNoAnswer) : value }
                         : row
@@ -297,24 +366,7 @@ export function WB5Digital() {
         }))
     }
 
-    const updateCommunicationReformulation = (
-        field: keyof WB5State['communicationImpactSection']['reformulation'],
-        value: string
-    ) => {
-        if (isLocked) return
-        setState((prev) => ({
-            ...prev,
-            communicationImpactSection: {
-                ...prev.communicationImpactSection,
-                reformulation: {
-                    ...prev.communicationImpactSection.reformulation,
-                    [field]: value
-                }
-            }
-        }))
-    }
-
-    const saveCommunicationBlock = (blockLabel: string) => {
+    const saveExecutiveBlock = (blockLabel: string) => {
         markVisited(3)
         announceSave(`${blockLabel} guardado.`)
     }
@@ -390,43 +442,49 @@ export function WB5Digital() {
         return union === 0 ? 0 : intersection / union
     }
 
-    const communicationMatrix = state.communicationImpactSection.matrix
-    const communicationStructure = state.communicationImpactSection.structure
-    const communicationCheck = state.communicationImpactSection.clarityCheck
-    const communicationReformulation = state.communicationImpactSection.reformulation
+    const executiveBluf = state.executiveMessageSection.bluf
+    const executivePyramid = state.executiveMessageSection.pyramid
+    const executiveScqa = state.executiveMessageSection.scqa
+    const executiveClarityTest = state.executiveMessageSection.clarityTest
 
-    const communicationMatrixCompleted = Object.values(communicationMatrix).every((value) => value.trim().length > 0)
-    const communicationStructureCompleted = Object.values(communicationStructure).every((value) => value.trim().length > 0)
-    const communicationCheckCompleted = communicationCheck.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
-    const communicationReformulationCompleted =
-        communicationReformulation.executiveVersion.trim().length > 0 && communicationReformulation.explanatoryVersion.trim().length > 0
-    const communicationSectionCompleted =
-        communicationMatrixCompleted &&
-        communicationStructureCompleted &&
-        communicationCheckCompleted &&
-        communicationReformulationCompleted
+    const blufCompleted = Object.values(executiveBluf).every((value) => value.trim().length > 0)
+    const pyramidCompleted = Object.values(executivePyramid).every((value) => value.trim().length > 0)
+    const scqaCompleted = Object.values(executiveScqa).every((value) => value.trim().length > 0)
+    const executiveTestCompleted = executiveClarityTest.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
+    const executiveSectionCompleted = blufCompleted && pyramidCompleted && scqaCompleted && executiveTestCompleted
 
-    const centralIdeaWordCount = communicationStructure.centralIdea.trim().split(/\s+/).filter(Boolean).length
-    const centralIdeaTooLong = centralIdeaWordCount > 22
-    const missingExpectedAction =
-        communicationStructure.expectedAction.trim().length === 0 &&
-        (communicationStructure.context.trim().length > 0 ||
-            communicationStructure.centralIdea.trim().length > 0 ||
-            communicationStructure.whyItMatters.trim().length > 0)
-    const reformulationTooSimilar =
-        communicationReformulation.executiveVersion.trim().length > 0 &&
-        communicationReformulation.explanatoryVersion.trim().length > 0 &&
-        (communicationReformulation.executiveVersion.trim().toLowerCase() ===
-            communicationReformulation.explanatoryVersion.trim().toLowerCase() ||
-            computeTokenSimilarity(
-                communicationReformulation.executiveVersion,
-                communicationReformulation.explanatoryVersion
-            ) > 0.82)
+    const bottomLineWordCount = executiveBluf.bottomLine.trim().split(/\s+/).filter(Boolean).length
+    const bottomLineTooLong = bottomLineWordCount > 18
+
+    const argumentTexts = [
+        executivePyramid.argumentOne,
+        executivePyramid.argumentTwo,
+        executivePyramid.argumentThree
+    ]
+        .map((argument) => argument.trim())
+        .filter(Boolean)
+    const repeatedArgumentByText = argumentTexts.some((argument, index) => argumentTexts.indexOf(argument) !== index)
+    let repeatedArgumentBySimilarity = false
+    for (let index = 0; index < argumentTexts.length; index += 1) {
+        for (let comparison = index + 1; comparison < argumentTexts.length; comparison += 1) {
+            if (computeTokenSimilarity(argumentTexts[index], argumentTexts[comparison]) > 0.86) {
+                repeatedArgumentBySimilarity = true
+            }
+        }
+    }
+    const pyramidArgumentsRepetitive = repeatedArgumentByText || repeatedArgumentBySimilarity
+
+    const scqaMisaligned =
+        executiveScqa.question.trim().length > 0 &&
+        executiveScqa.answer.trim().length > 0 &&
+        computeTokenSimilarity(executiveScqa.question, executiveScqa.answer) < 0.08
+
+    const actionClarityNeedsAdjustment = executiveClarityTest[2]?.verdict === 'no'
 
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
-        3: communicationSectionCompleted
+        3: executiveSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -734,14 +792,16 @@ export function WB5Digital() {
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 3 de 3"
-                                data-print-title="Comunicación de impacto"
+                                data-print-title="Estructura de mensaje ejecutivo"
                                 data-print-meta={printMetaLabel}
                             >
                                 <header className="space-y-2">
                                     <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 3</p>
-                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Comunicación de impacto</h2>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Estructura de mensaje ejecutivo
+                                    </h2>
                                     <p className="text-sm md:text-base text-slate-700 max-w-4xl">
-                                        Responde con más precisión cómo lograr que tu mensaje no solo se diga, sino que realmente se entienda, se reciba y movilice.
+                                        Estructura mensajes ejecutivos con claridad, jerarquía y capacidad de acción para reducir ambigüedad y dejar claro qué debe decidirse, hacerse o acordarse.
                                     </p>
                                 </header>
 
@@ -750,7 +810,7 @@ export function WB5Digital() {
                                         <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
                                         <button
                                             type="button"
-                                            onClick={() => setShowCommunicationHelp(true)}
+                                            onClick={() => setShowExecutiveHelp(true)}
                                             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                         >
                                             Ayuda / Ver ejemplo
@@ -758,9 +818,13 @@ export function WB5Digital() {
                                     </div>
                                     <ul className="space-y-2.5">
                                         {[
-                                            'Comunicar con impacto implica claridad (se entiende), dirección (orienta a la acción), recepción (conecta), adaptación (según audiencia) y tracción (mueve decisiones).',
-                                            'No es hablar mucho, usar palabras complejas ni repetir exactamente el mismo mensaje para todos.',
-                                            'Debe dejar claro qué quieres decir, por qué importa, qué debe entender la otra persona y qué cambio esperas facilitar.'
+                                            'Mensaje ejecutivo: comunicación breve, jerarquizada y orientada a decisión.',
+                                            'BLUF: pone la conclusión al inicio para acelerar comprensión.',
+                                            'Pirámide ejecutiva: idea central superior con argumentos y evidencias de soporte.',
+                                            'SCQA ejecutivo: situación, complicación, pregunta y respuesta.',
+                                            'Accionabilidad: deja claro qué debe decidirse, hacerse o confirmarse.',
+                                            'Condición de satisfacción: define cómo se ve un resultado bien hecho.',
+                                            'Confianza conversacional: mensaje claro, honesto y consistente que evita retrabajo.'
                                         ].map((item) => (
                                             <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
                                                 <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
@@ -772,84 +836,106 @@ export function WB5Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Matriz Mensaje – Audiencia – Objetivo</h3>
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — BLUF ejecutivo (Bottom Line Up Front)</h3>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => setShowCommunicationExampleStep1(true)}
+                                                onClick={() => setShowExecutiveExampleStep1(true)}
                                                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                             >
                                                 Ver ejemplo
                                             </button>
                                             <span
                                                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                    communicationMatrixCompleted
+                                                    blufCompleted
                                                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                                                 }`}
                                             >
-                                                {communicationMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                                {blufCompleted ? 'Completado' : 'Pendiente'}
                                             </span>
                                         </div>
                                     </div>
+                                    <p className="text-sm text-slate-700">
+                                        Empieza por lo esencial: conclusión, relevancia, acción esperada y soporte mínimo.
+                                    </p>
 
                                     <div className="grid grid-cols-1 gap-4">
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Mensaje central</span>
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Bottom line (idea principal)</span>
                                             <textarea
                                                 rows={2}
-                                                value={communicationMatrix.centralMessage}
-                                                onChange={(event) => updateCommunicationMatrix('centralMessage', event.target.value)}
+                                                value={executiveBluf.bottomLine}
+                                                onChange={(event) => updateBluf('bottomLine', event.target.value)}
                                                 disabled={isLocked}
                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             />
                                         </label>
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Audiencia</span>
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Por qué importa (so what)</span>
+                                            <textarea
+                                                rows={2}
+                                                value={executiveBluf.whyItMatters}
+                                                onChange={(event) => updateBluf('whyItMatters', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Qué debe pasar ahora (now what)</span>
+                                            <textarea
+                                                rows={2}
+                                                value={executiveBluf.nowWhat}
+                                                onChange={(event) => updateBluf('nowWhat', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Soporte mínimo 1</span>
                                             <input
                                                 type="text"
-                                                value={communicationMatrix.audience}
-                                                onChange={(event) => updateCommunicationMatrix('audience', event.target.value)}
+                                                value={executiveBluf.supportOne}
+                                                onChange={(event) => updateBluf('supportOne', event.target.value)}
                                                 disabled={isLocked}
-                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2.5 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             />
                                         </label>
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué necesito que comprenda</span>
-                                            <textarea
-                                                rows={2}
-                                                value={communicationMatrix.needsToUnderstand}
-                                                onChange={(event) => updateCommunicationMatrix('needsToUnderstand', event.target.value)}
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Soporte mínimo 2</span>
+                                            <input
+                                                type="text"
+                                                value={executiveBluf.supportTwo}
+                                                onChange={(event) => updateBluf('supportTwo', event.target.value)}
                                                 disabled={isLocked}
-                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2.5 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             />
                                         </label>
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué necesito que sienta o perciba</span>
-                                            <textarea
-                                                rows={2}
-                                                value={communicationMatrix.needsToFeel}
-                                                onChange={(event) => updateCommunicationMatrix('needsToFeel', event.target.value)}
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Soporte mínimo 3</span>
+                                            <input
+                                                type="text"
+                                                value={executiveBluf.supportThree}
+                                                onChange={(event) => updateBluf('supportThree', event.target.value)}
                                                 disabled={isLocked}
-                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            />
-                                        </label>
-                                        <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué necesito que haga o decida</span>
-                                            <textarea
-                                                rows={2}
-                                                value={communicationMatrix.needsToDo}
-                                                onChange={(event) => updateCommunicationMatrix('needsToDo', event.target.value)}
-                                                disabled={isLocked}
-                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2.5 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             />
                                         </label>
                                     </div>
 
+                                    {bottomLineTooLong && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: reduce la idea principal a una frase más nítida.
+                                        </p>
+                                    )}
+
                                     <div className="flex justify-end">
                                         <button
                                             type="button"
-                                            onClick={() => saveCommunicationBlock('Paso 1')}
+                                            onClick={() => saveExecutiveBlock('Paso 1')}
                                             disabled={isLocked}
                                             className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -860,87 +946,228 @@ export function WB5Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Estructura en 4 pasos</h3>
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Pirámide ejecutiva 1–3–3</h3>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => setShowCommunicationExampleStep2(true)}
+                                                onClick={() => setShowExecutiveExampleStep2(true)}
                                                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                             >
                                                 Ver ejemplo
                                             </button>
                                             <span
                                                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                    communicationStructureCompleted
+                                                    pyramidCompleted
                                                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                                                 }`}
                                             >
-                                                {communicationStructureCompleted ? 'Completado' : 'Pendiente'}
+                                                {pyramidCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <label className="space-y-1">
+                                        <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nivel 1 — Idea madre</span>
+                                        <textarea
+                                            rows={2}
+                                            value={executivePyramid.motherIdea}
+                                            onChange={(event) => updatePyramid('motherIdea', event.target.value)}
+                                            disabled={isLocked}
+                                            className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                        />
+                                    </label>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nivel 2 — Argumento 1</span>
+                                                <textarea
+                                                    rows={3}
+                                                    value={executivePyramid.argumentOne}
+                                                    onChange={(event) => updatePyramid('argumentOne', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                />
+                                            </label>
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nivel 3 — Prueba / implicación 1</span>
+                                                <textarea
+                                                    rows={3}
+                                                    value={executivePyramid.proofOne}
+                                                    onChange={(event) => updatePyramid('proofOne', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                />
+                                            </label>
+                                        </div>
+                                        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nivel 2 — Argumento 2</span>
+                                                <textarea
+                                                    rows={3}
+                                                    value={executivePyramid.argumentTwo}
+                                                    onChange={(event) => updatePyramid('argumentTwo', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                />
+                                            </label>
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nivel 3 — Prueba / implicación 2</span>
+                                                <textarea
+                                                    rows={3}
+                                                    value={executivePyramid.proofTwo}
+                                                    onChange={(event) => updatePyramid('proofTwo', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                />
+                                            </label>
+                                        </div>
+                                        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nivel 2 — Argumento 3</span>
+                                                <textarea
+                                                    rows={3}
+                                                    value={executivePyramid.argumentThree}
+                                                    onChange={(event) => updatePyramid('argumentThree', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                />
+                                            </label>
+                                            <label className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Nivel 3 — Prueba / implicación 3</span>
+                                                <textarea
+                                                    rows={3}
+                                                    value={executivePyramid.proofThree}
+                                                    onChange={(event) => updatePyramid('proofThree', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 md:p-5">
+                                        <p className="text-xs uppercase tracking-[0.14em] text-blue-700 font-semibold">Esquema visual de la pirámide 1–3–3</p>
+                                        <div className="mt-3 space-y-4">
+                                            <div className="mx-auto max-w-2xl rounded-xl border border-blue-200 bg-white p-4 text-center shadow-sm">
+                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Idea madre</p>
+                                                <p className="mt-1 text-sm font-semibold text-slate-800">
+                                                    {executivePyramid.motherIdea.trim() || 'Completa la idea madre para visualizarla aquí'}
+                                                </p>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                {[
+                                                    { title: 'Argumento 1', argument: executivePyramid.argumentOne, proof: executivePyramid.proofOne },
+                                                    { title: 'Argumento 2', argument: executivePyramid.argumentTwo, proof: executivePyramid.proofTwo },
+                                                    { title: 'Argumento 3', argument: executivePyramid.argumentThree, proof: executivePyramid.proofThree }
+                                                ].map((item) => (
+                                                    <div key={item.title} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{item.title}</p>
+                                                        <p className="mt-1 text-sm font-semibold text-slate-800">{item.argument.trim() || 'Sin argumento'}</p>
+                                                        <div className="mt-2 h-px bg-slate-200" />
+                                                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">Prueba / implicación</p>
+                                                        <p className="mt-1 text-sm text-slate-700">{item.proof.trim() || 'Sin prueba'}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {pyramidArgumentsRepetitive && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: diferencia mejor cada argumento para evitar repeticiones.
+                                        </p>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveExecutiveBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — SCQA ejecutivo</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowExecutiveExampleStep3(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    scqaCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {scqaCompleted ? 'Completado' : 'Pendiente'}
                                             </span>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-4">
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Contexto</span>
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Situación</span>
                                             <textarea
                                                 rows={2}
-                                                value={communicationStructure.context}
-                                                onChange={(event) => updateCommunicationStructure('context', event.target.value)}
+                                                value={executiveScqa.situation}
+                                                onChange={(event) => updateScqa('situation', event.target.value)}
                                                 disabled={isLocked}
                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             />
                                         </label>
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Idea central</span>
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Complicación</span>
                                             <textarea
                                                 rows={2}
-                                                value={communicationStructure.centralIdea}
-                                                onChange={(event) => updateCommunicationStructure('centralIdea', event.target.value)}
+                                                value={executiveScqa.complication}
+                                                onChange={(event) => updateScqa('complication', event.target.value)}
                                                 disabled={isLocked}
                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             />
                                         </label>
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Por qué importa</span>
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Pregunta / decisión que se abre</span>
                                             <textarea
                                                 rows={2}
-                                                value={communicationStructure.whyItMatters}
-                                                onChange={(event) => updateCommunicationStructure('whyItMatters', event.target.value)}
+                                                value={executiveScqa.question}
+                                                onChange={(event) => updateScqa('question', event.target.value)}
                                                 disabled={isLocked}
                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             />
                                         </label>
                                         <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Qué acción o decisión espero</span>
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Respuesta / propuesta</span>
                                             <textarea
                                                 rows={2}
-                                                value={communicationStructure.expectedAction}
-                                                onChange={(event) => updateCommunicationStructure('expectedAction', event.target.value)}
+                                                value={executiveScqa.answer}
+                                                onChange={(event) => updateScqa('answer', event.target.value)}
                                                 disabled={isLocked}
                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
                                             />
                                         </label>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        {centralIdeaTooLong && (
-                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                                                Sugerencia: reduce la idea central a una frase más clara.
-                                            </p>
-                                        )}
-                                        {missingExpectedAction && (
-                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                                                Sugerencia: aclara qué necesitas que ocurra después.
-                                            </p>
-                                        )}
-                                    </div>
+                                    {scqaMisaligned && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: alinea mejor la propuesta con la tensión planteada en la pregunta.
+                                        </p>
+                                    )}
 
                                     <div className="flex justify-end">
                                         <button
                                             type="button"
-                                            onClick={() => saveCommunicationBlock('Paso 2')}
+                                            onClick={() => saveExecutiveBlock('Paso 3')}
                                             disabled={isLocked}
                                             className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -951,23 +1178,23 @@ export function WB5Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Chequeo de claridad, escucha y adaptación</h3>
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Test de claridad, lógica y accionabilidad</h3>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => setShowCommunicationExampleStep3(true)}
+                                                onClick={() => setShowExecutiveExampleStep4(true)}
                                                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                             >
                                                 Ver ejemplo
                                             </button>
                                             <span
                                                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                    communicationCheckCompleted
+                                                    executiveTestCompleted
                                                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                                                 }`}
                                             >
-                                                {communicationCheckCompleted ? 'Completado' : 'Pendiente'}
+                                                {executiveTestCompleted ? 'Completado' : 'Pendiente'}
                                             </span>
                                         </div>
                                     </div>
@@ -985,16 +1212,16 @@ export function WB5Digital() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {communicationCheck.map((row, rowIndex) => (
-                                                    <tr key={`communication-check-${rowIndex}`}>
+                                                {executiveClarityTest.map((row, rowIndex) => (
+                                                    <tr key={`executive-check-${rowIndex}`}>
                                                         <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
                                                         <td className="px-4 py-3 border-b border-slate-100">
                                                             <label className="inline-flex items-center">
                                                                 <input
                                                                     type="radio"
-                                                                    name={`communication-check-${rowIndex}`}
+                                                                    name={`executive-check-${rowIndex}`}
                                                                     checked={row.verdict === 'yes'}
-                                                                    onChange={() => updateCommunicationCheck(rowIndex, 'verdict', 'yes')}
+                                                                    onChange={() => updateExecutiveTest(rowIndex, 'verdict', 'yes')}
                                                                     disabled={isLocked}
                                                                     className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
                                                                 />
@@ -1004,9 +1231,9 @@ export function WB5Digital() {
                                                             <label className="inline-flex items-center">
                                                                 <input
                                                                     type="radio"
-                                                                    name={`communication-check-${rowIndex}`}
+                                                                    name={`executive-check-${rowIndex}`}
                                                                     checked={row.verdict === 'no'}
-                                                                    onChange={() => updateCommunicationCheck(rowIndex, 'verdict', 'no')}
+                                                                    onChange={() => updateExecutiveTest(rowIndex, 'verdict', 'no')}
                                                                     disabled={isLocked}
                                                                     className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
                                                                 />
@@ -1016,7 +1243,7 @@ export function WB5Digital() {
                                                             <input
                                                                 type="text"
                                                                 value={row.adjustment}
-                                                                onChange={(event) => updateCommunicationCheck(rowIndex, 'adjustment', event.target.value)}
+                                                                onChange={(event) => updateExecutiveTest(rowIndex, 'adjustment', event.target.value)}
                                                                 disabled={isLocked}
                                                                 placeholder="Escribe ajuste o Completar"
                                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
@@ -1028,74 +1255,16 @@ export function WB5Digital() {
                                         </table>
                                     </div>
 
-                                    <div className="flex justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={() => saveCommunicationBlock('Paso 3')}
-                                            disabled={isLocked}
-                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Guardar bloque
-                                        </button>
-                                    </div>
-                                </section>
-
-                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Prueba breve de reformulación</h3>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowCommunicationExampleStep4(true)}
-                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-                                            >
-                                                Ver ejemplo
-                                            </button>
-                                            <span
-                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                    communicationReformulationCompleted
-                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                                }`}
-                                            >
-                                                {communicationReformulationCompleted ? 'Completado' : 'Pendiente'}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Versión A — Ejecutiva / breve</span>
-                                            <textarea
-                                                rows={3}
-                                                value={communicationReformulation.executiveVersion}
-                                                onChange={(event) => updateCommunicationReformulation('executiveVersion', event.target.value)}
-                                                disabled={isLocked}
-                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            />
-                                        </label>
-                                        <label className="space-y-1">
-                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Versión B — Más explicativa / cercana</span>
-                                            <textarea
-                                                rows={3}
-                                                value={communicationReformulation.explanatoryVersion}
-                                                onChange={(event) => updateCommunicationReformulation('explanatoryVersion', event.target.value)}
-                                                disabled={isLocked}
-                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
-                                            />
-                                        </label>
-                                    </div>
-
-                                    {reformulationTooSimilar && (
+                                    {actionClarityNeedsAdjustment && (
                                         <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                                            Sugerencia: ajusta más el lenguaje según la audiencia; las dos versiones están muy parecidas.
+                                            Sugerencia: define explícitamente qué debe decidirse, hacerse o confirmarse.
                                         </p>
                                     )}
 
                                     <div className="flex justify-end">
                                         <button
                                             type="button"
-                                            onClick={() => saveCommunicationBlock('Paso 4')}
+                                            onClick={() => saveExecutiveBlock('Paso 4')}
                                             disabled={isLocked}
                                             className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -1108,11 +1277,11 @@ export function WB5Digital() {
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
                                     <ul className="mt-4 space-y-2.5">
                                         {[
-                                            '¿Qué quiero que el otro entienda?',
-                                            '¿Qué necesito que cambie después de mi mensaje?',
-                                            '¿Cómo estructuro mejor mi comunicación?',
-                                            '¿Cómo adapto el lenguaje sin perder claridad?',
-                                            '¿Cómo integro escucha y ajuste dentro de la comunicación?'
+                                            '¿Cuál es la idea central que debe ir primero?',
+                                            '¿Cómo organizar un mensaje con jerarquía y soporte?',
+                                            '¿Cuándo usar BLUF y cuándo usar SCQA?',
+                                            '¿Cómo traducir una idea en una estructura accionable?',
+                                            '¿Cómo saber si tu mensaje está listo para una audiencia ejecutiva?'
                                         ].map((item) => (
                                             <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
                                                 <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
@@ -1123,12 +1292,12 @@ export function WB5Digital() {
                                     <div className="mt-5 flex items-center justify-between gap-3">
                                         <span
                                             className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                communicationSectionCompleted
+                                                executiveSectionCompleted
                                                     ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
                                                     : 'bg-amber-100 text-amber-700 border border-amber-300'
                                             }`}
                                         >
-                                            {communicationSectionCompleted ? 'Sección completada' : 'Sección pendiente'}
+                                            {executiveSectionCompleted ? 'Sección completada' : 'Sección pendiente'}
                                         </span>
                                         <button
                                             type="button"
@@ -1143,118 +1312,118 @@ export function WB5Digital() {
                             </article>
                         )}
 
-                        {showCommunicationHelp && !isExportingAll && (
+                        {showExecutiveHelp && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
                                     <div className="flex items-center justify-between gap-3 mb-4">
-                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Comunicación de impacto</h3>
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Estructura de mensaje ejecutivo</h3>
                                         <button
                                             type="button"
-                                            onClick={() => setShowCommunicationHelp(false)}
+                                            onClick={() => setShowExecutiveHelp(false)}
                                             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                         >
                                             Cerrar
                                         </button>
                                     </div>
                                     <div className="space-y-3 text-sm text-slate-700">
-                                        <p>• Comunicación de impacto = claridad + adaptación + escucha.</p>
-                                        <p>• No basta con decir el mensaje; importa lo que la audiencia entiende y qué hace después.</p>
-                                        <p>• Estructura útil: contexto → idea central → por qué importa → qué sigue.</p>
+                                        <p>• BLUF: empieza por la conclusión para reducir carga cognitiva.</p>
+                                        <p>• Pirámide ejecutiva: idea madre + argumentos + pruebas.</p>
+                                        <p>• SCQA: contexto estructurado sin perder foco ni accionabilidad.</p>
+                                        <p>• Un buen mensaje ejecutivo reduce ambigüedad y facilita decisiones.</p>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {showCommunicationExampleStep1 && !isExportingAll && (
+                        {showExecutiveExampleStep1 && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
                                     <div className="flex items-center justify-between gap-3 mb-4">
-                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1</h3>
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1 (BLUF)</h3>
                                         <button
                                             type="button"
-                                            onClick={() => setShowCommunicationExampleStep1(false)}
+                                            onClick={() => setShowExecutiveExampleStep1(false)}
                                             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                         >
                                             Cerrar
                                         </button>
                                     </div>
                                     <div className="space-y-2.5 text-sm text-slate-700">
-                                        <p><span className="font-semibold">Mensaje central:</span> Necesitamos ajustar prioridades y foco del trimestre.</p>
-                                        <p><span className="font-semibold">Audiencia:</span> Equipo de trabajo.</p>
-                                        <p><span className="font-semibold">Qué necesito que comprenda:</span> Qué cambia, por qué cambia y qué se espera.</p>
-                                        <p><span className="font-semibold">Qué necesito que sienta o perciba:</span> Claridad, dirección y seguridad.</p>
-                                        <p><span className="font-semibold">Qué necesito que haga o decida:</span> Repriorizar tareas y comprometerse con el nuevo foco.</p>
+                                        <p><span className="font-semibold">Bottom line:</span> Necesitamos redefinir prioridades del trimestre y concentrarnos en tres frentes.</p>
+                                        <p><span className="font-semibold">Por qué importa:</span> Si seguimos con cinco prioridades activas, bajará la calidad y aumentará el retrabajo.</p>
+                                        <p><span className="font-semibold">Qué debe pasar ahora:</span> Hoy debemos decidir qué tres frentes quedan y cuáles salen del foco.</p>
+                                        <p><span className="font-semibold">Soporte mínimo:</span> El equipo reporta saturación; hubo correcciones evitables; la capacidad no alcanza para cinco frentes.</p>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {showCommunicationExampleStep2 && !isExportingAll && (
+                        {showExecutiveExampleStep2 && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
                                     <div className="flex items-center justify-between gap-3 mb-4">
-                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2</h3>
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2 (Pirámide 1–3–3)</h3>
                                         <button
                                             type="button"
-                                            onClick={() => setShowCommunicationExampleStep2(false)}
+                                            onClick={() => setShowExecutiveExampleStep2(false)}
                                             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                         >
                                             Cerrar
                                         </button>
                                     </div>
                                     <ul className="space-y-2.5 text-sm text-slate-700">
-                                        <li><span className="font-semibold">1. Contexto:</span> El trimestre cambió de prioridades porque entraron dos frentes críticos.</li>
-                                        <li><span className="font-semibold">2. Idea central:</span> Necesitamos reenfocar el trabajo y concentrarnos en tres entregables clave.</li>
-                                        <li><span className="font-semibold">3. Por qué importa:</span> Si no hacemos este ajuste, dispersaremos tiempo y perderemos calidad.</li>
-                                        <li><span className="font-semibold">4. Qué acción o decisión espero:</span> Quiero que hoy salgamos con prioridades redefinidas y responsables claros.</li>
+                                        <li><span className="font-semibold">Idea madre:</span> Necesitamos simplificar el mensaje ejecutivo del proyecto.</li>
+                                        <li><span className="font-semibold">Argumento 1:</span> La propuesta es extensa para la audiencia decisora.</li>
+                                        <li><span className="font-semibold">Prueba 1:</span> El sponsor pidió “ir al punto” tres veces.</li>
+                                        <li><span className="font-semibold">Argumento 2:</span> La idea principal queda diluida entre contexto.</li>
+                                        <li><span className="font-semibold">Prueba 2:</span> El equipo no pudo repetir la recomendación final.</li>
+                                        <li><span className="font-semibold">Argumento 3:</span> No está clara la decisión esperada.</li>
+                                        <li><span className="font-semibold">Prueba 3:</span> La reunión cerró sin responsables ni siguiente paso.</li>
                                     </ul>
                                 </div>
                             </div>
                         )}
 
-                        {showCommunicationExampleStep3 && !isExportingAll && (
+                        {showExecutiveExampleStep3 && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
                                     <div className="flex items-center justify-between gap-3 mb-4">
-                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3</h3>
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3 (SCQA)</h3>
                                         <button
                                             type="button"
-                                            onClick={() => setShowCommunicationExampleStep3(false)}
+                                            onClick={() => setShowExecutiveExampleStep3(false)}
                                             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                         >
                                             Cerrar
                                         </button>
                                     </div>
-                                    <div className="space-y-2.5 text-sm text-slate-700">
-                                        <p>• Idea principal clara: Sí.</p>
-                                        <p>• Relevancia para audiencia: Sí.</p>
-                                        <p>• Acción esperada explícita: Sí.</p>
-                                        <p>• Lenguaje adaptado: Parcial → ajustar tecnicismos.</p>
-                                        <p>• Espacio para escuchar/verificar: Sí, agregando pregunta de confirmación.</p>
-                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Situación:</span> El equipo inició el trimestre con cuatro frentes estratégicos definidos.</li>
+                                        <li><span className="font-semibold">Complicación:</span> Entraron dos demandas nuevas que alteraron la capacidad real.</li>
+                                        <li><span className="font-semibold">Pregunta:</span> ¿Qué debemos priorizar para no sacrificar calidad ni tiempos?</li>
+                                        <li><span className="font-semibold">Respuesta:</span> Reenfocar en tres frentes, redefinir responsables y sacar del alcance lo que no cabe.</li>
+                                    </ul>
                                 </div>
                             </div>
                         )}
 
-                        {showCommunicationExampleStep4 && !isExportingAll && (
+                        {showExecutiveExampleStep4 && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
                                     <div className="flex items-center justify-between gap-3 mb-4">
-                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4</h3>
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4 (Test)</h3>
                                         <button
                                             type="button"
-                                            onClick={() => setShowCommunicationExampleStep4(false)}
+                                            onClick={() => setShowExecutiveExampleStep4(false)}
                                             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                                         >
                                             Cerrar
                                         </button>
                                     </div>
                                     <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Mensaje débil:</span> “Tenemos que revisar varias cosas para mejorar cómo vamos.”</p>
                                         <p>
-                                            <span className="font-semibold">Versión A:</span> Vamos a reenfocar prioridades en tres frentes porque necesitamos proteger calidad y resultados.
-                                        </p>
-                                        <p>
-                                            <span className="font-semibold">Versión B:</span> En las últimas semanas cambiaron varias condiciones, y por eso necesitamos ajustar prioridades para evitar dispersión y asegurar foco claro del equipo.
+                                            <span className="font-semibold">Mensaje mejorado:</span> “Necesitamos redefinir prioridades hoy porque la carga actual supera la capacidad del equipo y ya está afectando calidad. Quiero cerrar esta reunión con tres focos, responsables y límites claros.”
                                         </p>
                                     </div>
                                 </div>
