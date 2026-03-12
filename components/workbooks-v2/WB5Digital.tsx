@@ -5,7 +5,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2
+type WorkbookPageId = 1 | 2 | 3
+type YesNoAnswer = '' | 'yes' | 'no'
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -20,11 +21,36 @@ type WB5State = {
         cohort: string
         startDate: string
     }
+    communicationImpactSection: {
+        matrix: {
+            centralMessage: string
+            audience: string
+            needsToUnderstand: string
+            needsToFeel: string
+            needsToDo: string
+        }
+        structure: {
+            context: string
+            centralIdea: string
+            whyItMatters: string
+            expectedAction: string
+        }
+        clarityCheck: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+        reformulation: {
+            executiveVersion: string
+            explanatoryVersion: string
+        }
+    }
 }
 
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
-    { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' }
+    { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
+    { id: 3, label: '3. Comunicación de impacto', shortLabel: 'Comunicación de impacto' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb5-state'
@@ -38,6 +64,32 @@ const DEFAULT_STATE: WB5State = {
         role: '',
         cohort: '',
         startDate: ''
+    },
+    communicationImpactSection: {
+        matrix: {
+            centralMessage: '',
+            audience: '',
+            needsToUnderstand: '',
+            needsToFeel: '',
+            needsToDo: ''
+        },
+        structure: {
+            context: '',
+            centralIdea: '',
+            whyItMatters: '',
+            expectedAction: ''
+        },
+        clarityCheck: [
+            { question: '¿Mi mensaje deja clara la idea principal?', verdict: '', adjustment: '' },
+            { question: '¿Se entiende por qué importa?', verdict: '', adjustment: '' },
+            { question: '¿Se entiende qué espero del otro?', verdict: '', adjustment: '' },
+            { question: '¿Está adaptado al lenguaje de esta audiencia?', verdict: '', adjustment: '' },
+            { question: '¿Deja espacio para escuchar y verificar comprensión?', verdict: '', adjustment: '' }
+        ],
+        reformulation: {
+            executiveVersion: '',
+            explanatoryVersion: ''
+        }
     }
 }
 
@@ -51,6 +103,11 @@ export function WB5Digital() {
     const [isHydrated, setIsHydrated] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
     const [isExportingAll, setIsExportingAll] = useState(false)
+    const [showCommunicationHelp, setShowCommunicationHelp] = useState(false)
+    const [showCommunicationExampleStep1, setShowCommunicationExampleStep1] = useState(false)
+    const [showCommunicationExampleStep2, setShowCommunicationExampleStep2] = useState(false)
+    const [showCommunicationExampleStep3, setShowCommunicationExampleStep3] = useState(false)
+    const [showCommunicationExampleStep4, setShowCommunicationExampleStep4] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -70,7 +127,7 @@ export function WB5Digital() {
             if (rawPage) {
                 const parsed = Number(rawPage)
                 if (PAGES.some((page) => page.id === parsed)) {
-                    setActivePage(parsed as WorkbookPageId)
+                    setActivePage(!introSeen && parsed > 2 ? 1 : (parsed as WorkbookPageId))
                 }
             }
 
@@ -139,6 +196,13 @@ export function WB5Digital() {
     }
 
     const jumpToPage = (pageId: WorkbookPageId) => {
+        if (!hasSeenPresentationOnce && pageId > 2) {
+            setActivePage(2)
+            markVisited(2)
+            announceSave('Revisa primero la Presentación del workbook.')
+            return
+        }
+
         setActivePage(pageId)
         markVisited(pageId)
         if (typeof window !== 'undefined') {
@@ -178,6 +242,81 @@ export function WB5Digital() {
                 [field]: value
             }
         }))
+    }
+
+    const updateCommunicationMatrix = (
+        field: keyof WB5State['communicationImpactSection']['matrix'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            communicationImpactSection: {
+                ...prev.communicationImpactSection,
+                matrix: {
+                    ...prev.communicationImpactSection.matrix,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateCommunicationStructure = (
+        field: keyof WB5State['communicationImpactSection']['structure'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            communicationImpactSection: {
+                ...prev.communicationImpactSection,
+                structure: {
+                    ...prev.communicationImpactSection.structure,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateCommunicationCheck = (
+        rowIndex: number,
+        field: keyof WB5State['communicationImpactSection']['clarityCheck'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            communicationImpactSection: {
+                ...prev.communicationImpactSection,
+                clarityCheck: prev.communicationImpactSection.clarityCheck.map((row, index) =>
+                    index === rowIndex
+                        ? { ...row, [field]: field === 'verdict' ? (value as YesNoAnswer) : value }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateCommunicationReformulation = (
+        field: keyof WB5State['communicationImpactSection']['reformulation'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            communicationImpactSection: {
+                ...prev.communicationImpactSection,
+                reformulation: {
+                    ...prev.communicationImpactSection.reformulation,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const saveCommunicationBlock = (blockLabel: string) => {
+        markVisited(3)
+        announceSave(`${blockLabel} guardado.`)
     }
 
     const waitForRenderCycle = () =>
@@ -228,9 +367,66 @@ export function WB5Digital() {
         }
     }
 
+    const computeTokenSimilarity = (left: string, right: string) => {
+        const leftTokens = new Set(
+            left
+                .toLowerCase()
+                .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+                .split(/\s+/)
+                .filter((token) => token.length > 2)
+        )
+        const rightTokens = new Set(
+            right
+                .toLowerCase()
+                .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+                .split(/\s+/)
+                .filter((token) => token.length > 2)
+        )
+
+        if (leftTokens.size === 0 || rightTokens.size === 0) return 0
+
+        const intersection = Array.from(leftTokens).filter((token) => rightTokens.has(token)).length
+        const union = new Set([...Array.from(leftTokens), ...Array.from(rightTokens)]).size
+        return union === 0 ? 0 : intersection / union
+    }
+
+    const communicationMatrix = state.communicationImpactSection.matrix
+    const communicationStructure = state.communicationImpactSection.structure
+    const communicationCheck = state.communicationImpactSection.clarityCheck
+    const communicationReformulation = state.communicationImpactSection.reformulation
+
+    const communicationMatrixCompleted = Object.values(communicationMatrix).every((value) => value.trim().length > 0)
+    const communicationStructureCompleted = Object.values(communicationStructure).every((value) => value.trim().length > 0)
+    const communicationCheckCompleted = communicationCheck.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
+    const communicationReformulationCompleted =
+        communicationReformulation.executiveVersion.trim().length > 0 && communicationReformulation.explanatoryVersion.trim().length > 0
+    const communicationSectionCompleted =
+        communicationMatrixCompleted &&
+        communicationStructureCompleted &&
+        communicationCheckCompleted &&
+        communicationReformulationCompleted
+
+    const centralIdeaWordCount = communicationStructure.centralIdea.trim().split(/\s+/).filter(Boolean).length
+    const centralIdeaTooLong = centralIdeaWordCount > 22
+    const missingExpectedAction =
+        communicationStructure.expectedAction.trim().length === 0 &&
+        (communicationStructure.context.trim().length > 0 ||
+            communicationStructure.centralIdea.trim().length > 0 ||
+            communicationStructure.whyItMatters.trim().length > 0)
+    const reformulationTooSimilar =
+        communicationReformulation.executiveVersion.trim().length > 0 &&
+        communicationReformulation.explanatoryVersion.trim().length > 0 &&
+        (communicationReformulation.executiveVersion.trim().toLowerCase() ===
+            communicationReformulation.explanatoryVersion.trim().toLowerCase() ||
+            computeTokenSimilarity(
+                communicationReformulation.executiveVersion,
+                communicationReformulation.explanatoryVersion
+            ) > 0.82)
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
-        2: true
+        2: true,
+        3: communicationSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -293,11 +489,12 @@ export function WB5Digital() {
                                     key={page.id}
                                     type="button"
                                     onClick={() => jumpToPage(page.id)}
+                                    disabled={page.id > 2 && !hasSeenPresentationOnce}
                                     className={`w-full text-left rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
                                         activePage === page.id
                                             ? 'bg-blue-50 text-blue-800 border border-blue-200'
                                             : 'text-slate-600 hover:bg-slate-100 border border-transparent'
-                                    }`}
+                                    } disabled:opacity-55 disabled:cursor-not-allowed`}
                                 >
                                     {page.label}
                                 </button>
@@ -309,7 +506,7 @@ export function WB5Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb5-print-page wb5-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 2"
+                                data-print-page="Página 1 de 3"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -402,7 +599,7 @@ export function WB5Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 2"
+                                data-print-page="Página 2 de 3"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -531,6 +728,537 @@ export function WB5Digital() {
                                     </button>
                                 </div>
                             </article>
+                        )}
+
+                        {isPageVisible(3) && (
+                            <article
+                                className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 3 de 3"
+                                data-print-title="Comunicación de impacto"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 3</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Comunicación de impacto</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-4xl">
+                                        Responde con más precisión cómo lograr que tu mensaje no solo se diga, sino que realmente se entienda, se reciba y movilice.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCommunicationHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Comunicar con impacto implica claridad (se entiende), dirección (orienta a la acción), recepción (conecta), adaptación (según audiencia) y tracción (mueve decisiones).',
+                                            'No es hablar mucho, usar palabras complejas ni repetir exactamente el mismo mensaje para todos.',
+                                            'Debe dejar claro qué quieres decir, por qué importa, qué debe entender la otra persona y qué cambio esperas facilitar.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Matriz Mensaje – Audiencia – Objetivo</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCommunicationExampleStep1(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    communicationMatrixCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {communicationMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Mensaje central</span>
+                                            <textarea
+                                                rows={2}
+                                                value={communicationMatrix.centralMessage}
+                                                onChange={(event) => updateCommunicationMatrix('centralMessage', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Audiencia</span>
+                                            <input
+                                                type="text"
+                                                value={communicationMatrix.audience}
+                                                onChange={(event) => updateCommunicationMatrix('audience', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué necesito que comprenda</span>
+                                            <textarea
+                                                rows={2}
+                                                value={communicationMatrix.needsToUnderstand}
+                                                onChange={(event) => updateCommunicationMatrix('needsToUnderstand', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué necesito que sienta o perciba</span>
+                                            <textarea
+                                                rows={2}
+                                                value={communicationMatrix.needsToFeel}
+                                                onChange={(event) => updateCommunicationMatrix('needsToFeel', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué necesito que haga o decida</span>
+                                            <textarea
+                                                rows={2}
+                                                value={communicationMatrix.needsToDo}
+                                                onChange={(event) => updateCommunicationMatrix('needsToDo', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCommunicationBlock('Paso 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Estructura en 4 pasos</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCommunicationExampleStep2(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    communicationStructureCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {communicationStructureCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Contexto</span>
+                                            <textarea
+                                                rows={2}
+                                                value={communicationStructure.context}
+                                                onChange={(event) => updateCommunicationStructure('context', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Idea central</span>
+                                            <textarea
+                                                rows={2}
+                                                value={communicationStructure.centralIdea}
+                                                onChange={(event) => updateCommunicationStructure('centralIdea', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Por qué importa</span>
+                                            <textarea
+                                                rows={2}
+                                                value={communicationStructure.whyItMatters}
+                                                onChange={(event) => updateCommunicationStructure('whyItMatters', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Qué acción o decisión espero</span>
+                                            <textarea
+                                                rows={2}
+                                                value={communicationStructure.expectedAction}
+                                                onChange={(event) => updateCommunicationStructure('expectedAction', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        {centralIdeaTooLong && (
+                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                                Sugerencia: reduce la idea central a una frase más clara.
+                                            </p>
+                                        )}
+                                        {missingExpectedAction && (
+                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                                Sugerencia: aclara qué necesitas que ocurra después.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCommunicationBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Chequeo de claridad, escucha y adaptación</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCommunicationExampleStep3(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    communicationCheckCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {communicationCheckCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[860px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">
+                                                        Ajuste necesario
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {communicationCheck.map((row, rowIndex) => (
+                                                    <tr key={`communication-check-${rowIndex}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <label className="inline-flex items-center">
+                                                                <input
+                                                                    type="radio"
+                                                                    name={`communication-check-${rowIndex}`}
+                                                                    checked={row.verdict === 'yes'}
+                                                                    onChange={() => updateCommunicationCheck(rowIndex, 'verdict', 'yes')}
+                                                                    disabled={isLocked}
+                                                                    className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                                />
+                                                            </label>
+                                                        </td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <label className="inline-flex items-center">
+                                                                <input
+                                                                    type="radio"
+                                                                    name={`communication-check-${rowIndex}`}
+                                                                    checked={row.verdict === 'no'}
+                                                                    onChange={() => updateCommunicationCheck(rowIndex, 'verdict', 'no')}
+                                                                    disabled={isLocked}
+                                                                    className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                                />
+                                                            </label>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateCommunicationCheck(rowIndex, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Escribe ajuste o Completar"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCommunicationBlock('Paso 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Prueba breve de reformulación</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCommunicationExampleStep4(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    communicationReformulationCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {communicationReformulationCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Versión A — Ejecutiva / breve</span>
+                                            <textarea
+                                                rows={3}
+                                                value={communicationReformulation.executiveVersion}
+                                                onChange={(event) => updateCommunicationReformulation('executiveVersion', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Versión B — Más explicativa / cercana</span>
+                                            <textarea
+                                                rows={3}
+                                                value={communicationReformulation.explanatoryVersion}
+                                                onChange={(event) => updateCommunicationReformulation('explanatoryVersion', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    {reformulationTooSimilar && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: ajusta más el lenguaje según la audiencia; las dos versiones están muy parecidas.
+                                        </p>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCommunicationBlock('Paso 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
+                                    <ul className="mt-4 space-y-2.5">
+                                        {[
+                                            '¿Qué quiero que el otro entienda?',
+                                            '¿Qué necesito que cambie después de mi mensaje?',
+                                            '¿Cómo estructuro mejor mi comunicación?',
+                                            '¿Cómo adapto el lenguaje sin perder claridad?',
+                                            '¿Cómo integro escucha y ajuste dentro de la comunicación?'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-5 flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                communicationSectionCompleted
+                                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                    : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                            }`}
+                                        >
+                                            {communicationSectionCompleted ? 'Sección completada' : 'Sección pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => savePage(3)}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar página 3
+                                        </button>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {showCommunicationHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Comunicación de impacto</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCommunicationHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>• Comunicación de impacto = claridad + adaptación + escucha.</p>
+                                        <p>• No basta con decir el mensaje; importa lo que la audiencia entiende y qué hace después.</p>
+                                        <p>• Estructura útil: contexto → idea central → por qué importa → qué sigue.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCommunicationExampleStep1 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCommunicationExampleStep1(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Mensaje central:</span> Necesitamos ajustar prioridades y foco del trimestre.</p>
+                                        <p><span className="font-semibold">Audiencia:</span> Equipo de trabajo.</p>
+                                        <p><span className="font-semibold">Qué necesito que comprenda:</span> Qué cambia, por qué cambia y qué se espera.</p>
+                                        <p><span className="font-semibold">Qué necesito que sienta o perciba:</span> Claridad, dirección y seguridad.</p>
+                                        <p><span className="font-semibold">Qué necesito que haga o decida:</span> Repriorizar tareas y comprometerse con el nuevo foco.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCommunicationExampleStep2 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCommunicationExampleStep2(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">1. Contexto:</span> El trimestre cambió de prioridades porque entraron dos frentes críticos.</li>
+                                        <li><span className="font-semibold">2. Idea central:</span> Necesitamos reenfocar el trabajo y concentrarnos en tres entregables clave.</li>
+                                        <li><span className="font-semibold">3. Por qué importa:</span> Si no hacemos este ajuste, dispersaremos tiempo y perderemos calidad.</li>
+                                        <li><span className="font-semibold">4. Qué acción o decisión espero:</span> Quiero que hoy salgamos con prioridades redefinidas y responsables claros.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCommunicationExampleStep3 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCommunicationExampleStep3(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p>• Idea principal clara: Sí.</p>
+                                        <p>• Relevancia para audiencia: Sí.</p>
+                                        <p>• Acción esperada explícita: Sí.</p>
+                                        <p>• Lenguaje adaptado: Parcial → ajustar tecnicismos.</p>
+                                        <p>• Espacio para escuchar/verificar: Sí, agregando pregunta de confirmación.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCommunicationExampleStep4 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCommunicationExampleStep4(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p>
+                                            <span className="font-semibold">Versión A:</span> Vamos a reenfocar prioridades en tres frentes porque necesitamos proteger calidad y resultados.
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">Versión B:</span> En las últimas semanas cambiaron varias condiciones, y por eso necesitamos ajustar prioridades para evitar dispersión y asegurar foco claro del equipo.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         )}
 
                         {!isExportingAll && (

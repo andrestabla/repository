@@ -56,8 +56,8 @@ export const WORKBOOKS_V2_CATALOG: WorkbookV2CatalogItem[] = [
         code: 'WB5',
         title: 'Comunicación ejecutiva y estratégica',
         pillar: 'Shine Out',
-        statusLabel: 'Portada y presentación activas',
-        progress: 18,
-        summary: 'Versión digital inicial con portada, identificación y presentación informativa en estándar editorial premium.'
+        statusLabel: 'Sección 1 activa',
+        progress: 28,
+        summary: 'Portada y presentación completas, más la primera sección operativa de Comunicación de impacto con estructura guiada y guardado por bloques.'
     }
 ]
