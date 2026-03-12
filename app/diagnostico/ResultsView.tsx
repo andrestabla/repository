@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
     Tooltip
@@ -28,14 +28,34 @@ interface ResultsViewProps {
     initialReports?: Record<string, string>;
 }
 
+type ReportFilter = 'all' | 'within' | 'out' | 'up' | 'beyond';
+const REPORT_FILTERS: ReportFilter[] = ['all', 'within', 'out', 'up', 'beyond'];
+
 export function ResultsView({ state, onReset, isPublic = false, initialReports = {} }: ResultsViewProps) {
-    const [filter, setFilter] = useState<'all' | 'within' | 'out' | 'up' | 'beyond'>('all');
+    const [filter, setFilter] = useState<ReportFilter>('all');
     const [reports, setReports] = useState<Record<string, string>>(initialReports);
+    const [reportLoading, setReportLoading] = useState<Record<ReportFilter, boolean>>({
+        all: false,
+        within: false,
+        out: false,
+        up: false,
+        beyond: false
+    });
+    const [reportErrors, setReportErrors] = useState<Record<ReportFilter, string>>({
+        all: '',
+        within: '',
+        out: '',
+        up: '',
+        beyond: ''
+    });
     const [isExporting, setIsExporting] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const [publicId, setPublicId] = useState<string | null>(null);
     const reportRef = React.useRef<HTMLDivElement>(null);
     const hiddenPdfRef = React.useRef<HTMLDivElement>(null);
+    const pendingReportsRef = React.useRef<Set<ReportFilter>>(new Set());
+    const reportsRef = React.useRef<Record<string, string>>(reports);
+    const prefetchStartedRef = React.useRef(false);
 
     // Tour state
     const [runTour, setRunTour] = useState(false);
@@ -57,8 +77,8 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
             disableBeacon: true,
         },
         {
-            target: '.tour-ai',
-            content: '¡Usa el poder de la IA! Genera un análisis profundo y una hoja de ruta táctica basada en tus puntajes (disponible de forma global y por pilar).',
+            target: '.tour-report',
+            content: 'El informe de resultados se prepara automáticamente en la vista general y se precarga por pilar en segundo plano.',
             placement: 'left',
         },
         {
@@ -81,6 +101,10 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
             localStorage.setItem(`hasSeenResultsTour_${state.username}`, 'true');
         }
     };
+
+    React.useEffect(() => {
+        reportsRef.current = reports;
+    }, [reports]);
 
     const handleShare = async () => {
         if (isPublic) return;
@@ -280,6 +304,71 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
         return { pillarMetrics, globalIndex, compList };
     }, [state]);
 
+    const generateReportForPillar = useCallback(async (pillar: ReportFilter, force = false) => {
+        if (isPublic) return;
+        const existingReport = reportsRef.current[pillar];
+        if (!force && existingReport && existingReport.trim().length > 0) return;
+        if (pendingReportsRef.current.has(pillar)) return;
+
+        pendingReportsRef.current.add(pillar);
+        setReportLoading((prev) => ({ ...prev, [pillar]: true }));
+        setReportErrors((prev) => ({ ...prev, [pillar]: '' }));
+
+        try {
+            const res = await fetch('/api/diagnostics/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: state.username, role: state.role, scores: scoring, pillar })
+            });
+            if (!res.ok) {
+                throw new Error(`No se pudo generar el informe (${res.status})`);
+            }
+            const data = await res.json();
+            if (data.report && typeof data.report === 'string') {
+                setReports((prev) => ({ ...prev, [pillar]: data.report }));
+            } else {
+                throw new Error('Respuesta de informe inválida');
+            }
+        } catch (error: any) {
+            console.error(error);
+            setReportErrors((prev) => ({
+                ...prev,
+                [pillar]: error?.message || 'No se pudo generar el informe.'
+            }));
+        } finally {
+            pendingReportsRef.current.delete(pillar);
+            setReportLoading((prev) => ({ ...prev, [pillar]: false }));
+        }
+    }, [isPublic, scoring, state.role, state.username]);
+
+    React.useEffect(() => {
+        void generateReportForPillar('all');
+    }, [generateReportForPillar]);
+
+    React.useEffect(() => {
+        if (filter !== 'all') {
+            void generateReportForPillar(filter);
+        }
+    }, [filter, generateReportForPillar]);
+
+    React.useEffect(() => {
+        if (isPublic || prefetchStartedRef.current || !reports.all) return;
+        prefetchStartedRef.current = true;
+        const queue: ReportFilter[] = ['within', 'out', 'up', 'beyond'];
+        queue.forEach((pillar, index) => {
+            window.setTimeout(() => {
+                void generateReportForPillar(pillar);
+            }, index * 350);
+        });
+    }, [generateReportForPillar, isPublic, reports.all]);
+
+    const handleFilterChange = (next: ReportFilter) => {
+        setFilter(next);
+        if (next !== 'all') {
+            void generateReportForPillar(next);
+        }
+    };
+
     const radarData = [
         { subject: 'Within', A: scoring.pillarMetrics.within.total, fullMark: 100 },
         { subject: 'Out', A: scoring.pillarMetrics.out.total, fullMark: 100 },
@@ -303,6 +392,9 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
     };
 
     const globalStatus = getStatus(scoring.globalIndex);
+    const globalReportReady = Boolean(reports.all && reports.all.trim().length > 0);
+    const activeReportReady = Boolean(reports[filter] && reports[filter].trim().length > 0);
+    const activeReportLoading = reportLoading[filter];
 
     return (
         <div className="min-h-screen bg-slate-50 pb-20 overflow-x-hidden">
@@ -423,24 +515,28 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                         <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform"><BrainCircuit size={120} /></div>
                         <div className="relative z-10">
                             <div className="bg-indigo-500/20 p-2 rounded-xl w-fit mb-6"><Sparkles className="text-indigo-300" /></div>
-                            <h3 className="text-xl font-black mb-4 leading-tight">Hoja de Ruta Personalizada</h3>
-                            <button
-                                onClick={() => setFilter('all')}
-                                className="w-full bg-white text-indigo-950 font-black py-4 rounded-2xl shadow-lg hover:shadow-indigo-500/20 transition-all active:scale-95 no-export"
-                            >
-                                {isPublic ? 'Ver Análisis Detallado' : 'Generar Informe AI'}
-                            </button>
-                            <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest text-center mt-4">Powered by 4Shine AI</p>
+                            <h3 className="text-xl font-black mb-3 leading-tight">Informe personalizado</h3>
+                            <p className="text-indigo-100/90 text-sm leading-relaxed">
+                                {globalReportReady
+                                    ? 'La vista general ya está lista y los informes por pilar se preparan en segundo plano.'
+                                    : 'Estamos preparando tu informe de resultados automáticamente.'}
+                            </p>
+                            <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-white/10 border border-white/20 px-4 py-3">
+                                <span className="text-xs font-black uppercase tracking-widest text-indigo-100">
+                                    {activeReportReady ? 'Informe listo' : activeReportLoading ? 'Preparando informe...' : 'En cola de preparación'}
+                                </span>
+                                {activeReportLoading && <Loader2 size={16} className="animate-spin text-indigo-100" />}
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex justify-center w-full no-export">
                     <div className="tour-tabs flex flex-wrap items-center justify-center gap-3 p-2 rounded-[2rem]">
-                        {['all', 'within', 'out', 'up', 'beyond'].map(f => (
+                        {REPORT_FILTERS.map(f => (
                             <button
                                 key={f}
-                                onClick={() => setFilter(f as any)}
+                                onClick={() => handleFilterChange(f)}
                                 className={`
                                     px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all
                                     ${filter === f
@@ -512,14 +608,13 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
                         )}
                     </div>
 
-                    <div className="h-full tour-ai">
+                    <div className="h-full tour-report">
                         <AiAnalysisSection
                             reports={reports}
-                            setReports={setReports}
-                            username={state.username}
-                            role={state.role}
-                            scores={scoring}
                             pillar={filter}
+                            loading={activeReportLoading}
+                            error={reportErrors[filter]}
+                            onRetry={() => generateReportForPillar(filter, true)}
                             isPublic={isPublic}
                         />
                     </div>
@@ -569,70 +664,50 @@ export function ResultsView({ state, onReset, isPublic = false, initialReports =
     );
 }
 
-// --- SHARED AI SECTION ---
+// --- SHARED REPORT SECTION ---
 
 interface AiAnalysisProps {
-    username: string;
-    role: string;
-    scores: any;
-    pillar: string;
+    pillar: ReportFilter;
     reports: Record<string, string>;
-    setReports: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+    loading: boolean;
+    error: string;
+    onRetry: () => void;
     isPublic?: boolean;
 }
 
-export function AiAnalysisSection({ username, role, scores, pillar, reports, setReports, isPublic = false }: AiAnalysisProps) {
-    const [loading, setLoading] = useState(false);
+export function AiAnalysisSection({ pillar, reports, loading, error, onRetry, isPublic = false }: AiAnalysisProps) {
     const report = reports[pillar];
-
-    const handleAnalyze = async () => {
-        if (isPublic) return;
-        setLoading(true);
-        try {
-            const res = await fetch('/api/diagnostics/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, role, scores, pillar })
-            });
-            const data = await res.json();
-            if (data.report) {
-                setReports(prev => ({ ...prev, [pillar]: data.report }));
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <div className="bg-[#1e1e2e] text-white p-8 rounded-[40px] shadow-2xl h-full flex flex-col border border-slate-800">
             <div className="flex items-center gap-4 mb-8">
                 <div className="bg-indigo-500/20 p-2 rounded-xl"><Sparkles className="text-indigo-400" /></div>
                 <div>
-                    <h3 className="font-black text-lg leading-none mb-1">AI Executive Consultant</h3>
-                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{pillar === 'all' ? 'Análisis Global' : `Pilar: ${PILLAR_INFO[pillar as keyof typeof PILLAR_INFO]?.title}`}</span>
+                    <h3 className="font-black text-lg leading-none mb-1">Informe ejecutivo</h3>
+                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{pillar === 'all' ? 'Visión general' : `Pilar: ${PILLAR_INFO[pillar as keyof typeof PILLAR_INFO]?.title}`}</span>
                 </div>
             </div>
 
             {!report ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
                     <p className="text-slate-400 text-sm max-w-[240px]">
-                        {isPublic ? 'Análisis no disponible.' : 'Genera un análisis de brechas profundo y una guía de acción táctica basada en tus resultados.'}
+                        {isPublic ? 'Informe no disponible en esta vista compartida.' : 'Estamos preparando tu informe en segundo plano para mostrarlo automáticamente.'}
                     </p>
-                    {!isPublic && (
+                    {!isPublic && loading && <Loader2 className="animate-spin text-indigo-300" />}
+                    {!isPublic && !loading && error && (
                         <button
-                            onClick={handleAnalyze}
-                            disabled={loading}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-2xl font-black shadow-lg shadow-indigo-900/40 transition-all flex items-center gap-3 disabled:opacity-50"
+                            onClick={onRetry}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-indigo-900/40 transition-all"
                         >
-                            {loading ? <Loader2 className="animate-spin" /> : <BrainCircuit size={20} />}
-                            {loading ? 'Generando...' : 'Obtener Feedback AI'}
+                            Reintentar informe
                         </button>
                     )}
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar text-justify max-h-[600px] prose prose-invert prose-sm">
+                    {loading && (
+                        <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-indigo-300">Actualizando informe...</p>
+                    )}
                     <ReactMarkdown>{report}</ReactMarkdown>
                 </div>
             )}

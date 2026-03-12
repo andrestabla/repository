@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, ArrowRight, FileText, Lock, Plus, Printer, X, Trash2 } from 'lucide-react'
+import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
 type WB1IdentificationFields = {
     leaderName: string
@@ -2818,7 +2819,7 @@ export function WB1Step1Digital() {
             const url = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = url
-            link.download = 'WB1-completo-digital-interactivo.html'
+            link.download = 'WB1-creencias-identidad-pilares-personales-completo.html'
             document.body.appendChild(link)
             link.click()
             link.remove()
@@ -3744,71 +3745,70 @@ export function WB1Step1Digital() {
     const canUseNoNegotiablePhrases = fundamentalValues.selected3.length === 3
 
     return (
-        <div className="min-h-screen bg-[#f4f7fb] text-[#0f172a]">
-            <header className="wb1-toolbar sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-                <div className="max-w-7xl mx-auto px-5 md:px-8 py-4 flex flex-wrap items-center gap-3">
+        <div className={WORKBOOK_V2_EDITORIAL.classes.shell}>
+            <header className={`wb1-toolbar ${WORKBOOK_V2_EDITORIAL.classes.toolbar}`}>
+                <div className={WORKBOOK_V2_EDITORIAL.classes.toolbarInner}>
                     <Link
                         href="/workbooks-v2"
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold tracking-wide hover:bg-slate-100 transition-colors"
+                        className={WORKBOOK_V2_EDITORIAL.classes.backButton}
                     >
                         <ArrowLeft size={14} />
                         Volver
                     </Link>
 
                     <div className="mr-auto">
-                        <p className="text-[11px] tracking-[0.2em] uppercase text-slate-500">Workbook v2</p>
+                        <p className="text-[11px] tracking-[0.2em] uppercase text-slate-500">{WORKBOOK_V2_EDITORIAL.labels.workbookTag}</p>
                         <p className="text-sm md:text-base font-extrabold text-slate-900">WB1 - Creencias, identidad y pilares personales</p>
                     </div>
 
-                    <span className="rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-[11px] font-semibold text-blue-700">
+                    <span className={WORKBOOK_V2_EDITORIAL.classes.progressPill}>
                         Avance: {completion}%
                     </span>
+                    <span className={WORKBOOK_V2_EDITORIAL.classes.savedPill}>
+                        Guardado automático
+                    </span>
                     {isExporting && (
-                        <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">
-                            Preparando exportación completa...
+                        <span className={WORKBOOK_V2_EDITORIAL.classes.exportingPill}>
+                            {WORKBOOK_V2_EDITORIAL.labels.exportingAll}
                         </span>
                     )}
                     <button
                         type="button"
                         onClick={() => setIsLocked((prev) => !prev)}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                        className={WORKBOOK_V2_EDITORIAL.classes.lockButton}
                     >
                         <Lock size={14} />
-                        {isLocked ? 'Campos bloqueados' : 'Campos editables'}
+                        {isLocked ? WORKBOOK_V2_EDITORIAL.labels.fieldsLocked : WORKBOOK_V2_EDITORIAL.labels.fieldsEditable}
                     </button>
                     <button
                         type="button"
                         onClick={exportPdf}
                         disabled={isExporting}
-                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-bold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={WORKBOOK_V2_EDITORIAL.classes.pdfButton}
                     >
                         <Printer size={14} />
-                        {isExporting ? 'Preparando PDF...' : 'Descargar PDF'}
+                        {isExporting ? WORKBOOK_V2_EDITORIAL.labels.pdfLoading : WORKBOOK_V2_EDITORIAL.labels.pdfDownload}
                     </button>
                     <button
                         type="button"
                         onClick={exportHtml}
                         disabled={isExporting}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={WORKBOOK_V2_EDITORIAL.classes.htmlButton}
                     >
                         <FileText size={14} />
-                        {isExporting ? 'Preparando HTML...' : 'Descargar HTML'}
+                        {isExporting ? WORKBOOK_V2_EDITORIAL.labels.htmlLoading : WORKBOOK_V2_EDITORIAL.labels.htmlDownload}
                     </button>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-5 md:px-8 py-8 overflow-x-auto">
+            <main className="max-w-[1280px] mx-auto px-5 md:px-8 py-8 overflow-x-auto">
                 <div
                     className={`grid gap-6 items-start ${
                         isExportingAll ? 'grid-cols-1 min-w-0' : 'grid-cols-[240px_minmax(0,1fr)] min-w-[920px]'
                     }`}
                 >
-                    <aside
-                        className={`wb1-sidebar rounded-2xl border border-slate-200 bg-white p-4 lg:sticky lg:top-24 shadow-sm ${
-                            isExportingAll ? 'hidden' : ''
-                        }`}
-                    >
-                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3">Índice</p>
+                    <aside className={`wb1-sidebar ${WORKBOOK_V2_EDITORIAL.classes.sidebar} ${isExportingAll ? 'hidden' : ''}`}>
+                        <p className={WORKBOOK_V2_EDITORIAL.classes.sidebarTitle}>{WORKBOOK_V2_EDITORIAL.labels.index}</p>
                         <nav className="space-y-1.5" aria-label="Navegación de páginas">
                             {PAGES.map((page) => (
                                 <button
@@ -8404,19 +8404,19 @@ export function WB1Step1Digital() {
                         )}
 
                         {!isExportingAll && (
-                            <nav className="wb1-page-nav rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm flex items-center justify-between">
+                            <nav className={`wb1-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button
                                     type="button"
                                     onClick={goPrevPage}
                                     disabled={!hasPrevPage}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}
                                 >
                                     <ArrowLeft size={15} />
-                                    Atrás
+                                    {WORKBOOK_V2_EDITORIAL.labels.back}
                                 </button>
 
                                 <div className="text-center">
-                                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Navegación</p>
+                                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{WORKBOOK_V2_EDITORIAL.labels.navigation}</p>
                                     <p className="text-sm font-bold text-slate-900">
                                         {PAGES[currentPageIndex]?.shortLabel || 'Página'}
                                     </p>
@@ -8426,9 +8426,9 @@ export function WB1Step1Digital() {
                                     type="button"
                                     onClick={goNextPage}
                                     disabled={!hasNextPage}
-                                    className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    className={WORKBOOK_V2_EDITORIAL.classes.bottomNavNext}
                                 >
-                                    Adelante
+                                    {WORKBOOK_V2_EDITORIAL.labels.next}
                                     <ArrowRight size={15} />
                                 </button>
                             </nav>

@@ -16,8 +16,48 @@ export const WORKBOOKS_V2_CATALOG: WorkbookV2CatalogItem[] = [
         code: 'WB1',
         title: 'Creencias, identidad y pilares personales',
         pillar: 'Shine Within',
-        statusLabel: 'Paso 3.3 activo',
-        progress: 42,
-        summary: 'Portada + presentacion + storytelling + definicion de identidad en version digital interactiva.'
+        statusLabel: 'Edición premium activa',
+        progress: 100,
+        summary: 'Versión digital interactiva completa con navegación editorial, guardado por instrumento y exportación integral.'
+    },
+    {
+        id: 'wb2',
+        slug: 'wb2',
+        code: 'WB2',
+        title: 'Gestión emocional y PDI estratégico',
+        pillar: 'Shine Within',
+        statusLabel: 'Edición premium activa',
+        progress: 100,
+        summary: 'Versión digital interactiva completa con estructura por páginas, experiencia guiada y exportación profesional.'
+    },
+    {
+        id: 'wb3',
+        slug: 'wb3',
+        code: 'WB3',
+        title: 'Propósito y valores no negociables',
+        pillar: 'Shine Within',
+        statusLabel: 'Edición premium activa',
+        progress: 100,
+        summary: 'Versión digital interactiva completa con diseño editorial estandarizado, flujo claro y cierre de evaluación.'
+    },
+    {
+        id: 'wb4',
+        slug: 'wb4',
+        code: 'WB4',
+        title: 'Narrativa profesional y Elevator Pitch',
+        pillar: 'Shine Out',
+        statusLabel: 'Construcción activa',
+        progress: 35,
+        summary: 'Portada y presentación informativa activas en formato digital premium, con flujo guiado para primer ingreso y continuidad automática.'
+    },
+    {
+        id: 'wb5',
+        slug: 'wb5',
+        code: 'WB5',
+        title: 'Comunicación ejecutiva y estratégica',
+        pillar: 'Shine Out',
+        statusLabel: 'Portada y presentación activas',
+        progress: 18,
+        summary: 'Versión digital inicial con portada, identificación y presentación informativa en estándar editorial premium.'
     }
 ]
