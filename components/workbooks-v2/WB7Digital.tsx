@@ -187,6 +187,24 @@ const buildSponsorType = (influence: Score15, closeness: Score15, exposure: Scor
     return 'Sponsor en desarrollo'
 }
 
+const getConcentricPosition = (
+    index: number,
+    total: number,
+    radiusPercent: number,
+    startAngleDeg: number = -90
+): { x: number; y: number } => {
+    if (total <= 0) return { x: 50, y: 50 }
+    const step = 360 / total
+    const angle = ((startAngleDeg + index * step) * Math.PI) / 180
+    const rawX = 50 + radiusPercent * Math.cos(angle)
+    const rawY = 50 + radiusPercent * Math.sin(angle)
+    const clamp = (value: number) => Math.min(86, Math.max(14, value))
+    return {
+        x: clamp(rawX),
+        y: clamp(rawY)
+    }
+}
+
 const DEFAULT_STATE: WB7State = {
     identification: {
         leaderName: '',
@@ -878,6 +896,9 @@ export function WB7Digital() {
     const ring1Actors = actorRows.filter((item) => item.actor && item.row.level === '1')
     const ring2Actors = actorRows.filter((item) => item.actor && item.row.level === '2')
     const ring3Actors = actorRows.filter((item) => item.actor && item.row.level === '3')
+    const ring1Positions = ring1Actors.map((_, index) => getConcentricPosition(index, ring1Actors.length, 18, -90))
+    const ring2Positions = ring2Actors.map((_, index) => getConcentricPosition(index, ring2Actors.length, 30, -30))
+    const ring3Positions = ring3Actors.map((_, index) => getConcentricPosition(index, ring3Actors.length, 42, 20))
 
     const sponsorSection = state.sponsorIdentificationSection
     const sponsorRows = sponsorSection.possibleSponsors.map((name, index) => ({
@@ -1805,42 +1826,119 @@ export function WB7Digital() {
                                         />
                                     </label>
 
-                                    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-4">
-                                        <div className="rounded-xl bg-white border border-blue-200 px-4 py-3">
-                                            <p className="text-xs uppercase tracking-[0.12em] text-blue-600 font-semibold">Centro</p>
-                                            <p className="text-sm font-semibold text-slate-900">
-                                                {state.stakeholderMappingSection.ecosystemMap.centerRole.trim() || 'Completa tu rol para activar el centro.'}
-                                            </p>
-                                        </div>
+                                    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-5">
+                                        <div className="grid grid-cols-1 xl:grid-cols-[1fr_220px] gap-4 items-start">
+                                            <div className="relative mx-auto w-full max-w-[780px] h-[460px] md:h-[560px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <div className="relative w-[94%] h-[94%]">
+                                                        <div className="absolute left-1/2 top-1/2 w-[92%] h-[92%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-200 bg-blue-50/20" />
+                                                        <div className="absolute left-1/2 top-1/2 w-[68%] h-[68%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-300 bg-blue-50/25" />
+                                                        <div className="absolute left-1/2 top-1/2 w-[44%] h-[44%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-400 bg-blue-50/35" />
 
-                                        {[
-                                            { title: 'Anillo 1 — Stakeholders nivel 1', rows: ring1Actors },
-                                            { title: 'Anillo 2 — Stakeholders nivel 2', rows: ring2Actors },
-                                            { title: 'Anillo 3 — Stakeholders nivel 3', rows: ring3Actors }
-                                        ].map((ring) => (
-                                            <article key={`wb7-ring-${ring.title}`} className="rounded-xl bg-white border border-blue-200 p-4 space-y-3">
-                                                <h4 className="text-sm font-bold text-slate-900">{ring.title}</h4>
-                                                {ring.rows.length === 0 ? (
-                                                    <p className="text-sm text-slate-500">Sin actores clasificados en este anillo.</p>
-                                                ) : (
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {ring.rows.map((item) => (
-                                                            <button
-                                                                key={`wb7-ring-actor-${item.index}`}
-                                                                type="button"
-                                                                onClick={() => cycleActorSymbol(item.index)}
-                                                                disabled={isLocked}
-                                                                title="Haz clic para cambiar símbolo"
-                                                                className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                                                            >
-                                                                {item.symbol ? `${item.symbol} ` : ''}
-                                                                {item.actor}
-                                                            </button>
-                                                        ))}
+                                                        {ring3Actors.map((item, index) => {
+                                                            const pos = ring3Positions[index]
+                                                            return (
+                                                                <button
+                                                                    key={`wb7-concentric-ring3-${item.index}`}
+                                                                    type="button"
+                                                                    onClick={() => cycleActorSymbol(item.index)}
+                                                                    disabled={isLocked}
+                                                                    title={`Anillo 3 · ${item.actor}`}
+                                                                    style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                                                                    className="absolute -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-full border border-blue-300 bg-white px-2 py-1 text-[11px] md:text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed max-w-[112px] md:max-w-[170px] shadow-sm"
+                                                                >
+                                                                    {item.symbol ? <span className="shrink-0">{item.symbol}</span> : null}
+                                                                    <span className="truncate">{item.actor}</span>
+                                                                </button>
+                                                            )
+                                                        })}
+
+                                                        {ring2Actors.map((item, index) => {
+                                                            const pos = ring2Positions[index]
+                                                            return (
+                                                                <button
+                                                                    key={`wb7-concentric-ring2-${item.index}`}
+                                                                    type="button"
+                                                                    onClick={() => cycleActorSymbol(item.index)}
+                                                                    disabled={isLocked}
+                                                                    title={`Anillo 2 · ${item.actor}`}
+                                                                    style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                                                                    className="absolute -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-full border border-blue-400 bg-white px-2 py-1 text-[11px] md:text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed max-w-[112px] md:max-w-[170px] shadow-sm"
+                                                                >
+                                                                    {item.symbol ? <span className="shrink-0">{item.symbol}</span> : null}
+                                                                    <span className="truncate">{item.actor}</span>
+                                                                </button>
+                                                            )
+                                                        })}
+
+                                                        {ring1Actors.map((item, index) => {
+                                                            const pos = ring1Positions[index]
+                                                            return (
+                                                                <button
+                                                                    key={`wb7-concentric-ring1-${item.index}`}
+                                                                    type="button"
+                                                                    onClick={() => cycleActorSymbol(item.index)}
+                                                                    disabled={isLocked}
+                                                                    title={`Anillo 1 · ${item.actor}`}
+                                                                    style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                                                                    className="absolute -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-full border border-blue-500 bg-white px-2 py-1 text-[11px] md:text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed max-w-[112px] md:max-w-[170px] shadow-sm"
+                                                                >
+                                                                    {item.symbol ? <span className="shrink-0">{item.symbol}</span> : null}
+                                                                    <span className="truncate">{item.actor}</span>
+                                                                </button>
+                                                            )
+                                                        })}
+
+                                                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[32%] max-w-[250px] min-w-[150px] rounded-2xl border border-blue-500 bg-white px-3 py-2.5 text-center shadow-sm">
+                                                            <p className="text-[10px] uppercase tracking-[0.14em] text-blue-700 font-semibold">Centro</p>
+                                                            <p className="mt-1 text-sm md:text-base font-bold text-slate-900 leading-tight">
+                                                                {state.stakeholderMappingSection.ecosystemMap.centerRole.trim() || 'Completa tu rol'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {ring1Actors.length === 0 && ring2Actors.length === 0 && ring3Actors.length === 0 && (
+                                                    <div className="absolute inset-x-6 bottom-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center">
+                                                        <p className="text-xs text-amber-800">
+                                                            Aún no hay stakeholders clasificados por niveles. Completa el Paso 2 para visualizar el mapa concéntrico.
+                                                        </p>
                                                     </div>
                                                 )}
-                                            </article>
-                                        ))}
+                                            </div>
+
+                                            <aside className="space-y-2.5">
+                                                {[
+                                                    { title: 'Anillo 1', subtitle: 'Stakeholders nivel 1', color: 'border-blue-500 text-blue-800', count: ring1Actors.length },
+                                                    { title: 'Anillo 2', subtitle: 'Stakeholders nivel 2', color: 'border-blue-400 text-blue-700', count: ring2Actors.length },
+                                                    { title: 'Anillo 3', subtitle: 'Stakeholders nivel 3', color: 'border-blue-300 text-blue-600', count: ring3Actors.length }
+                                                ].map((ring) => (
+                                                    <div key={`wb7-ring-guide-${ring.title}`} className={`rounded-xl border bg-white px-3 py-2 ${ring.color}`}>
+                                                        <p className="text-xs uppercase tracking-[0.12em] font-semibold">{ring.title}</p>
+                                                        <p className="text-xs mt-0.5">{ring.subtitle}</p>
+                                                        <p className="text-xs mt-1 text-slate-500">{ring.count} actor{ring.count === 1 ? '' : 'es'}</p>
+                                                    </div>
+                                                ))}
+                                                <p className="text-xs text-slate-500 leading-relaxed">
+                                                    Haz clic sobre cualquier actor del mapa para alternar símbolo y marcar prioridad relacional.
+                                                </p>
+                                            </aside>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            {[
+                                                { label: 'Anillo 1', rows: ring1Actors },
+                                                { label: 'Anillo 2', rows: ring2Actors },
+                                                { label: 'Anillo 3', rows: ring3Actors }
+                                            ].map((ring) => (
+                                                <article key={`wb7-ring-summary-${ring.label}`} className="rounded-xl border border-blue-200 bg-white p-3">
+                                                    <p className="text-xs uppercase tracking-[0.12em] text-blue-700 font-semibold">{ring.label}</p>
+                                                    <p className="mt-1 text-sm text-slate-700">
+                                                        {ring.rows.length > 0 ? ring.rows.map((item) => item.actor).join(', ') : 'Sin stakeholders en este anillo.'}
+                                                    </p>
+                                                </article>
+                                            ))}
+                                        </div>
 
                                         <div className="rounded-xl border border-blue-200 bg-white p-4">
                                             <p className="text-xs uppercase tracking-[0.12em] text-blue-600 font-semibold">Leyenda de símbolos</p>
