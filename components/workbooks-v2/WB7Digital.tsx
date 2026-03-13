@@ -5,10 +5,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3
+type WorkbookPageId = 1 | 2 | 3 | 4
 type YesNoAnswer = '' | 'yes' | 'no'
 type StakeholderLevel = '' | '1' | '2' | '3'
 type StakeholderSymbol = '' | '★' | '▲' | '!' | '○'
+type SponsorLevel = '' | 'bajo' | 'medio' | 'alto'
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -51,6 +52,39 @@ type WB7State = {
             adjustment: string
         }>
     }
+    sponsorIdentificationSection: {
+        possibleSponsors: string[]
+        sponsorMatrixRows: Array<{
+            influenceAccess: Score15
+            currentCloseness: Score15
+            valueExposure: Score15
+            probableDisposition: Score15
+        }>
+        sponsorshipIndexRows: Array<{
+            factor: string
+            level: SponsorLevel
+            evidence: string
+        }>
+        valueBeforeAskingRows: Array<{
+            prioritySponsor: string
+            currentPriority: string
+            firstValue: string
+            avoidAction: string
+        }>
+        activationRoute: {
+            prioritySponsor: string
+            accessPath: string
+            realisticMove: string
+            progressSignal: string
+            mainRisk: string
+            nextStep15Days: string
+        }
+        sponsorReadTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 type Score15 = '' | '1' | '2' | '3' | '4' | '5'
@@ -58,7 +92,8 @@ type Score15 = '' | '1' | '2' | '3' | '4' | '5'
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
-    { id: 3, label: '3. Mapeo de stakeholders (niveles 1, 2 y 3)', shortLabel: 'Stakeholders' }
+    { id: 3, label: '3. Mapeo de stakeholders (niveles 1, 2 y 3)', shortLabel: 'Stakeholders' },
+    { id: 4, label: '4. Identificación de sponsors', shortLabel: 'Sponsors' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb7-state'
@@ -67,6 +102,7 @@ const VISITED_STORAGE_KEY = 'workbooks-v2-wb7-visited'
 const INTRO_SEEN_KEY = 'workbooks-v2-wb7-presentation-seen'
 
 const INVENTORY_ROWS = 10
+const SPONSOR_ROWS = 6
 const MAP_RING_SYMBOLS: StakeholderSymbol[] = ['', '★', '▲', '!', '○']
 const BOND_TYPE_OPTIONS = [
     'Jerárquico / coordinación',
@@ -91,6 +127,23 @@ const STRATEGIC_TEST_QUESTIONS = [
     '¿Identifiqué relaciones de alto valor y relaciones frágiles?',
     '¿El mapa me permite decidir próximos movimientos?'
 ] as const
+const SPONSORSHIP_INDEX_FACTORS = [
+    'Resultados visibles',
+    'Reputación confiable',
+    'Claridad de aporte',
+    'Consistencia relacional',
+    'Visibilidad estratégica',
+    'Capacidad de reciprocidad'
+] as const
+const SPONSOR_TEST_QUESTIONS = [
+    '¿Diferencio mentor y sponsor?',
+    '¿Identifico sponsors prioritarios reales?',
+    '¿Sé qué valor aportar primero?',
+    '¿Distingo sponsor natural de sponsor aspiracional?',
+    '¿Tengo una vía de acceso realista?',
+    '¿Estoy evitando pedir patrocinio demasiado pronto?'
+] as const
+const SPONSOR_ACCESS_OPTIONS = ['Directa', 'Por puente', 'Por visibilidad gradual'] as const
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '')
 
@@ -101,6 +154,7 @@ const readLevel = (value: unknown): StakeholderLevel => (value === '1' || value 
 const readScore = (value: unknown): Score15 => (value === '1' || value === '2' || value === '3' || value === '4' || value === '5' ? value : '')
 
 const readSymbol = (value: unknown): StakeholderSymbol => (MAP_RING_SYMBOLS.includes(value as StakeholderSymbol) ? (value as StakeholderSymbol) : '')
+const readSponsorLevel = (value: unknown): SponsorLevel => (value === 'bajo' || value === 'medio' || value === 'alto' ? value : '')
 
 const scoreToNumber = (value: Score15): number => (value ? Number(value) : 0)
 
@@ -116,6 +170,21 @@ const buildStrategicReading = (power: Score15, closeness: Score15, mutualValue: 
     if (p <= 2 && c >= 4 && v >= 3) return 'Relación operativa cercana con impacto limitado'
     if (p >= 3 && v <= 2) return 'Existe acceso, falta fortalecer valor mutuo'
     return 'Relación en evolución: ajustar estrategia según contexto'
+}
+
+const buildSponsorType = (influence: Score15, closeness: Score15, exposure: Score15, disposition: Score15): string => {
+    const i = scoreToNumber(influence)
+    const c = scoreToNumber(closeness)
+    const e = scoreToNumber(exposure)
+    const d = scoreToNumber(disposition)
+
+    if (!i && !c && !e && !d) return ''
+    if (i >= 4 && c >= 4 && e >= 4 && d >= 4) return 'Sponsor natural'
+    if (i >= 4 && (c <= 2 || e <= 2) && d >= 2) return 'Sponsor potencial lejano'
+    if (i >= 4 && e >= 3 && d >= 3) return 'Sponsor potencial'
+    if (i <= 2) return 'Sponsor improbable (baja influencia)'
+    if (d <= 2) return 'Sponsor improbable (baja disposición)'
+    return 'Sponsor en desarrollo'
 }
 
 const DEFAULT_STATE: WB7State = {
@@ -152,6 +221,39 @@ const DEFAULT_STATE: WB7State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    sponsorIdentificationSection: {
+        possibleSponsors: Array.from({ length: SPONSOR_ROWS }, () => ''),
+        sponsorMatrixRows: Array.from({ length: SPONSOR_ROWS }, () => ({
+            influenceAccess: '' as Score15,
+            currentCloseness: '' as Score15,
+            valueExposure: '' as Score15,
+            probableDisposition: '' as Score15
+        })),
+        sponsorshipIndexRows: SPONSORSHIP_INDEX_FACTORS.map((factor) => ({
+            factor,
+            level: '' as SponsorLevel,
+            evidence: ''
+        })),
+        valueBeforeAskingRows: Array.from({ length: 3 }, () => ({
+            prioritySponsor: '',
+            currentPriority: '',
+            firstValue: '',
+            avoidAction: ''
+        })),
+        activationRoute: {
+            prioritySponsor: '',
+            accessPath: '',
+            realisticMove: '',
+            progressSignal: '',
+            mainRisk: '',
+            nextStep15Days: ''
+        },
+        sponsorReadTest: SPONSOR_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
     }
 }
 
@@ -168,6 +270,13 @@ const normalizeState = (raw: unknown): WB7State => {
     const rawEcosystemMap = (stakeholderSection.ecosystemMap ?? {}) as Record<string, unknown>
     const rawActorSymbols = Array.isArray(rawEcosystemMap.actorSymbols) ? rawEcosystemMap.actorSymbols : []
     const rawStrategicReadTest = Array.isArray(stakeholderSection.strategicReadTest) ? stakeholderSection.strategicReadTest : []
+    const sponsorSection = (parsed.sponsorIdentificationSection ?? {}) as Record<string, unknown>
+    const rawPossibleSponsors = Array.isArray(sponsorSection.possibleSponsors) ? sponsorSection.possibleSponsors : []
+    const rawSponsorMatrixRows = Array.isArray(sponsorSection.sponsorMatrixRows) ? sponsorSection.sponsorMatrixRows : []
+    const rawSponsorshipIndexRows = Array.isArray(sponsorSection.sponsorshipIndexRows) ? sponsorSection.sponsorshipIndexRows : []
+    const rawValueBeforeAskingRows = Array.isArray(sponsorSection.valueBeforeAskingRows) ? sponsorSection.valueBeforeAskingRows : []
+    const rawActivationRoute = (sponsorSection.activationRoute ?? {}) as Record<string, unknown>
+    const rawSponsorReadTest = Array.isArray(sponsorSection.sponsorReadTest) ? sponsorSection.sponsorReadTest : []
 
     return {
         identification: {
@@ -215,6 +324,51 @@ const normalizeState = (raw: unknown): WB7State => {
                     adjustment: readString(row.adjustment)
                 }
             })
+        },
+        sponsorIdentificationSection: {
+            possibleSponsors: Array.from({ length: SPONSOR_ROWS }, (_, index) => readString(rawPossibleSponsors[index])),
+            sponsorMatrixRows: Array.from({ length: SPONSOR_ROWS }, (_, index) => {
+                const row = (rawSponsorMatrixRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    influenceAccess: readScore(row.influenceAccess),
+                    currentCloseness: readScore(row.currentCloseness),
+                    valueExposure: readScore(row.valueExposure),
+                    probableDisposition: readScore(row.probableDisposition)
+                }
+            }),
+            sponsorshipIndexRows: SPONSORSHIP_INDEX_FACTORS.map((factor, index) => {
+                const row = (rawSponsorshipIndexRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    factor,
+                    level: readSponsorLevel(row.level),
+                    evidence: readString(row.evidence)
+                }
+            }),
+            valueBeforeAskingRows: Array.from({ length: 3 }, (_, index) => {
+                const row = (rawValueBeforeAskingRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    prioritySponsor: readString(row.prioritySponsor),
+                    currentPriority: readString(row.currentPriority),
+                    firstValue: readString(row.firstValue),
+                    avoidAction: readString(row.avoidAction)
+                }
+            }),
+            activationRoute: {
+                prioritySponsor: readString(rawActivationRoute.prioritySponsor),
+                accessPath: readString(rawActivationRoute.accessPath),
+                realisticMove: readString(rawActivationRoute.realisticMove),
+                progressSignal: readString(rawActivationRoute.progressSignal),
+                mainRisk: readString(rawActivationRoute.mainRisk),
+                nextStep15Days: readString(rawActivationRoute.nextStep15Days)
+            },
+            sponsorReadTest: SPONSOR_TEST_QUESTIONS.map((question, index) => {
+                const row = (rawSponsorReadTest[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: readYesNo(row.verdict),
+                    adjustment: readString(row.adjustment)
+                }
+            })
         }
     }
 }
@@ -230,6 +384,7 @@ export function WB7Digital() {
     const [isExporting, setIsExporting] = useState(false)
     const [isExportingAll, setIsExportingAll] = useState(false)
     const [showStakeholderHelp, setShowStakeholderHelp] = useState(false)
+    const [showSponsorHelp, setShowSponsorHelp] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -498,6 +653,123 @@ export function WB7Digital() {
         announceSave(`${label} guardado.`)
     }
 
+    const updatePossibleSponsor = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const possibleSponsors = [...prev.sponsorIdentificationSection.possibleSponsors]
+            possibleSponsors[index] = value
+            return {
+                ...prev,
+                sponsorIdentificationSection: {
+                    ...prev.sponsorIdentificationSection,
+                    possibleSponsors
+                }
+            }
+        })
+    }
+
+    const updateSponsorMatrixRow = (
+        index: number,
+        field: keyof WB7State['sponsorIdentificationSection']['sponsorMatrixRows'][number],
+        value: Score15
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const sponsorMatrixRows = [...prev.sponsorIdentificationSection.sponsorMatrixRows]
+            sponsorMatrixRows[index] = {
+                ...sponsorMatrixRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                sponsorIdentificationSection: {
+                    ...prev.sponsorIdentificationSection,
+                    sponsorMatrixRows
+                }
+            }
+        })
+    }
+
+    const updateSponsorshipIndexRow = (index: number, field: 'level' | 'evidence', value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const sponsorshipIndexRows = [...prev.sponsorIdentificationSection.sponsorshipIndexRows]
+            sponsorshipIndexRows[index] =
+                field === 'level'
+                    ? { ...sponsorshipIndexRows[index], level: readSponsorLevel(value) }
+                    : { ...sponsorshipIndexRows[index], evidence: value }
+            return {
+                ...prev,
+                sponsorIdentificationSection: {
+                    ...prev.sponsorIdentificationSection,
+                    sponsorshipIndexRows
+                }
+            }
+        })
+    }
+
+    const updateValueBeforeAskingRow = (
+        index: number,
+        field: keyof WB7State['sponsorIdentificationSection']['valueBeforeAskingRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const valueBeforeAskingRows = [...prev.sponsorIdentificationSection.valueBeforeAskingRows]
+            valueBeforeAskingRows[index] = {
+                ...valueBeforeAskingRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                sponsorIdentificationSection: {
+                    ...prev.sponsorIdentificationSection,
+                    valueBeforeAskingRows
+                }
+            }
+        })
+    }
+
+    const updateActivationRoute = (
+        field: keyof WB7State['sponsorIdentificationSection']['activationRoute'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            sponsorIdentificationSection: {
+                ...prev.sponsorIdentificationSection,
+                activationRoute: {
+                    ...prev.sponsorIdentificationSection.activationRoute,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateSponsorReadTestRow = (index: number, field: 'verdict' | 'adjustment', value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const sponsorReadTest = [...prev.sponsorIdentificationSection.sponsorReadTest]
+            sponsorReadTest[index] =
+                field === 'verdict'
+                    ? { ...sponsorReadTest[index], verdict: readYesNo(value) }
+                    : { ...sponsorReadTest[index], adjustment: value }
+            return {
+                ...prev,
+                sponsorIdentificationSection: {
+                    ...prev.sponsorIdentificationSection,
+                    sponsorReadTest
+                }
+            }
+        })
+    }
+
+    const saveSponsorBlock = (label: string) => {
+        savePage(4)
+        announceSave(`${label} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -607,10 +879,68 @@ export function WB7Digital() {
     const ring2Actors = actorRows.filter((item) => item.actor && item.row.level === '2')
     const ring3Actors = actorRows.filter((item) => item.actor && item.row.level === '3')
 
+    const sponsorSection = state.sponsorIdentificationSection
+    const sponsorRows = sponsorSection.possibleSponsors.map((name, index) => ({
+        index,
+        name: name.trim(),
+        row: sponsorSection.sponsorMatrixRows[index]
+    }))
+    const sponsorsDefined = sponsorRows.filter((item) => item.name.length > 0)
+    const sponsorsInventoryCompleted = sponsorsDefined.length >= 1
+    const sponsorMatrixCompleted =
+        sponsorsDefined.length > 0 &&
+        sponsorsDefined.every(
+            (item) =>
+                item.row.influenceAccess !== '' &&
+                item.row.currentCloseness !== '' &&
+                item.row.valueExposure !== '' &&
+                item.row.probableDisposition !== ''
+        )
+    const sponsorshipIndexCompleted = sponsorSection.sponsorshipIndexRows.every(
+        (row) => row.level !== '' && row.evidence.trim().length > 0
+    )
+    const valueBeforeAskingCompleted = sponsorSection.valueBeforeAskingRows.every(
+        (row) =>
+            row.prioritySponsor.trim().length > 0 &&
+            row.currentPriority.trim().length > 0 &&
+            row.firstValue.trim().length > 0 &&
+            row.avoidAction.trim().length > 0
+    )
+    const activationRoute = sponsorSection.activationRoute
+    const sponsorActivationCompleted =
+        activationRoute.prioritySponsor.trim().length > 0 &&
+        activationRoute.accessPath.trim().length > 0 &&
+        activationRoute.realisticMove.trim().length > 0 &&
+        activationRoute.progressSignal.trim().length > 0 &&
+        activationRoute.mainRisk.trim().length > 0 &&
+        activationRoute.nextStep15Days.trim().length > 0
+    const sponsorTestCompleted = sponsorSection.sponsorReadTest.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+    const hasPrioritySponsor =
+        activationRoute.prioritySponsor.trim().length > 0 ||
+        sponsorSection.valueBeforeAskingRows.some((row) => row.prioritySponsor.trim().length > 0)
+    const section4Completed =
+        sponsorsInventoryCompleted &&
+        sponsorMatrixCompleted &&
+        sponsorshipIndexCompleted &&
+        valueBeforeAskingCompleted &&
+        sponsorActivationCompleted &&
+        sponsorTestCompleted &&
+        hasPrioritySponsor
+
+    const allSponsorsDistant = sponsorsDefined.length > 0 && sponsorsDefined.every((item) => scoreToNumber(item.row.currentCloseness) <= 2)
+    const noValueBeforeAsking = sponsorSection.valueBeforeAskingRows.every((row) => row.firstValue.trim().length === 0)
+    const allHighInfluenceLowExposure =
+        sponsorsDefined.length > 0 &&
+        sponsorsDefined.every((item) => scoreToNumber(item.row.influenceAccess) >= 4 && scoreToNumber(item.row.valueExposure) <= 2)
+    const activationRouteVague = !sponsorActivationCompleted
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
-        3: section3Completed
+        3: section3Completed,
+        4: section4Completed
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -689,7 +1019,7 @@ export function WB7Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb7-print-page wb7-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 3"
+                                data-print-page="Página 1 de 4"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -782,7 +1112,7 @@ export function WB7Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 3"
+                                data-print-page="Página 2 de 4"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -915,7 +1245,7 @@ export function WB7Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 3"
+                                data-print-page="Página 3 de 4"
                                 data-print-title="Mapeo de stakeholders (niveles 1, 2 y 3)"
                                 data-print-meta={printMetaLabel}
                             >
@@ -970,16 +1300,42 @@ export function WB7Digital() {
                                             {inventoryCompleted ? 'Completado' : 'Pendiente'}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-slate-700 leading-relaxed">
-                                        Lista actores de los últimos 30–60 días que inciden en resultados, visibilidad, acceso o legitimidad. Evita quedarte solo en
-                                        quienes te resultan cercanos.
-                                    </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Trabaja con tu contexto real de los últimos 30 a 60 días.',
+                                                'No te limites a personas cercanas; incluye actores que influyen en resultados, visibilidad, legitimidad o acceso.',
+                                                'Asegura mezcla interna y externa: jerárquicos, pares, aliados transversales, clientes, partners y referentes.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                     <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                                         <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
-                                        <p className="mt-2 text-sm text-slate-600">
-                                            Jefe directo, directora de unidad, par de operaciones, líder comercial, sponsor informal, cliente interno clave,
-                                            proveedor estratégico, referente externo, exjefe y mentor con llegada a comité.
-                                        </p>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Actor 1: Jefe directo',
+                                                'Actor 2: Directora de unidad',
+                                                'Actor 3: Par de operaciones',
+                                                'Actor 4: Líder comercial',
+                                                'Actor 5: Sponsor informal de otra gerencia',
+                                                'Actor 6: Cliente interno clave',
+                                                'Actor 7: Proveedor estratégico',
+                                                'Actor 8: Referente externo del sector',
+                                                'Actor 9: Exjefe con alta credibilidad',
+                                                'Actor 10: Mentor con llegada a comité'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </details>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {state.stakeholderMappingSection.actorInventory.map((actor, index) => (
@@ -1021,16 +1377,38 @@ export function WB7Digital() {
                                             {classificationCompleted ? 'Completado' : 'Pendiente'}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-slate-700 leading-relaxed">
-                                        Clasifica cada actor según cercanía e impacto estratégico: nivel 1 (directo), nivel 2 (influencia relevante), nivel 3
-                                        (periférico con valor futuro).
-                                    </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Nivel 1: relación directa, frecuente e impacto inmediato.',
+                                                'Nivel 2: conexión al sistema cercano con influencia relevante, sin interacción diaria.',
+                                                'Nivel 3: actor periférico con valor estratégico futuro o capacidad de abrir oportunidades.',
+                                                'Completa además tipo de vínculo, frecuencia e impacto para evitar clasificaciones vagas.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                     <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                                         <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
-                                        <p className="mt-2 text-sm text-slate-600">
-                                            Jefe directo (nivel 1, impacto alto), directora de unidad (nivel 2, visibilidad/decisión), referente externo (nivel 3,
-                                            posicionamiento).
-                                        </p>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Jefe directo → Nivel 1 · Jerárquico/coordinación · Frecuencia alta · Impacto alto.',
+                                                'Par de operaciones → Nivel 1 · Colaboración transversal · Frecuencia alta · Impacto medio-alto.',
+                                                'Directora de unidad → Nivel 2 · Visibilidad/decisión · Frecuencia media · Impacto alto.',
+                                                'Sponsor informal → Nivel 2 · Reputación/acceso · Frecuencia baja-media · Impacto alto.',
+                                                'Referente externo → Nivel 3 · Posicionamiento/networking · Frecuencia baja · Impacto medio-alto.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </details>
                                     <div className="overflow-x-auto">
                                         <table className="w-full min-w-[1120px] text-left border-separate border-spacing-0">
@@ -1144,6 +1522,38 @@ export function WB7Digital() {
                                         Evalúa cada actor con escala 1–5 y usa la lectura automática para identificar relaciones críticas, frágiles o con potencial
                                         estratégico subdesarrollado.
                                     </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Poder/influencia: cuánto puede mover decisiones, recursos, reputación o acceso.',
+                                                'Cercanía actual: calidad y frecuencia real de la relación hoy.',
+                                                'Valor mutuo: nivel de intercambio útil y recíproco, más allá de contacto superficial.',
+                                                'Usa la lectura automática como base y ajusta tu estrategia de relación a partir de ese resultado.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Directora de unidad: poder 5, cercanía 2, valor mutuo 2 → Alta influencia, baja cercanía: relación a desarrollar.',
+                                                'Jefe directo: poder 4, cercanía 4, valor mutuo 4 → Relación crítica y relativamente sólida.',
+                                                'Sponsor informal: poder 4, cercanía 2, valor mutuo 3 → Relación estratégica subdesarrollada.',
+                                                'Referente externo: poder 3, cercanía 1, valor mutuo 2 → Existe acceso, falta fortalecer valor mutuo.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
                                     <div className="overflow-x-auto">
                                         <table className="w-full min-w-[1120px] text-left border-separate border-spacing-0">
                                             <thead>
@@ -1250,6 +1660,39 @@ export function WB7Digital() {
                                     <p className="text-sm text-slate-700 leading-relaxed">
                                         Identifica al menos un vacío relacional crítico y define una acción mínima para activarlo en el corto plazo.
                                     </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Detecta qué actor debería estar en tu mapa y hoy no está suficientemente conectado.',
+                                                'Evalúa dónde dependes de una sola persona para acceso o visibilidad.',
+                                                'Especifica por qué el vacío es crítico y cuál es la acción mínima para activarlo en 15–30 días.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Vacío 1: no tengo vínculo directo con la directora que valida iniciativas estratégicas.',
+                                                'Por qué es crítico: dependo de visibilidad indirecta y eso limita posicionamiento.',
+                                                'Acción mínima: activar conversación puente con apoyo del jefe directo.',
+                                                'Vacío 2: red externa del sector débil.',
+                                                'Por qué es crítico: reduce aprendizaje comparativo y visibilidad estratégica.',
+                                                'Acción mínima: reactivar dos contactos externos y asistir a un evento clave este mes.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
                                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                                         {state.stakeholderMappingSection.relationalGaps.map((gap, index) => (
                                             <article key={`wb7-gap-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
@@ -1319,6 +1762,37 @@ export function WB7Digital() {
                                         Organiza los actores por anillos concéntricos y asigna símbolos para marcar sponsors potenciales, relaciones de alto valor,
                                         relaciones críticas/frágiles y vínculos a activar.
                                     </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Centro: escribe tu rol actual para anclar el mapa en tu contexto real.',
+                                                'Anillo 1: stakeholders nivel 1; anillo 2: nivel 2; anillo 3: nivel 3.',
+                                                'Asigna símbolos por actor según lectura: ★ sponsor potencial, ▲ alto valor, ! relación crítica/frágil, ○ vínculo a activar.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Centro: Yo / líder de área.',
+                                                'Anillo 1: jefe directo, equipo, par de operaciones.',
+                                                'Anillo 2: directora de unidad ★ !, sponsor informal ▲, líder comercial.',
+                                                'Anillo 3: referente externo ○, exjefe ▲, mentor ★.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
                                     <label className="space-y-1 block">
                                         <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Centro: Yo / mi rol actual</span>
                                         <input
@@ -1403,6 +1877,35 @@ export function WB7Digital() {
                                     <p className="text-sm text-slate-700 leading-relaxed">
                                         Verifica si tu red está diseñada con criterio estratégico y si el mapa ya orienta decisiones concretas de relacionamiento.
                                     </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Marca Sí o No con honestidad para cada pregunta del test.',
+                                                'Cuando marques No, registra un ajuste concreto para la próxima iteración.',
+                                                'Usa este bloque para transformar el mapa en decisiones accionables de networking.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Señal débil: mapa centrado solo en quienes ya te rodean cotidianamente.',
+                                                'Señal mejorada: mapa que distingue influencia, cercanía, valor mutuo y vacíos críticos.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
                                     <div className="overflow-x-auto">
                                         <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
                                             <thead>
@@ -1504,6 +2007,734 @@ export function WB7Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(4) && (
+                            <article
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 4 de 4"
+                                data-print-title="Identificación de sponsors"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 4</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Identificación de sponsors</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Identifica sponsors estratégicos reales y potenciales para activar visibilidad, acceso y legitimidad desde una aproximación
+                                        basada en valor.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSponsorHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Sponsor estratégico: abre puertas, visibiliza y pone reputación en juego por tu valor.',
+                                            'Mentor orienta; sponsor moviliza oportunidades activamente.',
+                                            'Patrocinio activo: recomendar, incluir, visibilizar, defender o nominar.',
+                                            'Antes de pedir respaldo: valor visible, relación suficiente y lectura política.',
+                                            'Distingue sponsor natural, potencial, lejano e improbable.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Inventario de sponsors posibles</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                sponsorsInventoryCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {sponsorsInventoryCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Lista actores con influencia real y acceso a decisiones.',
+                                                'Incluye internos, externos y aliados de industria relevantes.',
+                                                'Prioriza quienes ya amplifican talento o resultados.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Sponsor posible 1: Directora de unidad',
+                                                'Sponsor posible 2: Exjefe con alta reputación',
+                                                'Sponsor posible 3: Sponsor informal de otra gerencia',
+                                                'Sponsor posible 4: Mentor con llegada a comité',
+                                                'Sponsor posible 5: Referente externo del sector',
+                                                'Sponsor posible 6: Líder comercial con alta exposición ejecutiva'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {sponsorSection.possibleSponsors.map((sponsor, index) => (
+                                            <label key={`wb7-sponsor-possible-${index}`} className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Sponsor posible {index + 1}</span>
+                                                <input
+                                                    type="text"
+                                                    value={sponsor}
+                                                    onChange={(event) => updatePossibleSponsor(index, event.target.value)}
+                                                    disabled={isLocked}
+                                                    placeholder="Ej: Directora de unidad"
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                />
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSponsorBlock('Paso 1 — Inventario de sponsors')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz sponsor: influencia, cercanía y disposición</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                sponsorMatrixCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {sponsorMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-slate-700 leading-relaxed">
+                                        Califica cada sponsor posible de 1 a 5 y usa el tipo automático para distinguir natural, potencial, lejano o improbable.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Influencia/acceso: capacidad de abrir puertas o mover decisiones.',
+                                                'Cercanía actual: nivel real de relación y confianza.',
+                                                'Exposición a tu valor: cuánto conoce esa persona tus resultados.',
+                                                'Disposición probable: viabilidad real de apoyo activo.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Directora de unidad: 5 / 2 / 2 / 2 → Sponsor potencial lejano.',
+                                                'Exjefe con reputación: 4 / 4 / 5 / 4 → Sponsor natural.',
+                                                'Sponsor informal: 4 / 2 / 3 / 3 → Sponsor potencial.',
+                                                'Mentor con llegada a comité: 3 / 4 / 4 / 4 → Sponsor natural.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1180px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Actor</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Influencia / acceso</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Cercanía</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Exposición a mi valor</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Disposición probable</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tipo (automático)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {sponsorRows.map((item) => {
+                                                    const disabledRow = isLocked || item.name.length === 0
+                                                    const autoType = buildSponsorType(
+                                                        item.row.influenceAccess,
+                                                        item.row.currentCloseness,
+                                                        item.row.valueExposure,
+                                                        item.row.probableDisposition
+                                                    )
+                                                    return (
+                                                        <tr key={`wb7-sponsor-matrix-${item.index}`}>
+                                                            <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">
+                                                                {item.name || `Sponsor ${item.index + 1} (sin definir)`}
+                                                            </td>
+                                                            {(['influenceAccess', 'currentCloseness', 'valueExposure', 'probableDisposition'] as const).map((field) => (
+                                                                <td key={`wb7-sponsor-matrix-${item.index}-${field}`} className="px-3 py-2 border-b border-slate-100">
+                                                                    <select
+                                                                        value={item.row[field]}
+                                                                        onChange={(event) => updateSponsorMatrixRow(item.index, field, readScore(event.target.value))}
+                                                                        disabled={disabledRow}
+                                                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                    >
+                                                                        <option value="">Selecciona</option>
+                                                                        {['1', '2', '3', '4', '5'].map((option) => (
+                                                                            <option key={`wb7-sponsor-option-${item.index}-${field}-${option}`} value={option}>
+                                                                                {option}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                </td>
+                                                            ))}
+                                                            <td className="px-4 py-3 border-b border-slate-100 text-sm text-slate-600">
+                                                                {autoType || 'Completa los puntajes para clasificar.'}
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSponsorBlock('Paso 2 — Matriz de sponsors')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Índice de patrocinabilidad propia</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                sponsorshipIndexCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {sponsorshipIndexCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-slate-700 leading-relaxed">
+                                        Evalúa tu preparación para recibir patrocinio real con evidencia observable, no solo intención.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Selecciona Bajo/Medio/Alto por cada factor de patrocinabilidad.',
+                                                'Acompaña cada selección con evidencia concreta y reciente.',
+                                                'Si no hay evidencia, registra explícitamente “No tengo evidencia reciente”.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Resultados visibles: Medio (trabajo sólido, poca exposición ejecutiva).',
+                                                'Reputación confiable: Alto (cumplimiento consistente).',
+                                                'Claridad de aporte: Medio (valor entendido de forma desigual).',
+                                                'Visibilidad estratégica: Bajo (dependencia de visibilidad indirecta).'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Factor</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Nivel</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Evidencia / señal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {sponsorSection.sponsorshipIndexRows.map((row, index) => (
+                                                    <tr key={`wb7-sponsor-index-${row.factor}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.factor}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.level}
+                                                                onChange={(event) => updateSponsorshipIndexRow(index, 'level', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="bajo">Bajo</option>
+                                                                <option value="medio">Medio</option>
+                                                                <option value="alto">Alto</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.evidence}
+                                                                onChange={(event) => updateSponsorshipIndexRow(index, 'evidence', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Evidencia concreta"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSponsorBlock('Paso 3 — Índice de patrocinabilidad')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Mapa de valor antes de pedir</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                valueBeforeAskingCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {valueBeforeAskingCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-slate-700 leading-relaxed">
+                                        Define qué valor aportar primero antes de solicitar respaldo para evitar un acercamiento oportunista.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Selecciona sponsors prioritarios sobre los que puedas construir relación real.',
+                                                'Explicita qué les importa hoy y cómo puedes contribuir primero.',
+                                                'Define con claridad qué comportamiento debes evitar para no sonar transaccional.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Directora de unidad: le importa foco estratégico; aportar síntesis ejecutivas útiles; evitar pedir exposición sin evidencia.',
+                                                'Exjefe con reputación: le importa talento confiable; compartir avances concretos; evitar aparecer solo al pedir recomendación.',
+                                                'Sponsor informal: le importa impacto transversal; conectar trabajo con su agenda; evitar forzar cercanía.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1120px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sponsor prioritario</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué le importa</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué valor puedo aportar primero</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué no debo hacer</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {sponsorSection.valueBeforeAskingRows.map((row, index) => (
+                                                    <tr key={`wb7-value-before-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <select
+                                                                value={row.prioritySponsor}
+                                                                onChange={(event) => updateValueBeforeAskingRow(index, 'prioritySponsor', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona sponsor</option>
+                                                                {sponsorsDefined.map((item) => (
+                                                                    <option key={`wb7-sponsor-priority-${item.index}`} value={item.name}>
+                                                                        {item.name}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.currentPriority}
+                                                                onChange={(event) => updateValueBeforeAskingRow(index, 'currentPriority', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Qué le importa"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.firstValue}
+                                                                onChange={(event) => updateValueBeforeAskingRow(index, 'firstValue', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Valor previo que pondrás"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.avoidAction}
+                                                                onChange={(event) => updateValueBeforeAskingRow(index, 'avoidAction', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Error a evitar"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSponsorBlock('Paso 4 — Mapa de valor antes de pedir')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Ruta de activación del sponsor</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                sponsorActivationCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {sponsorActivationCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Elige un sponsor prioritario realista para los próximos 15 días.',
+                                                'Define una vía de acceso viable: directa, por puente o por visibilidad gradual.',
+                                                'Concreta movimiento inicial, señal de avance, riesgo principal y siguiente paso verificable.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Sponsor prioritario: Directora de unidad.',
+                                                'Vía de acceso: por puente con jefe directo.',
+                                                'Movimiento inicial: presentar síntesis ejecutiva en espacio compartido.',
+                                                'Señal de avance: reconocimiento explícito de criterio o invitación a iniciativa.',
+                                                'Riesgo principal: parecer oportunista.',
+                                                'Próximo paso (15 días): pedir al jefe un espacio breve de exposición con foco estratégico.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <label className="space-y-1 block md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Sponsor prioritario</span>
+                                            <select
+                                                value={activationRoute.prioritySponsor}
+                                                onChange={(event) => updateActivationRoute('prioritySponsor', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            >
+                                                <option value="">Selecciona sponsor</option>
+                                                {sponsorsDefined.map((item) => (
+                                                    <option key={`wb7-route-sponsor-${item.index}`} value={item.name}>
+                                                        {item.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                        <label className="space-y-1 block">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Vía de acceso</span>
+                                            <select
+                                                value={activationRoute.accessPath}
+                                                onChange={(event) => updateActivationRoute('accessPath', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            >
+                                                <option value="">Selecciona</option>
+                                                {SPONSOR_ACCESS_OPTIONS.map((option) => (
+                                                    <option key={`wb7-access-path-${option}`} value={option}>
+                                                        {option}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                        <label className="space-y-1 block">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Señal de avance</span>
+                                            <input
+                                                type="text"
+                                                value={activationRoute.progressSignal}
+                                                onChange={(event) => updateActivationRoute('progressSignal', event.target.value)}
+                                                disabled={isLocked}
+                                                placeholder="Qué señal buscarás"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1 block md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Movimiento inicial realista</span>
+                                            <textarea
+                                                value={activationRoute.realisticMove}
+                                                onChange={(event) => updateActivationRoute('realisticMove', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                placeholder="Primer movimiento concreto"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300 resize-y"
+                                            />
+                                        </label>
+                                        <label className="space-y-1 block">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Riesgo principal</span>
+                                            <textarea
+                                                value={activationRoute.mainRisk}
+                                                onChange={(event) => updateActivationRoute('mainRisk', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                placeholder="Riesgo si te acercas mal"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300 resize-y"
+                                            />
+                                        </label>
+                                        <label className="space-y-1 block">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Próximo paso (15 días)</span>
+                                            <textarea
+                                                value={activationRoute.nextStep15Days}
+                                                onChange={(event) => updateActivationRoute('nextStep15Days', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                placeholder="Acción concreta en 15 días"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300 resize-y"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSponsorBlock('Paso 5 — Ruta de activación')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Test de lectura de sponsors</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                sponsorTestCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {sponsorTestCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Responde Sí/No desde hechos observables y recientes.',
+                                                'Registra ajustes concretos cuando identifiques brechas.',
+                                                'Verifica especialmente si estás pidiendo patrocinio antes de construir valor visible.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Señal débil: llamar sponsor a cualquier actor influyente que apenas te conoce.',
+                                                'Señal mejorada: priorizar quien combina influencia, conoce tu valor y podría poner reputación en juego por ti.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí / No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {sponsorSection.sponsorReadTest.map((row, index) => (
+                                                    <tr key={`wb7-sponsor-test-${index}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.verdict}
+                                                                onChange={(event) => updateSponsorReadTestRow(index, 'verdict', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="yes">Sí</option>
+                                                                <option value="no">No</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateSponsorReadTestRow(index, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="¿Qué necesitas ajustar?"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSponsorBlock('Paso 6 — Test de sponsors')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+                                    <h3 className="text-base font-bold text-slate-900">Validaciones suaves</h3>
+                                    {allSponsorsDistant && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: incluye también sponsors naturales o intermedios con acceso más realista.
+                                        </p>
+                                    )}
+                                    {noValueBeforeAsking && (
+                                        <p className="text-sm text-amber-800">Sugerencia: define primero qué puedes ofrecer o facilitar antes de pedir.</p>
+                                    )}
+                                    {allHighInfluenceLowExposure && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: si hay alta influencia pero baja exposición a tu valor, primero aumenta visibilidad y credibilidad.
+                                        </p>
+                                    )}
+                                    {activationRouteVague && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: convierte la intención en un movimiento concreto de los próximos 15 días.
+                                        </p>
+                                    )}
+                                    {!allSponsorsDistant && !noValueBeforeAsking && !allHighInfluenceLowExposure && !activationRouteVague && (
+                                        <p className="text-sm text-emerald-700">Sin alertas: la estrategia de sponsors está bien calibrada para activación.</p>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">Estado de la sección</p>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                {section4Completed
+                                                    ? 'Completado: inventario, matriz, patrocinabilidad, valor previo, ruta y test diligenciados.'
+                                                    : 'Pendiente: define al menos un sponsor prioritario y completa una ruta de activación, junto con los demás bloques.'}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                section4Completed
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {section4Completed ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {!isExportingAll && (
                             <nav className={`wb7-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button type="button" onClick={goPrevPage} disabled={!hasPrevPage} className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}>
@@ -1548,6 +2779,37 @@ export function WB7Digital() {
                                         </li>
                                         <li className="text-sm text-slate-700 leading-relaxed">
                                             El mapa debe ayudarte a detectar sponsors, vacíos relacionales y relaciones de alto valor.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showSponsorHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
+                                <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl p-6 space-y-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Ayuda — Identificación de sponsors</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSponsorHelp(false)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Sponsor ≠ mentor: el sponsor abre puertas, visibiliza y pone capital reputacional en juego.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Antes de pedir patrocinio, necesitas valor visible, relación suficiente y lectura política.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Un buen sponsor no siempre es la persona más cercana, sino quien combina influencia, credibilidad y disposición real.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Diseña primero qué aportas; luego activa la conversación de patrocinio.
                                         </li>
                                     </ul>
                                 </div>
