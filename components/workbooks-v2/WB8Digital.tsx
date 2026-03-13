@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3
+type WorkbookPageId = 1 | 2 | 3 | 4
 type YesNoAnswer = '' | 'yes' | 'no'
 type Score15 = '' | '1' | '2' | '3' | '4' | '5'
 type LadderLevel = 'Entrada' | 'Núcleo' | 'Escalamiento'
@@ -58,12 +58,51 @@ type WB8State = {
             adjustment: string
         }>
     }
+    businessModelSection: {
+        internalRoutes: string[]
+        externalRoutes: string[]
+        monetizationCanvas: Array<{
+            dimension: string
+            internalRoute: string
+            externalRoute: string
+        }>
+        valueCaptureMatrixRows: Array<{
+            valueUnit: string
+            perceivedValue: Score15
+            comprehensionEase: Score15
+            deliveryEffort: Score15
+            scalability: Score15
+            valueCapture: Score15
+            dependencyRisk: Score15
+        }>
+        portfolioRows: Array<{
+            offerRoute: string
+            activationEase: string
+            capturableValue: string
+            quadrant: string
+            decision: string
+        }>
+        monetizationHypothesis: {
+            mainHypothesis: string
+            confirmingSignal: string
+            weakeningSignal: string
+            minimumViableTest: string
+            validationWindow: string
+            followUpDecision: string
+        }
+        modelCoherenceTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
-    { id: 3, label: '3. Escalera de valor', shortLabel: 'Escalera de valor' }
+    { id: 3, label: '3. Escalera de valor', shortLabel: 'Escalera de valor' },
+    { id: 4, label: '4. Modelo de negocio', shortLabel: 'Modelo de negocio' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb8-state'
@@ -74,6 +113,10 @@ const INTRO_SEEN_KEY = 'workbooks-v2-wb8-presentation-seen'
 const ASSETS_ROWS = 8
 const MATRIX_ROWS = 3
 const FOCUS_ROWS = 3
+const INTERNAL_ROUTES_ROWS = 4
+const EXTERNAL_ROUTES_ROWS = 4
+const VALUE_CAPTURE_ROWS = 3
+const PORTFOLIO_ROWS = 4
 
 const LADDER_LEVELS: LadderLevel[] = ['Entrada', 'Núcleo', 'Escalamiento']
 
@@ -121,6 +164,44 @@ const TRANSFERABLE_ASSET_SIGNALS = [
 ] as const
 
 const VAGUE_TRANSFORMATION_TERMS = ['mejorar', 'apoyar', 'ayudar', 'acompañar', 'optimizar', 'potenciar'] as const
+const BUSINESS_MODEL_CANVAS_DIMENSIONS = [
+    'Oferta / capacidad central',
+    'Quién recibe el valor',
+    'Problema que resuelve',
+    'Resultado que produce',
+    'Cómo capturo el valor',
+    'Evidencia que la hace creíble'
+] as const
+const MODEL_COHERENCE_QUESTIONS = [
+    '¿Diferencio monetización interna y externa?',
+    '¿Tengo unidades de valor claras?',
+    '¿Sé cómo capturo valor en cada ruta?',
+    '¿He comparado valor, esfuerzo y escalabilidad?',
+    '¿Definí una prioridad de foco?',
+    '¿Tengo una hipótesis concreta a validar?'
+] as const
+const ACTIVATION_OPTIONS = ['Fácil', 'Media', 'Difícil'] as const
+const CAPTURABLE_VALUE_OPTIONS = ['Bajo', 'Medio', 'Medio-alto', 'Alto'] as const
+const PORTFOLIO_QUADRANT_OPTIONS = [
+    'Foco inmediato',
+    'Apostar con validación',
+    'Táctico / de entrada',
+    'No priorizar aún'
+] as const
+const PORTFOLIO_DECISION_OPTIONS = ['Priorizar', 'Pilotear', 'Mantener', 'Ajustar', 'Pausar', 'Descartar'] as const
+const MONETIZABLE_UNIT_SIGNALS = [
+    'diagnóstico',
+    'mentoría',
+    'taller',
+    'programa',
+    'consultoría',
+    'sesión',
+    'licencia',
+    'producto',
+    'servicio',
+    'oferta',
+    'framework'
+] as const
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '')
 const readYesNo = (value: unknown): YesNoAnswer => (value === 'yes' || value === 'no' ? value : '')
@@ -199,6 +280,44 @@ const DEFAULT_STATE: WB8State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    businessModelSection: {
+        internalRoutes: Array.from({ length: INTERNAL_ROUTES_ROWS }, () => ''),
+        externalRoutes: Array.from({ length: EXTERNAL_ROUTES_ROWS }, () => ''),
+        monetizationCanvas: BUSINESS_MODEL_CANVAS_DIMENSIONS.map((dimension) => ({
+            dimension,
+            internalRoute: '',
+            externalRoute: ''
+        })),
+        valueCaptureMatrixRows: Array.from({ length: VALUE_CAPTURE_ROWS }, () => ({
+            valueUnit: '',
+            perceivedValue: '' as Score15,
+            comprehensionEase: '' as Score15,
+            deliveryEffort: '' as Score15,
+            scalability: '' as Score15,
+            valueCapture: '' as Score15,
+            dependencyRisk: '' as Score15
+        })),
+        portfolioRows: Array.from({ length: PORTFOLIO_ROWS }, () => ({
+            offerRoute: '',
+            activationEase: '',
+            capturableValue: '',
+            quadrant: '',
+            decision: ''
+        })),
+        monetizationHypothesis: {
+            mainHypothesis: '',
+            confirmingSignal: '',
+            weakeningSignal: '',
+            minimumViableTest: '',
+            validationWindow: '',
+            followUpDecision: ''
+        },
+        modelCoherenceTest: MODEL_COHERENCE_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
     }
 }
 
@@ -207,6 +326,7 @@ const normalizeState = (raw: unknown): WB8State => {
     const parsed = raw as Record<string, unknown>
     const identification = (parsed.identification ?? {}) as Record<string, unknown>
     const valueLadderSection = (parsed.valueLadderSection ?? {}) as Record<string, unknown>
+    const businessModelSection = (parsed.businessModelSection ?? {}) as Record<string, unknown>
 
     const rawAssetsInventory = Array.isArray(valueLadderSection.assetsInventory) ? valueLadderSection.assetsInventory : []
     const rawMatrixRows = Array.isArray(valueLadderSection.problemTransformationRows) ? valueLadderSection.problemTransformationRows : []
@@ -214,6 +334,15 @@ const normalizeState = (raw: unknown): WB8State => {
     const rawLadderCoherenceTest = Array.isArray(valueLadderSection.ladderCoherenceTest) ? valueLadderSection.ladderCoherenceTest : []
     const rawFocusRows = Array.isArray(valueLadderSection.focusDecisionRows) ? valueLadderSection.focusDecisionRows : []
     const rawPackagingTest = Array.isArray(valueLadderSection.packagingTest) ? valueLadderSection.packagingTest : []
+    const rawInternalRoutes = Array.isArray(businessModelSection.internalRoutes) ? businessModelSection.internalRoutes : []
+    const rawExternalRoutes = Array.isArray(businessModelSection.externalRoutes) ? businessModelSection.externalRoutes : []
+    const rawMonetizationCanvas = Array.isArray(businessModelSection.monetizationCanvas) ? businessModelSection.monetizationCanvas : []
+    const rawValueCaptureMatrixRows = Array.isArray(businessModelSection.valueCaptureMatrixRows)
+        ? businessModelSection.valueCaptureMatrixRows
+        : []
+    const rawPortfolioRows = Array.isArray(businessModelSection.portfolioRows) ? businessModelSection.portfolioRows : []
+    const rawMonetizationHypothesis = (businessModelSection.monetizationHypothesis ?? {}) as Record<string, unknown>
+    const rawModelCoherenceTest = Array.isArray(businessModelSection.modelCoherenceTest) ? businessModelSection.modelCoherenceTest : []
 
     return {
         identification: {
@@ -271,6 +400,56 @@ const normalizeState = (raw: unknown): WB8State => {
                     adjustment: readString(row.adjustment)
                 }
             })
+        },
+        businessModelSection: {
+            internalRoutes: Array.from({ length: INTERNAL_ROUTES_ROWS }, (_, index) => readString(rawInternalRoutes[index])),
+            externalRoutes: Array.from({ length: EXTERNAL_ROUTES_ROWS }, (_, index) => readString(rawExternalRoutes[index])),
+            monetizationCanvas: BUSINESS_MODEL_CANVAS_DIMENSIONS.map((dimension, index) => {
+                const row = (rawMonetizationCanvas[index] ?? {}) as Record<string, unknown>
+                return {
+                    dimension,
+                    internalRoute: readString(row.internalRoute),
+                    externalRoute: readString(row.externalRoute)
+                }
+            }),
+            valueCaptureMatrixRows: Array.from({ length: VALUE_CAPTURE_ROWS }, (_, index) => {
+                const row = (rawValueCaptureMatrixRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    valueUnit: readString(row.valueUnit),
+                    perceivedValue: readScore(row.perceivedValue),
+                    comprehensionEase: readScore(row.comprehensionEase),
+                    deliveryEffort: readScore(row.deliveryEffort),
+                    scalability: readScore(row.scalability),
+                    valueCapture: readScore(row.valueCapture),
+                    dependencyRisk: readScore(row.dependencyRisk)
+                }
+            }),
+            portfolioRows: Array.from({ length: PORTFOLIO_ROWS }, (_, index) => {
+                const row = (rawPortfolioRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    offerRoute: readString(row.offerRoute),
+                    activationEase: readString(row.activationEase),
+                    capturableValue: readString(row.capturableValue),
+                    quadrant: readString(row.quadrant),
+                    decision: readString(row.decision)
+                }
+            }),
+            monetizationHypothesis: {
+                mainHypothesis: readString(rawMonetizationHypothesis.mainHypothesis),
+                confirmingSignal: readString(rawMonetizationHypothesis.confirmingSignal),
+                weakeningSignal: readString(rawMonetizationHypothesis.weakeningSignal),
+                minimumViableTest: readString(rawMonetizationHypothesis.minimumViableTest),
+                validationWindow: readString(rawMonetizationHypothesis.validationWindow),
+                followUpDecision: readString(rawMonetizationHypothesis.followUpDecision)
+            },
+            modelCoherenceTest: MODEL_COHERENCE_QUESTIONS.map((question, index) => {
+                const row = (rawModelCoherenceTest[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: readYesNo(row.verdict),
+                    adjustment: readString(row.adjustment)
+                }
+            })
         }
     }
 }
@@ -286,6 +465,7 @@ export function WB8Digital() {
     const [isExporting, setIsExporting] = useState(false)
     const [isExportingAll, setIsExportingAll] = useState(false)
     const [showValueLadderHelp, setShowValueLadderHelp] = useState(false)
+    const [showBusinessModelHelp, setShowBusinessModelHelp] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -543,6 +723,150 @@ export function WB8Digital() {
         announceSave(`${label} guardado.`)
     }
 
+    const updateInternalRoute = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const internalRoutes = [...prev.businessModelSection.internalRoutes]
+            internalRoutes[index] = value
+            return {
+                ...prev,
+                businessModelSection: {
+                    ...prev.businessModelSection,
+                    internalRoutes
+                }
+            }
+        })
+    }
+
+    const updateExternalRoute = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const externalRoutes = [...prev.businessModelSection.externalRoutes]
+            externalRoutes[index] = value
+            return {
+                ...prev,
+                businessModelSection: {
+                    ...prev.businessModelSection,
+                    externalRoutes
+                }
+            }
+        })
+    }
+
+    const updateMonetizationCanvasRow = (
+        index: number,
+        field: keyof Omit<WB8State['businessModelSection']['monetizationCanvas'][number], 'dimension'>,
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const monetizationCanvas = [...prev.businessModelSection.monetizationCanvas]
+            monetizationCanvas[index] = {
+                ...monetizationCanvas[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                businessModelSection: {
+                    ...prev.businessModelSection,
+                    monetizationCanvas
+                }
+            }
+        })
+    }
+
+    const updateValueCaptureMatrixRow = (
+        index: number,
+        field: keyof WB8State['businessModelSection']['valueCaptureMatrixRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const valueCaptureMatrixRows = [...prev.businessModelSection.valueCaptureMatrixRows]
+            if (field === 'valueUnit') {
+                valueCaptureMatrixRows[index] = {
+                    ...valueCaptureMatrixRows[index],
+                    valueUnit: value
+                }
+            } else {
+                valueCaptureMatrixRows[index] = {
+                    ...valueCaptureMatrixRows[index],
+                    [field]: readScore(value)
+                }
+            }
+
+            return {
+                ...prev,
+                businessModelSection: {
+                    ...prev.businessModelSection,
+                    valueCaptureMatrixRows
+                }
+            }
+        })
+    }
+
+    const updatePortfolioRow = (
+        index: number,
+        field: keyof WB8State['businessModelSection']['portfolioRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const portfolioRows = [...prev.businessModelSection.portfolioRows]
+            portfolioRows[index] = {
+                ...portfolioRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                businessModelSection: {
+                    ...prev.businessModelSection,
+                    portfolioRows
+                }
+            }
+        })
+    }
+
+    const updateMonetizationHypothesis = (
+        field: keyof WB8State['businessModelSection']['monetizationHypothesis'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            businessModelSection: {
+                ...prev.businessModelSection,
+                monetizationHypothesis: {
+                    ...prev.businessModelSection.monetizationHypothesis,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateModelCoherenceTestRow = (index: number, field: 'verdict' | 'adjustment', value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const modelCoherenceTest = [...prev.businessModelSection.modelCoherenceTest]
+            modelCoherenceTest[index] =
+                field === 'verdict'
+                    ? { ...modelCoherenceTest[index], verdict: readYesNo(value) }
+                    : { ...modelCoherenceTest[index], adjustment: value }
+            return {
+                ...prev,
+                businessModelSection: {
+                    ...prev.businessModelSection,
+                    modelCoherenceTest
+                }
+            }
+        })
+    }
+
+    const saveBusinessModelBlock = (label: string) => {
+        savePage(4)
+        announceSave(`${label} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -592,6 +916,7 @@ export function WB8Digital() {
     }
 
     const valueLadderSection = state.valueLadderSection
+    const businessModelSection = state.businessModelSection
     const assetsInventory = valueLadderSection.assetsInventory
     const nonEmptyAssets = assetsInventory.map((item) => item.trim()).filter((item) => item.length > 0)
 
@@ -658,10 +983,95 @@ export function WB8Digital() {
         (row) => row.offerName.trim().length > 0 && row.solvedProblem.trim().length > 0 && row.mainOutcome.trim().length > 0
     )
 
+    const internalRoutes = businessModelSection.internalRoutes
+    const externalRoutes = businessModelSection.externalRoutes
+    const hypothesis = businessModelSection.monetizationHypothesis
+
+    const monetizationInventoryCompleted =
+        internalRoutes.every((route) => route.trim().length > 0) && externalRoutes.every((route) => route.trim().length > 0)
+    const monetizationCanvasCompleted = businessModelSection.monetizationCanvas.every(
+        (row) => row.internalRoute.trim().length > 0 && row.externalRoute.trim().length > 0
+    )
+    const monetizationMatrixCompleted = businessModelSection.valueCaptureMatrixRows.every(
+        (row) =>
+            row.valueUnit.trim().length > 0 &&
+            row.perceivedValue !== '' &&
+            row.comprehensionEase !== '' &&
+            row.deliveryEffort !== '' &&
+            row.scalability !== '' &&
+            row.valueCapture !== '' &&
+            row.dependencyRisk !== ''
+    )
+    const monetizationPortfolioCompleted = businessModelSection.portfolioRows.every(
+        (row) =>
+            row.offerRoute.trim().length > 0 &&
+            row.activationEase.trim().length > 0 &&
+            row.capturableValue.trim().length > 0 &&
+            row.quadrant.trim().length > 0 &&
+            row.decision.trim().length > 0
+    )
+    const monetizationHypothesisCompleted =
+        hypothesis.mainHypothesis.trim().length > 0 &&
+        hypothesis.confirmingSignal.trim().length > 0 &&
+        hypothesis.weakeningSignal.trim().length > 0 &&
+        hypothesis.minimumViableTest.trim().length > 0 &&
+        hypothesis.validationWindow.trim().length > 0 &&
+        hypothesis.followUpDecision.trim().length > 0
+    const monetizationCoherenceCompleted = businessModelSection.modelCoherenceTest.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+
+    const section4Completed =
+        monetizationInventoryCompleted &&
+        monetizationCanvasCompleted &&
+        monetizationMatrixCompleted &&
+        monetizationPortfolioCompleted &&
+        monetizationHypothesisCompleted &&
+        monetizationCoherenceCompleted
+
+    const hasAtLeastOneInternalRoute = internalRoutes.some((route) => route.trim().length > 0)
+    const hasAtLeastOneExternalRoute = externalRoutes.some((route) => route.trim().length > 0)
+    const hasHypothesisBase = hypothesis.mainHypothesis.trim().length > 0
+    const section4MinimumReady = hasAtLeastOneInternalRoute && hasAtLeastOneExternalRoute && hasHypothesisBase
+
+    const portfolioOfferOptions = Array.from(
+        new Set(
+            [
+                ...internalRoutes.map((item) => item.trim()),
+                ...externalRoutes.map((item) => item.trim()),
+                ...businessModelSection.valueCaptureMatrixRows.map((item) => item.valueUnit.trim())
+            ].filter((item) => item.length > 0)
+        )
+    )
+
+    const nonEmptyValueUnits = businessModelSection.valueCaptureMatrixRows.map((row) => row.valueUnit.trim()).filter((row) => row.length > 0)
+    const unitsOnlyThemes =
+        nonEmptyValueUnits.length > 0 &&
+        nonEmptyValueUnits.every((unit) => {
+            const normalized = unit.toLowerCase()
+            return !MONETIZABLE_UNIT_SIGNALS.some((signal) => normalized.includes(signal))
+        })
+
+    const routesNotDifferentiated =
+        !hasAtLeastOneInternalRoute ||
+        !hasAtLeastOneExternalRoute ||
+        internalRoutes.every((route, index) => route.trim().length > 0 && route.trim() === externalRoutes[index]?.trim())
+
+    const filledMatrixRows = businessModelSection.valueCaptureMatrixRows.filter((row) => row.valueUnit.trim().length > 0)
+    const highEffortLowClarity =
+        filledMatrixRows.length > 0 &&
+        filledMatrixRows.every((row) => Number(row.deliveryEffort) >= 4 && Number(row.comprehensionEase) <= 2)
+
+    const missingHypothesisTest =
+        hypothesis.mainHypothesis.trim().length === 0 ||
+        hypothesis.minimumViableTest.trim().length === 0 ||
+        hypothesis.validationWindow.trim().length === 0
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
-        3: section3Completed
+        3: section3Completed,
+        4: section4Completed
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -746,7 +1156,7 @@ export function WB8Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb8-print-page wb8-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 3"
+                                data-print-page="Página 1 de 4"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -818,7 +1228,7 @@ export function WB8Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-6 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 3"
+                                data-print-page="Página 2 de 4"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -952,7 +1362,7 @@ export function WB8Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 3"
+                                data-print-page="Página 3 de 4"
                                 data-print-title="Escalera de valor"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1710,6 +2120,827 @@ export function WB8Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(4) && (
+                            <article
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 4 de 4"
+                                data-print-title="Modelo de negocio"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 4</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Modelo de negocio: monetización del talento (Interno / Externo)
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Diseñar un modelo de negocio personal/profesional que permita convertir tu talento en valor capturable,
+                                        diferenciando rutas de monetización interna y externa, para tomar decisiones más estratégicas sobre foco,
+                                        oferta, posicionamiento y retorno.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBusinessModelHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Modelo de negocio personal/profesional: arquitectura que explica cómo tu talento crea, entrega y captura valor de forma sostenible.',
+                                            'Monetización interna: traducir valor en crecimiento, influencia, presupuesto, visibilidad, responsabilidad ampliada o compensación dentro de la organización.',
+                                            'Monetización externa: convertir talento en ingresos, contratos, alianzas, productos o servicios fuera de la estructura organizacional directa.',
+                                            'Unidad de valor: pieza concreta por la que una audiencia estaría dispuesta a pagar, invertir, aprobar o respaldar.',
+                                            'Captura de valor: retorno en dinero, acceso, reputación, visibilidad, aprendizaje o poder de decisión.',
+                                            'Motor de ingresos y motor de influencia interna: mecanismos para producir retorno económico o posicionamiento organizacional.',
+                                            'Escalabilidad razonable y margen estratégico: crecer sin que el costo de entrega aumente en la misma proporción.',
+                                            'Riesgo de dependencia y portafolio de monetización: evitar depender de un solo cliente, jefe, canal o formato.',
+                                            'Hipótesis de negocio: suposición estratégica que debe validarse antes de invertir demasiado tiempo o recursos.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Inventario de rutas de monetización</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                monetizationInventoryCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {monetizationInventoryCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Primero mapea rutas posibles de captura de valor, no precios.',
+                                                'Diferencia con claridad rutas internas (influencia, visibilidad, rol, presupuesto) y externas (servicios, productos, alianzas).',
+                                                'Define rutas realistas para tu contexto actual.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <p className="text-sm font-semibold text-slate-700">Rutas internas posibles</p>
+                                                {[
+                                                    'Liderar iniciativas estratégicas.',
+                                                    'Convertirme en referente interno en narrativa y posicionamiento.',
+                                                    'Ganar visibilidad en comités ampliados.',
+                                                    'Traducir mi valor en mayor influencia y expansión de rol.'
+                                                ].map((item) => (
+                                                    <p key={item} className="text-sm text-slate-600">{item}</p>
+                                                ))}
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <p className="text-sm font-semibold text-slate-700">Rutas externas posibles</p>
+                                                {[
+                                                    'Mentoría ejecutiva.',
+                                                    'Talleres de narrativa profesional.',
+                                                    'Diagnóstico de posicionamiento o liderazgo.',
+                                                    'Consultoría estratégica por proyectos.'
+                                                ].map((item) => (
+                                                    <p key={item} className="text-sm text-slate-600">{item}</p>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+                                            <h4 className="text-sm font-bold text-slate-900">Rutas internas posibles</h4>
+                                            {businessModelSection.internalRoutes.map((route, index) => (
+                                                <label key={`wb8-internal-route-${index}`} className="space-y-1 block">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Ruta interna {index + 1}</span>
+                                                    <input
+                                                        type="text"
+                                                        value={route}
+                                                        onChange={(event) => updateInternalRoute(index, event.target.value)}
+                                                        disabled={isLocked}
+                                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                            ))}
+                                        </article>
+                                        <article className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
+                                            <h4 className="text-sm font-bold text-slate-900">Rutas externas posibles</h4>
+                                            {businessModelSection.externalRoutes.map((route, index) => (
+                                                <label key={`wb8-external-route-${index}`} className="space-y-1 block">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Ruta externa {index + 1}</span>
+                                                    <input
+                                                        type="text"
+                                                        value={route}
+                                                        onChange={(event) => updateExternalRoute(index, event.target.value)}
+                                                        disabled={isLocked}
+                                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                            ))}
+                                        </article>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveBusinessModelBlock('Paso 1 — Inventario de rutas')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Lienzo de monetización interno / externo</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                monetizationCanvasCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {monetizationCanvasCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Completa el carril interno y externo con una lógica comparable de oferta, problema, resultado y captura.',
+                                                'Evita respuestas genéricas: usa audiencias y resultados concretos.',
+                                                'Incluye evidencia que haga creíble cada propuesta.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Oferta interna: capacidad de ordenar estrategia y foco | Oferta externa: mentoría en narrativa ejecutiva.',
+                                                'Problema interno: dispersión y baja claridad | Problema externo: valor profesional poco visible.',
+                                                'Captura interna: visibilidad y expansión de rol | Captura externa: honorarios por sesiones/programas.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ruta interna</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ruta externa</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {businessModelSection.monetizationCanvas.map((row, index) => (
+                                                    <tr key={`wb8-canvas-row-${row.dimension}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.dimension}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.internalRoute}
+                                                                onChange={(event) => updateMonetizationCanvasRow(index, 'internalRoute', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.externalRoute}
+                                                                onChange={(event) => updateMonetizationCanvasRow(index, 'externalRoute', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveBusinessModelBlock('Paso 2 — Lienzo interno/externo')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Matriz unidad de valor–captura–esfuerzo</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                monetizationMatrixCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {monetizationMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Evalúa cada unidad de valor con criterios comparables de 1 a 5.',
+                                                'Incluye percepción de valor, comprensión, esfuerzo, escalabilidad, captura y riesgo de dependencia.',
+                                                'Usa el resultado para decidir qué escalar primero.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Diagnóstico estratégico: valor 4, comprensión 5, esfuerzo 3, escalabilidad 4, captura 4, dependencia 2.',
+                                                'Mentoría 1:1: valor 5, comprensión 4, esfuerzo 4, escalabilidad 2, captura 4, dependencia 3.',
+                                                'Taller grupal: valor 4, comprensión 4, esfuerzo 3, escalabilidad 5, captura 5, dependencia 2.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1280px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Unidad de valor / oferta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Valor percibido</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Comprensión</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Esfuerzo</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Escalabilidad</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Captura</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Riesgo dependencia</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {businessModelSection.valueCaptureMatrixRows.map((row, index) => (
+                                                    <tr key={`wb8-value-capture-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.valueUnit}
+                                                                onChange={(event) => updateValueCaptureMatrixRow(index, 'valueUnit', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        {(
+                                                            ['perceivedValue', 'comprehensionEase', 'deliveryEffort', 'scalability', 'valueCapture', 'dependencyRisk'] as const
+                                                        ).map((field) => (
+                                                            <td key={`wb8-value-capture-score-${index}-${field}`} className="px-3 py-2 border-b border-slate-100 w-[140px]">
+                                                                <select
+                                                                    value={row[field]}
+                                                                    onChange={(event) => updateValueCaptureMatrixRow(index, field, event.target.value)}
+                                                                    disabled={isLocked}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {['1', '2', '3', '4', '5'].map((option) => (
+                                                                        <option key={`wb8-value-capture-score-option-${index}-${field}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveBusinessModelBlock('Paso 3 — Matriz valor-captura-esfuerzo')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Portafolio de monetización 2x2</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                monetizationPortfolioCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {monetizationPortfolioCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Ubica cada oferta/ruta según facilidad de activación y valor capturable.',
+                                                'Asigna cuadrante y decisión para priorizar, pilotear, mantener o pausar.',
+                                                'El objetivo es concentrar foco, no escalar todo al tiempo.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Diagnóstico express: fácil, alto valor, foco inmediato, decisión priorizar.',
+                                                'Programa premium: difícil, alto valor, apostar con validación, decisión pilotear.',
+                                                'Producto complejo no probado: difícil, bajo valor, no priorizar aún, decisión pausar.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1280px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Oferta / ruta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Activación</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Valor capturable</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Cuadrante</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Decisión</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {businessModelSection.portfolioRows.map((row, index) => (
+                                                    <tr key={`wb8-portfolio-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[280px]">
+                                                            <select
+                                                                value={row.offerRoute}
+                                                                onChange={(event) => updatePortfolioRow(index, 'offerRoute', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona oferta/ruta</option>
+                                                                {portfolioOfferOptions.map((option) => (
+                                                                    <option key={`wb8-portfolio-offer-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.activationEase}
+                                                                onChange={(event) => updatePortfolioRow(index, 'activationEase', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {ACTIVATION_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-portfolio-activation-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.capturableValue}
+                                                                onChange={(event) => updatePortfolioRow(index, 'capturableValue', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {CAPTURABLE_VALUE_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-portfolio-value-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.quadrant}
+                                                                onChange={(event) => updatePortfolioRow(index, 'quadrant', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {PORTFOLIO_QUADRANT_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-portfolio-quadrant-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.decision}
+                                                                onChange={(event) => updatePortfolioRow(index, 'decision', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {PORTFOLIO_DECISION_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-portfolio-decision-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <article className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-4">
+                                        <h4 className="text-sm font-bold text-slate-900">Esquema visual del portafolio 2x2</h4>
+                                        <div className="relative h-[340px] rounded-xl border border-slate-300 bg-white overflow-hidden">
+                                            <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-300" />
+                                            <div className="absolute inset-y-0 left-1/2 border-l border-dashed border-slate-300" />
+
+                                            <div className="absolute top-3 left-3 text-xs font-semibold text-slate-600">Apostar con validación</div>
+                                            <div className="absolute top-3 right-3 text-xs font-semibold text-slate-600">Foco inmediato</div>
+                                            <div className="absolute bottom-3 left-3 text-xs font-semibold text-slate-600">No priorizar aún</div>
+                                            <div className="absolute bottom-3 right-3 text-xs font-semibold text-slate-600">Táctico / de entrada</div>
+
+                                            <div className="absolute left-1/2 -translate-x-1/2 top-1 text-[11px] uppercase tracking-[0.12em] text-slate-500">
+                                                Eje Y: potencial de captura de valor
+                                            </div>
+                                            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.12em] text-slate-500">
+                                                Eje X: facilidad de activación / adopción
+                                            </div>
+
+                                            {businessModelSection.portfolioRows.map((row, index) => {
+                                                if (!row.offerRoute.trim()) return null
+                                                const x =
+                                                    row.activationEase === 'Fácil'
+                                                        ? 78
+                                                        : row.activationEase === 'Difícil'
+                                                          ? 22
+                                                          : 50
+                                                const y =
+                                                    row.capturableValue === 'Alto'
+                                                        ? 18
+                                                        : row.capturableValue === 'Medio-alto'
+                                                          ? 32
+                                                          : row.capturableValue === 'Bajo'
+                                                            ? 78
+                                                            : 50
+                                                return (
+                                                    <div
+                                                        key={`wb8-portfolio-point-${index}-${row.offerRoute}`}
+                                                        className="absolute -translate-x-1/2 -translate-y-1/2"
+                                                        style={{ left: `${x}%`, top: `${y}%` }}
+                                                    >
+                                                        <div className="h-3 w-3 rounded-full bg-blue-600 shadow-[0_0_0_4px_rgba(59,130,246,0.18)]" />
+                                                        <p className="mt-1 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.offerRoute}</p>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </article>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveBusinessModelBlock('Paso 4 — Portafolio 2x2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Hipótesis de monetización y validación</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                monetizationHypothesisCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {monetizationHypothesisCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Formula una hipótesis principal para tu ruta prioritaria.',
+                                                'Define señales de confirmación y señales que debilitan la hipótesis.',
+                                                'Diseña una prueba mínima viable con tiempo de validación y decisión posterior.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Hipótesis: existe demanda por mentoría breve para traducir experiencia en propuesta de valor clara.',
+                                                'Confirmación: mínimo 3 conversaciones de interés real o una primera venta/piloto.',
+                                                'Prueba: versión piloto en 30 días para decidir escalar, ajustar o descartar.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Hipótesis principal</span>
+                                            <textarea
+                                                value={businessModelSection.monetizationHypothesis.mainHypothesis}
+                                                onChange={(event) => updateMonetizationHypothesis('mainHypothesis', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Señal que confirma</span>
+                                            <textarea
+                                                value={businessModelSection.monetizationHypothesis.confirmingSignal}
+                                                onChange={(event) => updateMonetizationHypothesis('confirmingSignal', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Señal que debilita</span>
+                                            <textarea
+                                                value={businessModelSection.monetizationHypothesis.weakeningSignal}
+                                                onChange={(event) => updateMonetizationHypothesis('weakeningSignal', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Prueba mínima viable</span>
+                                            <textarea
+                                                value={businessModelSection.monetizationHypothesis.minimumViableTest}
+                                                onChange={(event) => updateMonetizationHypothesis('minimumViableTest', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Tiempo de validación</span>
+                                            <input
+                                                type="text"
+                                                value={businessModelSection.monetizationHypothesis.validationWindow}
+                                                onChange={(event) => updateMonetizationHypothesis('validationWindow', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Decisión posterior</span>
+                                            <input
+                                                type="text"
+                                                value={businessModelSection.monetizationHypothesis.followUpDecision}
+                                                onChange={(event) => updateMonetizationHypothesis('followUpDecision', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveBusinessModelBlock('Paso 5 — Hipótesis y validación')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Test de coherencia del modelo de negocio</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                monetizationCoherenceCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {monetizationCoherenceCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Verifica si ya diferencias monetización interna y externa.',
+                                                'Confirma si tienes unidades de valor claras y captura definida por ruta.',
+                                                'Evalúa si tu foco está priorizado y validado con hipótesis.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Señal débil: varias ideas interesantes, pero sin lógica de captura de valor.',
+                                                'Señal mejorada: rutas internas/externas diferenciadas, foco priorizado e hipótesis validable.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí / No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {businessModelSection.modelCoherenceTest.map((row, index) => (
+                                                    <tr key={`wb8-model-coherence-test-${index}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.verdict}
+                                                                onChange={(event) => updateModelCoherenceTestRow(index, 'verdict', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="yes">Sí</option>
+                                                                <option value="no">No</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateModelCoherenceTestRow(index, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveBusinessModelBlock('Paso 6 — Test de coherencia del modelo')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-3">
+                                    <h3 className="text-base font-bold text-slate-900">Cierre de la sección</h3>
+                                    <p className="text-sm text-slate-700 leading-relaxed">Cuando termines esta sección, deberías poder responder con más claridad:</p>
+                                    <ul className="space-y-1.5">
+                                        {[
+                                            'Cómo se monetiza tu talento dentro y fuera de una organización.',
+                                            'Qué rutas tienen más sentido hoy.',
+                                            'Qué ofertas tienen mejor balance entre valor, esfuerzo y captura.',
+                                            'Cuál es tu foco inmediato.',
+                                            'Qué hipótesis de negocio debes validar antes de escalar.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <p className="text-sm text-slate-700">
+                                        Este enfoque es coherente con el diagnóstico 4Shine en competencias como Pensamiento estratégico, Decisión bajo incertidumbre y Resolución de causa raíz, visibles en Shine Up.
+                                    </p>
+                                </section>
+
+                                <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+                                    <h3 className="text-base font-bold text-slate-900">Validaciones suaves</h3>
+                                    {unitsOnlyThemes && (
+                                        <p className="text-sm text-amber-800">Sugerencia: convierte el talento en una oferta o capacidad más concreta.</p>
+                                    )}
+                                    {routesNotDifferentiated && (
+                                        <p className="text-sm text-amber-800">Sugerencia: aclara cómo se captura valor dentro y fuera del sistema actual.</p>
+                                    )}
+                                    {highEffortLowClarity && (
+                                        <p className="text-sm text-amber-800">Sugerencia: incluye una ruta de entrada más simple.</p>
+                                    )}
+                                    {missingHypothesisTest && (
+                                        <p className="text-sm text-amber-800">Sugerencia: formula algo que puedas validar antes de invertir más.</p>
+                                    )}
+                                    {!unitsOnlyThemes && !routesNotDifferentiated && !highEffortLowClarity && !missingHypothesisTest && (
+                                        <p className="text-sm text-emerald-700">
+                                            Sin alertas: el modelo distingue rutas, foco y validación de hipótesis.
+                                        </p>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">Estado de la sección</p>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                {section4Completed
+                                                    ? 'Completado: inventario + lienzo + matriz + 2x2 + hipótesis + test diligenciados.'
+                                                    : !section4MinimumReady
+                                                      ? 'Pendiente: define al menos una ruta interna, una externa y una hipótesis a validar.'
+                                                      : 'Pendiente: completa todos los bloques para cerrar la sección.'}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                section4Completed
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {section4Completed ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {!isExportingAll && (
                             <nav className={`wb8-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button type="button" onClick={goPrevPage} disabled={!hasPrevPage} className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}>
@@ -1754,6 +2985,37 @@ export function WB8Digital() {
                                         </li>
                                         <li className="text-sm text-slate-700 leading-relaxed">
                                             Si la escalera no diferencia profundidad y resultado, termina pareciendo ruido.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showBusinessModelHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
+                                <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl p-6 space-y-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Ayuda — Modelo de negocio</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBusinessModelHelp(false)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Monetizar talento no es solo cobrar: también puede significar visibilidad, poder de decisión, promoción o acceso.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Una unidad de valor clara facilita comprensión, adopción y decisión.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Un buen modelo compara valor, esfuerzo, captura y riesgo para decidir foco.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Antes de escalar, conviene validar hipótesis con pruebas pequeñas.
                                         </li>
                                     </ul>
                                 </div>
