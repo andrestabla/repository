@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6
 type YesNoAnswer = '' | 'yes' | 'no'
 
 type WorkbookPage = {
@@ -110,6 +110,49 @@ type WB5State = {
             adjustment: string
         }>
     }
+    strategicConversationSection: {
+        brief: {
+            realTopic: string
+            conversationalObjective: string
+            minimumResult: string
+            mainRisk: string
+            trustToProtect: string
+            explicitClosing: string
+        }
+        map: {
+            myPosition: string
+            myRealInterest: string
+            counterpartLikelyPosition: string
+            counterpartLikelyInterest: string
+            centralRisk: string
+            usefulMove: string
+        }
+        architecture: {
+            opening: string
+            context: string
+            explorationQuestions: string
+            mainApproach: string
+            negotiationAdjustment: string
+            closure: string
+        }
+        speechActs: Array<{
+            speechAct: string
+            whatIWillSayOrDo: string
+        }>
+        objections: Array<{
+            likelyObjection: string
+            whatToAcknowledge: string
+            evidenceOrCriteria: string
+            wayOutOrReframe: string
+        }>
+        closingRecord: {
+            whatMustBeUnderstood: string
+            explicitAgreement: string
+            commitmentsByPart: string
+            followUpMilestone: string
+            ambiguityToAvoid: string
+        }
+    }
 }
 
 const PAGES: WorkbookPage[] = [
@@ -117,7 +160,8 @@ const PAGES: WorkbookPage[] = [
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Estructura de mensaje ejecutivo', shortLabel: 'Mensaje ejecutivo' },
     { id: 4, label: '4. Ingeniería del lenguaje', shortLabel: 'Promesas y pedidos' },
-    { id: 5, label: '5. Influencia racional y emocional', shortLabel: 'Influencia ética' }
+    { id: 5, label: '5. Influencia racional y emocional', shortLabel: 'Influencia ética' },
+    { id: 6, label: '6. Framework de conversación estratégica', shortLabel: 'Conversación estratégica' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb5-state'
@@ -163,6 +207,8 @@ const INFLUENCE_ETHICS_QUESTIONS = [
     '¿Estoy influyendo sin imponer?',
     '¿Mi mensaje seguiría siendo sólido si me pidieran explicarlo mejor?'
 ]
+const STRATEGIC_SPEECH_ACT_ROWS = 7
+const STRATEGIC_OBJECTION_ROWS = 3
 
 const DEFAULT_STATE: WB5State = {
     identification: {
@@ -256,6 +302,49 @@ const DEFAULT_STATE: WB5State = {
             verdict: '',
             adjustment: ''
         }))
+    },
+    strategicConversationSection: {
+        brief: {
+            realTopic: '',
+            conversationalObjective: '',
+            minimumResult: '',
+            mainRisk: '',
+            trustToProtect: '',
+            explicitClosing: ''
+        },
+        map: {
+            myPosition: '',
+            myRealInterest: '',
+            counterpartLikelyPosition: '',
+            counterpartLikelyInterest: '',
+            centralRisk: '',
+            usefulMove: ''
+        },
+        architecture: {
+            opening: '',
+            context: '',
+            explorationQuestions: '',
+            mainApproach: '',
+            negotiationAdjustment: '',
+            closure: ''
+        },
+        speechActs: Array.from({ length: STRATEGIC_SPEECH_ACT_ROWS }, () => ({
+            speechAct: '',
+            whatIWillSayOrDo: ''
+        })),
+        objections: Array.from({ length: STRATEGIC_OBJECTION_ROWS }, () => ({
+            likelyObjection: '',
+            whatToAcknowledge: '',
+            evidenceOrCriteria: '',
+            wayOutOrReframe: ''
+        })),
+        closingRecord: {
+            whatMustBeUnderstood: '',
+            explicitAgreement: '',
+            commitmentsByPart: '',
+            followUpMilestone: '',
+            ambiguityToAvoid: ''
+        }
     }
 }
 
@@ -270,6 +359,9 @@ const normalizeState = (raw: unknown): WB5State => {
     const influenceRaw = parsed.influenceCommunicationSection ?? {}
     const leversRaw = Array.isArray(influenceRaw.levers) ? influenceRaw.levers : []
     const ethicalRaw = Array.isArray(influenceRaw.ethicalCheck) ? influenceRaw.ethicalCheck : []
+    const strategicRaw = parsed.strategicConversationSection ?? {}
+    const strategicSpeechRaw = Array.isArray(strategicRaw.speechActs) ? strategicRaw.speechActs : []
+    const strategicObjectionsRaw = Array.isArray(strategicRaw.objections) ? strategicRaw.objections : []
     const normalizedRiskLevel = (value: unknown): '' | 'Bajo' | 'Medio' | 'Alto' => {
         if (value === 'Bajo' || value === 'Medio' || value === 'Alto') return value
         return ''
@@ -368,6 +460,52 @@ const normalizeState = (raw: unknown): WB5State => {
                     adjustment: typeof candidate?.adjustment === 'string' ? candidate.adjustment : ''
                 }
             })
+        },
+        strategicConversationSection: {
+            brief: {
+                ...DEFAULT_STATE.strategicConversationSection.brief,
+                ...(strategicRaw.brief ?? {})
+            },
+            map: {
+                ...DEFAULT_STATE.strategicConversationSection.map,
+                ...(strategicRaw.map ?? {})
+            },
+            architecture: {
+                ...DEFAULT_STATE.strategicConversationSection.architecture,
+                ...(strategicRaw.architecture ?? {})
+            },
+            speechActs: DEFAULT_STATE.strategicConversationSection.speechActs.map((row, index) => {
+                const candidate = strategicSpeechRaw[index] ?? {}
+                return {
+                    speechAct: typeof candidate.speechAct === 'string' ? candidate.speechAct : row.speechAct,
+                    whatIWillSayOrDo:
+                        typeof candidate.whatIWillSayOrDo === 'string'
+                            ? candidate.whatIWillSayOrDo
+                            : row.whatIWillSayOrDo
+                }
+            }),
+            objections: DEFAULT_STATE.strategicConversationSection.objections.map((row, index) => {
+                const candidate = strategicObjectionsRaw[index] ?? {}
+                return {
+                    likelyObjection: typeof candidate.likelyObjection === 'string' ? candidate.likelyObjection : row.likelyObjection,
+                    whatToAcknowledge:
+                        typeof candidate.whatToAcknowledge === 'string'
+                            ? candidate.whatToAcknowledge
+                            : row.whatToAcknowledge,
+                    evidenceOrCriteria:
+                        typeof candidate.evidenceOrCriteria === 'string'
+                            ? candidate.evidenceOrCriteria
+                            : row.evidenceOrCriteria,
+                    wayOutOrReframe:
+                        typeof candidate.wayOutOrReframe === 'string'
+                            ? candidate.wayOutOrReframe
+                            : row.wayOutOrReframe
+                }
+            }),
+            closingRecord: {
+                ...DEFAULT_STATE.strategicConversationSection.closingRecord,
+                ...(strategicRaw.closingRecord ?? {})
+            }
         }
     }
 }
@@ -399,6 +537,15 @@ export function WB5Digital() {
     const [showInfluenceExampleStep2, setShowInfluenceExampleStep2] = useState(false)
     const [showInfluenceExampleStep3, setShowInfluenceExampleStep3] = useState(false)
     const [showInfluenceExampleStep4, setShowInfluenceExampleStep4] = useState(false)
+    const [showStrategicHelp, setShowStrategicHelp] = useState(false)
+    const [showStrategicExampleStep1, setShowStrategicExampleStep1] = useState(false)
+    const [showStrategicExampleStep2, setShowStrategicExampleStep2] = useState(false)
+    const [showStrategicExampleStep3, setShowStrategicExampleStep3] = useState(false)
+    const [showStrategicExampleStep4, setShowStrategicExampleStep4] = useState(false)
+    const [showStrategicExampleStep5, setShowStrategicExampleStep5] = useState(false)
+    const [showStrategicExampleStep6, setShowStrategicExampleStep6] = useState(false)
+    const [showStrategicMapPreview, setShowStrategicMapPreview] = useState(false)
+    const [showStrategicTimelinePreview, setShowStrategicTimelinePreview] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -802,6 +949,119 @@ export function WB5Digital() {
         announceSave(`${blockLabel} guardado.`)
     }
 
+    const updateStrategicBrief = (
+        field: keyof WB5State['strategicConversationSection']['brief'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            strategicConversationSection: {
+                ...prev.strategicConversationSection,
+                brief: {
+                    ...prev.strategicConversationSection.brief,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateStrategicMap = (
+        field: keyof WB5State['strategicConversationSection']['map'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            strategicConversationSection: {
+                ...prev.strategicConversationSection,
+                map: {
+                    ...prev.strategicConversationSection.map,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateStrategicArchitecture = (
+        field: keyof WB5State['strategicConversationSection']['architecture'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            strategicConversationSection: {
+                ...prev.strategicConversationSection,
+                architecture: {
+                    ...prev.strategicConversationSection.architecture,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateStrategicSpeechAct = (
+        rowIndex: number,
+        field: keyof WB5State['strategicConversationSection']['speechActs'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            strategicConversationSection: {
+                ...prev.strategicConversationSection,
+                speechActs: prev.strategicConversationSection.speechActs.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updateStrategicObjection = (
+        rowIndex: number,
+        field: keyof WB5State['strategicConversationSection']['objections'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            strategicConversationSection: {
+                ...prev.strategicConversationSection,
+                objections: prev.strategicConversationSection.objections.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updateStrategicClosing = (
+        field: keyof WB5State['strategicConversationSection']['closingRecord'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            strategicConversationSection: {
+                ...prev.strategicConversationSection,
+                closingRecord: {
+                    ...prev.strategicConversationSection.closingRecord,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const saveStrategicBlock = (blockLabel: string) => {
+        markVisited(6)
+        if (blockLabel === 'Paso 2') {
+            setShowStrategicMapPreview(true)
+        }
+        if (blockLabel === 'Paso 3') {
+            setShowStrategicTimelinePreview(true)
+        }
+        announceSave(`${blockLabel} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -886,6 +1146,12 @@ export function WB5Digital() {
     const influenceLevers = state.influenceCommunicationSection.levers
     const influenceDual = state.influenceCommunicationSection.dualMessage
     const influenceEthics = state.influenceCommunicationSection.ethicalCheck
+    const strategicBrief = state.strategicConversationSection.brief
+    const strategicMap = state.strategicConversationSection.map
+    const strategicArchitecture = state.strategicConversationSection.architecture
+    const strategicSpeechActs = state.strategicConversationSection.speechActs
+    const strategicObjections = state.strategicConversationSection.objections
+    const strategicClosing = state.strategicConversationSection.closingRecord
 
     const blufCompleted = Object.values(executiveBluf).every((value) => value.trim().length > 0)
     const pyramidCompleted = Object.values(executivePyramid).every((value) => value.trim().length > 0)
@@ -913,6 +1179,23 @@ export function WB5Digital() {
     const influenceEthicsCompleted = influenceEthics.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
     const influenceSectionCompleted =
         influenceMatrixCompleted && influenceLeversCompleted && influenceDualCompleted && influenceEthicsCompleted
+    const strategicBriefCompleted = Object.values(strategicBrief).every((value) => value.trim().length > 0)
+    const strategicMapCompleted = Object.values(strategicMap).every((value) => value.trim().length > 0)
+    const strategicArchitectureCompleted = Object.values(strategicArchitecture).every((value) => value.trim().length > 0)
+    const strategicSpeechActsCompleted = strategicSpeechActs.every(
+        (row) => row.speechAct.trim().length > 0 && row.whatIWillSayOrDo.trim().length > 0
+    )
+    const strategicObjectionsCompleted = strategicObjections.every((row) =>
+        Object.values(row).every((value) => value.trim().length > 0)
+    )
+    const strategicClosingCompleted = Object.values(strategicClosing).every((value) => value.trim().length > 0)
+    const strategicSectionCompleted =
+        strategicBriefCompleted &&
+        strategicMapCompleted &&
+        strategicArchitectureCompleted &&
+        strategicSpeechActsCompleted &&
+        strategicObjectionsCompleted &&
+        strategicClosingCompleted
 
     const bottomLineWordCount = executiveBluf.bottomLine.trim().split(/\s+/).filter(Boolean).length
     const bottomLineTooLong = bottomLineWordCount > 18
@@ -976,13 +1259,33 @@ export function WB5Digital() {
         influenceDual.decisionalClose.toLowerCase().includes(signal)
     )
     const decisionalNeedsSupport = influenceDual.decisionalClose.trim().length > 0 && !hasDecisionalSignal
+    const strategicObjectiveSignals = ['definir', 'acord', 'decid', 'renegoci', 'aline', 'movil', 'cerrar', 'destrabar']
+    const hasStrategicObjectiveSignal = strategicObjectiveSignals.some((signal) =>
+        strategicBrief.conversationalObjective.toLowerCase().includes(signal)
+    )
+    const strategicObjectiveNeedsAdjustment =
+        strategicBrief.conversationalObjective.trim().length > 0 && !hasStrategicObjectiveSignal
+    const strategicExplorationMissing =
+        strategicArchitecture.explorationQuestions.trim().length === 0 &&
+        Object.values(strategicArchitecture).some((value) => value.trim().length > 0)
+    const strategicClosingMissing =
+        strategicClosing.explicitAgreement.trim().length === 0 ||
+        strategicClosing.followUpMilestone.trim().length === 0
+    const strategicObjectionsWithoutEvidence = strategicObjections.some(
+        (row) =>
+            (row.likelyObjection.trim().length > 0 ||
+                row.whatToAcknowledge.trim().length > 0 ||
+                row.wayOutOrReframe.trim().length > 0) &&
+            row.evidenceOrCriteria.trim().length === 0
+    )
 
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: executiveSectionCompleted,
         4: languageSectionCompleted,
-        5: influenceSectionCompleted
+        5: influenceSectionCompleted,
+        6: strategicSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -1062,7 +1365,7 @@ export function WB5Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb5-print-page wb5-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 5"
+                                data-print-page="Página 1 de 6"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1155,7 +1458,7 @@ export function WB5Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 5"
+                                data-print-page="Página 2 de 6"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1289,7 +1592,7 @@ export function WB5Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 5"
+                                data-print-page="Página 3 de 6"
                                 data-print-title="Estructura de mensaje ejecutivo"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1813,7 +2116,7 @@ export function WB5Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 5"
+                                data-print-page="Página 4 de 6"
                                 data-print-title="Ingeniería del lenguaje (promesas y pedidos)"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2430,7 +2733,7 @@ export function WB5Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 5 de 5"
+                                data-print-page="Página 5 de 6"
                                 data-print-title="Comunicación de influencia racional y emocional"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2831,6 +3134,691 @@ export function WB5Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(6) && (
+                            <article
+                                className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 6 de 6"
+                                data-print-title="Framework de conversación estratégica"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 6</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Framework de conversación estratégica
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Diseña conversaciones estratégicas con intención, estructura y criterio conversacional para abrir, conducir, tensionar, negociar y cerrar con claridad, escucha e influencia ética.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStrategicHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Conversación estratégica: interacción de alto valor con resultado específico (alinear, decidir, destrabar, renegociar o reparar).',
+                                            'Objetivo conversacional: efecto concreto buscado al final, no solo el tema.',
+                                            'Posición e interés: lo que cada parte dice querer y lo que realmente está cuidando.',
+                                            'Actos del habla: pedir, ofrecer, prometer, declarar, preguntar, reconocer, cuestionar, rechazar o renegociar.',
+                                            'Secuencia conversacional: apertura, exploración, planteamiento, tensión, negociación y cierre.',
+                                            'Tensión productiva: diferencia legítima que puede mejorar la decisión si se gestiona bien.',
+                                            'Objeción estratégica: resistencia relevante que debe trabajarse, no neutralizarse.',
+                                            'Cierre conversacional: dejar explícito qué se entendió, qué se acordó y qué sigue.',
+                                            'Minuta de compromisos: responsables, fechas, condiciones de satisfacción y seguimiento.',
+                                            'Confianza conversacional: claridad, honestidad, responsabilidad y consistencia.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Brief de conversación estratégica</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowStrategicExampleStep1(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    strategicBriefCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {strategicBriefCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Tema real</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicBrief.realTopic}
+                                                onChange={(event) => updateStrategicBrief('realTopic', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Objetivo conversacional</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicBrief.conversationalObjective}
+                                                onChange={(event) => updateStrategicBrief('conversationalObjective', event.target.value)}
+                                                disabled={isLocked}
+                                                placeholder="Qué resultado tiene que quedar producido al final"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Resultado mínimo aceptable</span>
+                                            <input
+                                                type="text"
+                                                value={strategicBrief.minimumResult}
+                                                onChange={(event) => updateStrategicBrief('minimumResult', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Riesgo principal si no se gestiona bien</span>
+                                            <input
+                                                type="text"
+                                                value={strategicBrief.mainRisk}
+                                                onChange={(event) => updateStrategicBrief('mainRisk', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">5. Relación o confianza que necesito cuidar</span>
+                                            <input
+                                                type="text"
+                                                value={strategicBrief.trustToProtect}
+                                                onChange={(event) => updateStrategicBrief('trustToProtect', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">6. Qué debe quedar explícito al cierre</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicBrief.explicitClosing}
+                                                onChange={(event) => updateStrategicBrief('explicitClosing', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {strategicObjectiveNeedsAdjustment && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: redacta el objetivo como resultado a lograr, no solo como tema.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveStrategicBlock('Paso 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Mapa posición–interés–riesgo–movimiento</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowStrategicExampleStep2(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    strategicMapCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {strategicMapCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[840px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Elemento</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tu respuesta</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {[
+                                                    { key: 'myPosition', label: 'Mi posición' },
+                                                    { key: 'myRealInterest', label: 'Mi interés real' },
+                                                    { key: 'counterpartLikelyPosition', label: 'Posición probable de la otra parte' },
+                                                    { key: 'counterpartLikelyInterest', label: 'Interés probable de la otra parte' },
+                                                    { key: 'centralRisk', label: 'Riesgo central de la conversación' },
+                                                    { key: 'usefulMove', label: 'Movimiento útil para abrir avance' }
+                                                ].map((row) => (
+                                                    <tr key={row.key}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.label}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={strategicMap[row.key as keyof typeof strategicMap]}
+                                                                onChange={(event) =>
+                                                                    updateStrategicMap(
+                                                                        row.key as keyof WB5State['strategicConversationSection']['map'],
+                                                                        event.target.value
+                                                                    )
+                                                                }
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {showStrategicMapPreview && (
+                                        <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 md:p-5">
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-700 font-semibold">Mapa esquematizado</p>
+                                            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                                    <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Mi posición</p>
+                                                    <p className="mt-1 text-sm font-semibold text-slate-800">{strategicMap.myPosition || 'Sin definir'}</p>
+                                                </div>
+                                                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                                    <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Posición de la otra parte</p>
+                                                    <p className="mt-1 text-sm font-semibold text-slate-800">{strategicMap.counterpartLikelyPosition || 'Sin definir'}</p>
+                                                </div>
+                                                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                                    <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Mi interés real</p>
+                                                    <p className="mt-1 text-sm text-slate-700">{strategicMap.myRealInterest || 'Sin definir'}</p>
+                                                </div>
+                                                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                                    <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Interés de la otra parte</p>
+                                                    <p className="mt-1 text-sm text-slate-700">{strategicMap.counterpartLikelyInterest || 'Sin definir'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                                                <p className="text-xs uppercase tracking-[0.14em] text-amber-700 font-semibold">Riesgo central</p>
+                                                <p className="mt-1 text-sm text-amber-900">{strategicMap.centralRisk || 'Sin definir'}</p>
+                                            </div>
+                                            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                                                <p className="text-xs uppercase tracking-[0.14em] text-emerald-700 font-semibold">Movimiento útil para abrir avance</p>
+                                                <p className="mt-1 text-sm text-emerald-900">{strategicMap.usefulMove || 'Sin definir'}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveStrategicBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Arquitectura conversacional</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowStrategicExampleStep3(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    strategicArchitectureCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {strategicArchitectureCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Apertura</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicArchitecture.opening}
+                                                onChange={(event) => updateStrategicArchitecture('opening', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Contexto</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicArchitecture.context}
+                                                onChange={(event) => updateStrategicArchitecture('context', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Exploración (preguntas clave)</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicArchitecture.explorationQuestions}
+                                                onChange={(event) => updateStrategicArchitecture('explorationQuestions', event.target.value)}
+                                                disabled={isLocked}
+                                                placeholder="Incluye preguntas antes de empujar tu posición"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Planteamiento principal</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicArchitecture.mainApproach}
+                                                onChange={(event) => updateStrategicArchitecture('mainApproach', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">5. Negociación / ajuste</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicArchitecture.negotiationAdjustment}
+                                                onChange={(event) => updateStrategicArchitecture('negotiationAdjustment', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">6. Cierre</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicArchitecture.closure}
+                                                onChange={(event) => updateStrategicArchitecture('closure', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    {strategicExplorationMissing && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: agrega preguntas de exploración para comprender antes de empujar tu propuesta.
+                                        </p>
+                                    )}
+
+                                    {showStrategicTimelinePreview && (
+                                        <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 md:p-5">
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-700 font-semibold">Arquitectura conversacional (timeline)</p>
+                                            <div className="mt-3 overflow-x-auto">
+                                                <div className="min-w-[980px] flex items-start gap-2">
+                                                    {[
+                                                        { label: 'Apertura', value: strategicArchitecture.opening },
+                                                        { label: 'Contexto', value: strategicArchitecture.context },
+                                                        { label: 'Exploración', value: strategicArchitecture.explorationQuestions },
+                                                        { label: 'Planteamiento', value: strategicArchitecture.mainApproach },
+                                                        { label: 'Negociación', value: strategicArchitecture.negotiationAdjustment },
+                                                        { label: 'Cierre', value: strategicArchitecture.closure }
+                                                    ].map((step, index, array) => (
+                                                        <React.Fragment key={step.label}>
+                                                            <div className="w-[155px] rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                                    {index + 1}. {step.label}
+                                                                </p>
+                                                                <p className="mt-1 text-sm text-slate-700">{step.value || 'Sin definir'}</p>
+                                                            </div>
+                                                            {index < array.length - 1 && (
+                                                                <div className="pt-9 text-blue-600 font-bold">→</div>
+                                                            )}
+                                                        </React.Fragment>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveStrategicBlock('Paso 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Secuencia de actos del habla</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowStrategicExampleStep4(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    strategicSpeechActsCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {strategicSpeechActsCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Orden</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Acto del habla</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué diré o haré</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {strategicSpeechActs.map((row, rowIndex) => (
+                                                    <tr key={`strategic-speech-${rowIndex}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{rowIndex + 1}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.speechAct}
+                                                                onChange={(event) => updateStrategicSpeechAct(rowIndex, 'speechAct', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Ej: Reconocer, Preguntar, Declarar..."
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.whatIWillSayOrDo}
+                                                                onChange={(event) => updateStrategicSpeechAct(rowIndex, 'whatIWillSayOrDo', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveStrategicBlock('Paso 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Matriz de objeciones y respuestas</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowStrategicExampleStep5(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    strategicObjectionsCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {strategicObjectionsCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1060px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Objeción probable</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué voy a reconocer</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Evidencia o criterio</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Salida o reformulación</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {strategicObjections.map((row, rowIndex) => (
+                                                    <tr key={`strategic-objection-${rowIndex}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.likelyObjection}
+                                                                onChange={(event) => updateStrategicObjection(rowIndex, 'likelyObjection', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.whatToAcknowledge}
+                                                                onChange={(event) => updateStrategicObjection(rowIndex, 'whatToAcknowledge', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.evidenceOrCriteria}
+                                                                onChange={(event) => updateStrategicObjection(rowIndex, 'evidenceOrCriteria', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.wayOutOrReframe}
+                                                                onChange={(event) => updateStrategicObjection(rowIndex, 'wayOutOrReframe', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {strategicObjectionsWithoutEvidence && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: agrega base racional (evidencia o criterio) para sostener tu respuesta a objeciones.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveStrategicBlock('Paso 5')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Acta de cierre y compromisos</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowStrategicExampleStep6(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    strategicClosingCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {strategicClosingCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Qué debe quedar entendido</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicClosing.whatMustBeUnderstood}
+                                                onChange={(event) => updateStrategicClosing('whatMustBeUnderstood', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Acuerdo o decisión explícita</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicClosing.explicitAgreement}
+                                                onChange={(event) => updateStrategicClosing('explicitAgreement', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Compromiso de cada parte</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicClosing.commitmentsByPart}
+                                                onChange={(event) => updateStrategicClosing('commitmentsByPart', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Fecha / hito de seguimiento</span>
+                                            <input
+                                                type="text"
+                                                value={strategicClosing.followUpMilestone}
+                                                onChange={(event) => updateStrategicClosing('followUpMilestone', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">5. Ambigüedad a evitar</span>
+                                            <textarea
+                                                rows={2}
+                                                value={strategicClosing.ambiguityToAvoid}
+                                                onChange={(event) => updateStrategicClosing('ambiguityToAvoid', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {strategicClosingMissing && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: aclara acuerdo explícito y fecha/hito de seguimiento para cerrar sin ambigüedad.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveStrategicBlock('Paso 6')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
+                                    <ul className="mt-4 space-y-2.5">
+                                        {[
+                                            'Qué resultado quiero producir realmente en una conversación importante.',
+                                            'Qué tensión central debo gestionar.',
+                                            'Cómo ordenar la secuencia de la conversación.',
+                                            'Qué objeciones debo anticipar.',
+                                            'Cómo cerrar con claridad, seguimiento y compromiso.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-5 flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                strategicSectionCompleted
+                                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                    : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                            }`}
+                                        >
+                                            {strategicSectionCompleted ? 'Sección completada' : 'Sección pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => savePage(6)}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar página 6
+                                        </button>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {showExecutiveHelp && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
@@ -3194,6 +4182,176 @@ export function WB5Digital() {
                                         <p><span className="font-semibold">Mensaje débil:</span> “Necesitamos hacer esto porque yo sé que es lo correcto.”</p>
                                         <p><span className="font-semibold">Mensaje mejorado:</span> “Necesitamos ajustar porque los datos muestran dispersión y proteger foco y calidad es coherente con el equipo que queremos ser.”</p>
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showStrategicHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Framework de conversación estratégica</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStrategicHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>• Una conversación estratégica no se improvisa: requiere objetivo, lectura de intereses y secuencia.</p>
+                                        <p>• Una buena conversación no termina cuando “ya hablé”; termina cuando queda claro qué sigue.</p>
+                                        <p>• Anticipar objeciones mejora calidad y reduce reactividad.</p>
+                                        <p>• El estándar alto en WB5 es ordenar conversaciones complejas con firmeza y respeto.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showStrategicExampleStep1 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1 (Brief)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStrategicExampleStep1(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Tema real:</span> Renegociar alcance de un entregable sin deteriorar confianza.</li>
+                                        <li><span className="font-semibold">Objetivo:</span> Redefinir alcance, fecha y criterio de calidad.</li>
+                                        <li><span className="font-semibold">Resultado mínimo:</span> Aceptación de revisar alcance y nueva fecha.</li>
+                                        <li><span className="font-semibold">Riesgo:</span> Que se interprete como falta de compromiso.</li>
+                                        <li><span className="font-semibold">Relación a cuidar:</span> Confianza con sponsor directo.</li>
+                                        <li><span className="font-semibold">Cierre explícito:</span> Nuevo alcance, fecha y responsables.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showStrategicExampleStep2 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2 (Mapa)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStrategicExampleStep2(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Mi posición:</span> Necesitamos redefinir el alcance.</li>
+                                        <li><span className="font-semibold">Mi interés real:</span> Proteger calidad y evitar incumplir.</li>
+                                        <li><span className="font-semibold">Posición probable de la otra parte:</span> Debe salir como se acordó.</li>
+                                        <li><span className="font-semibold">Interés probable de la otra parte:</span> Cuidar credibilidad frente a dirección.</li>
+                                        <li><span className="font-semibold">Riesgo central:</span> Que vea el ajuste como desorden.</li>
+                                        <li><span className="font-semibold">Movimiento útil:</span> Reconocer su preocupación y mostrar evidencia de capacidad real.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showStrategicExampleStep3 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3 (Arquitectura)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStrategicExampleStep3(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Apertura:</span> Ordenar alcance y proteger calidad.</li>
+                                        <li><span className="font-semibold">Contexto:</span> Entraron requerimientos no previstos.</li>
+                                        <li><span className="font-semibold">Exploración:</span> “¿Qué no podríamos comprometer?”</li>
+                                        <li><span className="font-semibold">Planteamiento:</span> Redefinir alcance o mover fecha.</li>
+                                        <li><span className="font-semibold">Negociación:</span> Si no se mueve fecha, ajustar alcance.</li>
+                                        <li><span className="font-semibold">Cierre:</span> Nuevo alcance, revisión mañana y validación final jueves.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showStrategicExampleStep4 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4 (Actos del habla)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStrategicExampleStep4(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ol className="space-y-2.5 text-sm text-slate-700 list-decimal list-inside">
+                                        <li>Reconocer: “Sé que cuidas tiempos y exposición con dirección”.</li>
+                                        <li>Preguntar: “¿Qué es lo más crítico para ti en este entregable?”.</li>
+                                        <li>Declarar: “Hoy el alcance supera la capacidad real del equipo”.</li>
+                                        <li>Pedir: “Necesito revisar contigo el alcance prioritario”.</li>
+                                        <li>Ofrecer: “Sostengo calidad si ajustamos dos bloques y mantenemos foco”.</li>
+                                        <li>Renegociar: “Si no movemos fecha, necesitamos mover alcance”.</li>
+                                        <li>Cerrar: “Definamos alcance, responsables y fecha de validación”.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        )}
+
+                        {showStrategicExampleStep5 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 5 (Objeciones)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStrategicExampleStep5(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Objeción:</span> “Eso retrasa todo”. <span className="font-semibold">Criterio:</span> alcance actual supera capacidad. <span className="font-semibold">Salida:</span> redefinir alcance o mover fecha.</li>
+                                        <li><span className="font-semibold">Objeción:</span> “Ya habíamos acordado esto”. <span className="font-semibold">Criterio:</span> cambiaron condiciones clave. <span className="font-semibold">Salida:</span> renegociar ahora para proteger resultado.</li>
+                                        <li><span className="font-semibold">Objeción:</span> “No podemos abrir este tema ahora”. <span className="font-semibold">Criterio:</span> el riesgo crece si se posterga. <span className="font-semibold">Salida:</span> definir espacio corto hoy o mañana.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showStrategicExampleStep6 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 6 (Acta de cierre)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStrategicExampleStep6(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Entendido:</span> el ajuste protege resultado y no evade responsabilidad.</li>
+                                        <li><span className="font-semibold">Acuerdo:</span> nuevo alcance y nueva fecha.</li>
+                                        <li><span className="font-semibold">Compromisos:</span> yo envío versión; la otra parte valida antes de las 10:00 a. m.</li>
+                                        <li><span className="font-semibold">Hito:</span> revisión mañana 10:00 a. m.</li>
+                                        <li><span className="font-semibold">Ambigüedad a evitar:</span> cerrar con “vemos después”.</li>
+                                    </ul>
                                 </div>
                             </div>
                         )}
