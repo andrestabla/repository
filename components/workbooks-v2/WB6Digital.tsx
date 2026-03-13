@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 type YesNoAnswer = '' | 'yes' | 'no'
 type PresenceImpact = '' | 'Suma' | 'Resta'
 type LeakageLevel = '' | 'Verde' | 'Amarillo' | 'Rojo'
@@ -226,16 +226,55 @@ type WB6State = {
             adjustment: string
         }>
     }
+    coherenceAlignmentSection: {
+        congruenceMap: Array<{
+            dimension: string
+            intendedMessage: string
+            perceivedSignal: string
+        }>
+        perceptiveContradictions: Array<{
+            verbalStatement: string
+            contradictorySignal: string
+            likelyReading: string
+            priorityAdjustment: string
+        }>
+        phraseSignalLab: Array<{
+            keyPhrase: string
+            installedIdea: string
+            neededTone: string
+            supportingPostureOrGesture: string
+            whatToAvoid: string
+        }>
+        expressiveTrafficLight: Array<{
+            signal: string
+            level: LeakageLevel
+            whenAppears: string
+            requiredAdjustment: string
+        }>
+        incoherenceRepairProtocol: {
+            alertSignal: string
+            bodyCorrection: string
+            vocalCorrection: string
+            reorderingPhrase: string
+            ideaToReinstall: string
+        }
+        coherenceTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Lenguaje corporal ejecutivo', shortLabel: 'Lenguaje corporal' },
-    { id: 4, label: '4. Manejo de objeciones', shortLabel: 'Objeciones' },
-    { id: 5, label: '5. Tono y ritmo de voz', shortLabel: 'Voz ejecutiva' },
-    { id: 6, label: '6. Comunicación bajo presión', shortLabel: 'Bajo presión' },
-    { id: 7, label: '7. Presencia en reuniones de alto nivel', shortLabel: 'Reuniones alto nivel' }
+    { id: 5, label: '4. Tono y ritmo de voz', shortLabel: 'Voz ejecutiva' },
+    { id: 6, label: '5. Comunicación bajo presión', shortLabel: 'Bajo presión' },
+    { id: 7, label: '6. Presencia en reuniones de alto nivel', shortLabel: 'Reuniones alto nivel' },
+    { id: 8, label: '7. Coherencia verbal y no verbal', shortLabel: 'Coherencia verbal-no verbal' },
+    { id: 4, label: '8. Manejo de objeciones', shortLabel: 'Objeciones' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb6-state'
@@ -821,6 +860,137 @@ const EXAMPLE_MEETING_FOOTPRINT_AUDIT = {
     nextAdjustment: 'Preparar mejor apertura y leer antes la dinámica de sala.'
 }
 
+const CONGRUENCE_DIMENSIONS = [
+    'Mensaje central',
+    'Postura corporal',
+    'Tono y ritmo',
+    'Rostro y mirada',
+    'Energía general',
+    'Nivel de coherencia percibida'
+] as const
+
+const COHERENCE_TEST_QUESTIONS = [
+    '¿Mi forma reforzó mi mensaje?',
+    '¿Evité contradicciones visibles?',
+    '¿Tono, cuerpo y mirada fueron en la misma dirección?',
+    '¿La lectura probable fue de coherencia y no de tensión?',
+    '¿Identifico mis contradicciones más frecuentes?',
+    '¿Sé corregirlas en tiempo real?'
+] as const
+
+const EXAMPLE_CONGRUENCE_MAP = [
+    {
+        dimension: 'Mensaje central',
+        intendedMessage: 'Quería transmitir calma y control.',
+        perceivedSignal: 'El mensaje era correcto, pero soné más tenso de lo que quería.'
+    },
+    {
+        dimension: 'Postura corporal',
+        intendedMessage: 'Quería verme estable.',
+        perceivedSignal: 'Me incliné demasiado hacia adelante.'
+    },
+    {
+        dimension: 'Tono y ritmo',
+        intendedMessage: 'Quería sonar firme.',
+        perceivedSignal: 'Aceleré varias frases.'
+    },
+    {
+        dimension: 'Rostro y mirada',
+        intendedMessage: 'Quería mostrar apertura.',
+        perceivedSignal: 'Fruncí el ceño y bajé la mirada al ser cuestionado.'
+    },
+    {
+        dimension: 'Energía general',
+        intendedMessage: 'Quería ordenar la conversación.',
+        perceivedSignal: 'Se percibió urgencia defensiva.'
+    },
+    {
+        dimension: 'Nivel de coherencia percibida',
+        intendedMessage: 'Medio-alto.',
+        perceivedSignal: 'Medio-bajo.'
+    }
+] as const
+
+const EXAMPLE_PERCEPTIVE_CONTRADICTIONS = [
+    {
+        verbalStatement: '“Estoy abierto a escucharlos”.',
+        contradictorySignal: 'Brazos cerrados y torso rígido.',
+        likelyReading: 'Defensividad.',
+        priorityAdjustment: 'Abrir brazos y bajar tensión visible.'
+    },
+    {
+        verbalStatement: '“No hay urgencia innecesaria”.',
+        contradictorySignal: 'Hablo muy rápido.',
+        likelyReading: 'Apuro o ansiedad.',
+        priorityAdjustment: 'Reducir velocidad y marcar pausas.'
+    },
+    {
+        verbalStatement: '“Lo tenemos bajo control”.',
+        contradictorySignal: 'Mirada evasiva y mandíbula tensa.',
+        likelyReading: 'Inseguridad.',
+        priorityAdjustment: 'Sostener mirada y soltar mandíbula.'
+    },
+    {
+        verbalStatement: '“Es una decisión pensada”.',
+        contradictorySignal: 'Cierre de frase débil.',
+        likelyReading: 'Duda.',
+        priorityAdjustment: 'Cerrar con tono más firme.'
+    }
+] as const
+
+const EXAMPLE_PHRASE_SIGNAL_LAB = [
+    {
+        keyPhrase: '“Voy a ordenar esto en tres puntos”.',
+        installedIdea: 'Control y estructura.',
+        neededTone: 'Firme y calmado.',
+        supportingPostureOrGesture: 'Torso estable, mirada al frente, manos visibles.',
+        whatToAvoid: 'Acelerar.'
+    },
+    {
+        keyPhrase: '“Entiendo la preocupación”.',
+        installedIdea: 'Reconocimiento y escucha.',
+        neededTone: 'Bajo, limpio, sin dureza.',
+        supportingPostureOrGesture: 'Leve inclinación receptiva y rostro abierto.',
+        whatToAvoid: 'Sonar irónico.'
+    },
+    {
+        keyPhrase: '“Mi recomendación es esta”.',
+        installedIdea: 'Criterio y decisión.',
+        neededTone: 'Claro, directo, con cierre firme.',
+        supportingPostureOrGesture: 'Postura vertical y gesto breve de marcación.',
+        whatToAvoid: 'Bajar volumen al final.'
+    }
+] as const
+
+const EXAMPLE_EXPRESSIVE_TRAFFIC = [
+    {
+        signal: 'Mantengo mirada y torso estables.',
+        level: 'Verde',
+        whenAppears: 'Al presentar ideas preparadas.',
+        requiredAdjustment: 'Consolidar.'
+    },
+    {
+        signal: 'Sonrío por nervio al dar feedback difícil.',
+        level: 'Amarillo',
+        whenAppears: 'En conversaciones tensas.',
+        requiredAdjustment: 'Bajar sonrisa automática y sostener seriedad amable.'
+    },
+    {
+        signal: 'Digo “estoy tranquilo” con voz acelerada.',
+        level: 'Rojo',
+        whenAppears: 'Bajo cuestionamiento.',
+        requiredAdjustment: 'Hacer pausa y reiniciar con menor velocidad.'
+    }
+] as const
+
+const EXAMPLE_INCOHERENCE_REPAIR_PROTOCOL = {
+    alertSignal: 'Empiezo a mover las manos sin control y acelero la voz.',
+    bodyCorrection: 'Reanclar pies, bajar hombros y detener el gesto.',
+    vocalCorrection: 'Exhalar y bajar medio punto la velocidad.',
+    reorderingPhrase: '“Déjame decirlo con claridad en una frase.”',
+    ideaToReinstall: 'Que tengo criterio y control del tema.'
+}
+
 const DEFAULT_STATE: WB6State = {
     identification: {
         leaderName: '',
@@ -1021,6 +1191,44 @@ const DEFAULT_STATE: WB6State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    coherenceAlignmentSection: {
+        congruenceMap: CONGRUENCE_DIMENSIONS.map((dimension) => ({
+            dimension,
+            intendedMessage: '',
+            perceivedSignal: ''
+        })),
+        perceptiveContradictions: Array.from({ length: 4 }, () => ({
+            verbalStatement: '',
+            contradictorySignal: '',
+            likelyReading: '',
+            priorityAdjustment: ''
+        })),
+        phraseSignalLab: Array.from({ length: 3 }, () => ({
+            keyPhrase: '',
+            installedIdea: '',
+            neededTone: '',
+            supportingPostureOrGesture: '',
+            whatToAvoid: ''
+        })),
+        expressiveTrafficLight: Array.from({ length: 4 }, () => ({
+            signal: '',
+            level: '' as LeakageLevel,
+            whenAppears: '',
+            requiredAdjustment: ''
+        })),
+        incoherenceRepairProtocol: {
+            alertSignal: '',
+            bodyCorrection: '',
+            vocalCorrection: '',
+            reorderingPhrase: '',
+            ideaToReinstall: ''
+        },
+        coherenceTest: COHERENCE_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
     }
 }
 
@@ -1049,6 +1257,16 @@ const normalizeState = (raw: unknown): WB6State => {
     const meetingsRaw = (parsed.highLevelMeetingsSection ?? {}) as Record<string, unknown>
     const meetingsTimingRaw = Array.isArray(meetingsRaw.timingMap) ? meetingsRaw.timingMap : []
     const meetingsTestRaw = Array.isArray(meetingsRaw.highLevelMeetingTest) ? meetingsRaw.highLevelMeetingTest : []
+    const coherenceAlignmentRaw = (parsed.coherenceAlignmentSection ?? {}) as Record<string, unknown>
+    const congruenceMapRaw = Array.isArray(coherenceAlignmentRaw.congruenceMap) ? coherenceAlignmentRaw.congruenceMap : []
+    const perceptiveContradictionsRaw = Array.isArray(coherenceAlignmentRaw.perceptiveContradictions)
+        ? coherenceAlignmentRaw.perceptiveContradictions
+        : []
+    const phraseSignalLabRaw = Array.isArray(coherenceAlignmentRaw.phraseSignalLab) ? coherenceAlignmentRaw.phraseSignalLab : []
+    const expressiveTrafficLightRaw = Array.isArray(coherenceAlignmentRaw.expressiveTrafficLight)
+        ? coherenceAlignmentRaw.expressiveTrafficLight
+        : []
+    const coherenceSectionTestRaw = Array.isArray(coherenceAlignmentRaw.coherenceTest) ? coherenceAlignmentRaw.coherenceTest : []
 
     const normalizeVerdict = (value: unknown): YesNoAnswer => {
         if (value === 'yes' || value === 'no') return value
@@ -1537,6 +1755,75 @@ const normalizeState = (raw: unknown): WB6State => {
                     adjustment: typeof candidate.adjustment === 'string' ? candidate.adjustment : ''
                 }
             })
+        },
+        coherenceAlignmentSection: {
+            congruenceMap: CONGRUENCE_DIMENSIONS.map((dimension, index) => {
+                const candidate = (congruenceMapRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    dimension,
+                    intendedMessage: typeof candidate.intendedMessage === 'string' ? candidate.intendedMessage : '',
+                    perceivedSignal: typeof candidate.perceivedSignal === 'string' ? candidate.perceivedSignal : ''
+                }
+            }),
+            perceptiveContradictions: Array.from({ length: 4 }, (_, index) => {
+                const candidate = (perceptiveContradictionsRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    verbalStatement: typeof candidate.verbalStatement === 'string' ? candidate.verbalStatement : '',
+                    contradictorySignal: typeof candidate.contradictorySignal === 'string' ? candidate.contradictorySignal : '',
+                    likelyReading: typeof candidate.likelyReading === 'string' ? candidate.likelyReading : '',
+                    priorityAdjustment: typeof candidate.priorityAdjustment === 'string' ? candidate.priorityAdjustment : ''
+                }
+            }),
+            phraseSignalLab: Array.from({ length: 3 }, (_, index) => {
+                const candidate = (phraseSignalLabRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    keyPhrase: typeof candidate.keyPhrase === 'string' ? candidate.keyPhrase : '',
+                    installedIdea: typeof candidate.installedIdea === 'string' ? candidate.installedIdea : '',
+                    neededTone: typeof candidate.neededTone === 'string' ? candidate.neededTone : '',
+                    supportingPostureOrGesture:
+                        typeof candidate.supportingPostureOrGesture === 'string' ? candidate.supportingPostureOrGesture : '',
+                    whatToAvoid: typeof candidate.whatToAvoid === 'string' ? candidate.whatToAvoid : ''
+                }
+            }),
+            expressiveTrafficLight: Array.from({ length: 4 }, (_, index) => {
+                const candidate = (expressiveTrafficLightRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    signal: typeof candidate.signal === 'string' ? candidate.signal : '',
+                    level: normalizeLeakageLevel(candidate.level),
+                    whenAppears: typeof candidate.whenAppears === 'string' ? candidate.whenAppears : '',
+                    requiredAdjustment: typeof candidate.requiredAdjustment === 'string' ? candidate.requiredAdjustment : ''
+                }
+            }),
+            incoherenceRepairProtocol: {
+                alertSignal:
+                    typeof (coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown> | undefined)?.alertSignal === 'string'
+                        ? ((coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown>).alertSignal as string)
+                        : '',
+                bodyCorrection:
+                    typeof (coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown> | undefined)?.bodyCorrection === 'string'
+                        ? ((coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown>).bodyCorrection as string)
+                        : '',
+                vocalCorrection:
+                    typeof (coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown> | undefined)?.vocalCorrection === 'string'
+                        ? ((coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown>).vocalCorrection as string)
+                        : '',
+                reorderingPhrase:
+                    typeof (coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown> | undefined)?.reorderingPhrase === 'string'
+                        ? ((coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown>).reorderingPhrase as string)
+                        : '',
+                ideaToReinstall:
+                    typeof (coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown> | undefined)?.ideaToReinstall === 'string'
+                        ? ((coherenceAlignmentRaw.incoherenceRepairProtocol as Record<string, unknown>).ideaToReinstall as string)
+                        : ''
+            },
+            coherenceTest: COHERENCE_TEST_QUESTIONS.map((question, index) => {
+                const candidate = (coherenceSectionTestRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: normalizeVerdict(candidate.verdict),
+                    adjustment: typeof candidate.adjustment === 'string' ? candidate.adjustment : ''
+                }
+            })
         }
     }
 }
@@ -1587,6 +1874,13 @@ export function WB6Digital() {
     const [showMeetingExampleStep4, setShowMeetingExampleStep4] = useState(false)
     const [showMeetingExampleStep5, setShowMeetingExampleStep5] = useState(false)
     const [showMeetingExampleStep6, setShowMeetingExampleStep6] = useState(false)
+    const [showCoherenceHelp, setShowCoherenceHelp] = useState(false)
+    const [showCoherenceExampleStep1, setShowCoherenceExampleStep1] = useState(false)
+    const [showCoherenceExampleStep2, setShowCoherenceExampleStep2] = useState(false)
+    const [showCoherenceExampleStep3, setShowCoherenceExampleStep3] = useState(false)
+    const [showCoherenceExampleStep4, setShowCoherenceExampleStep4] = useState(false)
+    const [showCoherenceExampleStep5, setShowCoherenceExampleStep5] = useState(false)
+    const [showCoherenceExampleStep6, setShowCoherenceExampleStep6] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1821,7 +2115,7 @@ export function WB6Digital() {
         }))
     }
 
-    const updateCoherenceTestRow = (
+    const updateBodyLanguageCoherenceTestRow = (
         rowIndex: number,
         field: keyof WB6State['bodyLanguageSection']['coherenceTest'][number],
         value: string
@@ -2309,6 +2603,125 @@ export function WB6Digital() {
         announceSave(`${blockLabel} guardado.`)
     }
 
+    const updateCongruenceMapRow = (
+        rowIndex: number,
+        field: keyof WB6State['coherenceAlignmentSection']['congruenceMap'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            coherenceAlignmentSection: {
+                ...prev.coherenceAlignmentSection,
+                congruenceMap: prev.coherenceAlignmentSection.congruenceMap.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updatePerceptiveContradictionRow = (
+        rowIndex: number,
+        field: keyof WB6State['coherenceAlignmentSection']['perceptiveContradictions'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            coherenceAlignmentSection: {
+                ...prev.coherenceAlignmentSection,
+                perceptiveContradictions: prev.coherenceAlignmentSection.perceptiveContradictions.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updatePhraseSignalLabRow = (
+        rowIndex: number,
+        field: keyof WB6State['coherenceAlignmentSection']['phraseSignalLab'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            coherenceAlignmentSection: {
+                ...prev.coherenceAlignmentSection,
+                phraseSignalLab: prev.coherenceAlignmentSection.phraseSignalLab.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updateExpressiveTrafficLightRow = (
+        rowIndex: number,
+        field: keyof WB6State['coherenceAlignmentSection']['expressiveTrafficLight'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            coherenceAlignmentSection: {
+                ...prev.coherenceAlignmentSection,
+                expressiveTrafficLight: prev.coherenceAlignmentSection.expressiveTrafficLight.map((row, index) =>
+                    index === rowIndex
+                        ? {
+                              ...row,
+                              [field]:
+                                  field === 'level'
+                                      ? value === 'Verde' || value === 'Amarillo' || value === 'Rojo'
+                                          ? value
+                                          : ''
+                                      : value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateIncoherenceRepairProtocol = (
+        field: keyof WB6State['coherenceAlignmentSection']['incoherenceRepairProtocol'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            coherenceAlignmentSection: {
+                ...prev.coherenceAlignmentSection,
+                incoherenceRepairProtocol: {
+                    ...prev.coherenceAlignmentSection.incoherenceRepairProtocol,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateCoherenceTestRow = (
+        rowIndex: number,
+        field: keyof WB6State['coherenceAlignmentSection']['coherenceTest'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            coherenceAlignmentSection: {
+                ...prev.coherenceAlignmentSection,
+                coherenceTest: prev.coherenceAlignmentSection.coherenceTest.map((row, index) =>
+                    index === rowIndex
+                        ? { ...row, [field]: field === 'verdict' ? ((value === 'yes' || value === 'no' ? value : '') as YesNoAnswer) : value }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const saveCoherenceBlock = (blockLabel: string) => {
+        markVisited(8)
+        announceSave(`${blockLabel} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -2387,6 +2800,12 @@ export function WB6Digital() {
     const meetingTimingMap = state.highLevelMeetingsSection.timingMap
     const meetingExecutiveFootprintAudit = state.highLevelMeetingsSection.executiveFootprintAudit
     const meetingHighLevelTest = state.highLevelMeetingsSection.highLevelMeetingTest
+    const congruenceMap = state.coherenceAlignmentSection.congruenceMap
+    const perceptiveContradictions = state.coherenceAlignmentSection.perceptiveContradictions
+    const phraseSignalLab = state.coherenceAlignmentSection.phraseSignalLab
+    const expressiveTrafficLight = state.coherenceAlignmentSection.expressiveTrafficLight
+    const incoherenceRepairProtocol = state.coherenceAlignmentSection.incoherenceRepairProtocol
+    const coherenceSectionTest = state.coherenceAlignmentSection.coherenceTest
 
     const baselineCompleted = baselineScan.every(
         (row) => row.observation.trim().length > 0 && row.effect.trim().length > 0
@@ -2662,6 +3081,79 @@ export function WB6Digital() {
             meetingExecutiveFootprintAudit.realContribution.trim().length > 0) &&
         meetingExecutiveFootprintAudit.likelyPerception.trim().length === 0
 
+    const congruenceMapCompleted = congruenceMap.every(
+        (row) => row.intendedMessage.trim().length > 0 && row.perceivedSignal.trim().length > 0
+    )
+    const perceptiveContradictionsCompleted = perceptiveContradictions.every(
+        (row) =>
+            row.verbalStatement.trim().length > 0 &&
+            row.contradictorySignal.trim().length > 0 &&
+            row.likelyReading.trim().length > 0 &&
+            row.priorityAdjustment.trim().length > 0
+    )
+    const phraseSignalLabCompleted = phraseSignalLab.every(
+        (row) =>
+            row.keyPhrase.trim().length > 0 &&
+            row.installedIdea.trim().length > 0 &&
+            row.neededTone.trim().length > 0 &&
+            row.supportingPostureOrGesture.trim().length > 0 &&
+            row.whatToAvoid.trim().length > 0
+    )
+    const expressiveTrafficCompleted = expressiveTrafficLight.every(
+        (row) =>
+            row.signal.trim().length > 0 &&
+            row.level !== '' &&
+            row.whenAppears.trim().length > 0 &&
+            row.requiredAdjustment.trim().length > 0
+    )
+    const incoherenceRepairCompleted = Object.values(incoherenceRepairProtocol).every((value) => value.trim().length > 0)
+    const coherenceTestCompleted = coherenceSectionTest.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
+
+    const hasAtLeastOneContradictionWithAdjustment = perceptiveContradictions.some(
+        (row) => row.verbalStatement.trim().length > 0 && row.priorityAdjustment.trim().length > 0
+    )
+    const coherenceSectionMinimal =
+        hasAtLeastOneContradictionWithAdjustment &&
+        (incoherenceRepairProtocol.bodyCorrection.trim().length > 0 || incoherenceRepairProtocol.vocalCorrection.trim().length > 0)
+    const coherenceSectionCompleted =
+        congruenceMapCompleted &&
+        perceptiveContradictionsCompleted &&
+        phraseSignalLabCompleted &&
+        expressiveTrafficCompleted &&
+        incoherenceRepairCompleted &&
+        coherenceTestCompleted
+
+    const coherenceObservableKeywords = [
+        'postura',
+        'mirada',
+        'tono',
+        'ritmo',
+        'voz',
+        'gesto',
+        'cuerpo',
+        'rostro',
+        'energía',
+        'mandíbula',
+        'hombros',
+        'volumen'
+    ]
+    const coherenceMapMissingObservables = congruenceMap.some((row) => {
+        const text = row.perceivedSignal.trim().toLowerCase()
+        if (text.length === 0) return false
+        return !coherenceObservableKeywords.some((keyword) => text.includes(keyword))
+    })
+    const abstractContradictions = perceptiveContradictions.some((row) => {
+        const text = row.contradictorySignal.trim().toLowerCase()
+        if (text.length === 0) return false
+        return !coherenceObservableKeywords.some((keyword) => text.includes(keyword))
+    })
+    const repairMissingBodyOrVoice =
+        Object.values(incoherenceRepairProtocol).some((value) => value.trim().length > 0) &&
+        (incoherenceRepairProtocol.bodyCorrection.trim().length === 0 || incoherenceRepairProtocol.vocalCorrection.trim().length === 0)
+    const coherenceLowWithoutPriorityAdjustment =
+        coherenceSectionTest.some((row) => row.verdict === 'no') &&
+        perceptiveContradictions.every((row) => row.priorityAdjustment.trim().length === 0)
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
@@ -2669,7 +3161,8 @@ export function WB6Digital() {
         4: objectionSectionCompleted,
         5: voiceSectionCompleted,
         6: pressureSectionCompleted,
-        7: meetingSectionCompleted
+        7: meetingSectionCompleted,
+        8: coherenceSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -2707,7 +3200,7 @@ export function WB6Digital() {
                         disabled={isLocked || isExporting}
                         className={WORKBOOK_V2_EDITORIAL.classes.saveButton}
                     >
-                        Guardar página {activePage}
+                        Guardar página {currentPageIndex >= 0 ? currentPageIndex + 1 : activePage}
                     </button>
 
                     <button type="button" onClick={exportPdf} disabled={isExporting} className={WORKBOOK_V2_EDITORIAL.classes.pdfButton}>
@@ -2748,7 +3241,7 @@ export function WB6Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb6-print-page wb6-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 7"
+                                data-print-page="Página 1 de 8"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2841,7 +3334,7 @@ export function WB6Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 7"
+                                data-print-page="Página 2 de 8"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2963,7 +3456,7 @@ export function WB6Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 7"
+                                data-print-page="Página 3 de 8"
                                 data-print-title="Lenguaje corporal ejecutivo"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3559,7 +4052,7 @@ export function WB6Digital() {
                                                                 type="radio"
                                                                 name={`wb6-coherence-${rowIndex}`}
                                                                 checked={row.verdict === 'yes'}
-                                                                onChange={() => updateCoherenceTestRow(rowIndex, 'verdict', 'yes')}
+                                                                onChange={() => updateBodyLanguageCoherenceTestRow(rowIndex, 'verdict', 'yes')}
                                                                 disabled={isLocked}
                                                                 className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
                                                             />
@@ -3569,7 +4062,7 @@ export function WB6Digital() {
                                                                 type="radio"
                                                                 name={`wb6-coherence-${rowIndex}`}
                                                                 checked={row.verdict === 'no'}
-                                                                onChange={() => updateCoherenceTestRow(rowIndex, 'verdict', 'no')}
+                                                                onChange={() => updateBodyLanguageCoherenceTestRow(rowIndex, 'verdict', 'no')}
                                                                 disabled={isLocked}
                                                                 className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
                                                             />
@@ -3578,7 +4071,7 @@ export function WB6Digital() {
                                                             <input
                                                                 type="text"
                                                                 value={row.adjustment}
-                                                                onChange={(event) => updateCoherenceTestRow(rowIndex, 'adjustment', event.target.value)}
+                                                                onChange={(event) => updateBodyLanguageCoherenceTestRow(rowIndex, 'adjustment', event.target.value)}
                                                                 disabled={isLocked}
                                                                 placeholder="Ajuste necesario"
                                                                 className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
@@ -3649,12 +4142,12 @@ export function WB6Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 7"
+                                data-print-page="Página 8 de 8"
                                 data-print-title="Manejo de objeciones"
                                 data-print-meta={printMetaLabel}
                             >
                                 <header className="space-y-2">
-                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 4</p>
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 8</p>
                                     <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Manejo de objeciones</h2>
                                     <p className="text-sm md:text-base text-slate-700 max-w-5xl">
                                         Responde objeciones con claridad, estabilidad y criterio para sostener presencia ejecutiva, proteger la confianza
@@ -4256,7 +4749,7 @@ export function WB6Digital() {
                                             disabled={isLocked}
                                             className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Guardar página 4
+                                            Guardar página 8
                                         </button>
                                     </div>
                                 </section>
@@ -4266,12 +4759,12 @@ export function WB6Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 5 de 7"
+                                data-print-page="Página 4 de 8"
                                 data-print-title="Tono y ritmo de voz"
                                 data-print-meta={printMetaLabel}
                             >
                                 <header className="space-y-2">
-                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 5</p>
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 4</p>
                                     <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Tono y ritmo de voz</h2>
                                     <p className="text-sm md:text-base text-slate-700 max-w-5xl">
                                         Fortalece el uso estratégico de la voz para proyectar claridad, calma, autoridad y control conversacional, regulando tono,
@@ -4888,7 +5381,7 @@ export function WB6Digital() {
                                             disabled={isLocked}
                                             className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Guardar página 5
+                                            Guardar página 4
                                         </button>
                                     </div>
                                 </section>
@@ -4898,12 +5391,12 @@ export function WB6Digital() {
                         {isPageVisible(6) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 6 de 7"
+                                data-print-page="Página 5 de 8"
                                 data-print-title="Comunicación bajo presión"
                                 data-print-meta={printMetaLabel}
                             >
                                 <header className="space-y-2">
-                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 6</p>
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 5</p>
                                     <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Comunicación bajo presión</h2>
                                     <p className="text-sm md:text-base text-slate-700 max-w-5xl">
                                         Desarrolla la capacidad de comunicar con claridad, control y criterio en situaciones de alta exigencia, sosteniendo presencia
@@ -5524,7 +6017,7 @@ export function WB6Digital() {
                                             disabled={isLocked}
                                             className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Guardar página 6
+                                            Guardar página 5
                                         </button>
                                     </div>
                                 </section>
@@ -5534,12 +6027,12 @@ export function WB6Digital() {
                         {isPageVisible(7) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 7 de 7"
+                                data-print-page="Página 6 de 8"
                                 data-print-title="Presencia en reuniones de alto nivel"
                                 data-print-meta={printMetaLabel}
                             >
                                 <header className="space-y-2">
-                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 7</p>
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 6</p>
                                     <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
                                         Presencia en reuniones de alto nivel
                                     </h2>
@@ -6156,6 +6649,687 @@ export function WB6Digital() {
                                         <button
                                             type="button"
                                             onClick={() => savePage(7)}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar página 6
+                                        </button>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {isPageVisible(8) && (
+                            <article
+                                className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 7 de 8"
+                                data-print-title="Coherencia verbal y no verbal"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 7</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Coherencia verbal y no verbal</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Alinea contenido, voz y corporalidad para reducir contradicciones perceptibles, aumentar credibilidad y proyectar una presencia
+                                        ejecutiva más congruente.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCoherenceHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Coherencia verbal y no verbal: alineación observable entre lo que dices y lo que proyectan cuerpo, rostro, mirada y voz.',
+                                            'Congruencia ejecutiva: consistencia entre mensaje, postura, tono, ritmo e intención.',
+                                            'Contradicción perceptiva y microincongruencias: cuando la forma debilita lo declarado.',
+                                            'Unidad expresiva: mensaje, respiración, mirada y voz operando en una misma dirección.',
+                                            'Reparación de incoherencia: detectar y corregir la ruptura antes de erosionar credibilidad.',
+                                            'Mensaje encarnado: la idea no solo se dice, también se sostiene físicamente y vocalmente.'
+                                        ].map((item) => (
+                                            <li key={`wb6-coherence-concept-${item}`} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Mapa de congruencia actual</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCoherenceExampleStep1(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    congruenceMapCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {congruenceMapCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Usa una situación real reciente (reunión clave, comité, conversación difícil, presentación o respuesta a objeción).
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Compara intención vs percepción: qué querías transmitir y qué se vio/oyó realmente en postura, tono, mirada y energía.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1040px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Intención / lo que quería transmitir</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Lo que probablemente se vio o se oyó</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {congruenceMap.map((row, rowIndex) => (
+                                                    <tr key={`wb6-coherence-map-${row.dimension}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.dimension}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.intendedMessage}
+                                                                onChange={(event) => updateCongruenceMapRow(rowIndex, 'intendedMessage', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.perceivedSignal}
+                                                                onChange={(event) => updateCongruenceMapRow(rowIndex, 'perceivedSignal', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {coherenceMapMissingObservables && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: describe señales observables (postura, tono, mirada, gesto, ritmo) y no solo lo que sentiste.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCoherenceBlock('Paso 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz de contradicciones perceptivas</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCoherenceExampleStep2(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    perceptiveContradictionsCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {perceptiveContradictionsCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Identifica al menos cuatro contradicciones entre lo que dices y la señal no verbal/vocal que puede estar restando credibilidad.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Define lectura probable en otros y un ajuste prioritario concreto por cada caso.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1120px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Lo que digo</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Señal no verbal o vocal que lo contradice</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Lectura probable en otros</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste prioritario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {perceptiveContradictions.map((row, rowIndex) => (
+                                                    <tr key={`wb6-coherence-contradiction-${rowIndex}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.verbalStatement}
+                                                                onChange={(event) => updatePerceptiveContradictionRow(rowIndex, 'verbalStatement', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.contradictorySignal}
+                                                                onChange={(event) => updatePerceptiveContradictionRow(rowIndex, 'contradictorySignal', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.likelyReading}
+                                                                onChange={(event) => updatePerceptiveContradictionRow(rowIndex, 'likelyReading', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.priorityAdjustment}
+                                                                onChange={(event) => updatePerceptiveContradictionRow(rowIndex, 'priorityAdjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {abstractContradictions && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: vuelve la contradicción visible. ¿Qué vieron o escucharon otros exactamente?
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCoherenceBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Laboratorio frase–señal</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCoherenceExampleStep3(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    phraseSignalLabCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {phraseSignalLabCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Elige tres frases ejecutivas que usas con frecuencia y diseña cómo deben sonar y verse para sostener coherencia.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Define idea que instala, tono requerido, postura/gesto que la respalda y el error de forma a evitar.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1200px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Frase clave</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué idea instala</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué tono necesita</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué postura / gesto la sostiene</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué debo evitar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {phraseSignalLab.map((row, rowIndex) => (
+                                                    <tr key={`wb6-coherence-lab-${rowIndex}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.keyPhrase}
+                                                                onChange={(event) => updatePhraseSignalLabRow(rowIndex, 'keyPhrase', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.installedIdea}
+                                                                onChange={(event) => updatePhraseSignalLabRow(rowIndex, 'installedIdea', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.neededTone}
+                                                                onChange={(event) => updatePhraseSignalLabRow(rowIndex, 'neededTone', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.supportingPostureOrGesture}
+                                                                onChange={(event) => updatePhraseSignalLabRow(rowIndex, 'supportingPostureOrGesture', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.whatToAvoid}
+                                                                onChange={(event) => updatePhraseSignalLabRow(rowIndex, 'whatToAvoid', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCoherenceBlock('Paso 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Semáforo de alineación expresiva</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCoherenceExampleStep4(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    expressiveTrafficCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {expressiveTrafficCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Clasifica señales en Verde, Amarillo o Rojo según cuánto refuerzan o contradicen tu mensaje en momentos exigentes.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Incluye cuándo aparece cada señal y qué ajuste requiere para elevar congruencia ejecutiva.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1040px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Señal</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Nivel</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Cuándo aparece</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué ajuste requiere</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {expressiveTrafficLight.map((row, rowIndex) => (
+                                                    <tr key={`wb6-coherence-traffic-${rowIndex}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.signal}
+                                                                onChange={(event) => updateExpressiveTrafficLightRow(rowIndex, 'signal', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <select
+                                                                value={row.level}
+                                                                onChange={(event) => updateExpressiveTrafficLightRow(rowIndex, 'level', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="Verde">Verde</option>
+                                                                <option value="Amarillo">Amarillo</option>
+                                                                <option value="Rojo">Rojo</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.whenAppears}
+                                                                onChange={(event) => updateExpressiveTrafficLightRow(rowIndex, 'whenAppears', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.requiredAdjustment}
+                                                                onChange={(event) => updateExpressiveTrafficLightRow(rowIndex, 'requiredAdjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCoherenceBlock('Paso 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Protocolo de reparación de incoherencia</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCoherenceExampleStep5(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    incoherenceRepairCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {incoherenceRepairCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Diseña tu secuencia de reparación cuando detectes incoherencia: señal de alerta, corrección corporal, corrección vocal,
+                                            frase de reordenamiento e idea a reinstalar.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            La meta es corregir en tiempo real sin perder presencia ni legitimidad.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi señal de alerta es:</span>
+                                            <textarea
+                                                value={incoherenceRepairProtocol.alertSignal}
+                                                onChange={(event) => updateIncoherenceRepairProtocol('alertSignal', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi corrección corporal inmediata será:</span>
+                                            <textarea
+                                                value={incoherenceRepairProtocol.bodyCorrection}
+                                                onChange={(event) => updateIncoherenceRepairProtocol('bodyCorrection', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi corrección vocal inmediata será:</span>
+                                            <textarea
+                                                value={incoherenceRepairProtocol.vocalCorrection}
+                                                onChange={(event) => updateIncoherenceRepairProtocol('vocalCorrection', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi frase de reordenamiento será:</span>
+                                            <textarea
+                                                value={incoherenceRepairProtocol.reorderingPhrase}
+                                                onChange={(event) => updateIncoherenceRepairProtocol('reorderingPhrase', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2 md:col-span-2">
+                                            <span className="text-sm font-semibold text-slate-700">La idea que necesito reinstalar es:</span>
+                                            <textarea
+                                                value={incoherenceRepairProtocol.ideaToReinstall}
+                                                onChange={(event) => updateIncoherenceRepairProtocol('ideaToReinstall', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {repairMissingBodyOrVoice && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: incluye corrección corporal y vocal explícitas para volver a alinear forma y contenido.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCoherenceBlock('Paso 5')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Test de coherencia verbal y no verbal</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCoherenceExampleStep6(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    coherenceTestCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {coherenceTestCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Evalúa una reunión reciente, una grabación o una simulación para verificar si forma y contenido estuvieron alineados.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Si marcas “No”, registra un ajuste concreto para la siguiente intervención.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {coherenceSectionTest.map((row, rowIndex) => (
+                                                    <tr key={`wb6-coherence-test-${row.question}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`wb6-coherence-test-${rowIndex}`}
+                                                                checked={row.verdict === 'yes'}
+                                                                onChange={() => updateCoherenceTestRow(rowIndex, 'verdict', 'yes')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`wb6-coherence-test-${rowIndex}`}
+                                                                checked={row.verdict === 'no'}
+                                                                onChange={() => updateCoherenceTestRow(rowIndex, 'verdict', 'no')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateCoherenceTestRow(rowIndex, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Ajuste necesario"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {coherenceLowWithoutPriorityAdjustment && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: si el test marcó coherencia baja, define al menos un ajuste prioritario para la próxima situación.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveCoherenceBlock('Paso 6')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
+                                    <ul className="mt-4 space-y-2.5">
+                                        {[
+                                            'Qué contradicciones perceptivas restan credibilidad a tu mensaje.',
+                                            'Qué frases requieren soporte corporal y vocal más preciso.',
+                                            'Qué señales refuerzan o debilitan tu coherencia.',
+                                            'Cómo detectar microincongruencias antes de que escalen.',
+                                            'Cómo reparar rápidamente una ruptura entre forma y contenido.'
+                                        ].map((item) => (
+                                            <li key={`wb6-coherence-close-${item}`} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-5 flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                coherenceSectionCompleted
+                                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                    : coherenceSectionMinimal
+                                                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                                      : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                            }`}
+                                        >
+                                            {coherenceSectionCompleted
+                                                ? 'Sección completada'
+                                                : coherenceSectionMinimal
+                                                  ? 'Pendiente (falta completar bloques)'
+                                                  : 'Sección pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => savePage(8)}
                                             disabled={isLocked}
                                             className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -7192,6 +8366,234 @@ export function WB6Digital() {
                                         </p>
                                         <p>
                                             <span className="font-semibold">Señal mejorada:</span> intervenir en el momento justo, sintetizar con criterio y cerrar con una recomendación breve.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCoherenceHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Coherencia verbal y no verbal</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCoherenceHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>• Cuando hay contradicción, la audiencia suele confiar más en la forma que en la declaración verbal.</p>
+                                        <p>• Coherencia no es rigidez: es alineación entre lo que dices y cómo lo sostienes.</p>
+                                        <p>• Una presencia ejecutiva sólida exige que cuerpo, voz y mensaje vayan en la misma dirección.</p>
+                                        <p>• Detectar y reparar microincongruencias es parte central de la presencia estratégica.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCoherenceExampleStep1 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1 (Mapa de congruencia)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCoherenceExampleStep1(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1000px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Intención</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Lo percibido</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_CONGRUENCE_MAP.map((row) => (
+                                                    <tr key={`wb6-coherence-modal-step1-${row.dimension}`}>
+                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-slate-100">{row.dimension}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.intendedMessage}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.perceivedSignal}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCoherenceExampleStep2 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2 (Contradicciones perceptivas)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCoherenceExampleStep2(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1100px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Lo que digo</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Señal contradictoria</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Lectura probable</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Ajuste</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_PERCEPTIVE_CONTRADICTIONS.map((row, rowIndex) => (
+                                                    <tr key={`wb6-coherence-modal-step2-${rowIndex}`}>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.verbalStatement}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.contradictorySignal}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.likelyReading}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.priorityAdjustment}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCoherenceExampleStep3 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3 (Laboratorio frase–señal)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCoherenceExampleStep3(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1200px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Frase</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Idea</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Tono</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Postura / gesto</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Evitar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_PHRASE_SIGNAL_LAB.map((row, rowIndex) => (
+                                                    <tr key={`wb6-coherence-modal-step3-${rowIndex}`}>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.keyPhrase}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.installedIdea}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.neededTone}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.supportingPostureOrGesture}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.whatToAvoid}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCoherenceExampleStep4 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4 (Semáforo de alineación)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCoherenceExampleStep4(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[940px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Señal</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Nivel</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Cuándo aparece</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Ajuste</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_EXPRESSIVE_TRAFFIC.map((row, rowIndex) => (
+                                                    <tr key={`wb6-coherence-modal-step4-${rowIndex}`}>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.signal}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.level}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.whenAppears}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.requiredAdjustment}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCoherenceExampleStep5 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 5 (Protocolo de reparación)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCoherenceExampleStep5(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Señal de alerta:</span> {EXAMPLE_INCOHERENCE_REPAIR_PROTOCOL.alertSignal}</p>
+                                        <p><span className="font-semibold">Corrección corporal:</span> {EXAMPLE_INCOHERENCE_REPAIR_PROTOCOL.bodyCorrection}</p>
+                                        <p><span className="font-semibold">Corrección vocal:</span> {EXAMPLE_INCOHERENCE_REPAIR_PROTOCOL.vocalCorrection}</p>
+                                        <p><span className="font-semibold">Frase de reordenamiento:</span> {EXAMPLE_INCOHERENCE_REPAIR_PROTOCOL.reorderingPhrase}</p>
+                                        <p><span className="font-semibold">Idea a reinstalar:</span> {EXAMPLE_INCOHERENCE_REPAIR_PROTOCOL.ideaToReinstall}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showCoherenceExampleStep6 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 6 (Test de coherencia)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCoherenceExampleStep6(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>
+                                            <span className="font-semibold">Señal débil:</span> decir “confío en el equipo” mientras el cuerpo se tensa y el tono suena controlador.
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">Señal mejorada:</span> sostener la frase con torso abierto, tono estable y gesto de apertura moderado.
                                         </p>
                                     </div>
                                 </div>
