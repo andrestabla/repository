@@ -2153,14 +2153,19 @@ export function WB8Digital() {
                                     <ul className="space-y-2.5">
                                         {[
                                             'Modelo de negocio personal/profesional: arquitectura que explica cómo tu talento crea, entrega y captura valor de forma sostenible.',
-                                            'Monetización interna: traducir valor en crecimiento, influencia, presupuesto, visibilidad, responsabilidad ampliada o compensación dentro de la organización.',
-                                            'Monetización externa: convertir talento en ingresos, contratos, alianzas, productos o servicios fuera de la estructura organizacional directa.',
+                                            'Monetización interna: capacidad de traducir tu valor en crecimiento, influencia, presupuesto, visibilidad, responsabilidad ampliada, acceso a decisiones o compensación dentro de la organización.',
+                                            'Monetización externa: capacidad de convertir tu talento en ingresos, contratos, alianzas, productos o servicios fuera de la estructura organizacional directa.',
                                             'Unidad de valor: pieza concreta por la que una audiencia estaría dispuesta a pagar, invertir, aprobar o respaldar.',
-                                            'Captura de valor: retorno en dinero, acceso, reputación, visibilidad, aprendizaje o poder de decisión.',
-                                            'Motor de ingresos y motor de influencia interna: mecanismos para producir retorno económico o posicionamiento organizacional.',
-                                            'Escalabilidad razonable y margen estratégico: crecer sin que el costo de entrega aumente en la misma proporción.',
-                                            'Riesgo de dependencia y portafolio de monetización: evitar depender de un solo cliente, jefe, canal o formato.',
-                                            'Hipótesis de negocio: suposición estratégica que debe validarse antes de invertir demasiado tiempo o recursos.'
+                                            'Captura de valor: forma en que el valor generado retorna hacia ti o hacia tu proyecto, ya sea en dinero, acceso, reputación, visibilidad, aprendizaje o poder de decisión.',
+                                            'Motor de ingresos: mecanismo principal mediante el cual una oferta produce flujo económico o retorno tangible.',
+                                            'Motor de influencia interna: mecanismo mediante el cual una oferta o capacidad genera promoción, visibilidad, expansión de rol, presupuesto o poder organizacional.',
+                                            'Oferta monetizable: propuesta que resuelve un problema suficientemente relevante como para justificar inversión.',
+                                            'Costo de entrega: recursos, tiempo, energía, reputación o estructura necesarios para producir y sostener una oferta.',
+                                            'Escalabilidad razonable: capacidad de aumentar alcance o retorno sin que el costo de entrega crezca en la misma proporción.',
+                                            'Margen estratégico: diferencia entre el valor capturado y el esfuerzo o costo requerido para sostener la oferta.',
+                                            'Riesgo de dependencia: situación en la que toda la captura de valor depende de un solo cliente, un solo jefe, un solo canal o un solo formato.',
+                                            'Portafolio de monetización: conjunto equilibrado de rutas, ofertas y fuentes de captura de valor.',
+                                            'Hipótesis de negocio: suposición estratégica que debe ser validada antes de invertir demasiado tiempo o recursos.'
                                         ].map((item) => (
                                             <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
                                                 <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
