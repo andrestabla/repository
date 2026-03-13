@@ -4005,6 +4005,7 @@ export function WB1Step1Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1. Línea de vida (Timeline)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <p className="text-sm text-slate-700">
                                         Define una temporalidad y, en este lapso, identifica:
                                     </p>
@@ -4173,6 +4174,7 @@ export function WB1Step1Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2. Narrativa en 3 actos</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <p className="text-sm text-slate-700">
                                         Convierte tu historia en una narrativa útil para el liderazgo. Descúbrete en 3 actos:
                                     </p>
@@ -4252,6 +4254,7 @@ export function WB1Step1Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 3. Patrones</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <p className="text-sm text-slate-700">
                                         Extrae 3 conclusiones operativas: tu patrón, tu mayor detonante y tu recurso más confiable.
                                     </p>

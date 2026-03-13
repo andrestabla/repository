@@ -2240,6 +2240,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1. Estructura de storytelling ejecutivo en 5 bloques</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2322,6 +2323,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2. Matriz Historia – Valor – Prueba</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2402,6 +2404,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3. Versión breve del storytelling (50–70 palabras)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2526,6 +2529,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1. Exploración del núcleo verbal</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2615,6 +2619,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2. Fórmulas de slogan</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <span
                                             className={`rounded-full px-3 py-1 text-xs font-semibold ${
                                                 sloganVersionsCompleted
@@ -2695,6 +2700,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3. Filtro de calidad del slogan</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <span
                                             className={`rounded-full px-3 py-1 text-xs font-semibold ${
                                                 sloganFilterCompleted && sloganSelectedCompleted
@@ -2851,6 +2857,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1. Matriz Valor – Destinatario – Resultado</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2954,6 +2961,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2. Fórmula de promesa de valor</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3073,6 +3081,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3. Prueba de credibilidad</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3157,6 +3166,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4. Versión breve de promesa de valor</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3283,6 +3293,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1. Mapa inicial de audiencias posibles</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3377,6 +3388,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2. Matriz Audiencia – Necesidad – Lenguaje – Valor</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3485,6 +3497,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3. Selector de audiencia principal</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3575,6 +3588,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4. Prueba de sintonía del mensaje</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3742,6 +3756,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1. Mapa de problemas posibles</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3836,6 +3851,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2. Matriz Problema – Afectado – Costo – Cambio</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3938,6 +3954,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3. Problema principal en una frase</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4002,6 +4019,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4. Prueba de precisión del problema</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4171,6 +4189,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1. Matriz Rasgo – Valor – Relevancia</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4263,6 +4282,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2. Comparador “Común vs Diferencial”</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4341,6 +4361,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3. Diferencial competitivo en una frase</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4448,6 +4469,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4. Prueba de diferenciación estratégica</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4621,6 +4643,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1. Estructura del elevator pitch en 6 bloques</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4719,6 +4742,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2. Matriz Mensaje – Evidencia – Reacción</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4823,6 +4847,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3. Versión corta y versión extendida</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4908,6 +4933,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4. Prueba de impacto y adaptabilidad</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -5080,6 +5106,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1. Mapa de temas actuales</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -5178,6 +5205,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2. Matriz Eje – Audiencia – Objetivo – Formato</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -5274,6 +5302,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3. Definición final de ejes estratégicos</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -5372,6 +5401,7 @@ export function WB4Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4. Prueba de coherencia estratégica</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"

@@ -2472,6 +2472,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 1 — Exploración guiada del propósito</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowExampleStep1((prev) => !prev)}
@@ -2563,6 +2564,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz Propósito–Impacto–Acción</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowExampleStep2((prev) => !prev)}
@@ -2674,6 +2676,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 3 — Fórmula de propósito en una frase</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowExampleStep3((prev) => !prev)}
@@ -2750,6 +2753,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 4 — Chequeo de coherencia</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <p className="text-sm text-slate-700">
                                     Verifica si tu frase de propósito te representa y te sirve para decidir. Marca Sí/No y define ajuste necesario.
                                 </p>
@@ -2872,6 +2876,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 1 — Matriz Vocación–Misión–Pasión</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowVmpExample1((prev) => !prev)}
@@ -2982,6 +2987,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 2 — Zona de convergencia</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowVmpExample2((prev) => !prev)}
@@ -3059,6 +3065,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 3 — Semáforo de coherencia personal</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowVmpExample3((prev) => !prev)}
@@ -3218,6 +3225,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 1 — Rueda de la vida (0–10)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowWheelExample1((prev) => !prev)}
@@ -3301,6 +3309,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 2 — Visualización: Tu rueda actual</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <p className="text-sm text-slate-700">
                                     El gráfico radar se actualiza automáticamente con los 8 puntajes para mostrar la forma general de tu rueda y sus desbalances.
                                 </p>
@@ -3401,6 +3410,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 3 — Lectura de la rueda y priorización de foco</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <p className="text-sm text-slate-700">
                                     Responde con precisión: primero interpreta el patrón de la rueda y luego define una área crítica, una área palanca y un primer ajuste concreto para esta semana.
                                 </p>
@@ -3610,6 +3620,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 1 — Exploración guiada del éxito personal</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <p className="text-sm text-slate-700">
                                     Responde con honestidad y desde tu realidad: no escribas lo que suena elevado, escribe lo que realmente valoras.
                                 </p>
@@ -3673,6 +3684,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz Éxito auténtico vs éxito impuesto</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowSuccessExample2((prev) => !prev)}
@@ -3741,6 +3753,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 3 — Declaración de éxito personal en una frase</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowSuccessExample3((prev) => !prev)}
@@ -3818,6 +3831,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 4 — Chequeo de coherencia con valores</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <p className="text-sm text-slate-700">
                                     Lee tu declaración y valida si te representa, si puedes sostenerla bajo presión y si te ayuda a decidir.
                                 </p>
@@ -3932,6 +3946,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 1 — Matriz Propósito–Visión–Decisión</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowAlignmentExample1((prev) => !prev)}
@@ -4018,6 +4033,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 2 — Chequeo de coherencia estratégica</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <div className="overflow-x-auto">
                                     <table className="min-w-[980px] w-full border border-slate-300 rounded-lg overflow-hidden bg-white">
                                         <thead className="bg-slate-100">
@@ -4075,6 +4091,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 3 — Mapa de tensiones y renuncias</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <p className="text-sm text-slate-700">
                                     Haz visibles las tensiones entre lo que quieres construir y lo que sigues sosteniendo aunque ya no alinee.
                                 </p>
@@ -4137,6 +4154,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 4 — Declaración de alineación</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <p className="text-sm text-slate-700">
                                     Redacta una frase breve que conecte explícitamente tu propósito con tu visión.
                                 </p>
@@ -4228,6 +4246,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 1 — Escenario futuro aspiracional</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowVisionExample1((prev) => !prev)}
@@ -4305,6 +4324,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz visión–metas–acciones</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowVisionExample2((prev) => !prev)}
@@ -4367,6 +4387,7 @@ export function WB3Digital() {
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h3 className="text-lg font-bold text-slate-900">Paso 3 — Hitos de largo plazo</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowVisionExample3((prev) => !prev)}
@@ -4481,6 +4502,7 @@ export function WB3Digital() {
 
                             <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Paso 4 — Chequeo de viabilidad y coherencia</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                 <div className="overflow-x-auto">
                                     <table className="min-w-[980px] w-full border border-slate-300 rounded-lg overflow-hidden bg-white">
                                         <thead className="bg-slate-100">

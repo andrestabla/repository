@@ -3682,6 +3682,7 @@ export function WB2Digital() {
 
                                 <section className="rounded-2xl border border-slate-200/90 bg-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1. Bitácora (mínimo 7 eventos)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <div className="space-y-3">
                                         <p className="text-sm text-slate-700">Registra eventos reales de los últimos 30 días con hechos observables:</p>
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -3906,6 +3907,7 @@ export function WB2Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2. Matriz Frecuencia × Intensidad</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <div className="space-y-2 text-sm text-slate-700">
                                         <p><span className="font-semibold text-slate-900">Cuenta:</span></p>
                                         <p>• Frecuencia: cuántas veces aparece cada detonante.</p>
@@ -3983,6 +3985,7 @@ export function WB2Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 3. Heatmap 2×2 + detonante prioritario</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <div className="space-y-1.5 text-sm text-slate-700">
                                         <p className="font-semibold text-slate-900">Ubica tus detonantes en el mapa:</p>
                                         <p>• Eje X: Frecuencia (baja → alta).</p>
@@ -5012,6 +5015,7 @@ export function WB2Digital() {
                                 <section className="rounded-2xl border border-slate-200/90 bg-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] p-5 md:p-7 space-y-4">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1 — Define tu rol ideal</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <span
                                             className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
                                                 state.skillsGap.roleIdeal.trim().length > 0
@@ -5057,6 +5061,7 @@ export function WB2Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2 — Completa la matriz (Actual vs Ideal + evidencia)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <p className="text-sm text-slate-700">
                                         Para cada habilidad marca tu nivel Actual (1–5), tu nivel Ideal (1–5) y escribe 1 evidencia reciente.
                                         Si no tienes evidencia, escribe <span className="font-semibold text-slate-900">“Completar”</span>.
@@ -5552,6 +5557,7 @@ export function WB2Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1 — Elige tus 3 micro-hábitos</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
                                             state.microHabits.selectedHabitIds.length === 3
                                                 ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
@@ -5626,6 +5632,7 @@ export function WB2Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2 — Define cómo se ve cada micro-hábito</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <button
                                             type="button"
                                             onClick={() => setShowMicroHabitsStep2Help((current) => !current)}
@@ -5720,6 +5727,7 @@ export function WB2Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 3 — Tracker 30 días (checks + evidencia)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <button
                                             type="button"
                                             onClick={() => setShowMicroHabitsStep3Help((current) => !current)}
@@ -5858,6 +5866,7 @@ export function WB2Digital() {
                                 <section className="rounded-2xl border border-slate-200/90 bg-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] p-5 md:p-7 space-y-4">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 4 — Cierre semanal (rápido, 5 minutos)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <button
                                             type="button"
                                             onClick={() => setShowMicroHabitsStep4Help((current) => !current)}
@@ -6078,6 +6087,7 @@ export function WB2Digital() {
                                         <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1 — Objetivo de desarrollo (1 frase)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPdiObjectiveHelp((current) => !current)}
@@ -6128,6 +6138,7 @@ export function WB2Digital() {
                                     {(isExportingAll || pdiStep === 2) && (
                                         <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                                             <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2 — Competencia foco (1 principal + 1 secundaria)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                             <p className="text-sm text-slate-700">
                                                 Si el detonante prioritario es crítica pública y el patrón es subir tono, suele ser Regulación + Somática.
                                             </p>
@@ -6168,6 +6179,7 @@ export function WB2Digital() {
                                         <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 3 — Evidencia de éxito (3 indicadores medibles)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPdiIndicatorsHelp((current) => !current)}
@@ -6212,6 +6224,7 @@ export function WB2Digital() {
                                         <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 4 — Acciones (3–5) con frecuencia, duración y evidencia</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPdiActionsHelp((current) => !current)}
@@ -6337,6 +6350,7 @@ export function WB2Digital() {
                                         <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 5 — Soportes para sostener el plan</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPdiSupportsHelp((current) => !current)}
@@ -6401,6 +6415,7 @@ export function WB2Digital() {
                                         <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 6 — Revisión semanal (15 min)</h3>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPdiWeeklyHelp((current) => !current)}
