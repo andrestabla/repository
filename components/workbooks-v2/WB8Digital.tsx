@@ -5,10 +5,27 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7
 type YesNoAnswer = '' | 'yes' | 'no'
 type Score15 = '' | '1' | '2' | '3' | '4' | '5'
 type LadderLevel = 'Entrada' | 'Núcleo' | 'Escalamiento'
+type MentorLevel = '' | 'N1' | 'N2' | 'N3' | 'N4'
+type MentorDecision = '' | 'Consolidado' | 'En desarrollo' | 'Prioritario'
+type EvaluationStageKey = 'mentor' | 'leader' | 'synthesis' | 'final'
+
+type MentorEvaluationRow = {
+    criterion: string
+    level: MentorLevel
+    evidence: string
+    decision: MentorDecision
+}
+
+type LeaderEvaluationRow = {
+    question: string
+    response: string
+    evidence: string
+    action: string
+}
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -149,6 +166,72 @@ type WB8State = {
             adjustment: string
         }>
     }
+    controlBoardSection: {
+        dashboardGoal: {
+            mainQuestion: string
+            strategicResult: string
+            primaryDimension: string
+            priorityReturnType: string
+        }
+        funnelRows: Array<{
+            stage: string
+            meaningInContext: string
+            possibleIndicator: string
+        }>
+        criticalKpiRows: Array<{
+            category: string
+            selectedKpi: string
+            whyItMatters: string
+            indicatorType: string
+        }>
+        kpiSheets: Array<{
+            kpiName: string
+            measuredVariable: string
+            formula: string
+            dataSource: string
+            frequency: string
+            owner: string
+            greenThreshold: string
+            yellowThreshold: string
+            redThreshold: string
+            associatedDecision: string
+        }>
+        baselineRows: Array<{
+            kpi: string
+            baselineCurrent: string
+            goal30: string
+            goal90: string
+            alertThreshold: string
+            correctiveAction: string
+        }>
+        executiveRows: Array<{
+            kpi: string
+            currentValue: string
+            trend: string
+            goal: string
+            status: string
+            quickRead: string
+            decision: string
+        }>
+        reviewCadence: {
+            weeklyReview: string
+            monthlyReview: string
+            decisionSignals: string
+            associatedDecisions: string
+        }
+        dashboardIntelligenceTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
+    evaluation: {
+        mentorRows: MentorEvaluationRow[]
+        mentorGeneralNotes: string
+        mentorGlobalDecision: MentorDecision
+        leaderRows: LeaderEvaluationRow[]
+        agreementsSynthesis: string
+    }
 }
 
 const PAGES: WorkbookPage[] = [
@@ -156,7 +239,9 @@ const PAGES: WorkbookPage[] = [
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Escalera de valor', shortLabel: 'Escalera de valor' },
     { id: 4, label: '4. Modelo de negocio', shortLabel: 'Modelo de negocio' },
-    { id: 5, label: '5. Estrategia de visibilidad', shortLabel: 'Visibilidad' }
+    { id: 5, label: '5. Estrategia de visibilidad', shortLabel: 'Visibilidad' },
+    { id: 6, label: '6. Tablero de control', shortLabel: 'KPIs y ROI' },
+    { id: 7, label: '7. Evaluación', shortLabel: 'Evaluación' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb8-state'
@@ -175,6 +260,10 @@ const THEMATIC_ROWS = 5
 const AUDIENCE_MAP_ROWS = 3
 const VISIBILITY_MATRIX_ROWS = 4
 const BACKLOG_ROWS = 8
+const FUNNEL_ROWS = 6
+const KPI_SHEET_ROWS = 4
+const BASELINE_ROWS = 4
+const EXECUTIVE_ROWS = 4
 
 const LADDER_LEVELS: LadderLevel[] = ['Entrada', 'Núcleo', 'Escalamiento']
 
@@ -328,6 +417,129 @@ const VISIBILITY_METRIC_OPTIONS = [
 const VISIBILITY_OBJECTIVE_OPTIONS = ['Atracción', 'Profundidad', 'Conversión'] as const
 const VISIBILITY_PRIORITY_OPTIONS = ['Alta', 'Media-alta', 'Media', 'Baja'] as const
 const GENERIC_TOPIC_TERMS = ['liderazgo', 'productividad', 'estrategia', 'marca', 'comunicación', 'negocio'] as const
+const CONTROL_BOARD_QUESTIONS = [
+    '¿El tablero responde una pregunta estratégica real?',
+    '¿Distingue actividad, conversión y retorno?',
+    '¿Evita métricas vanity como eje principal?',
+    '¿Cada KPI tiene definición operativa?',
+    '¿Sirve para tomar decisiones?',
+    '¿Permite leer ROI interno y/o externo?'
+] as const
+const CONTROL_FOCUS_DIMENSIONS = [
+    'Visibilidad',
+    'Autoridad',
+    'Conversaciones',
+    'Monetización',
+    'Posicionamiento interno',
+    'Acceso / patrocinio'
+] as const
+const CONTROL_RETURN_TYPES = ['Interno', 'Externo', 'Mixto'] as const
+const FUNNEL_STAGES = ['Alcance', 'Atención / interacción', 'Conversación', 'Oportunidad', 'Conversión', 'Retorno'] as const
+const KPI_CATEGORIES = ['Alcance', 'Interacción', 'Conversación', 'Oportunidad', 'Conversión', 'Retorno'] as const
+const KPI_TYPE_OPTIONS = ['Leading', 'Lagging'] as const
+const TREND_OPTIONS = ['↑', '→', '↓'] as const
+const KPI_STATUS_OPTIONS = ['Verde', 'Amarillo', 'Rojo'] as const
+const KPI_DECISION_OPTIONS = ['Mantener', 'Ajustar', 'Escalar', 'Pausar', 'Rediseñar'] as const
+const KPI_FREQUENCY_OPTIONS = ['Diaria', 'Semanal', 'Quincenal', 'Mensual'] as const
+const KPI_OWNER_OPTIONS = ['Yo', 'Equipo', 'Mentor', 'Marketing', 'Comercial', 'Operaciones'] as const
+const CONTROL_MAIN_QUESTION_OPTIONS = [
+    '¿Mi visibilidad está generando conversaciones y oportunidades reales?',
+    '¿Mis contenidos y canales están convirtiendo en oportunidades concretas?',
+    '¿Qué tácticas están generando retorno y cuáles debo pausar?',
+    '¿Estoy capturando ROI interno y externo con suficiente consistencia?'
+] as const
+const CONTROL_STRATEGIC_RESULT_OPTIONS = [
+    'Aumento de autoridad y conversión a sesiones/proyectos',
+    'Más oportunidades calificadas y mayor tasa de conversión',
+    'Mayor acceso a espacios de decisión y patrocinio',
+    'Incremento de retorno interno y externo medible'
+] as const
+const CONTROL_REVIEW_WEEKLY_OPTIONS = [
+    'Revisar alcance, interacción y conversaciones abiertas',
+    'Revisar desempeño por canal y CTA',
+    'Revisar embudo de visibilidad y alertas tempranas'
+] as const
+const CONTROL_REVIEW_MONTHLY_OPTIONS = [
+    'Revisar oportunidades, conversiones y retorno capturado',
+    'Comparar resultados vs metas 30/90 días',
+    'Decidir mantener, ajustar, escalar o pausar tácticas'
+] as const
+const CONTROL_DECISION_SIGNAL_OPTIONS = [
+    'KPI en rojo dos semanas seguidas',
+    'Alto alcance sin conversaciones cualificadas',
+    'Caída sostenida de conversiones',
+    'Sin retorno validado en 60 días'
+] as const
+const CONTROL_ASSOCIATED_DECISIONS_OPTIONS = [
+    'Ajustar canal y mensaje',
+    'Rediseñar CTA y secuencia de seguimiento',
+    'Escalar táctica con mejor desempeño',
+    'Pausar o reemplazar táctica improductiva'
+] as const
+const MENTOR_EVALUATION_CRITERIA = [
+    'Análisis sistémico',
+    'Decisión bajo incertidumbre',
+    'Priorización de largo plazo',
+    'Resolución de causa raíz',
+    'Agilidad estratégica ante cambios'
+] as const
+const LEADER_EVALUATION_QUESTIONS = [
+    '¿Estoy operando o pensando estratégicamente en mi rol actual?',
+    '¿Qué decisión importante estoy postergando por miedo o incertidumbre?',
+    '¿Qué patrón sistémico no estoy viendo claramente?',
+    '¿Qué problema estoy tratando como síntoma en lugar de causa raíz?',
+    '¿Qué riesgo estratégico debo asumir este trimestre?'
+] as const
+const MENTOR_LEVEL_OPTIONS: MentorLevel[] = ['N1', 'N2', 'N3', 'N4']
+const MENTOR_DECISION_OPTIONS: MentorDecision[] = ['Consolidado', 'En desarrollo', 'Prioritario']
+const MENTOR_LEVEL_REFERENCE = [
+    {
+        level: 'Nivel 1 – Declarativo',
+        descriptor: 'Análisis superficial; decisiones reactivas.'
+    },
+    {
+        level: 'Nivel 2 – Consciente',
+        descriptor: 'Identifica patrones pero duda en decisiones críticas.'
+    },
+    {
+        level: 'Nivel 3 – Integrado',
+        descriptor: 'Evalúa escenarios y decide con criterio consistente.'
+    },
+    {
+        level: 'Nivel 4 – Alineación Estratégica',
+        descriptor: 'Anticipa riesgos y oportunidades; impacta estrategia organizacional.'
+    }
+] as const
+const EVALUATION_STAGES: Array<{ key: EvaluationStageKey; label: string }> = [
+    { key: 'mentor', label: 'Mentor' },
+    { key: 'leader', label: 'Líder' },
+    { key: 'synthesis', label: 'Síntesis' },
+    { key: 'final', label: 'Cierre' }
+]
+
+const createDefaultEvaluationData = (): WB8State['evaluation'] => ({
+    mentorRows: MENTOR_EVALUATION_CRITERIA.map((criterion) => ({
+        criterion,
+        level: '' as MentorLevel,
+        evidence: '',
+        decision: '' as MentorDecision
+    })),
+    mentorGeneralNotes: '',
+    mentorGlobalDecision: '' as MentorDecision,
+    leaderRows: LEADER_EVALUATION_QUESTIONS.map((question) => ({
+        question,
+        response: '',
+        evidence: '',
+        action: ''
+    })),
+    agreementsSynthesis: ''
+})
+
+const isMentorEvaluationRowComplete = (row: MentorEvaluationRow): boolean =>
+    row.level !== '' && row.evidence.trim().length > 0 && row.decision !== ''
+
+const isLeaderEvaluationRowComplete = (row: LeaderEvaluationRow): boolean =>
+    row.response.trim().length > 0 && row.evidence.trim().length > 0 && row.action.trim().length > 0
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '')
 const readYesNo = (value: unknown): YesNoAnswer => (value === 'yes' || value === 'no' ? value : '')
@@ -376,6 +588,44 @@ const buildChannelPrimaryRole = (channel: string): string => {
         return 'Relacionamiento y posicionamiento'
     }
     return 'Visibilidad estratégica'
+}
+
+const parseNumberOrNull = (value: string): number | null => {
+    const normalized = value.replace(',', '.').trim()
+    if (!normalized) return null
+    const parsed = Number(normalized)
+    return Number.isFinite(parsed) ? parsed : null
+}
+
+const suggestGoal30 = (baseline: string): string => {
+    const numeric = parseNumberOrNull(baseline)
+    if (numeric === null) return ''
+    if (numeric === 0) return '1'
+    return String(Math.max(1, Math.round(numeric * 1.5)))
+}
+
+const suggestGoal90 = (baseline: string): string => {
+    const numeric = parseNumberOrNull(baseline)
+    if (numeric === null) return ''
+    if (numeric === 0) return '3'
+    return String(Math.max(1, Math.round(numeric * 3)))
+}
+
+const suggestAlertThreshold = (baseline: string): string => {
+    const numeric = parseNumberOrNull(baseline)
+    if (numeric === null) return ''
+    return `Menos de ${Math.max(1, Math.floor(numeric * 0.8))}`
+}
+
+const suggestCorrectiveAction = (kpi: string): string => {
+    const normalized = kpi.toLowerCase()
+    if (normalized.includes('alcance')) return 'Revisar audiencia objetivo y formato del contenido'
+    if (normalized.includes('interacci')) return 'Ajustar mensaje y llamado a la acción'
+    if (normalized.includes('conversa')) return 'Reforzar CTA y seguimiento uno a uno'
+    if (normalized.includes('oportun')) return 'Aumentar frecuencia de contacto estratégico'
+    if (normalized.includes('conversi')) return 'Optimizar propuesta y proceso de cierre'
+    if (normalized.includes('retorno') || normalized.includes('ingreso')) return 'Replantear oferta y canal de conversión'
+    return 'Revisar canal, mensaje y secuencia de conversión'
 }
 
 const computeTokenSimilarity = (left: string, right: string): number => {
@@ -532,7 +782,67 @@ const DEFAULT_STATE: WB8State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
-    }
+    },
+    controlBoardSection: {
+        dashboardGoal: {
+            mainQuestion: '',
+            strategicResult: '',
+            primaryDimension: '',
+            priorityReturnType: ''
+        },
+        funnelRows: FUNNEL_STAGES.map((stage) => ({
+            stage,
+            meaningInContext: '',
+            possibleIndicator: ''
+        })),
+        criticalKpiRows: KPI_CATEGORIES.map((category) => ({
+            category,
+            selectedKpi: '',
+            whyItMatters: '',
+            indicatorType: ''
+        })),
+        kpiSheets: Array.from({ length: KPI_SHEET_ROWS }, () => ({
+            kpiName: '',
+            measuredVariable: '',
+            formula: '',
+            dataSource: '',
+            frequency: '',
+            owner: '',
+            greenThreshold: '',
+            yellowThreshold: '',
+            redThreshold: '',
+            associatedDecision: ''
+        })),
+        baselineRows: Array.from({ length: BASELINE_ROWS }, () => ({
+            kpi: '',
+            baselineCurrent: '',
+            goal30: '',
+            goal90: '',
+            alertThreshold: '',
+            correctiveAction: ''
+        })),
+        executiveRows: Array.from({ length: EXECUTIVE_ROWS }, () => ({
+            kpi: '',
+            currentValue: '',
+            trend: '',
+            goal: '',
+            status: '',
+            quickRead: '',
+            decision: ''
+        })),
+        reviewCadence: {
+            weeklyReview: '',
+            monthlyReview: '',
+            decisionSignals: '',
+            associatedDecisions: ''
+        },
+        dashboardIntelligenceTest: CONTROL_BOARD_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
+    },
+    evaluation: createDefaultEvaluationData()
 }
 
 const normalizeState = (raw: unknown): WB8State => {
@@ -542,6 +852,8 @@ const normalizeState = (raw: unknown): WB8State => {
     const valueLadderSection = (parsed.valueLadderSection ?? {}) as Record<string, unknown>
     const businessModelSection = (parsed.businessModelSection ?? {}) as Record<string, unknown>
     const visibilityStrategySection = (parsed.visibilityStrategySection ?? {}) as Record<string, unknown>
+    const controlBoardSection = (parsed.controlBoardSection ?? {}) as Record<string, unknown>
+    const rawEvaluation = (parsed.evaluation ?? {}) as Record<string, unknown>
 
     const rawAssetsInventory = Array.isArray(valueLadderSection.assetsInventory) ? valueLadderSection.assetsInventory : []
     const rawMatrixRows = Array.isArray(valueLadderSection.problemTransformationRows) ? valueLadderSection.problemTransformationRows : []
@@ -574,6 +886,18 @@ const normalizeState = (raw: unknown): WB8State => {
     const rawVisibilityCoherenceTest = Array.isArray(visibilityStrategySection.visibilityCoherenceTest)
         ? visibilityStrategySection.visibilityCoherenceTest
         : []
+    const rawDashboardGoal = (controlBoardSection.dashboardGoal ?? {}) as Record<string, unknown>
+    const rawFunnelRows = Array.isArray(controlBoardSection.funnelRows) ? controlBoardSection.funnelRows : []
+    const rawCriticalKpiRows = Array.isArray(controlBoardSection.criticalKpiRows) ? controlBoardSection.criticalKpiRows : []
+    const rawKpiSheets = Array.isArray(controlBoardSection.kpiSheets) ? controlBoardSection.kpiSheets : []
+    const rawBaselineRows = Array.isArray(controlBoardSection.baselineRows) ? controlBoardSection.baselineRows : []
+    const rawExecutiveRows = Array.isArray(controlBoardSection.executiveRows) ? controlBoardSection.executiveRows : []
+    const rawReviewCadence = (controlBoardSection.reviewCadence ?? {}) as Record<string, unknown>
+    const rawDashboardIntelligenceTest = Array.isArray(controlBoardSection.dashboardIntelligenceTest)
+        ? controlBoardSection.dashboardIntelligenceTest
+        : []
+    const rawMentorRows = Array.isArray(rawEvaluation.mentorRows) ? rawEvaluation.mentorRows : []
+    const rawLeaderRows = Array.isArray(rawEvaluation.leaderRows) ? rawEvaluation.leaderRows : []
 
     return {
         identification: {
@@ -749,6 +1073,112 @@ const normalizeState = (raw: unknown): WB8State => {
                     adjustment: readString(row.adjustment)
                 }
             })
+        },
+        controlBoardSection: {
+            dashboardGoal: {
+                mainQuestion: readString(rawDashboardGoal.mainQuestion),
+                strategicResult: readString(rawDashboardGoal.strategicResult),
+                primaryDimension: readString(rawDashboardGoal.primaryDimension),
+                priorityReturnType: readString(rawDashboardGoal.priorityReturnType)
+            },
+            funnelRows: FUNNEL_STAGES.map((stage, index) => {
+                const row = (rawFunnelRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    stage,
+                    meaningInContext: readString(row.meaningInContext),
+                    possibleIndicator: readString(row.possibleIndicator)
+                }
+            }),
+            criticalKpiRows: KPI_CATEGORIES.map((category, index) => {
+                const row = (rawCriticalKpiRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    category,
+                    selectedKpi: readString(row.selectedKpi),
+                    whyItMatters: readString(row.whyItMatters),
+                    indicatorType: readString(row.indicatorType)
+                }
+            }),
+            kpiSheets: Array.from({ length: KPI_SHEET_ROWS }, (_, index) => {
+                const row = (rawKpiSheets[index] ?? {}) as Record<string, unknown>
+                return {
+                    kpiName: readString(row.kpiName),
+                    measuredVariable: readString(row.measuredVariable),
+                    formula: readString(row.formula),
+                    dataSource: readString(row.dataSource),
+                    frequency: readString(row.frequency),
+                    owner: readString(row.owner),
+                    greenThreshold: readString(row.greenThreshold),
+                    yellowThreshold: readString(row.yellowThreshold),
+                    redThreshold: readString(row.redThreshold),
+                    associatedDecision: readString(row.associatedDecision)
+                }
+            }),
+            baselineRows: Array.from({ length: BASELINE_ROWS }, (_, index) => {
+                const row = (rawBaselineRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    kpi: readString(row.kpi),
+                    baselineCurrent: readString(row.baselineCurrent),
+                    goal30: readString(row.goal30),
+                    goal90: readString(row.goal90),
+                    alertThreshold: readString(row.alertThreshold),
+                    correctiveAction: readString(row.correctiveAction)
+                }
+            }),
+            executiveRows: Array.from({ length: EXECUTIVE_ROWS }, (_, index) => {
+                const row = (rawExecutiveRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    kpi: readString(row.kpi),
+                    currentValue: readString(row.currentValue),
+                    trend: readString(row.trend),
+                    goal: readString(row.goal),
+                    status: readString(row.status),
+                    quickRead: readString(row.quickRead),
+                    decision: readString(row.decision)
+                }
+            }),
+            reviewCadence: {
+                weeklyReview: readString(rawReviewCadence.weeklyReview),
+                monthlyReview: readString(rawReviewCadence.monthlyReview),
+                decisionSignals: readString(rawReviewCadence.decisionSignals),
+                associatedDecisions: readString(rawReviewCadence.associatedDecisions)
+            },
+            dashboardIntelligenceTest: CONTROL_BOARD_QUESTIONS.map((question, index) => {
+                const row = (rawDashboardIntelligenceTest[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: readYesNo(row.verdict),
+                    adjustment: readString(row.adjustment)
+                }
+            })
+        },
+        evaluation: {
+            mentorRows: MENTOR_EVALUATION_CRITERIA.map((criterion, index) => {
+                const row = (rawMentorRows[index] ?? {}) as Record<string, unknown>
+                const level = readString(row.level)
+                const decision = readString(row.decision)
+                return {
+                    criterion,
+                    level: MENTOR_LEVEL_OPTIONS.includes(level as MentorLevel) ? (level as MentorLevel) : ('' as MentorLevel),
+                    evidence: readString(row.evidence),
+                    decision: MENTOR_DECISION_OPTIONS.includes(decision as MentorDecision)
+                        ? (decision as MentorDecision)
+                        : ('' as MentorDecision)
+                }
+            }),
+            mentorGeneralNotes: readString(rawEvaluation.mentorGeneralNotes),
+            mentorGlobalDecision: MENTOR_DECISION_OPTIONS.includes(readString(rawEvaluation.mentorGlobalDecision) as MentorDecision)
+                ? (readString(rawEvaluation.mentorGlobalDecision) as MentorDecision)
+                : ('' as MentorDecision),
+            leaderRows: LEADER_EVALUATION_QUESTIONS.map((question, index) => {
+                const row = (rawLeaderRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    response: readString(row.response),
+                    evidence: readString(row.evidence),
+                    action: readString(row.action)
+                }
+            }),
+            agreementsSynthesis: readString(rawEvaluation.agreementsSynthesis)
         }
     }
 }
@@ -766,6 +1196,15 @@ export function WB8Digital() {
     const [showValueLadderHelp, setShowValueLadderHelp] = useState(false)
     const [showBusinessModelHelp, setShowBusinessModelHelp] = useState(false)
     const [showVisibilityStrategyHelp, setShowVisibilityStrategyHelp] = useState(false)
+    const [showControlBoardHelp, setShowControlBoardHelp] = useState(false)
+    const [mentorEvaluationEditModes, setMentorEvaluationEditModes] = useState<boolean[]>(
+        () => state.evaluation.mentorRows.map(() => false)
+    )
+    const [leaderEvaluationEditModes, setLeaderEvaluationEditModes] = useState<boolean[]>(
+        () => state.evaluation.leaderRows.map(() => false)
+    )
+    const [evaluationStage, setEvaluationStage] = useState<EvaluationStageKey>('mentor')
+    const [showEvaluationLevelReference, setShowEvaluationLevelReference] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1360,6 +1799,376 @@ export function WB8Digital() {
         announceSave(`${label} guardado.`)
     }
 
+    const updateDashboardGoal = (field: keyof WB8State['controlBoardSection']['dashboardGoal'], value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            controlBoardSection: {
+                ...prev.controlBoardSection,
+                dashboardGoal: {
+                    ...prev.controlBoardSection.dashboardGoal,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateFunnelRow = (
+        index: number,
+        field: keyof Omit<WB8State['controlBoardSection']['funnelRows'][number], 'stage'>,
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const funnelRows = [...prev.controlBoardSection.funnelRows]
+            funnelRows[index] = {
+                ...funnelRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                controlBoardSection: {
+                    ...prev.controlBoardSection,
+                    funnelRows
+                }
+            }
+        })
+    }
+
+    const updateCriticalKpiRow = (
+        index: number,
+        field: keyof Omit<WB8State['controlBoardSection']['criticalKpiRows'][number], 'category'>,
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const criticalKpiRows = [...prev.controlBoardSection.criticalKpiRows]
+            criticalKpiRows[index] = {
+                ...criticalKpiRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                controlBoardSection: {
+                    ...prev.controlBoardSection,
+                    criticalKpiRows
+                }
+            }
+        })
+    }
+
+    const updateKpiSheetRow = (
+        index: number,
+        field: keyof WB8State['controlBoardSection']['kpiSheets'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const kpiSheets = [...prev.controlBoardSection.kpiSheets]
+            kpiSheets[index] = {
+                ...kpiSheets[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                controlBoardSection: {
+                    ...prev.controlBoardSection,
+                    kpiSheets
+                }
+            }
+        })
+    }
+
+    const updateBaselineRow = (
+        index: number,
+        field: keyof WB8State['controlBoardSection']['baselineRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const baselineRows = [...prev.controlBoardSection.baselineRows]
+            const current = baselineRows[index]
+            const nextRow = { ...current, [field]: value }
+
+            if (field === 'baselineCurrent') {
+                if (!nextRow.goal30.trim()) nextRow.goal30 = suggestGoal30(value)
+                if (!nextRow.goal90.trim()) nextRow.goal90 = suggestGoal90(value)
+                if (!nextRow.alertThreshold.trim()) nextRow.alertThreshold = suggestAlertThreshold(value)
+            }
+            if (field === 'kpi') {
+                if (!nextRow.correctiveAction.trim()) nextRow.correctiveAction = suggestCorrectiveAction(value)
+            }
+
+            baselineRows[index] = nextRow
+            return {
+                ...prev,
+                controlBoardSection: {
+                    ...prev.controlBoardSection,
+                    baselineRows
+                }
+            }
+        })
+    }
+
+    const updateExecutiveRow = (
+        index: number,
+        field: keyof WB8State['controlBoardSection']['executiveRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const executiveRows = [...prev.controlBoardSection.executiveRows]
+            executiveRows[index] = {
+                ...executiveRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                controlBoardSection: {
+                    ...prev.controlBoardSection,
+                    executiveRows
+                }
+            }
+        })
+    }
+
+    const updateReviewCadence = (field: keyof WB8State['controlBoardSection']['reviewCadence'], value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            controlBoardSection: {
+                ...prev.controlBoardSection,
+                reviewCadence: {
+                    ...prev.controlBoardSection.reviewCadence,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateDashboardIntelligenceTestRow = (index: number, field: 'verdict' | 'adjustment', value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const dashboardIntelligenceTest = [...prev.controlBoardSection.dashboardIntelligenceTest]
+            dashboardIntelligenceTest[index] =
+                field === 'verdict'
+                    ? { ...dashboardIntelligenceTest[index], verdict: readYesNo(value) }
+                    : { ...dashboardIntelligenceTest[index], adjustment: value }
+            return {
+                ...prev,
+                controlBoardSection: {
+                    ...prev.controlBoardSection,
+                    dashboardIntelligenceTest
+                }
+            }
+        })
+    }
+
+    const saveControlBoardBlock = (label: string) => {
+        savePage(6)
+        announceSave(`${label} guardado.`)
+    }
+
+    const editMentorEvaluationRow = (index: number) => {
+        if (isLocked) return
+        setMentorEvaluationEditModes((prev) => prev.map((item, rowIndex) => (rowIndex === index ? true : item)))
+    }
+
+    const saveMentorEvaluationRow = (index: number) => {
+        if (isLocked) return
+        setState((prev) => {
+            const nextRows = [...prev.evaluation.mentorRows]
+            const row = nextRows[index]
+            if (!row) return prev
+            nextRows[index] = {
+                ...row,
+                evidence: row.evidence.trim()
+            }
+            return {
+                ...prev,
+                evaluation: {
+                    ...prev.evaluation,
+                    mentorRows: nextRows
+                }
+            }
+        })
+        setMentorEvaluationEditModes((prev) => prev.map((item, rowIndex) => (rowIndex === index ? false : item)))
+        announceSave(`Fila mentor ${index + 1} guardada.`)
+    }
+
+    const setMentorEvaluationField = (index: number, field: 'level' | 'evidence' | 'decision', value: string) => {
+        if (isLocked || !mentorEvaluationEditModes[index]) return
+        setState((prev) => {
+            const nextRows = [...prev.evaluation.mentorRows]
+            const row = nextRows[index]
+            if (!row) return prev
+            if (field === 'level') {
+                const safeLevel = MENTOR_LEVEL_OPTIONS.includes(value as MentorLevel) ? (value as MentorLevel) : ''
+                nextRows[index] = { ...row, level: safeLevel }
+            } else if (field === 'decision') {
+                const safeDecision = MENTOR_DECISION_OPTIONS.includes(value as MentorDecision)
+                    ? (value as MentorDecision)
+                    : ''
+                nextRows[index] = { ...row, decision: safeDecision }
+            } else {
+                nextRows[index] = { ...row, evidence: value }
+            }
+            return {
+                ...prev,
+                evaluation: {
+                    ...prev.evaluation,
+                    mentorRows: nextRows
+                }
+            }
+        })
+    }
+
+    const setMentorGeneralNotes = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGeneralNotes: value
+            }
+        }))
+    }
+
+    const setMentorGlobalDecision = (value: string) => {
+        if (isLocked) return
+        const safeDecision = MENTOR_DECISION_OPTIONS.includes(value as MentorDecision) ? (value as MentorDecision) : ''
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGlobalDecision: safeDecision
+            }
+        }))
+    }
+
+    const saveMentorClosing = () => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGeneralNotes: prev.evaluation.mentorGeneralNotes.trim()
+            }
+        }))
+        markVisited(7)
+        announceSave('Cierre del mentor guardado.')
+    }
+
+    const editLeaderEvaluationRow = (index: number) => {
+        if (isLocked) return
+        setLeaderEvaluationEditModes((prev) => prev.map((item, rowIndex) => (rowIndex === index ? true : item)))
+    }
+
+    const saveLeaderEvaluationRow = (index: number) => {
+        if (isLocked) return
+        setState((prev) => {
+            const nextRows = [...prev.evaluation.leaderRows]
+            const row = nextRows[index]
+            if (!row) return prev
+            nextRows[index] = {
+                ...row,
+                response: row.response.trim(),
+                evidence: row.evidence.trim(),
+                action: row.action.trim()
+            }
+            return {
+                ...prev,
+                evaluation: {
+                    ...prev.evaluation,
+                    leaderRows: nextRows
+                }
+            }
+        })
+        setLeaderEvaluationEditModes((prev) => prev.map((item, rowIndex) => (rowIndex === index ? false : item)))
+        announceSave(`Fila líder ${index + 1} guardada.`)
+    }
+
+    const setLeaderEvaluationField = (index: number, field: 'response' | 'evidence' | 'action', value: string) => {
+        if (isLocked || !leaderEvaluationEditModes[index]) return
+        setState((prev) => {
+            const nextRows = [...prev.evaluation.leaderRows]
+            const row = nextRows[index]
+            if (!row) return prev
+            nextRows[index] = { ...row, [field]: value }
+            return {
+                ...prev,
+                evaluation: {
+                    ...prev.evaluation,
+                    leaderRows: nextRows
+                }
+            }
+        })
+    }
+
+    const setEvaluationSynthesis = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                agreementsSynthesis: value
+            }
+        }))
+    }
+
+    const saveEvaluationSynthesis = () => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                agreementsSynthesis: prev.evaluation.agreementsSynthesis.trim()
+            }
+        }))
+        markVisited(7)
+        announceSave('Síntesis de acuerdos guardada.')
+    }
+
+    const saveEvaluationModule = () => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorRows: prev.evaluation.mentorRows.map((row) => ({
+                    ...row,
+                    evidence: row.evidence.trim()
+                })),
+                mentorGeneralNotes: prev.evaluation.mentorGeneralNotes.trim(),
+                leaderRows: prev.evaluation.leaderRows.map((row) => ({
+                    ...row,
+                    response: row.response.trim(),
+                    evidence: row.evidence.trim(),
+                    action: row.action.trim()
+                })),
+                agreementsSynthesis: prev.evaluation.agreementsSynthesis.trim()
+            }
+        }))
+        savePage(7)
+        announceSave('Evaluación guardada.')
+    }
+
+    const changeEvaluationStage = (stage: EvaluationStageKey) => {
+        setEvaluationStage(stage)
+    }
+
+    const goPrevEvaluationStage = () => {
+        const currentIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+        if (currentIndex <= 0) return
+        setEvaluationStage(EVALUATION_STAGES[currentIndex - 1].key)
+    }
+
+    const goNextEvaluationStage = () => {
+        const currentIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+        if (currentIndex < 0 || currentIndex >= EVALUATION_STAGES.length - 1) return
+        setEvaluationStage(EVALUATION_STAGES[currentIndex + 1].key)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -1659,12 +2468,155 @@ export function WB8Digital() {
 
     const cadenceTooAmbitious = /diari|todos los d[ií]as|7\s*piezas|5\s*piezas|4\s*piezas/i.test(executionBoard.minimumCadence)
 
+    const controlBoardSection = state.controlBoardSection
+    const dashboardGoal = controlBoardSection.dashboardGoal
+    const funnelRows = controlBoardSection.funnelRows
+    const criticalKpiRows = controlBoardSection.criticalKpiRows
+    const kpiSheets = controlBoardSection.kpiSheets
+    const baselineRows = controlBoardSection.baselineRows
+    const executiveRows = controlBoardSection.executiveRows
+    const reviewCadence = controlBoardSection.reviewCadence
+    const dashboardIntelligenceTest = controlBoardSection.dashboardIntelligenceTest
+
+    const dashboardGoalCompleted =
+        dashboardGoal.mainQuestion.trim().length > 0 &&
+        dashboardGoal.strategicResult.trim().length > 0 &&
+        dashboardGoal.primaryDimension.trim().length > 0 &&
+        dashboardGoal.priorityReturnType.trim().length > 0
+    const funnelCompleted = funnelRows.every(
+        (row) => row.meaningInContext.trim().length > 0 && row.possibleIndicator.trim().length > 0
+    )
+    const criticalKpiCompleted = criticalKpiRows.every(
+        (row) => row.selectedKpi.trim().length > 0 && row.whyItMatters.trim().length > 0 && row.indicatorType.trim().length > 0
+    )
+    const kpiSheetsCompleted = kpiSheets.every(
+        (row) =>
+            row.kpiName.trim().length > 0 &&
+            row.measuredVariable.trim().length > 0 &&
+            row.formula.trim().length > 0 &&
+            row.dataSource.trim().length > 0 &&
+            row.frequency.trim().length > 0 &&
+            row.owner.trim().length > 0 &&
+            row.greenThreshold.trim().length > 0 &&
+            row.yellowThreshold.trim().length > 0 &&
+            row.redThreshold.trim().length > 0 &&
+            row.associatedDecision.trim().length > 0
+    )
+    const baselineCompleted = baselineRows.every(
+        (row) =>
+            row.kpi.trim().length > 0 &&
+            row.baselineCurrent.trim().length > 0 &&
+            row.goal30.trim().length > 0 &&
+            row.goal90.trim().length > 0 &&
+            row.alertThreshold.trim().length > 0 &&
+            row.correctiveAction.trim().length > 0
+    )
+    const executiveCompleted = executiveRows.every(
+        (row) =>
+            row.kpi.trim().length > 0 &&
+            row.currentValue.trim().length > 0 &&
+            row.trend.trim().length > 0 &&
+            row.goal.trim().length > 0 &&
+            row.status.trim().length > 0 &&
+            row.quickRead.trim().length > 0 &&
+            row.decision.trim().length > 0
+    )
+    const reviewCadenceCompleted =
+        reviewCadence.weeklyReview.trim().length > 0 &&
+        reviewCadence.monthlyReview.trim().length > 0 &&
+        reviewCadence.decisionSignals.trim().length > 0 &&
+        reviewCadence.associatedDecisions.trim().length > 0
+    const dashboardIntelligenceCompleted = dashboardIntelligenceTest.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+
+    const section6Completed =
+        dashboardGoalCompleted &&
+        funnelCompleted &&
+        criticalKpiCompleted &&
+        kpiSheetsCompleted &&
+        baselineCompleted &&
+        executiveCompleted &&
+        reviewCadenceCompleted &&
+        dashboardIntelligenceCompleted
+
+    const hasFunnelBase = funnelRows.some(
+        (row) => row.meaningInContext.trim().length > 0 && row.possibleIndicator.trim().length > 0
+    )
+    const hasCriticalKpiBase = criticalKpiRows.some(
+        (row) => row.selectedKpi.trim().length > 0 && row.whyItMatters.trim().length > 0 && row.indicatorType.trim().length > 0
+    )
+    const hasAtLeastOneGoal = baselineRows.some((row) => row.goal30.trim().length > 0 || row.goal90.trim().length > 0)
+    const section6MinimumReady = hasFunnelBase && hasCriticalKpiBase && hasAtLeastOneGoal
+
+    const kpiCatalog = Array.from(
+        new Set(
+            [
+                ...criticalKpiRows.map((row) => row.selectedKpi.trim()),
+                ...kpiSheets.map((row) => row.kpiName.trim())
+            ].filter((item) => item.length > 0)
+        )
+    )
+
+    const tooManyKpis = kpiCatalog.length > 10
+
+    const selectedCriticalRows = criticalKpiRows.filter((row) => row.selectedKpi.trim().length > 0)
+    const onlyActivityKpis =
+        selectedCriticalRows.length > 0 &&
+        selectedCriticalRows.every(
+            (row) => row.category.toLowerCase().includes('alcance') || row.category.toLowerCase().includes('interacción')
+        )
+
+    const missingFormulaOrSource = kpiSheets.some(
+        (row) => row.kpiName.trim().length > 0 && (row.formula.trim().length === 0 || row.dataSource.trim().length === 0)
+    )
+    const missingThresholdsOrDecisions = kpiSheets.some(
+        (row) =>
+            row.kpiName.trim().length > 0 &&
+            (row.greenThreshold.trim().length === 0 ||
+                row.yellowThreshold.trim().length === 0 ||
+                row.redThreshold.trim().length === 0 ||
+                row.associatedDecision.trim().length === 0)
+    )
+
+    const roiSignals = `${funnelRows.map((row) => row.possibleIndicator).join(' ')} ${criticalKpiRows
+        .map((row) => row.selectedKpi)
+        .join(' ')}`.toLowerCase()
+    const mentionsInternal = roiSignals.includes('intern') || dashboardGoal.priorityReturnType.toLowerCase().includes('intern')
+    const mentionsExternal = roiSignals.includes('extern') || dashboardGoal.priorityReturnType.toLowerCase().includes('extern')
+    const noRoiDistinction =
+        dashboardGoal.priorityReturnType.trim().length === 0 ||
+        (dashboardGoal.priorityReturnType.toLowerCase() === 'mixto' && !(mentionsInternal && mentionsExternal))
+
+    const evaluation = state.evaluation
+    const mentorCompletedRows = evaluation.mentorRows.filter((row) => isMentorEvaluationRowComplete(row)).length
+    const leaderCompletedRows = evaluation.leaderRows.filter((row) => isLeaderEvaluationRowComplete(row)).length
+    const mentorStageComplete =
+        mentorCompletedRows === evaluation.mentorRows.length &&
+        evaluation.mentorGeneralNotes.trim().length > 0 &&
+        evaluation.mentorGlobalDecision !== ''
+    const leaderStageComplete = leaderCompletedRows === evaluation.leaderRows.length
+    const synthesisStageComplete = evaluation.agreementsSynthesis.trim().length > 0
+    const evaluationSectionComplete = mentorStageComplete && leaderStageComplete && synthesisStageComplete
+    const evaluationStageIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+    const hasPrevEvaluationStage = evaluationStageIndex > 0
+    const hasNextEvaluationStage = evaluationStageIndex >= 0 && evaluationStageIndex < EVALUATION_STAGES.length - 1
+    const evaluationStageCompletionMap: Record<EvaluationStageKey, boolean> = {
+        mentor: mentorStageComplete,
+        leader: leaderStageComplete,
+        synthesis: synthesisStageComplete,
+        final: evaluationSectionComplete
+    }
+    const section7Completed = evaluationSectionComplete
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: section3Completed,
         4: section4Completed,
-        5: section5Completed
+        5: section5Completed,
+        6: section6Completed,
+        7: section7Completed
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -1749,7 +2701,7 @@ export function WB8Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb8-print-page wb8-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 5"
+                                data-print-page="Página 1 de 7"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1821,7 +2773,7 @@ export function WB8Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-6 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 5"
+                                data-print-page="Página 2 de 7"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1955,7 +2907,7 @@ export function WB8Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 5"
+                                data-print-page="Página 3 de 7"
                                 data-print-title="Escalera de valor"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2716,7 +3668,7 @@ export function WB8Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 5"
+                                data-print-page="Página 4 de 7"
                                 data-print-title="Modelo de negocio"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3542,7 +4494,7 @@ export function WB8Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 5 de 5"
+                                data-print-page="Página 5 de 7"
                                 data-print-title="Estrategia de visibilidad"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4563,6 +5515,1714 @@ export function WB8Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(6) && (
+                            <article
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 6 de 7"
+                                data-print-title="Tablero de control de KPIs y ROI"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 6</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Tablero de control: KPIs de alcance y retorno (ROI)
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Diseñar un tablero de control con KPIs de alcance, interacción, conversión y retorno, para medir si tu
+                                        estrategia realmente está generando visibilidad útil, oportunidades y captura de valor, y no solo
+                                        actividad aparente.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowControlBoardHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Tablero de control: sistema visual y operativo que organiza indicadores clave para seguir avance, detectar desvíos y tomar decisiones.',
+                                            'KPI (Key Performance Indicator): indicador crítico que muestra si una dimensión estratégica está avanzando o no.',
+                                            'Métrica de actividad: dato que muestra cuánto hiciste, por ejemplo número de publicaciones, reuniones o mensajes enviados.',
+                                            'Métrica de resultado: dato que muestra qué produjo esa actividad, por ejemplo conversaciones abiertas, leads, ingresos, invitaciones o acceso.',
+                                            'Métrica vanity: indicador que luce bien, pero aporta poca capacidad de decisión.',
+                                            'Leading indicator: indicador adelantado que anticipa resultados futuros.',
+                                            'Lagging indicator: indicador rezagado que refleja resultados ya ocurridos.',
+                                            'Embudo de visibilidad a retorno: secuencia que conecta alcance, atención, interacción, conversación, oportunidad, conversión y retorno.',
+                                            'Conversión estratégica: paso de una señal de visibilidad a una acción valiosa.',
+                                            'ROI interno y ROI externo: retorno capturado dentro y fuera del sistema organizacional.',
+                                            'Umbral de decisión: punto a partir del cual un indicador exige mantener, ajustar, escalar o detener una acción.',
+                                            'Cadencia de revisión: ritmo con el que se leen y analizan indicadores para decidir.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Definición del objetivo que el tablero debe servir</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                dashboardGoalCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {dashboardGoalCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define qué decisión estratégica quieres habilitar con el tablero.',
+                                                'Aclara resultado estratégico y dimensión prioritaria de medición.',
+                                                'Selecciona el tipo de retorno prioritario: interno, externo o mixto.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Pregunta principal: si mi visibilidad está generando conversaciones y oportunidades reales.',
+                                                'Resultado estratégico: aumento de autoridad y conversión a sesiones/proyectos.',
+                                                'Dimensión principal: visibilidad con capacidad de conversión.',
+                                                'Tipo de retorno prioritario: mixto.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <label className="space-y-1 md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Pregunta principal que el tablero debe responder</span>
+                                            <input
+                                                type="text"
+                                                list="wb8-control-main-question-options"
+                                                value={dashboardGoal.mainQuestion}
+                                                onChange={(event) => updateDashboardGoal('mainQuestion', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1 md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Resultado estratégico a seguir</span>
+                                            <input
+                                                type="text"
+                                                list="wb8-control-strategic-result-options"
+                                                value={dashboardGoal.strategicResult}
+                                                onChange={(event) => updateDashboardGoal('strategicResult', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Dimensión principal a medir</span>
+                                            <select
+                                                value={dashboardGoal.primaryDimension}
+                                                onChange={(event) => updateDashboardGoal('primaryDimension', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            >
+                                                <option value="">Selecciona una dimensión</option>
+                                                {CONTROL_FOCUS_DIMENSIONS.map((option) => (
+                                                    <option key={`wb8-control-dimension-${option}`} value={option}>
+                                                        {option}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Tipo de retorno prioritario</span>
+                                            <select
+                                                value={dashboardGoal.priorityReturnType}
+                                                onChange={(event) => updateDashboardGoal('priorityReturnType', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            >
+                                                <option value="">Selecciona</option>
+                                                {CONTROL_RETURN_TYPES.map((option) => (
+                                                    <option key={`wb8-control-return-${option}`} value={option}>
+                                                        {option}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveControlBoardBlock('Paso 1 — Objetivo del tablero')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Mapa del embudo de visibilidad a retorno</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                funnelCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {funnelCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define qué significa cada etapa del embudo en tu contexto real.',
+                                                'Asigna un indicador posible para cada etapa.',
+                                                'Usa el embudo para conectar visibilidad con retorno.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Alcance: personas expuestas a mis ideas o trabajo | Indicador: impresiones/vistas.',
+                                                'Conversación: contactos que pasan a intercambio directo | Indicador: DMs, reuniones, correos.',
+                                                'Conversión: acción valiosa realizada | Indicador: sesiones vendidas o inclusión en comité.',
+                                                'Retorno: valor capturado | Indicador: ingresos, expansión de rol, patrocinio, presupuesto.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Etapa</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué significa en mi caso</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Indicador posible</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {funnelRows.map((row, index) => (
+                                                    <tr key={`wb8-funnel-row-${row.stage}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.stage}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.meaningInContext}
+                                                                onChange={(event) => updateFunnelRow(index, 'meaningInContext', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.possibleIndicator}
+                                                                onChange={(event) => updateFunnelRow(index, 'possibleIndicator', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-3">
+                                        <p className="text-xs uppercase tracking-[0.14em] text-blue-700 font-semibold">Visual del embudo</p>
+                                        <div className="space-y-2">
+                                            {funnelRows.map((row, index) => {
+                                                const widthPercent = Math.max(54, 100 - index * 8)
+                                                return (
+                                                    <div key={`wb8-funnel-visual-${row.stage}`} className="flex justify-center">
+                                                        <div
+                                                            className="rounded-xl border border-blue-200 bg-white px-4 py-2.5"
+                                                            style={{ width: `${widthPercent}%` }}
+                                                        >
+                                                            <p className="text-xs uppercase tracking-[0.12em] text-blue-700 font-semibold">{row.stage}</p>
+                                                            <p className="text-sm text-slate-700">
+                                                                {row.possibleIndicator.trim().length > 0 ? row.possibleIndicator : 'Define indicador para esta etapa'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveControlBoardBlock('Paso 2 — Embudo de visibilidad a retorno')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Selección de KPIs críticos</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                criticalKpiCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {criticalKpiCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Selecciona entre 1 y 2 KPIs por categoría sin exceder un conjunto manejable.',
+                                                'Declara por qué importa cada KPI para decidir.',
+                                                'Clasifica cada KPI como leading o lagging.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Alcance: personas alcanzadas en canal principal | Leading.',
+                                                'Conversación: conversaciones cualificadas | Leading.',
+                                                'Conversión: propuestas aceptadas / sesiones vendidas | Lagging.',
+                                                'Retorno: ingresos / acceso / expansión de rol | Lagging.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Categoría</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">KPI seleccionado</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Por qué importa</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Leading / Lagging</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {criticalKpiRows.map((row, index) => (
+                                                    <tr key={`wb8-critical-kpi-row-${row.category}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.category}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.selectedKpi}
+                                                                onChange={(event) => updateCriticalKpiRow(index, 'selectedKpi', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.whyItMatters}
+                                                                onChange={(event) => updateCriticalKpiRow(index, 'whyItMatters', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.indicatorType}
+                                                                onChange={(event) => updateCriticalKpiRow(index, 'indicatorType', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {KPI_TYPE_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-critical-kpi-type-${row.category}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveControlBoardBlock('Paso 3 — Selección de KPIs críticos')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Ficha técnica de cada KPI</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                kpiSheetsCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {kpiSheetsCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define al menos 4 fichas de KPI con nombre, fórmula, fuente, umbrales y decisión asociada.',
+                                                'Usa definiciones operativas para que cualquier persona del equipo pueda leer el indicador.',
+                                                'Evita KPIs sin fuente o sin decisión gatillo.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <p className="mt-2 text-sm text-slate-600">
+                                            KPI: Conversaciones cualificadas por mes | Fórmula: total mensual de conversaciones estratégicas | Fuente:
+                                            agenda/CRM/registro manual | Umbral verde: 8 o más | Decisión asociada: si cae a rojo, revisar canal, mensaje o CTA.
+                                        </p>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1700px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Nombre</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué mide</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Fórmula</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Fuente</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Frecuencia</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Responsable</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Umbral verde</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Umbral amarillo</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Umbral rojo</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Decisión asociada</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {kpiSheets.map((row, index) => (
+                                                    <tr key={`wb8-kpi-sheet-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <input
+                                                                type="text"
+                                                                list="wb8-control-kpi-name-options"
+                                                                value={row.kpiName}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'kpiName', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[280px]">
+                                                            <input
+                                                                type="text"
+                                                                list="wb8-control-measure-options"
+                                                                value={row.measuredVariable}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'measuredVariable', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[260px]">
+                                                            <input
+                                                                type="text"
+                                                                list="wb8-control-formula-options"
+                                                                value={row.formula}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'formula', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <input
+                                                                type="text"
+                                                                list="wb8-control-source-options"
+                                                                value={row.dataSource}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'dataSource', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[170px]">
+                                                            <select
+                                                                value={row.frequency}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'frequency', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {KPI_FREQUENCY_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-kpi-sheet-frequency-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[170px]">
+                                                            <select
+                                                                value={row.owner}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'owner', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {KPI_OWNER_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-kpi-sheet-owner-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.greenThreshold}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'greenThreshold', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.yellowThreshold}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'yellowThreshold', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.redThreshold}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'redThreshold', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.associatedDecision}
+                                                                onChange={(event) => updateKpiSheetRow(index, 'associatedDecision', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {KPI_DECISION_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-kpi-sheet-decision-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveControlBoardBlock('Paso 4 — Ficha técnica de KPI')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Línea base, meta y umbral de decisión</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                baselineCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {baselineCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Registra línea base actual y metas a 30 y 90 días por KPI.',
+                                                'Define umbral de alerta y acción correctiva concreta.',
+                                                'El sistema sugiere metas y alertas cuando registras línea base.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Conversaciones cualificadas: línea base 2, meta 30 días 5, meta 90 días 10, alerta menos de 3.',
+                                                'Leads/oportunidades: línea base 1, meta 30 días 3, meta 90 días 6, alerta cero en 30 días.',
+                                                'Retorno externo: línea base 0, meta 30 días 1 piloto, meta 90 días 3 cierres.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1450px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">KPI</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Línea base actual</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Meta 30 días</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Meta 90 días</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Umbral de alerta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Acción correctiva</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {baselineRows.map((row, index) => (
+                                                    <tr key={`wb8-baseline-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[230px]">
+                                                            <select
+                                                                value={row.kpi}
+                                                                onChange={(event) => updateBaselineRow(index, 'kpi', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona KPI</option>
+                                                                {kpiCatalog.map((option) => (
+                                                                    <option key={`wb8-baseline-kpi-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[170px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.baselineCurrent}
+                                                                onChange={(event) => updateBaselineRow(index, 'baselineCurrent', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[170px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.goal30}
+                                                                onChange={(event) => updateBaselineRow(index, 'goal30', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[170px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.goal90}
+                                                                onChange={(event) => updateBaselineRow(index, 'goal90', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.alertThreshold}
+                                                                onChange={(event) => updateBaselineRow(index, 'alertThreshold', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[330px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.correctiveAction}
+                                                                onChange={(event) => updateBaselineRow(index, 'correctiveAction', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveControlBoardBlock('Paso 5 — Línea base, metas y umbrales')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Tablero ejecutivo mínimo</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                executiveCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {executiveCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Consolida una vista ejecutiva por KPI con valor actual, tendencia, meta, estado, lectura y decisión.',
+                                                'Usa el semáforo para orientar decisiones de mantener, ajustar, escalar o pausar.',
+                                                'Haz que la lectura rápida sea accionable y no descriptiva.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Alcance útil: 1200, tendencia ↑, meta 1500, estado Amarillo, decisión mantener y ajustar audiencia.',
+                                                'Conversaciones cualificadas: 6, tendencia ↑, meta 8, estado Amarillo, decisión reforzar conversión.',
+                                                'Retorno capturado: 1, tendencia ↑, meta 3, estado Amarillo, decisión escalar prueba.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1450px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">KPI</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Valor actual</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tendencia</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Meta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Estado</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Lectura rápida</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Decisión</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {executiveRows.map((row, index) => (
+                                                    <tr key={`wb8-executive-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.kpi}
+                                                                onChange={(event) => updateExecutiveRow(index, 'kpi', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona KPI</option>
+                                                                {kpiCatalog.map((option) => (
+                                                                    <option key={`wb8-executive-kpi-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[150px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.currentValue}
+                                                                onChange={(event) => updateExecutiveRow(index, 'currentValue', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[120px]">
+                                                            <select
+                                                                value={row.trend}
+                                                                onChange={(event) => updateExecutiveRow(index, 'trend', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">—</option>
+                                                                {TREND_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-executive-trend-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[150px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.goal}
+                                                                onChange={(event) => updateExecutiveRow(index, 'goal', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.status}
+                                                                onChange={(event) => updateExecutiveRow(index, 'status', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {KPI_STATUS_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-executive-status-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[320px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.quickRead}
+                                                                onChange={(event) => updateExecutiveRow(index, 'quickRead', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[200px]">
+                                                            <select
+                                                                value={row.decision}
+                                                                onChange={(event) => updateExecutiveRow(index, 'decision', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {KPI_DECISION_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-executive-decision-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveControlBoardBlock('Paso 6 — Tablero ejecutivo mínimo')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 7 — Cadencia de revisión y decisiones gatillo</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                reviewCadenceCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {reviewCadenceCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define qué revisarás semanalmente y qué revisarás mensualmente.',
+                                                'Especifica señales gatillo que obligan decisión.',
+                                                'Conecta señales con decisiones posibles: mantener, ajustar, escalar, pausar o rediseñar.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Revisión semanal: alcance, interacción y conversaciones abiertas.',
+                                                'Revisión mensual: oportunidades, conversiones y retorno.',
+                                                'Señales gatillo: KPI en rojo dos semanas seguidas, alto alcance sin conversación.',
+                                                'Decisiones asociadas: ajustar canal, rediseñar CTA, escalar contenido ganador, pausar táctica improductiva.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Revisión semanal</span>
+                                            <input
+                                                type="text"
+                                                list="wb8-control-review-weekly-options"
+                                                value={reviewCadence.weeklyReview}
+                                                onChange={(event) => updateReviewCadence('weeklyReview', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Revisión mensual</span>
+                                            <input
+                                                type="text"
+                                                list="wb8-control-review-monthly-options"
+                                                value={reviewCadence.monthlyReview}
+                                                onChange={(event) => updateReviewCadence('monthlyReview', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1 md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Señales que gatillan decisiones</span>
+                                            <textarea
+                                                value={reviewCadence.decisionSignals}
+                                                onChange={(event) => updateReviewCadence('decisionSignals', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                placeholder={CONTROL_DECISION_SIGNAL_OPTIONS.join(' · ')}
+                                            />
+                                        </label>
+                                        <label className="space-y-1 md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Decisiones posibles asociadas</span>
+                                            <textarea
+                                                value={reviewCadence.associatedDecisions}
+                                                onChange={(event) => updateReviewCadence('associatedDecisions', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                placeholder={CONTROL_ASSOCIATED_DECISIONS_OPTIONS.join(' · ')}
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveControlBoardBlock('Paso 7 — Cadencia de revisión y decisiones')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 8 — Test de inteligencia del tablero</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                dashboardIntelligenceCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {dashboardIntelligenceCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Verifica que el tablero responda preguntas estratégicas y no solo describa actividad.',
+                                                'Confirma que distingues actividad, conversación, conversión y retorno.',
+                                                'Declara ajustes concretos para cada respuesta No.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Señal débil: medir likes, vistas y publicaciones sin saber si eso abre oportunidades o retorno.',
+                                                'Señal mejorada: tablero que conecta visibilidad, conversaciones, conversiones y valor capturado.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí / No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {dashboardIntelligenceTest.map((row, index) => (
+                                                    <tr key={`wb8-control-test-row-${index}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.verdict}
+                                                                onChange={(event) => updateDashboardIntelligenceTestRow(index, 'verdict', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="yes">Sí</option>
+                                                                <option value="no">No</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateDashboardIntelligenceTestRow(index, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveControlBoardBlock('Paso 8 — Test de inteligencia del tablero')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-3">
+                                    <h3 className="text-base font-bold text-slate-900">Cierre de la sección</h3>
+                                    <p className="text-sm text-slate-700 leading-relaxed">Cuando termines esta sección, deberías poder responder con más claridad:</p>
+                                    <ul className="space-y-1.5">
+                                        {[
+                                            'Qué KPIs importan realmente para tu estrategia.',
+                                            'Cómo se conectan alcance, conversación, oportunidad y retorno.',
+                                            'Qué métricas debes dejar de sobrevalorar.',
+                                            'Qué umbrales gatillan decisiones.',
+                                            'Cómo construir un tablero que sirva para decidir, no solo para mirar.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+                                    <h3 className="text-base font-bold text-slate-900">Validaciones suaves</h3>
+                                    {tooManyKpis && (
+                                        <p className="text-sm text-amber-800">Sugerencia: reduce a un conjunto más crítico y manejable.</p>
+                                    )}
+                                    {onlyActivityKpis && (
+                                        <p className="text-sm text-amber-800">Sugerencia: incluye también conversación, conversión y retorno.</p>
+                                    )}
+                                    {missingFormulaOrSource && (
+                                        <p className="text-sm text-amber-800">Sugerencia: haz operativa la medición de cada KPI.</p>
+                                    )}
+                                    {missingThresholdsOrDecisions && (
+                                        <p className="text-sm text-amber-800">Sugerencia: define cuándo un KPI te obliga a actuar.</p>
+                                    )}
+                                    {noRoiDistinction && (
+                                        <p className="text-sm text-amber-800">Sugerencia: aclara qué retorno quieres capturar y cómo lo leerás.</p>
+                                    )}
+                                    {!tooManyKpis &&
+                                        !onlyActivityKpis &&
+                                        !missingFormulaOrSource &&
+                                        !missingThresholdsOrDecisions &&
+                                        !noRoiDistinction && (
+                                            <p className="text-sm text-emerald-700">
+                                                Sin alertas: el tablero conecta embudo, KPIs críticos, umbrales y decisiones.
+                                            </p>
+                                        )}
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">Estado de la sección</p>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                {section6Completed
+                                                    ? 'Completado: objetivo + embudo + KPIs + fichas + metas + tablero + cadencia + test diligenciados.'
+                                                    : !section6MinimumReady
+                                                      ? 'Pendiente: define embudo, KPIs críticos y al menos una meta.'
+                                                      : 'Pendiente: completa todos los bloques para cerrar la sección.'}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                section6Completed
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {section6Completed ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+
+                                <datalist id="wb8-control-main-question-options">
+                                    {CONTROL_MAIN_QUESTION_OPTIONS.map((option) => (
+                                        <option key={`wb8-control-main-question-option-${option}`} value={option} />
+                                    ))}
+                                </datalist>
+                                <datalist id="wb8-control-strategic-result-options">
+                                    {CONTROL_STRATEGIC_RESULT_OPTIONS.map((option) => (
+                                        <option key={`wb8-control-strategic-result-option-${option}`} value={option} />
+                                    ))}
+                                </datalist>
+                                <datalist id="wb8-control-kpi-name-options">
+                                    {Array.from(
+                                        new Set([
+                                            ...kpiCatalog,
+                                            'Alcance útil',
+                                            'Tasa de interacción útil',
+                                            'Conversaciones cualificadas',
+                                            'Oportunidades abiertas',
+                                            'Conversión efectiva',
+                                            'Retorno capturado'
+                                        ])
+                                    ).map((option) => (
+                                        <option key={`wb8-control-kpi-option-${option}`} value={option} />
+                                    ))}
+                                </datalist>
+                                <datalist id="wb8-control-measure-options">
+                                    {[
+                                        'Mide visibilidad base en audiencia objetivo',
+                                        'Mide interés inicial y relevancia del mensaje',
+                                        'Mide conversaciones estratégicas con potencial real',
+                                        'Mide oportunidades abiertas de colaboración o negocio',
+                                        'Mide conversión de oportunidad a acción',
+                                        'Mide valor capturado interno y/o externo'
+                                    ].map((option) => (
+                                        <option key={`wb8-control-measure-option-${option}`} value={option} />
+                                    ))}
+                                </datalist>
+                                <datalist id="wb8-control-formula-options">
+                                    {[
+                                        'Total mensual del indicador',
+                                        '(Resultado/objetivo)*100',
+                                        'Conversaciones cualificadas iniciadas por mes',
+                                        'Oportunidades abiertas en el periodo',
+                                        'Conversiones logradas / oportunidades totales',
+                                        'Retorno capturado / inversión total'
+                                    ].map((option) => (
+                                        <option key={`wb8-control-formula-option-${option}`} value={option} />
+                                    ))}
+                                </datalist>
+                                <datalist id="wb8-control-source-options">
+                                    {['Agenda', 'CRM', 'Registro manual', 'Analytics de canal', 'Reporte interno', 'Dashboard comercial'].map((option) => (
+                                        <option key={`wb8-control-source-option-${option}`} value={option} />
+                                    ))}
+                                </datalist>
+                                <datalist id="wb8-control-review-weekly-options">
+                                    {CONTROL_REVIEW_WEEKLY_OPTIONS.map((option) => (
+                                        <option key={`wb8-control-review-weekly-option-${option}`} value={option} />
+                                    ))}
+                                </datalist>
+                                <datalist id="wb8-control-review-monthly-options">
+                                    {CONTROL_REVIEW_MONTHLY_OPTIONS.map((option) => (
+                                        <option key={`wb8-control-review-monthly-option-${option}`} value={option} />
+                                    ))}
+                                </datalist>
+                            </article>
+                        )}
+
+                        {isPageVisible(7) && (
+                            <article
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 7 de 7"
+                                data-print-title="Evaluación"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 7</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Evaluación</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-4xl">
+                                        Objetivo: permitir que mentor y líder evalúen con evidencia, definan decisiones por criterio y cierren con
+                                        síntesis de acuerdos.
+                                    </p>
+                                </header>
+
+                                {!isExportingAll && (
+                                    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                            {EVALUATION_STAGES.map((stage) => {
+                                                const isActive = evaluationStage === stage.key
+                                                const isComplete = evaluationStageCompletionMap[stage.key]
+                                                return (
+                                                    <button
+                                                        key={`wb8-evaluation-stage-${stage.key}`}
+                                                        type="button"
+                                                        onClick={() => changeEvaluationStage(stage.key)}
+                                                        className={`rounded-xl border px-3 py-2 text-xs md:text-sm font-semibold text-left transition-colors ${
+                                                            isActive
+                                                                ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                                                        }`}
+                                                    >
+                                                        <p>{stage.label}</p>
+                                                        <p className={`mt-1 text-[11px] ${isComplete ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                                            {isComplete ? 'Completado' : 'Pendiente'}
+                                                        </p>
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={goPrevEvaluationStage}
+                                                disabled={!hasPrevEvaluationStage}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            >
+                                                Atrás
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={goNextEvaluationStage}
+                                                disabled={!hasNextEvaluationStage}
+                                                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            >
+                                                Siguiente
+                                            </button>
+                                        </div>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'mentor' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <h3 className="text-base md:text-lg font-bold text-slate-900">A) Instrucciones para el mentor (rúbricas)</h3>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowEvaluationLevelReference((current) => !current)}
+                                                    className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                                                >
+                                                    {showEvaluationLevelReference ? 'Ocultar referencia' : 'Ver referencia de niveles'}
+                                                </button>
+                                            </div>
+                                            <ul className="space-y-1.5">
+                                                {[
+                                                    'Evalúa cada criterio con base en evidencia observable (idealmente de los últimos 30 días).',
+                                                    'Marca un solo nivel por criterio (N1, N2, N3 o N4).',
+                                                    'Registra comentario u observación concreta por criterio (hechos, conversación o conducta observada).',
+                                                    'Define decisión por criterio: Consolidado, En desarrollo o Prioritario.',
+                                                    'Cierra el WB con observaciones generales y una decisión global de seguimiento.'
+                                                ].map((instruction) => (
+                                                    <li key={`wb8-mentor-instruction-${instruction}`} className="text-sm text-slate-700 flex items-start gap-2">
+                                                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                        <span>{instruction}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+
+                                            {showEvaluationLevelReference && (
+                                                <article className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                                    <p className="text-sm font-semibold text-slate-900 mb-2">Referencia de niveles (1-4)</p>
+                                                    <div className="overflow-x-auto">
+                                                        <table className="min-w-[520px] w-full border border-blue-200 rounded-lg overflow-hidden bg-white">
+                                                            <thead>
+                                                                <tr className="bg-blue-100">
+                                                                    <th className="px-3 py-2 text-left text-xs font-bold text-blue-800 border-b border-blue-200">
+                                                                        Nivel
+                                                                    </th>
+                                                                    <th className="px-3 py-2 text-left text-xs font-bold text-blue-800 border-b border-blue-200">
+                                                                        Descriptor
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {MENTOR_LEVEL_REFERENCE.map((item) => (
+                                                                    <tr key={`wb8-mentor-level-reference-${item.level}`} className="odd:bg-white even:bg-blue-50/40">
+                                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-blue-100">
+                                                                            {item.level}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-blue-100">
+                                                                            {item.descriptor}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </article>
+                                            )}
+                                        </section>
+
+                                        <section className="space-y-4">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <h3 className="text-base md:text-lg font-bold text-slate-900">Formato de evaluación del mentor (marcar y comentar)</h3>
+                                                <p className="text-xs text-slate-500">
+                                                    Criterios completados: {mentorCompletedRows}/{evaluation.mentorRows.length}
+                                                </p>
+                                            </div>
+
+                                            {evaluation.mentorRows.map((row, index) => {
+                                                const isEditing = mentorEvaluationEditModes[index]
+                                                const rowDisabled = isLocked || !isEditing
+                                                const isComplete = isMentorEvaluationRowComplete(row)
+
+                                                return (
+                                                    <article key={`wb8-mentor-row-${row.criterion}`} className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                                                        <div className="flex flex-wrap items-start justify-between gap-2">
+                                                            <h4 className="text-sm md:text-base font-bold text-slate-900">{row.criterion}</h4>
+                                                            <span
+                                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                                    isComplete
+                                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                                }`}
+                                                            >
+                                                                {isComplete ? 'Completado' : 'Pendiente'}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="inline-flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editMentorEvaluationRow(index)}
+                                                                disabled={isLocked || isEditing}
+                                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => saveMentorEvaluationRow(index)}
+                                                                disabled={isLocked || !isEditing}
+                                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Guardar fila
+                                                            </button>
+                                                        </div>
+
+                                                        {isEditing ? (
+                                                            <div className="space-y-3">
+                                                                <fieldset className="space-y-2">
+                                                                    <legend className="text-xs uppercase tracking-[0.12em] text-slate-500">Nivel</legend>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {MENTOR_LEVEL_OPTIONS.map((level) => (
+                                                                            <label
+                                                                                key={`wb8-mentor-level-${index}-${level}`}
+                                                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                                                                            >
+                                                                                <input
+                                                                                    type="radio"
+                                                                                    name={`wb8-mentor-level-${index}`}
+                                                                                    checked={row.level === level}
+                                                                                    onChange={() => setMentorEvaluationField(index, 'level', level)}
+                                                                                    disabled={rowDisabled}
+                                                                                    className="h-3.5 w-3.5"
+                                                                                />
+                                                                                <span>{level}</span>
+                                                                            </label>
+                                                                        ))}
+                                                                    </div>
+                                                                </fieldset>
+
+                                                                <label className="block space-y-1">
+                                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Comentario / evidencia observable</span>
+                                                                    <textarea
+                                                                        value={row.evidence}
+                                                                        onChange={(event) => setMentorEvaluationField(index, 'evidence', event.target.value)}
+                                                                        disabled={rowDisabled}
+                                                                        className="w-full min-h-[88px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                                                    />
+                                                                </label>
+
+                                                                <fieldset className="space-y-2">
+                                                                    <legend className="text-xs uppercase tracking-[0.12em] text-slate-500">Decisión del mentor</legend>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                                            <label
+                                                                                key={`wb8-mentor-decision-${index}-${decision}`}
+                                                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                                                                            >
+                                                                                <input
+                                                                                    type="radio"
+                                                                                    name={`wb8-mentor-decision-${index}`}
+                                                                                    checked={row.decision === decision}
+                                                                                    onChange={() => setMentorEvaluationField(index, 'decision', decision)}
+                                                                                    disabled={rowDisabled}
+                                                                                    className="h-3.5 w-3.5"
+                                                                                />
+                                                                                <span>{decision}</span>
+                                                                            </label>
+                                                                        ))}
+                                                                    </div>
+                                                                </fieldset>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-1.5 text-sm text-slate-700">
+                                                                <p>
+                                                                    Nivel: <span className="font-semibold text-slate-900">{row.level || 'Pendiente'}</span>
+                                                                </p>
+                                                                <p>
+                                                                    Evidencia: <span className="font-semibold text-slate-900">{row.evidence || 'Pendiente'}</span>
+                                                                </p>
+                                                                <p>
+                                                                    Decisión: <span className="font-semibold text-slate-900">{row.decision || 'Pendiente'}</span>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </article>
+                                                )
+                                            })}
+                                        </section>
+
+                                        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <label className="block space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Observaciones generales del mentor</span>
+                                                <textarea
+                                                    value={evaluation.mentorGeneralNotes}
+                                                    onChange={(event) => setMentorGeneralNotes(event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full min-h-[120px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                                />
+                                            </label>
+
+                                            <fieldset className="space-y-2">
+                                                <legend className="text-xs uppercase tracking-[0.12em] text-slate-500">Decisión global del WB</legend>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                        <label
+                                                            key={`wb8-mentor-global-decision-${decision}`}
+                                                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                                                        >
+                                                            <input
+                                                                type="radio"
+                                                                name="wb8-mentor-global-decision"
+                                                                checked={evaluation.mentorGlobalDecision === decision}
+                                                                onChange={() => setMentorGlobalDecision(decision)}
+                                                                disabled={isLocked}
+                                                                className="h-3.5 w-3.5"
+                                                            />
+                                                            <span>{decision}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </fieldset>
+
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={saveMentorClosing}
+                                                    disabled={isLocked}
+                                                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Guardar cierre mentor
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'leader' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">B) Instrucciones para el líder (autoevaluación)</h3>
+                                            <ul className="space-y-1.5">
+                                                {[
+                                                    'Responde cada pregunta desde hechos concretos y recientes, no desde intención.',
+                                                    'Incluye al menos un ejemplo o evidencia por respuesta.',
+                                                    'Define una acción o compromiso de 30 días para cada respuesta clave.',
+                                                    'Usa este bloque como insumo para acordar el plan de desarrollo con el mentor.'
+                                                ].map((instruction) => (
+                                                    <li key={`wb8-leader-instruction-${instruction}`} className="text-sm text-slate-700 flex items-start gap-2">
+                                                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                        <span>{instruction}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <p className="text-xs text-slate-500">Preguntas completadas: {leaderCompletedRows}/{evaluation.leaderRows.length}</p>
+                                        </section>
+
+                                        <section className="space-y-4">
+                                            {evaluation.leaderRows.map((row, index) => {
+                                                const isEditing = leaderEvaluationEditModes[index]
+                                                const rowDisabled = isLocked || !isEditing
+                                                const isComplete = isLeaderEvaluationRowComplete(row)
+
+                                                return (
+                                                    <article key={`wb8-leader-row-${row.question}`} className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                                                        <div className="flex flex-wrap items-start justify-between gap-2">
+                                                            <h4 className="text-sm md:text-base font-bold text-slate-900">{row.question}</h4>
+                                                            <span
+                                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                                    isComplete
+                                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                                }`}
+                                                            >
+                                                                {isComplete ? 'Completado' : 'Pendiente'}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="inline-flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editLeaderEvaluationRow(index)}
+                                                                disabled={isLocked || isEditing}
+                                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => saveLeaderEvaluationRow(index)}
+                                                                disabled={isLocked || !isEditing}
+                                                                className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                Guardar fila
+                                                            </button>
+                                                        </div>
+
+                                                        {isEditing ? (
+                                                            <div className="space-y-3">
+                                                                <label className="block space-y-1">
+                                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Respuesta del líder</span>
+                                                                    <textarea
+                                                                        value={row.response}
+                                                                        onChange={(event) => setLeaderEvaluationField(index, 'response', event.target.value)}
+                                                                        disabled={rowDisabled}
+                                                                        className="w-full min-h-[84px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                                                    />
+                                                                </label>
+                                                                <label className="block space-y-1">
+                                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Evidencia / ejemplo</span>
+                                                                    <textarea
+                                                                        value={row.evidence}
+                                                                        onChange={(event) => setLeaderEvaluationField(index, 'evidence', event.target.value)}
+                                                                        disabled={rowDisabled}
+                                                                        className="w-full min-h-[78px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                                                    />
+                                                                </label>
+                                                                <label className="block space-y-1">
+                                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                                        Acción o compromiso (30 días)
+                                                                    </span>
+                                                                    <textarea
+                                                                        value={row.action}
+                                                                        onChange={(event) => setLeaderEvaluationField(index, 'action', event.target.value)}
+                                                                        disabled={rowDisabled}
+                                                                        className="w-full min-h-[78px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                                                    />
+                                                                </label>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-1.5 text-sm text-slate-700">
+                                                                <p><span className="font-semibold text-slate-900">Respuesta:</span> {row.response || 'Pendiente'}</p>
+                                                                <p><span className="font-semibold text-slate-900">Evidencia:</span> {row.evidence || 'Pendiente'}</p>
+                                                                <p><span className="font-semibold text-slate-900">Acción 30 días:</span> {row.action || 'Pendiente'}</p>
+                                                            </div>
+                                                        )}
+                                                    </article>
+                                                )
+                                            })}
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'synthesis' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <h3 className="text-base md:text-lg font-bold text-slate-900">C) Síntesis de acuerdos Mentor-Líder</h3>
+                                                <span
+                                                    className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                        synthesisStageComplete
+                                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                            : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {synthesisStageComplete ? 'Completado' : 'Pendiente'}
+                                                </span>
+                                            </div>
+                                            <label className="block space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Síntesis de acuerdos Mentor-Líder</span>
+                                                <textarea
+                                                    value={evaluation.agreementsSynthesis}
+                                                    onChange={(event) => setEvaluationSynthesis(event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full min-h-[160px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                                    placeholder="Registra acuerdos concretos entre mentor y líder."
+                                                />
+                                            </label>
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={saveEvaluationSynthesis}
+                                                    disabled={isLocked}
+                                                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Guardar síntesis
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'final' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <article
+                                            className={`rounded-2xl border p-5 md:p-6 ${
+                                                evaluationSectionComplete
+                                                    ? 'border-emerald-300 bg-emerald-50'
+                                                    : 'border-amber-300 bg-amber-50'
+                                            }`}
+                                        >
+                                            <h3 className={`text-lg md:text-xl font-extrabold ${evaluationSectionComplete ? 'text-emerald-800' : 'text-amber-800'}`}>
+                                                {evaluationSectionComplete ? 'WB8 Evaluación completada' : 'WB8 Evaluación en progreso'}
+                                            </h3>
+                                            <p className={`mt-2 text-sm ${evaluationSectionComplete ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                                {evaluationSectionComplete
+                                                    ? 'Mentor y líder cerraron rúbrica, autoevaluación y síntesis.'
+                                                    : 'Completa los bloques pendientes para cerrar la evaluación.'}
+                                            </p>
+                                        </article>
+
+                                        <article className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-4">
+                                            <h4 className="text-base md:text-lg font-bold text-slate-900">Resumen de evaluación</h4>
+                                            <div className="space-y-2">
+                                                {evaluation.mentorRows.map((row, index) => (
+                                                    <div
+                                                        key={`wb8-evaluation-summary-criterion-${index}`}
+                                                        className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700"
+                                                    >
+                                                        <p className="font-semibold text-slate-900">{row.criterion}</p>
+                                                        <p>
+                                                            Nivel: <span className="font-medium text-slate-900">{row.level || 'Pendiente'}</span>
+                                                        </p>
+                                                        <p>
+                                                            Decisión: <span className="font-medium text-slate-900">{row.decision || 'Pendiente'}</span>
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="text-sm text-slate-700">
+                                                <span className="font-semibold text-slate-900">Decisión global:</span>{' '}
+                                                {evaluation.mentorGlobalDecision || 'Pendiente'}
+                                            </p>
+                                        </article>
+                                    </section>
+                                )}
+
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <span
+                                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+                                            evaluationSectionComplete
+                                                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                : 'border-amber-300 bg-amber-50 text-amber-700'
+                                        }`}
+                                    >
+                                        {evaluationSectionComplete
+                                            ? 'Evaluación completada'
+                                            : 'Evaluación pendiente (mentor + líder + síntesis)'}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={saveEvaluationModule}
+                                        disabled={isLocked}
+                                        className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Guardar página 7
+                                    </button>
+                                </div>
+                            </article>
+                        )}
+
                         {!isExportingAll && (
                             <nav className={`wb8-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button type="button" onClick={goPrevPage} disabled={!hasPrevPage} className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}>
@@ -4669,6 +7329,37 @@ export function WB8Digital() {
                                         </li>
                                         <li className="text-sm text-slate-700 leading-relaxed">
                                             Una estrategia madura convierte ideas en backlog, cadencia y métricas.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showControlBoardHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
+                                <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl p-6 space-y-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Ayuda — Tablero de control (KPIs y ROI)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowControlBoardHelp(false)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Un buen tablero no mide todo; mide lo decisivo para orientar decisiones.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Alcance no es retorno y actividad no es conversión.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Toda métrica clave necesita definición operativa, fuente, meta y decisión asociada.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            El tablero debe ayudarte a mantener, ajustar, escalar o pausar con criterio.
                                         </li>
                                     </ul>
                                 </div>
