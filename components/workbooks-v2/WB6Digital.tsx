@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6
 type YesNoAnswer = '' | 'yes' | 'no'
 type PresenceImpact = '' | 'Suma' | 'Resta'
 type LeakageLevel = '' | 'Verde' | 'Amarillo' | 'Rojo'
@@ -145,6 +145,45 @@ type WB6State = {
             adjustment: string
         }>
     }
+    pressureCommunicationSection: {
+        pressureSignatureMap: {
+            trigger: string
+            earlyInternalSignal: string
+            visibleCommunicationShift: string
+            automaticPattern: string
+            effectOnOthers: string
+            episodeCost: string
+        }
+        communicationDisorderMatrix: Array<{
+            dimension: string
+            underPressure: string
+            generatedReading: string
+            regulatoryAdjustment: string
+        }>
+        responseProtocol: {
+            functionalPause: string
+            internalOrderPhrase: string
+            strategicReframe: string
+            interventionFormula: string
+        }
+        shortMessageTemplate: {
+            fact: string
+            priority: string
+            direction: string
+            containment: string
+        }
+        pressureSimulator: {
+            probableCriticalScenario: string
+            entrySignal: string
+            regulatedResponse: string
+            recoveryAction: string
+        }
+        executivePressureTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 const PAGES: WorkbookPage[] = [
@@ -152,7 +191,8 @@ const PAGES: WorkbookPage[] = [
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Lenguaje corporal ejecutivo', shortLabel: 'Lenguaje corporal' },
     { id: 4, label: '4. Manejo de objeciones', shortLabel: 'Objeciones' },
-    { id: 5, label: '5. Tono y ritmo de voz', shortLabel: 'Voz ejecutiva' }
+    { id: 5, label: '5. Tono y ritmo de voz', shortLabel: 'Voz ejecutiva' },
+    { id: 6, label: '6. Comunicación bajo presión', shortLabel: 'Bajo presión' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb6-state'
@@ -570,6 +610,93 @@ const EXAMPLE_VOICE_LADDER = [
     }
 ] as const
 
+const PRESSURE_DISORDER_DIMENSIONS = [
+    'Síntesis',
+    'Claridad',
+    'Secuencia',
+    'Tono',
+    'Escucha',
+    'Capacidad de decisión'
+] as const
+
+const PRESSURE_TEST_QUESTIONS = [
+    '¿Mantuve claridad bajo presión?',
+    '¿Transmití seguridad tranquila?',
+    '¿Respondí en lugar de reaccionar?',
+    '¿Escuché antes de contraargumentar?',
+    '¿Ordené el contexto para otros?',
+    '¿Recuperé centro después del episodio?'
+] as const
+
+const EXAMPLE_PRESSURE_SIGNATURE_MAP = {
+    trigger: 'Me cuestionaron el enfoque frente al comité.',
+    earlyInternalSignal: 'Pecho apretado y aceleración mental.',
+    visibleCommunicationShift: 'Subí el tono y hablé más rápido.',
+    automaticPattern: 'Empecé a justificar demasiado.',
+    effectOnOthers: 'Más tensión y menos atención a la idea central.',
+    episodeCost: 'Perdí síntesis y proyecté defensividad.'
+}
+
+const EXAMPLE_PRESSURE_DISORDER_MATRIX = [
+    {
+        dimension: 'Síntesis',
+        underPressure: 'Doy demasiado contexto.',
+        generatedReading: 'Falta de foco.',
+        regulatoryAdjustment: 'Ir primero a la idea central.'
+    },
+    {
+        dimension: 'Claridad',
+        underPressure: 'Uso frases vagas.',
+        generatedReading: 'Inseguridad o confusión.',
+        regulatoryAdjustment: 'Nombrar problema, riesgo y acción.'
+    },
+    {
+        dimension: 'Secuencia',
+        underPressure: 'Mezclo hechos con reacción.',
+        generatedReading: 'Desorden.',
+        regulatoryAdjustment: 'Separar hecho, impacto y decisión.'
+    },
+    {
+        dimension: 'Tono',
+        underPressure: 'Subo intensidad.',
+        generatedReading: 'Reactividad.',
+        regulatoryAdjustment: 'Bajar volumen y velocidad.'
+    },
+    {
+        dimension: 'Escucha',
+        underPressure: 'Interrumpo o respondo antes.',
+        generatedReading: 'Cierre frente al otro.',
+        regulatoryAdjustment: 'Pausar y devolver una pregunta.'
+    },
+    {
+        dimension: 'Capacidad de decisión',
+        underPressure: 'Dudo o sobrerreacciono.',
+        generatedReading: 'Falta de criterio.',
+        regulatoryAdjustment: 'Definir un siguiente paso mínimo.'
+    }
+] as const
+
+const EXAMPLE_PRESSURE_PROTOCOL = {
+    functionalPause: 'Exhalar, bajar hombros y esperar un segundo antes de hablar.',
+    internalOrderPhrase: '“Esto es presión, no amenaza total.”',
+    strategicReframe: 'Responder para ordenar, no para defenderme.',
+    interventionFormula: '“Voy a responder en tres puntos: qué pasa, qué implica y qué propongo.”'
+}
+
+const EXAMPLE_PRESSURE_MESSAGE_TEMPLATE = {
+    fact: 'Tenemos una desviación relevante en el entregable.',
+    priority: 'Lo más importante ahora es proteger calidad y no amplificar el error.',
+    direction: 'Vamos a revisar causa, corregir alcance y reasignar foco en esta reunión.',
+    containment: 'Esto requiere precisión, no pánico; lo vamos a ordenar paso a paso.'
+}
+
+const EXAMPLE_PRESSURE_SIMULATOR = {
+    probableCriticalScenario: 'Que cuestionen públicamente una recomendación mía en comité.',
+    entrySignal: 'Acelero la voz y dejo de escuchar completo.',
+    regulatedResponse: 'Pausar, pedir precisión en la objeción y responder en una frase central.',
+    recoveryAction: 'Registrar qué pasó, qué hice bien y qué debo ajustar antes de la siguiente reunión.'
+}
+
 const DEFAULT_STATE: WB6State = {
     identification: {
         leaderName: '',
@@ -690,6 +817,45 @@ const DEFAULT_STATE: WB6State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    pressureCommunicationSection: {
+        pressureSignatureMap: {
+            trigger: '',
+            earlyInternalSignal: '',
+            visibleCommunicationShift: '',
+            automaticPattern: '',
+            effectOnOthers: '',
+            episodeCost: ''
+        },
+        communicationDisorderMatrix: PRESSURE_DISORDER_DIMENSIONS.map((dimension) => ({
+            dimension,
+            underPressure: '',
+            generatedReading: '',
+            regulatoryAdjustment: ''
+        })),
+        responseProtocol: {
+            functionalPause: '',
+            internalOrderPhrase: '',
+            strategicReframe: '',
+            interventionFormula: ''
+        },
+        shortMessageTemplate: {
+            fact: '',
+            priority: '',
+            direction: '',
+            containment: ''
+        },
+        pressureSimulator: {
+            probableCriticalScenario: '',
+            entrySignal: '',
+            regulatedResponse: '',
+            recoveryAction: ''
+        },
+        executivePressureTest: PRESSURE_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
     }
 }
 
@@ -712,6 +878,9 @@ const normalizeState = (raw: unknown): WB6State => {
     const voiceCalibrationRaw = Array.isArray(voiceRaw.calibrationMatrix) ? voiceRaw.calibrationMatrix : []
     const voiceLadderRaw = Array.isArray(voiceRaw.modulationLadder) ? voiceRaw.modulationLadder : []
     const voiceTestRaw = Array.isArray(voiceRaw.executiveImpactTest) ? voiceRaw.executiveImpactTest : []
+    const pressureRaw = (parsed.pressureCommunicationSection ?? {}) as Record<string, unknown>
+    const pressureDisorderRaw = Array.isArray(pressureRaw.communicationDisorderMatrix) ? pressureRaw.communicationDisorderMatrix : []
+    const pressureTestRaw = Array.isArray(pressureRaw.executivePressureTest) ? pressureRaw.executivePressureTest : []
 
     const normalizeVerdict = (value: unknown): YesNoAnswer => {
         if (value === 'yes' || value === 'no') return value
@@ -984,6 +1153,105 @@ const normalizeState = (raw: unknown): WB6State => {
                     adjustment: typeof candidate.adjustment === 'string' ? candidate.adjustment : ''
                 }
             })
+        },
+        pressureCommunicationSection: {
+            pressureSignatureMap: {
+                trigger:
+                    typeof (pressureRaw.pressureSignatureMap as Record<string, unknown> | undefined)?.trigger === 'string'
+                        ? ((pressureRaw.pressureSignatureMap as Record<string, unknown>).trigger as string)
+                        : '',
+                earlyInternalSignal:
+                    typeof (pressureRaw.pressureSignatureMap as Record<string, unknown> | undefined)?.earlyInternalSignal === 'string'
+                        ? ((pressureRaw.pressureSignatureMap as Record<string, unknown>).earlyInternalSignal as string)
+                        : '',
+                visibleCommunicationShift:
+                    typeof (pressureRaw.pressureSignatureMap as Record<string, unknown> | undefined)?.visibleCommunicationShift === 'string'
+                        ? ((pressureRaw.pressureSignatureMap as Record<string, unknown>).visibleCommunicationShift as string)
+                        : '',
+                automaticPattern:
+                    typeof (pressureRaw.pressureSignatureMap as Record<string, unknown> | undefined)?.automaticPattern === 'string'
+                        ? ((pressureRaw.pressureSignatureMap as Record<string, unknown>).automaticPattern as string)
+                        : '',
+                effectOnOthers:
+                    typeof (pressureRaw.pressureSignatureMap as Record<string, unknown> | undefined)?.effectOnOthers === 'string'
+                        ? ((pressureRaw.pressureSignatureMap as Record<string, unknown>).effectOnOthers as string)
+                        : '',
+                episodeCost:
+                    typeof (pressureRaw.pressureSignatureMap as Record<string, unknown> | undefined)?.episodeCost === 'string'
+                        ? ((pressureRaw.pressureSignatureMap as Record<string, unknown>).episodeCost as string)
+                        : ''
+            },
+            communicationDisorderMatrix: PRESSURE_DISORDER_DIMENSIONS.map((dimension, index) => {
+                const candidate = (pressureDisorderRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    dimension,
+                    underPressure: typeof candidate.underPressure === 'string' ? candidate.underPressure : '',
+                    generatedReading: typeof candidate.generatedReading === 'string' ? candidate.generatedReading : '',
+                    regulatoryAdjustment: typeof candidate.regulatoryAdjustment === 'string' ? candidate.regulatoryAdjustment : ''
+                }
+            }),
+            responseProtocol: {
+                functionalPause:
+                    typeof (pressureRaw.responseProtocol as Record<string, unknown> | undefined)?.functionalPause === 'string'
+                        ? ((pressureRaw.responseProtocol as Record<string, unknown>).functionalPause as string)
+                        : '',
+                internalOrderPhrase:
+                    typeof (pressureRaw.responseProtocol as Record<string, unknown> | undefined)?.internalOrderPhrase === 'string'
+                        ? ((pressureRaw.responseProtocol as Record<string, unknown>).internalOrderPhrase as string)
+                        : '',
+                strategicReframe:
+                    typeof (pressureRaw.responseProtocol as Record<string, unknown> | undefined)?.strategicReframe === 'string'
+                        ? ((pressureRaw.responseProtocol as Record<string, unknown>).strategicReframe as string)
+                        : '',
+                interventionFormula:
+                    typeof (pressureRaw.responseProtocol as Record<string, unknown> | undefined)?.interventionFormula === 'string'
+                        ? ((pressureRaw.responseProtocol as Record<string, unknown>).interventionFormula as string)
+                        : ''
+            },
+            shortMessageTemplate: {
+                fact:
+                    typeof (pressureRaw.shortMessageTemplate as Record<string, unknown> | undefined)?.fact === 'string'
+                        ? ((pressureRaw.shortMessageTemplate as Record<string, unknown>).fact as string)
+                        : '',
+                priority:
+                    typeof (pressureRaw.shortMessageTemplate as Record<string, unknown> | undefined)?.priority === 'string'
+                        ? ((pressureRaw.shortMessageTemplate as Record<string, unknown>).priority as string)
+                        : '',
+                direction:
+                    typeof (pressureRaw.shortMessageTemplate as Record<string, unknown> | undefined)?.direction === 'string'
+                        ? ((pressureRaw.shortMessageTemplate as Record<string, unknown>).direction as string)
+                        : '',
+                containment:
+                    typeof (pressureRaw.shortMessageTemplate as Record<string, unknown> | undefined)?.containment === 'string'
+                        ? ((pressureRaw.shortMessageTemplate as Record<string, unknown>).containment as string)
+                        : ''
+            },
+            pressureSimulator: {
+                probableCriticalScenario:
+                    typeof (pressureRaw.pressureSimulator as Record<string, unknown> | undefined)?.probableCriticalScenario === 'string'
+                        ? ((pressureRaw.pressureSimulator as Record<string, unknown>).probableCriticalScenario as string)
+                        : '',
+                entrySignal:
+                    typeof (pressureRaw.pressureSimulator as Record<string, unknown> | undefined)?.entrySignal === 'string'
+                        ? ((pressureRaw.pressureSimulator as Record<string, unknown>).entrySignal as string)
+                        : '',
+                regulatedResponse:
+                    typeof (pressureRaw.pressureSimulator as Record<string, unknown> | undefined)?.regulatedResponse === 'string'
+                        ? ((pressureRaw.pressureSimulator as Record<string, unknown>).regulatedResponse as string)
+                        : '',
+                recoveryAction:
+                    typeof (pressureRaw.pressureSimulator as Record<string, unknown> | undefined)?.recoveryAction === 'string'
+                        ? ((pressureRaw.pressureSimulator as Record<string, unknown>).recoveryAction as string)
+                        : ''
+            },
+            executivePressureTest: PRESSURE_TEST_QUESTIONS.map((question, index) => {
+                const candidate = (pressureTestRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: normalizeVerdict(candidate.verdict),
+                    adjustment: typeof candidate.adjustment === 'string' ? candidate.adjustment : ''
+                }
+            })
         }
     }
 }
@@ -1020,6 +1288,13 @@ export function WB6Digital() {
     const [showVoiceExampleStep4, setShowVoiceExampleStep4] = useState(false)
     const [showVoiceExampleStep5, setShowVoiceExampleStep5] = useState(false)
     const [showVoiceExampleStep6, setShowVoiceExampleStep6] = useState(false)
+    const [showPressureHelp, setShowPressureHelp] = useState(false)
+    const [showPressureExampleStep1, setShowPressureExampleStep1] = useState(false)
+    const [showPressureExampleStep2, setShowPressureExampleStep2] = useState(false)
+    const [showPressureExampleStep3, setShowPressureExampleStep3] = useState(false)
+    const [showPressureExampleStep4, setShowPressureExampleStep4] = useState(false)
+    const [showPressureExampleStep5, setShowPressureExampleStep5] = useState(false)
+    const [showPressureExampleStep6, setShowPressureExampleStep6] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1519,6 +1794,115 @@ export function WB6Digital() {
         announceSave(`${blockLabel} guardado.`)
     }
 
+    const updatePressureSignatureMap = (
+        field: keyof WB6State['pressureCommunicationSection']['pressureSignatureMap'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            pressureCommunicationSection: {
+                ...prev.pressureCommunicationSection,
+                pressureSignatureMap: {
+                    ...prev.pressureCommunicationSection.pressureSignatureMap,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updatePressureDisorderRow = (
+        rowIndex: number,
+        field: keyof WB6State['pressureCommunicationSection']['communicationDisorderMatrix'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            pressureCommunicationSection: {
+                ...prev.pressureCommunicationSection,
+                communicationDisorderMatrix: prev.pressureCommunicationSection.communicationDisorderMatrix.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updatePressureResponseProtocol = (
+        field: keyof WB6State['pressureCommunicationSection']['responseProtocol'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            pressureCommunicationSection: {
+                ...prev.pressureCommunicationSection,
+                responseProtocol: {
+                    ...prev.pressureCommunicationSection.responseProtocol,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updatePressureShortMessage = (
+        field: keyof WB6State['pressureCommunicationSection']['shortMessageTemplate'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            pressureCommunicationSection: {
+                ...prev.pressureCommunicationSection,
+                shortMessageTemplate: {
+                    ...prev.pressureCommunicationSection.shortMessageTemplate,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updatePressureSimulator = (
+        field: keyof WB6State['pressureCommunicationSection']['pressureSimulator'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            pressureCommunicationSection: {
+                ...prev.pressureCommunicationSection,
+                pressureSimulator: {
+                    ...prev.pressureCommunicationSection.pressureSimulator,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updatePressureExecutiveTestRow = (
+        rowIndex: number,
+        field: keyof WB6State['pressureCommunicationSection']['executivePressureTest'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            pressureCommunicationSection: {
+                ...prev.pressureCommunicationSection,
+                executivePressureTest: prev.pressureCommunicationSection.executivePressureTest.map((row, index) =>
+                    index === rowIndex
+                        ? { ...row, [field]: field === 'verdict' ? ((value === 'yes' || value === 'no' ? value : '') as YesNoAnswer) : value }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const savePressureBlock = (blockLabel: string) => {
+        markVisited(6)
+        announceSave(`${blockLabel} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -1585,6 +1969,12 @@ export function WB6Digital() {
     const voicePressureProtocol = state.voiceToneSection.pressureProtocol
     const voiceLadder = state.voiceToneSection.modulationLadder
     const voiceExecutiveTest = state.voiceToneSection.executiveImpactTest
+    const pressureSignatureMap = state.pressureCommunicationSection.pressureSignatureMap
+    const pressureDisorderMatrix = state.pressureCommunicationSection.communicationDisorderMatrix
+    const pressureResponseProtocol = state.pressureCommunicationSection.responseProtocol
+    const pressureShortMessageTemplate = state.pressureCommunicationSection.shortMessageTemplate
+    const pressureSimulator = state.pressureCommunicationSection.pressureSimulator
+    const pressureExecutiveTest = state.pressureCommunicationSection.executivePressureTest
 
     const baselineCompleted = baselineScan.every(
         (row) => row.observation.trim().length > 0 && row.effect.trim().length > 0
@@ -1769,12 +2159,64 @@ export function WB6Digital() {
     const voiceLadderSameAcrossContexts =
         voiceLadderSignatures.length >= 2 && new Set(voiceLadderSignatures).size === 1
 
+    const pressureSignatureCompleted = Object.values(pressureSignatureMap).every((value) => value.trim().length > 0)
+    const pressureDisorderCompleted = pressureDisorderMatrix.every(
+        (row) =>
+            row.underPressure.trim().length > 0 &&
+            row.generatedReading.trim().length > 0 &&
+            row.regulatoryAdjustment.trim().length > 0
+    )
+    const pressureResponseCompleted = Object.values(pressureResponseProtocol).every((value) => value.trim().length > 0)
+    const pressureShortMessageCompleted = Object.values(pressureShortMessageTemplate).every((value) => value.trim().length > 0)
+    const pressureSimulatorCompleted = Object.values(pressureSimulator).every((value) => value.trim().length > 0)
+    const pressureExecutiveTestCompleted = pressureExecutiveTest.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+
+    const pressureSectionMinimal = pressureSignatureCompleted && pressureResponseCompleted
+    const pressureSectionCompleted =
+        pressureSignatureCompleted &&
+        pressureDisorderCompleted &&
+        pressureResponseCompleted &&
+        pressureShortMessageCompleted &&
+        pressureSimulatorCompleted &&
+        pressureExecutiveTestCompleted
+
+    const pressureObservableKeywords = ['voz', 'tono', 'ritmo', 'velocidad', 'pausa', 'escucha', 'secuencia', 'síntesis', 'mensaje', 'cuerpo']
+    const pressureEmotionWords = ['ansiedad', 'miedo', 'frustración', 'estrés', 'nervios', 'inseguridad', 'me sentí']
+    const pressureSignatureLooksAbstract = [
+        pressureSignatureMap.visibleCommunicationShift,
+        pressureSignatureMap.automaticPattern
+    ].some((value) => {
+        const text = value.trim().toLowerCase()
+        if (text.length === 0) return false
+        const hasObservable = pressureObservableKeywords.some((keyword) => text.includes(keyword))
+        const hasEmotion = pressureEmotionWords.some((keyword) => text.includes(keyword))
+        return !hasObservable || hasEmotion
+    })
+
+    const pressurePauseKeywords = ['pausa', 'exhala', 'respira', 'silencio', 'segundo']
+    const pressureProtocolMissingPause =
+        pressureResponseProtocol.functionalPause.trim().length > 0 &&
+        !pressurePauseKeywords.some((keyword) => pressureResponseProtocol.functionalPause.toLowerCase().includes(keyword))
+
+    const pressureMessageMissingDirection =
+        pressureShortMessageTemplate.direction.trim().length > 0 &&
+        !['decidir', 'hacer', 'siguiente', 'accion', 'acción', 'priorizar', 'revisar', 'definir'].some((keyword) =>
+            pressureShortMessageTemplate.direction.toLowerCase().includes(keyword)
+        )
+
+    const pressureSimulatorMissingRecovery =
+        pressureSimulator.probableCriticalScenario.trim().length > 0 &&
+        pressureSimulator.recoveryAction.trim().length === 0
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: bodySectionCompleted,
         4: objectionSectionCompleted,
-        5: voiceSectionCompleted
+        5: voiceSectionCompleted,
+        6: pressureSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -1853,7 +2295,7 @@ export function WB6Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb6-print-page wb6-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 5"
+                                data-print-page="Página 1 de 6"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1946,7 +2388,7 @@ export function WB6Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 5"
+                                data-print-page="Página 2 de 6"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2068,7 +2510,7 @@ export function WB6Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 5"
+                                data-print-page="Página 3 de 6"
                                 data-print-title="Lenguaje corporal ejecutivo"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2754,7 +3196,7 @@ export function WB6Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 5"
+                                data-print-page="Página 4 de 6"
                                 data-print-title="Manejo de objeciones"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3371,7 +3813,7 @@ export function WB6Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 5 de 5"
+                                data-print-page="Página 5 de 6"
                                 data-print-title="Tono y ritmo de voz"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4000,6 +4442,642 @@ export function WB6Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(6) && (
+                            <article
+                                className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 6 de 6"
+                                data-print-title="Comunicación bajo presión"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 6</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Comunicación bajo presión</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Desarrolla la capacidad de comunicar con claridad, control y criterio en situaciones de alta exigencia, sosteniendo presencia
+                                        ejecutiva y confianza aun en contextos críticos.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPressureHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Comunicación bajo presión: sostener claridad, presencia y dirección cuando sube urgencia, conflicto o exposición.',
+                                            'Gravitas en crisis: calma, dominio y credibilidad visible en momentos tensos.',
+                                            'Compresión del mensaje: bajo presión el mensaje puede volverse corto pero ambiguo si no se regula.',
+                                            'Firma de presión: patrón personal repetitivo con el que reaccionas ante amenaza o urgencia.',
+                                            'Seguridad tranquila: firmeza sin dureza, capaz de ordenar sin contagiar pánico.',
+                                            'Respuesta reactiva vs. respuesta regulada: impulso defensivo frente a intervención con foco y secuencia.',
+                                            'Ordenamiento de contexto: ayudar a otros a entender qué pasa, qué importa y qué sigue.',
+                                            'Ventana de regulación: microespacio entre estímulo y respuesta para elegir intervención.',
+                                            'Recuperación post-presión: volver al centro después del episodio para sostener consistencia.'
+                                        ].map((item) => (
+                                            <li key={`wb6-pressure-concept-${item}`} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Mapa de firma de presión</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPressureExampleStep1(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    pressureSignatureCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {pressureSignatureCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Usa una situación real de los últimos 20 días (reunión tensa, objeción inesperada, contradicción pública, crisis operativa o
+                                            conversación difícil).
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Registra el disparador, señal interna temprana, cambio visible en tu comunicación, patrón automático, efecto en otros y costo
+                                            del episodio.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Elemento</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tu respuesta</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {([
+                                                    { label: 'Disparador', field: 'trigger', placeholder: 'Qué activó la presión' },
+                                                    { label: 'Señal interna temprana', field: 'earlyInternalSignal', placeholder: 'Qué notaste primero en ti' },
+                                                    {
+                                                        label: 'Cambio visible en mi comunicación',
+                                                        field: 'visibleCommunicationShift',
+                                                        placeholder: 'Qué se alteró en voz, cuerpo o mensaje'
+                                                    },
+                                                    { label: 'Patrón automático de respuesta', field: 'automaticPattern', placeholder: 'Qué hiciste automáticamente' },
+                                                    { label: 'Efecto en otros', field: 'effectOnOthers', placeholder: 'Qué generó tu forma de responder' },
+                                                    { label: 'Costo del episodio', field: 'episodeCost', placeholder: 'Qué se debilitó o se perdió' }
+                                                ] as const).map((row) => (
+                                                    <tr key={`wb6-pressure-signature-${row.field}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.label}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={pressureSignatureMap[row.field]}
+                                                                onChange={(event) => updatePressureSignatureMap(row.field, event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder={row.placeholder}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {pressureSignatureLooksAbstract && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: describe conductas observables (voz, tono, secuencia, escucha, cuerpo) en lugar de solo emociones generales.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => savePressureBlock('Paso 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz de desorden comunicacional bajo presión</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPressureExampleStep2(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    pressureDisorderCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {pressureDisorderCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Identifica dónde se rompe primero tu comunicación bajo presión: síntesis, claridad, secuencia, tono, escucha o decisión.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Para cada dimensión, registra qué te pasa, qué lectura produce en otros y qué ajuste regulador aplicarás.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1080px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué me pasa bajo presión</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué lectura puede generar</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste regulador necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {pressureDisorderMatrix.map((row, rowIndex) => (
+                                                    <tr key={`wb6-pressure-disorder-${row.dimension}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.dimension}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.underPressure}
+                                                                onChange={(event) => updatePressureDisorderRow(rowIndex, 'underPressure', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Qué me pasa bajo presión"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.generatedReading}
+                                                                onChange={(event) => updatePressureDisorderRow(rowIndex, 'generatedReading', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Qué lectura puede generar"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.regulatoryAdjustment}
+                                                                onChange={(event) => updatePressureDisorderRow(rowIndex, 'regulatoryAdjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Ajuste regulador necesario"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => savePressureBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Protocolo de respuesta en 4 tiempos</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPressureExampleStep3(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    pressureResponseCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {pressureResponseCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Diseña una respuesta regulada en cuatro tiempos: pausa, orden interno, reencuadre y fórmula breve de intervención.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            El objetivo es intervenir para ordenar el contexto, no para defenderte impulsivamente.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi pausa funcional será:</span>
+                                            <textarea
+                                                value={pressureResponseProtocol.functionalPause}
+                                                onChange={(event) => updatePressureResponseProtocol('functionalPause', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi frase interna de orden será:</span>
+                                            <textarea
+                                                value={pressureResponseProtocol.internalOrderPhrase}
+                                                onChange={(event) => updatePressureResponseProtocol('internalOrderPhrase', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi reencuadre estratégico será:</span>
+                                            <textarea
+                                                value={pressureResponseProtocol.strategicReframe}
+                                                onChange={(event) => updatePressureResponseProtocol('strategicReframe', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi fórmula breve de intervención será:</span>
+                                            <textarea
+                                                value={pressureResponseProtocol.interventionFormula}
+                                                onChange={(event) => updatePressureResponseProtocol('interventionFormula', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {pressureProtocolMissingPause && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: define una acción concreta de pausa (respirar, exhalar, silencio de 1 segundo) para abrir ventana de regulación.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => savePressureBlock('Paso 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Plantilla de mensaje breve para alta presión</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPressureExampleStep4(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    pressureShortMessageCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {pressureShortMessageCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Estructura un mensaje mínimo para escenarios críticos: hecho, prioridad, dirección y contención.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Esta plantilla te ayuda a ordenar rápido sin perder autoridad ni claridad cuando no hay tiempo para explicar de más.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Hecho:</span>
+                                            <textarea
+                                                value={pressureShortMessageTemplate.fact}
+                                                onChange={(event) => updatePressureShortMessage('fact', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Prioridad:</span>
+                                            <textarea
+                                                value={pressureShortMessageTemplate.priority}
+                                                onChange={(event) => updatePressureShortMessage('priority', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Dirección:</span>
+                                            <textarea
+                                                value={pressureShortMessageTemplate.direction}
+                                                onChange={(event) => updatePressureShortMessage('direction', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Contención / mensaje regulador:</span>
+                                            <textarea
+                                                value={pressureShortMessageTemplate.containment}
+                                                onChange={(event) => updatePressureShortMessage('containment', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {pressureMessageMissingDirection && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: aclara qué debe hacerse o decidirse ahora para que la dirección sea accionable.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => savePressureBlock('Paso 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Simulador de presión y recuperación</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPressureExampleStep5(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    pressureSimulatorCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {pressureSimulatorCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Define tu escenario crítico más probable, la señal de entrada en presión, la respuesta regulada que deseas instalar y la
+                                            recuperación posterior.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            El objetivo es entrenar tanto la intervención en crisis como el retorno al centro después del episodio.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Escenario crítico más probable:</span>
+                                            <textarea
+                                                value={pressureSimulator.probableCriticalScenario}
+                                                onChange={(event) => updatePressureSimulator('probableCriticalScenario', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Señal que me indica entrada en presión:</span>
+                                            <textarea
+                                                value={pressureSimulator.entrySignal}
+                                                onChange={(event) => updatePressureSimulator('entrySignal', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Respuesta regulada que quiero instalar:</span>
+                                            <textarea
+                                                value={pressureSimulator.regulatedResponse}
+                                                onChange={(event) => updatePressureSimulator('regulatedResponse', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Acción de recuperación después del evento:</span>
+                                            <textarea
+                                                value={pressureSimulator.recoveryAction}
+                                                onChange={(event) => updatePressureSimulator('recoveryAction', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {pressureSimulatorMissingRecovery && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: define una acción concreta de recuperación para volver al centro después del episodio.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => savePressureBlock('Paso 5')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Test de comunicación bajo presión</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPressureExampleStep6(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    pressureExecutiveTestCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {pressureExecutiveTestCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Aplica este test sobre una situación real o simulada y evalúa si mantuviste claridad, seguridad tranquila, escucha y
+                                            ordenamiento del contexto.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Marca cada criterio desde evidencia observable e incluye un ajuste específico por pregunta.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {pressureExecutiveTest.map((row, rowIndex) => (
+                                                    <tr key={`wb6-pressure-test-${row.question}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`wb6-pressure-test-${rowIndex}`}
+                                                                checked={row.verdict === 'yes'}
+                                                                onChange={() => updatePressureExecutiveTestRow(rowIndex, 'verdict', 'yes')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`wb6-pressure-test-${rowIndex}`}
+                                                                checked={row.verdict === 'no'}
+                                                                onChange={() => updatePressureExecutiveTestRow(rowIndex, 'verdict', 'no')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updatePressureExecutiveTestRow(rowIndex, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Ajuste necesario"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => savePressureBlock('Paso 6')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
+                                    <ul className="mt-4 space-y-2.5">
+                                        {[
+                                            'Cuál es tu firma de presión y cuándo se activa.',
+                                            'Dónde se rompe primero tu comunicación cuando sube la exigencia.',
+                                            'Qué protocolo usarás para no responder desde impulso.',
+                                            'Cómo ordenar mensajes breves en escenarios críticos.',
+                                            'Cómo recuperar centro después de una situación tensa.'
+                                        ].map((item) => (
+                                            <li key={`wb6-pressure-close-${item}`} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-5 flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                pressureSectionCompleted
+                                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                    : pressureSectionMinimal
+                                                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                                      : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                            }`}
+                                        >
+                                            {pressureSectionCompleted
+                                                ? 'Sección completada'
+                                                : pressureSectionMinimal
+                                                  ? 'Pendiente (falta completar bloques)'
+                                                  : 'Sección pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => savePage(6)}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar página 6
+                                        </button>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {showBodyHelp && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
@@ -4613,6 +5691,204 @@ export function WB6Digital() {
                                         <p>
                                             <span className="font-semibold">Señal mejorada:</span> bajar medio punto la velocidad, marcar dos pausas y cerrar la
                                             frase con tono firme.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showPressureHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Comunicación bajo presión</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPressureHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>• Comunicar bajo presión no es hablar más fuerte ni más rápido; es ordenar el contexto con claridad.</p>
+                                        <p>• La meta no es defenderte automáticamente, sino intervenir con pausa, secuencia y dirección.</p>
+                                        <p>• Una respuesta regulada combina síntesis, escucha y decisión accionable.</p>
+                                        <p>• En presencia ejecutiva, la calma visible bajo presión es parte de la gravitas.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showPressureExampleStep1 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1 (Mapa de firma de presión)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPressureExampleStep1(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[760px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Elemento</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Ejemplo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {([
+                                                    { label: 'Disparador', value: EXAMPLE_PRESSURE_SIGNATURE_MAP.trigger },
+                                                    { label: 'Señal interna temprana', value: EXAMPLE_PRESSURE_SIGNATURE_MAP.earlyInternalSignal },
+                                                    { label: 'Cambio visible en mi comunicación', value: EXAMPLE_PRESSURE_SIGNATURE_MAP.visibleCommunicationShift },
+                                                    { label: 'Patrón automático de respuesta', value: EXAMPLE_PRESSURE_SIGNATURE_MAP.automaticPattern },
+                                                    { label: 'Efecto en otros', value: EXAMPLE_PRESSURE_SIGNATURE_MAP.effectOnOthers },
+                                                    { label: 'Costo del episodio', value: EXAMPLE_PRESSURE_SIGNATURE_MAP.episodeCost }
+                                                ] as const).map((row) => (
+                                                    <tr key={`wb6-pressure-modal-step1-${row.label}`}>
+                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-slate-100">{row.label}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.value}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showPressureExampleStep2 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2 (Desorden comunicacional)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPressureExampleStep2(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1020px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Qué me pasa bajo presión</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Qué lectura puede generar</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Ajuste regulador</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_PRESSURE_DISORDER_MATRIX.map((row) => (
+                                                    <tr key={`wb6-pressure-modal-step2-${row.dimension}`}>
+                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-slate-100">{row.dimension}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.underPressure}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.generatedReading}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.regulatoryAdjustment}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showPressureExampleStep3 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3 (Protocolo en 4 tiempos)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPressureExampleStep3(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Pausa funcional:</span> {EXAMPLE_PRESSURE_PROTOCOL.functionalPause}</p>
+                                        <p><span className="font-semibold">Frase interna de orden:</span> {EXAMPLE_PRESSURE_PROTOCOL.internalOrderPhrase}</p>
+                                        <p><span className="font-semibold">Reencuadre estratégico:</span> {EXAMPLE_PRESSURE_PROTOCOL.strategicReframe}</p>
+                                        <p><span className="font-semibold">Fórmula breve:</span> {EXAMPLE_PRESSURE_PROTOCOL.interventionFormula}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showPressureExampleStep4 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4 (Mensaje breve de alta presión)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPressureExampleStep4(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Hecho:</span> {EXAMPLE_PRESSURE_MESSAGE_TEMPLATE.fact}</p>
+                                        <p><span className="font-semibold">Prioridad:</span> {EXAMPLE_PRESSURE_MESSAGE_TEMPLATE.priority}</p>
+                                        <p><span className="font-semibold">Dirección:</span> {EXAMPLE_PRESSURE_MESSAGE_TEMPLATE.direction}</p>
+                                        <p><span className="font-semibold">Contención:</span> {EXAMPLE_PRESSURE_MESSAGE_TEMPLATE.containment}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showPressureExampleStep5 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 5 (Simulador y recuperación)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPressureExampleStep5(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Escenario crítico:</span> {EXAMPLE_PRESSURE_SIMULATOR.probableCriticalScenario}</p>
+                                        <p><span className="font-semibold">Señal de entrada:</span> {EXAMPLE_PRESSURE_SIMULATOR.entrySignal}</p>
+                                        <p><span className="font-semibold">Respuesta regulada:</span> {EXAMPLE_PRESSURE_SIMULATOR.regulatedResponse}</p>
+                                        <p><span className="font-semibold">Recuperación:</span> {EXAMPLE_PRESSURE_SIMULATOR.recoveryAction}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showPressureExampleStep6 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 6 (Test bajo presión)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPressureExampleStep6(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>
+                                            <span className="font-semibold">Señal débil:</span> responder rápido, justificar demasiado y subir el tono.
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">Señal mejorada:</span> pausar, nombrar el punto crítico y responder con secuencia breve y firme.
                                         </p>
                                     </div>
                                 </div>
