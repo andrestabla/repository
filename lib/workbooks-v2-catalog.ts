@@ -66,8 +66,18 @@ export const WORKBOOKS_V2_CATALOG: WorkbookV2CatalogItem[] = [
         code: 'WB6',
         title: 'Lenguaje verbal y no verbal de impacto',
         pillar: 'Shine Out',
+        statusLabel: 'Construcción activa',
+        progress: 78,
+        summary: 'Edición premium con bloques avanzados de lenguaje corporal, voz, presión, objeciones, coherencia y evaluación.'
+    },
+    {
+        id: 'wb7',
+        slug: 'wb7',
+        code: 'WB7',
+        title: 'Mapeo del ecosistema estratégico',
+        pillar: 'Shine Up',
         statusLabel: 'Portada y presentación activas',
         progress: 15,
-        summary: 'Portada e identificación más presentación informativa inicial, con guardado, continuidad por sesión y exportación completa PDF/HTML.'
+        summary: 'Nueva versión digital con portada e identificación, presentación informativa completa y continuidad automática por sesión.'
     }
 ]

@@ -5,6 +5,7 @@ import { WB3Digital } from '@/components/workbooks-v2/WB3Digital'
 import { WB4Digital } from '@/components/workbooks-v2/WB4Digital'
 import { WB5Digital } from '@/components/workbooks-v2/WB5Digital'
 import { WB6Digital } from '@/components/workbooks-v2/WB6Digital'
+import { WB7Digital } from '@/components/workbooks-v2/WB7Digital'
 
 export const revalidate = 0
 
@@ -33,6 +34,10 @@ export default async function WorkbookV2Page({ params }: { params: Promise<{ slu
 
     if (slug === 'wb6') {
         return <WB6Digital />
+    }
+
+    if (slug === 'wb7') {
+        return <WB7Digital />
     }
 
     notFound()
