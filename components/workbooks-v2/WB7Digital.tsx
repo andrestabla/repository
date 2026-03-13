@@ -5,12 +5,28 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 type YesNoAnswer = '' | 'yes' | 'no'
 type StakeholderLevel = '' | '1' | '2' | '3'
 type StakeholderSymbol = '' | '★' | '▲' | '!' | '○'
 type SponsorLevel = '' | 'bajo' | 'medio' | 'alto'
 type CalibrationLevel = '' | 'bajo' | 'medio' | 'alto'
+type MentorLevel = '' | 'N1' | 'N2' | 'N3' | 'N4'
+type MentorDecision = '' | 'Consolidado' | 'En desarrollo' | 'Prioritario'
+
+type MentorEvaluationRow = {
+    criterion: string
+    level: MentorLevel
+    evidence: string
+    decision: MentorDecision
+}
+
+type LeaderEvaluationRow = {
+    question: string
+    response: string
+    evidence: string
+    action: string
+}
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -159,6 +175,54 @@ type WB7State = {
             progressCriteria: string
         }
     }
+    strategicVisibilitySection: {
+        visibilityAudit: {
+            currentVisibleSpaces: string
+            currentVisibleAudiences: string
+            currentPerceivedValue: string
+            invisibleContributions: string
+            unoccupiedKeySpaces: string
+            probablePerception: string
+        }
+        visibilityMatrixRows: Array<{
+            keyAudience: string
+            valueToMakeVisible: string
+            concreteEvidence: string
+            visibilitySurface: string
+            errorToAvoid: string
+        }>
+        signalArchitecture: {
+            mainSignal: string
+            visibleAttributes: string
+            visibleProofs: string
+            strongerContexts: string
+            weakeningIncoherences: string
+        }
+        visibilityPortfolioRows: Array<{
+            visibilitySurface: string
+            whatToShow: string
+            format: string
+            minimumFrequency: string
+        }>
+        visibilityTimelineRows: Array<{
+            horizon: '30 días' | '60 días' | '90 días'
+            targetVisibleOutcome: string
+            space: string
+            progressIndicator: string
+        }>
+        visibilityTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
+    evaluation: {
+        mentorRows: MentorEvaluationRow[]
+        mentorGeneralNotes: string
+        mentorGlobalDecision: MentorDecision
+        leaderRows: LeaderEvaluationRow[]
+        agreementsSynthesis: string
+    }
 }
 
 type Score15 = '' | '1' | '2' | '3' | '4' | '5'
@@ -169,7 +233,9 @@ const PAGES: WorkbookPage[] = [
     { id: 3, label: '3. Mapeo de stakeholders (niveles 1, 2 y 3)', shortLabel: 'Stakeholders' },
     { id: 4, label: '4. Identificación de sponsors', shortLabel: 'Sponsors' },
     { id: 5, label: '5. Red de alto valor', shortLabel: 'Red de valor' },
-    { id: 6, label: '6. Estrategia de networking consciente', shortLabel: 'Networking' }
+    { id: 6, label: '6. Estrategia de networking consciente', shortLabel: 'Networking' },
+    { id: 7, label: '7. Plan de visibilidad estratégica', shortLabel: 'Visibilidad' },
+    { id: 8, label: '8. Evaluación', shortLabel: 'Evaluación' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb7-state'
@@ -184,6 +250,8 @@ const HIGH_VALUE_RECIPROCITY_ROWS = 3
 const NETWORK_OBJECTIVE_ROWS = 3
 const NETWORK_MOVEMENT_ROWS = 6
 const NETWORK_CADENCE_ROWS = 4
+const VISIBILITY_MATRIX_ROWS = 3
+const VISIBILITY_PORTFOLIO_ROWS = 4
 const MAP_RING_SYMBOLS: StakeholderSymbol[] = ['', '★', '▲', '!', '○']
 const BOND_TYPE_OPTIONS = [
     'Jerárquico / coordinación',
@@ -265,6 +333,114 @@ const CONSCIOUS_NETWORKING_SCORECARD_DIMENSIONS = [
     'Expansión deliberada',
     'Coherencia con objetivos'
 ] as const
+const VISIBILITY_VALUE_OPTIONS = [
+    'Criterio estratégico',
+    'Síntesis ejecutiva',
+    'Capacidad de ordenar escenarios',
+    'Pensamiento transversal',
+    'Confiabilidad en ejecución',
+    'Liderazgo colaborativo',
+    'Especialidad técnica',
+    'Influencia ética'
+] as const
+const VISIBILITY_SURFACE_OPTIONS = [
+    'Reuniones uno a uno',
+    'Reuniones de equipo',
+    'Reuniones de alto nivel',
+    'Reportes ejecutivos',
+    'Presentaciones',
+    'Correos de síntesis',
+    'Espacios transversales',
+    'Networking interno',
+    'Networking externo',
+    'Presencia digital / LinkedIn',
+    'Visibilidad por terceros'
+] as const
+const VISIBILITY_PORTFOLIO_SURFACES = [
+    'Reuniones de alto nivel',
+    'Reporte ejecutivo',
+    'Networking interno',
+    'LinkedIn / red externa'
+] as const
+const VISIBILITY_SHOW_OPTIONS = [
+    'Criterio y síntesis',
+    'Claridad de avance y foco',
+    'Capacidad de colaboración transversal',
+    'Especialidad y lectura de contexto',
+    'Resultados con impacto',
+    'Recomendaciones bien sustentadas'
+] as const
+const VISIBILITY_FREQUENCY_OPTIONS = [
+    'Semanal',
+    'Quincenal',
+    'Mensual',
+    'Bimensual',
+    'Trimestral',
+    'Según hito'
+] as const
+const VISIBILITY_TEST_QUESTIONS = [
+    '¿Tengo clara la señal que quiero instalar?',
+    '¿He definido audiencias específicas?',
+    '¿Cada señal tiene evidencia visible?',
+    '¿Mi enfoque evita la autopromoción vacía?',
+    '¿Tengo superficies claras de visibilidad?',
+    '¿Mi plan 30-60-90 es ejecutable?'
+] as const
+
+const MENTOR_EVALUATION_CRITERIA = [
+    'Identificación de sponsors estratégicos',
+    'Calidad de relaciones clave',
+    'Generación de valor antes de pedir',
+    'Lectura de poder organizacional',
+    'Expansión consciente del capital relacional'
+] as const
+
+const LEADER_EVALUATION_QUESTIONS = [
+    '¿Mi red es estratégica o circunstancial?',
+    '¿A qué sponsor clave debo acercarme y no lo estoy haciendo?',
+    '¿Qué valor concreto aporto antes de solicitar apoyo?',
+    '¿Qué conversación clave estoy postergando?',
+    '¿Cómo estoy ampliando mi capital relacional este trimestre?'
+] as const
+
+const MENTOR_LEVEL_OPTIONS: MentorLevel[] = ['N1', 'N2', 'N3', 'N4']
+const MENTOR_DECISION_OPTIONS: MentorDecision[] = ['Consolidado', 'En desarrollo', 'Prioritario']
+const MENTOR_LEVEL_REFERENCE = [
+    {
+        level: 'Nivel 1 – Declarativo',
+        descriptor: 'Desconoce actores clave; relaciones superficiales.'
+    },
+    {
+        level: 'Nivel 2 – Consciente',
+        descriptor: 'Identifica actores pero sin estrategia clara.'
+    },
+    {
+        level: 'Nivel 3 – Integrado',
+        descriptor: 'Relaciones estratégicas activas con intercambio de valor.'
+    },
+    {
+        level: 'Nivel 4 – Alineación Estratégica',
+        descriptor: 'Red consolidada; influencia estable y sostenible.'
+    }
+] as const
+
+const createDefaultEvaluationData = (): WB7State['evaluation'] => ({
+    mentorRows: MENTOR_EVALUATION_CRITERIA.map((criterion) => ({
+        criterion,
+        level: '' as MentorLevel,
+        evidence: '',
+        decision: '' as MentorDecision
+    })),
+    mentorGeneralNotes: '',
+    mentorGlobalDecision: '' as MentorDecision,
+    leaderRows: LEADER_EVALUATION_QUESTIONS.map((question) => ({
+        question,
+        response: '',
+        evidence: '',
+        action: ''
+    })),
+    agreementsSynthesis: ''
+})
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '')
 
@@ -468,7 +644,48 @@ const DEFAULT_STATE: WB7State = {
             maintenanceHabit: '',
             progressCriteria: ''
         }
-    }
+    },
+    strategicVisibilitySection: {
+        visibilityAudit: {
+            currentVisibleSpaces: '',
+            currentVisibleAudiences: '',
+            currentPerceivedValue: '',
+            invisibleContributions: '',
+            unoccupiedKeySpaces: '',
+            probablePerception: ''
+        },
+        visibilityMatrixRows: Array.from({ length: VISIBILITY_MATRIX_ROWS }, () => ({
+            keyAudience: '',
+            valueToMakeVisible: '',
+            concreteEvidence: '',
+            visibilitySurface: '',
+            errorToAvoid: ''
+        })),
+        signalArchitecture: {
+            mainSignal: '',
+            visibleAttributes: '',
+            visibleProofs: '',
+            strongerContexts: '',
+            weakeningIncoherences: ''
+        },
+        visibilityPortfolioRows: Array.from({ length: VISIBILITY_PORTFOLIO_ROWS }, (_, index) => ({
+            visibilitySurface: VISIBILITY_PORTFOLIO_SURFACES[index],
+            whatToShow: '',
+            format: '',
+            minimumFrequency: ''
+        })),
+        visibilityTimelineRows: [
+            { horizon: '30 días' as const, targetVisibleOutcome: '', space: '', progressIndicator: '' },
+            { horizon: '60 días' as const, targetVisibleOutcome: '', space: '', progressIndicator: '' },
+            { horizon: '90 días' as const, targetVisibleOutcome: '', space: '', progressIndicator: '' }
+        ],
+        visibilityTest: VISIBILITY_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
+    },
+    evaluation: createDefaultEvaluationData()
 }
 
 const normalizeState = (raw: unknown): WB7State => {
@@ -509,6 +726,22 @@ const normalizeState = (raw: unknown): WB7State => {
     const rawCadenceRows = Array.isArray(consciousNetworkingSection.cadenceRows) ? consciousNetworkingSection.cadenceRows : []
     const rawScorecardRows = Array.isArray(consciousNetworkingSection.scorecardRows) ? consciousNetworkingSection.scorecardRows : []
     const rawPlan30Days = (consciousNetworkingSection.plan30Days ?? {}) as Record<string, unknown>
+    const strategicVisibilitySection = (parsed.strategicVisibilitySection ?? {}) as Record<string, unknown>
+    const rawVisibilityAudit = (strategicVisibilitySection.visibilityAudit ?? {}) as Record<string, unknown>
+    const rawVisibilityMatrixRows = Array.isArray(strategicVisibilitySection.visibilityMatrixRows)
+        ? strategicVisibilitySection.visibilityMatrixRows
+        : []
+    const rawSignalArchitecture = (strategicVisibilitySection.signalArchitecture ?? {}) as Record<string, unknown>
+    const rawVisibilityPortfolioRows = Array.isArray(strategicVisibilitySection.visibilityPortfolioRows)
+        ? strategicVisibilitySection.visibilityPortfolioRows
+        : []
+    const rawVisibilityTimelineRows = Array.isArray(strategicVisibilitySection.visibilityTimelineRows)
+        ? strategicVisibilitySection.visibilityTimelineRows
+        : []
+    const rawVisibilityTest = Array.isArray(strategicVisibilitySection.visibilityTest) ? strategicVisibilitySection.visibilityTest : []
+    const rawEvaluation = (parsed.evaluation ?? {}) as Record<string, unknown>
+    const rawMentorRows = Array.isArray(rawEvaluation.mentorRows) ? rawEvaluation.mentorRows : []
+    const rawLeaderRows = Array.isArray(rawEvaluation.leaderRows) ? rawEvaluation.leaderRows : []
 
     return {
         identification: {
@@ -703,6 +936,93 @@ const normalizeState = (raw: unknown): WB7State => {
                 maintenanceHabit: readString(rawPlan30Days.maintenanceHabit),
                 progressCriteria: readString(rawPlan30Days.progressCriteria)
             }
+        },
+        strategicVisibilitySection: {
+            visibilityAudit: {
+                currentVisibleSpaces: readString(rawVisibilityAudit.currentVisibleSpaces),
+                currentVisibleAudiences: readString(rawVisibilityAudit.currentVisibleAudiences),
+                currentPerceivedValue: readString(rawVisibilityAudit.currentPerceivedValue),
+                invisibleContributions: readString(rawVisibilityAudit.invisibleContributions),
+                unoccupiedKeySpaces: readString(rawVisibilityAudit.unoccupiedKeySpaces),
+                probablePerception: readString(rawVisibilityAudit.probablePerception)
+            },
+            visibilityMatrixRows: Array.from({ length: VISIBILITY_MATRIX_ROWS }, (_, index) => {
+                const row = (rawVisibilityMatrixRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    keyAudience: readString(row.keyAudience),
+                    valueToMakeVisible: readString(row.valueToMakeVisible),
+                    concreteEvidence: readString(row.concreteEvidence),
+                    visibilitySurface: readString(row.visibilitySurface),
+                    errorToAvoid: readString(row.errorToAvoid)
+                }
+            }),
+            signalArchitecture: {
+                mainSignal: readString(rawSignalArchitecture.mainSignal),
+                visibleAttributes: readString(rawSignalArchitecture.visibleAttributes),
+                visibleProofs: readString(rawSignalArchitecture.visibleProofs),
+                strongerContexts: readString(rawSignalArchitecture.strongerContexts),
+                weakeningIncoherences: readString(rawSignalArchitecture.weakeningIncoherences)
+            },
+            visibilityPortfolioRows: Array.from({ length: VISIBILITY_PORTFOLIO_ROWS }, (_, index) => {
+                const row = (rawVisibilityPortfolioRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    visibilitySurface: readString(row.visibilitySurface) || VISIBILITY_PORTFOLIO_SURFACES[index],
+                    whatToShow: readString(row.whatToShow),
+                    format: readString(row.format),
+                    minimumFrequency: readString(row.minimumFrequency)
+                }
+            }),
+            visibilityTimelineRows: ['30 días', '60 días', '90 días'].map((horizon, index) => {
+                const row = (rawVisibilityTimelineRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    horizon: horizon as '30 días' | '60 días' | '90 días',
+                    targetVisibleOutcome: readString(row.targetVisibleOutcome),
+                    space: readString(row.space),
+                    progressIndicator: readString(row.progressIndicator)
+                }
+            }),
+            visibilityTest: VISIBILITY_TEST_QUESTIONS.map((question, index) => {
+                const row = (rawVisibilityTest[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: readYesNo(row.verdict),
+                    adjustment: readString(row.adjustment)
+                }
+            })
+        },
+        evaluation: {
+            mentorRows: MENTOR_EVALUATION_CRITERIA.map((criterion, index) => {
+                const row = (rawMentorRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    criterion,
+                    level:
+                        row.level === 'N1' || row.level === 'N2' || row.level === 'N3' || row.level === 'N4'
+                            ? (row.level as MentorLevel)
+                            : ('' as MentorLevel),
+                    evidence: readString(row.evidence),
+                    decision:
+                        row.decision === 'Consolidado' || row.decision === 'En desarrollo' || row.decision === 'Prioritario'
+                            ? (row.decision as MentorDecision)
+                            : ('' as MentorDecision)
+                }
+            }),
+            mentorGeneralNotes: readString(rawEvaluation.mentorGeneralNotes),
+            mentorGlobalDecision:
+                rawEvaluation.mentorGlobalDecision === 'Consolidado' ||
+                rawEvaluation.mentorGlobalDecision === 'En desarrollo' ||
+                rawEvaluation.mentorGlobalDecision === 'Prioritario'
+                    ? (rawEvaluation.mentorGlobalDecision as MentorDecision)
+                    : ('' as MentorDecision),
+            leaderRows: LEADER_EVALUATION_QUESTIONS.map((question, index) => {
+                const row = (rawLeaderRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    response: readString(row.response),
+                    evidence: readString(row.evidence),
+                    action: readString(row.action)
+                }
+            }),
+            agreementsSynthesis: readString(rawEvaluation.agreementsSynthesis)
         }
     }
 }
@@ -721,6 +1041,7 @@ export function WB7Digital() {
     const [showSponsorHelp, setShowSponsorHelp] = useState(false)
     const [showHighValueHelp, setShowHighValueHelp] = useState(false)
     const [showConsciousNetworkingHelp, setShowConsciousNetworkingHelp] = useState(false)
+    const [showVisibilityHelp, setShowVisibilityHelp] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1396,6 +1717,266 @@ export function WB7Digital() {
         announceSave(`${label} guardado.`)
     }
 
+    const mergeVisibilityAudiences = (incoming: string[]) => {
+        if (isLocked) return
+        const normalizedIncoming = incoming.map((item) => item.trim()).filter((item) => item.length > 0)
+        if (!normalizedIncoming.length) return
+        setState((prev) => {
+            const visibilityMatrixRows = [...prev.strategicVisibilitySection.visibilityMatrixRows]
+            const existing = new Set(
+                visibilityMatrixRows.map((row) => row.keyAudience.trim().toLowerCase()).filter((item) => item.length > 0)
+            )
+            const candidates = normalizedIncoming.filter((item) => !existing.has(item.toLowerCase()))
+            if (!candidates.length) return prev
+
+            let pointer = 0
+            for (let index = 0; index < visibilityMatrixRows.length && pointer < candidates.length; index += 1) {
+                if (visibilityMatrixRows[index].keyAudience.trim().length === 0) {
+                    visibilityMatrixRows[index] = {
+                        ...visibilityMatrixRows[index],
+                        keyAudience: candidates[pointer]
+                    }
+                    pointer += 1
+                }
+            }
+
+            return {
+                ...prev,
+                strategicVisibilitySection: {
+                    ...prev.strategicVisibilitySection,
+                    visibilityMatrixRows
+                }
+            }
+        })
+    }
+
+    const importStakeholdersIntoVisibility = () => {
+        mergeVisibilityAudiences(state.stakeholderMappingSection.actorInventory)
+        savePage(7)
+        announceSave('Se importaron stakeholders a audiencias clave de visibilidad.')
+    }
+
+    const importSponsorsIntoVisibility = () => {
+        mergeVisibilityAudiences(state.sponsorIdentificationSection.possibleSponsors)
+        savePage(7)
+        announceSave('Se importaron sponsors a audiencias clave de visibilidad.')
+    }
+
+    const updateVisibilityAudit = (
+        field: keyof WB7State['strategicVisibilitySection']['visibilityAudit'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            strategicVisibilitySection: {
+                ...prev.strategicVisibilitySection,
+                visibilityAudit: {
+                    ...prev.strategicVisibilitySection.visibilityAudit,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateVisibilityMatrixRow = (
+        index: number,
+        field: keyof WB7State['strategicVisibilitySection']['visibilityMatrixRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const visibilityMatrixRows = [...prev.strategicVisibilitySection.visibilityMatrixRows]
+            visibilityMatrixRows[index] = {
+                ...visibilityMatrixRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                strategicVisibilitySection: {
+                    ...prev.strategicVisibilitySection,
+                    visibilityMatrixRows
+                }
+            }
+        })
+    }
+
+    const updateVisibilitySignalArchitecture = (
+        field: keyof WB7State['strategicVisibilitySection']['signalArchitecture'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            strategicVisibilitySection: {
+                ...prev.strategicVisibilitySection,
+                signalArchitecture: {
+                    ...prev.strategicVisibilitySection.signalArchitecture,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateVisibilityPortfolioRow = (
+        index: number,
+        field: keyof WB7State['strategicVisibilitySection']['visibilityPortfolioRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const visibilityPortfolioRows = [...prev.strategicVisibilitySection.visibilityPortfolioRows]
+            visibilityPortfolioRows[index] = {
+                ...visibilityPortfolioRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                strategicVisibilitySection: {
+                    ...prev.strategicVisibilitySection,
+                    visibilityPortfolioRows
+                }
+            }
+        })
+    }
+
+    const updateVisibilityTimelineRow = (
+        index: number,
+        field: keyof Omit<WB7State['strategicVisibilitySection']['visibilityTimelineRows'][number], 'horizon'>,
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const visibilityTimelineRows = [...prev.strategicVisibilitySection.visibilityTimelineRows]
+            visibilityTimelineRows[index] = {
+                ...visibilityTimelineRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                strategicVisibilitySection: {
+                    ...prev.strategicVisibilitySection,
+                    visibilityTimelineRows
+                }
+            }
+        })
+    }
+
+    const updateVisibilityTestRow = (index: number, field: 'verdict' | 'adjustment', value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const visibilityTest = [...prev.strategicVisibilitySection.visibilityTest]
+            visibilityTest[index] =
+                field === 'verdict' ? { ...visibilityTest[index], verdict: readYesNo(value) } : { ...visibilityTest[index], adjustment: value }
+            return {
+                ...prev,
+                strategicVisibilitySection: {
+                    ...prev.strategicVisibilitySection,
+                    visibilityTest
+                }
+            }
+        })
+    }
+
+    const saveVisibilityBlock = (label: string) => {
+        savePage(7)
+        announceSave(`${label} guardado.`)
+    }
+
+    const updateMentorEvaluationRow = (index: number, field: keyof Omit<MentorEvaluationRow, 'criterion'>, value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const mentorRows = [...prev.evaluation.mentorRows]
+            const row = mentorRows[index]
+            if (!row) return prev
+
+            if (field === 'level') {
+                mentorRows[index] = {
+                    ...row,
+                    level: (MENTOR_LEVEL_OPTIONS.includes(value as MentorLevel) ? value : '') as MentorLevel
+                }
+            } else if (field === 'decision') {
+                mentorRows[index] = {
+                    ...row,
+                    decision: (MENTOR_DECISION_OPTIONS.includes(value as MentorDecision) ? value : '') as MentorDecision
+                }
+            } else {
+                mentorRows[index] = {
+                    ...row,
+                    evidence: value
+                }
+            }
+
+            return {
+                ...prev,
+                evaluation: {
+                    ...prev.evaluation,
+                    mentorRows
+                }
+            }
+        })
+    }
+
+    const updateMentorGeneralNotes = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGeneralNotes: value
+            }
+        }))
+    }
+
+    const updateMentorGlobalDecision = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGlobalDecision: (
+                    MENTOR_DECISION_OPTIONS.includes(value as MentorDecision) ? value : ''
+                ) as WB7State['evaluation']['mentorGlobalDecision']
+            }
+        }))
+    }
+
+    const updateLeaderEvaluationRow = (index: number, field: keyof Omit<LeaderEvaluationRow, 'question'>, value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const leaderRows = [...prev.evaluation.leaderRows]
+            const row = leaderRows[index]
+            if (!row) return prev
+            leaderRows[index] = {
+                ...row,
+                [field]: value
+            }
+            return {
+                ...prev,
+                evaluation: {
+                    ...prev.evaluation,
+                    leaderRows
+                }
+            }
+        })
+    }
+
+    const updateEvaluationAgreements = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                agreementsSynthesis: value
+            }
+        }))
+    }
+
+    const saveEvaluationBlock = (label: string) => {
+        savePage(8)
+        announceSave(`${label} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -1738,13 +2319,107 @@ export function WB7Digital() {
     const cadenceMissing = consciousNetworkingSection.cadenceRows.every((row) => row.suggestedCadence.trim().length === 0)
     const planMissingReciprocity = plan30Days.visibleReciprocityAction.trim().length === 0
 
+    const visibilitySection = state.strategicVisibilitySection
+    const visibilityAudit = visibilitySection.visibilityAudit
+    const visibilitySignal = visibilitySection.signalArchitecture
+    const visibilityAuditCompleted =
+        visibilityAudit.currentVisibleSpaces.trim().length > 0 &&
+        visibilityAudit.currentVisibleAudiences.trim().length > 0 &&
+        visibilityAudit.currentPerceivedValue.trim().length > 0 &&
+        visibilityAudit.invisibleContributions.trim().length > 0 &&
+        visibilityAudit.unoccupiedKeySpaces.trim().length > 0 &&
+        visibilityAudit.probablePerception.trim().length > 0
+    const visibilityMatrixCompleted = visibilitySection.visibilityMatrixRows.every(
+        (row) =>
+            row.keyAudience.trim().length > 0 &&
+            row.valueToMakeVisible.trim().length > 0 &&
+            row.concreteEvidence.trim().length > 0 &&
+            row.visibilitySurface.trim().length > 0 &&
+            row.errorToAvoid.trim().length > 0
+    )
+    const visibilitySignalCompleted =
+        visibilitySignal.mainSignal.trim().length > 0 &&
+        visibilitySignal.visibleAttributes.trim().length > 0 &&
+        visibilitySignal.visibleProofs.trim().length > 0 &&
+        visibilitySignal.strongerContexts.trim().length > 0 &&
+        visibilitySignal.weakeningIncoherences.trim().length > 0
+    const visibilityPortfolioCompleted = visibilitySection.visibilityPortfolioRows.every(
+        (row) =>
+            row.visibilitySurface.trim().length > 0 &&
+            row.whatToShow.trim().length > 0 &&
+            row.format.trim().length > 0 &&
+            row.minimumFrequency.trim().length > 0
+    )
+    const visibilityTimelineCompleted = visibilitySection.visibilityTimelineRows.every(
+        (row) =>
+            row.targetVisibleOutcome.trim().length > 0 && row.space.trim().length > 0 && row.progressIndicator.trim().length > 0
+    )
+    const visibilityTestCompleted = visibilitySection.visibilityTest.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+    const hasVisibilityAudiences = visibilitySection.visibilityMatrixRows.some((row) => row.keyAudience.trim().length > 0)
+    const section7Completed =
+        visibilityAuditCompleted &&
+        visibilityMatrixCompleted &&
+        visibilitySignalCompleted &&
+        visibilityPortfolioCompleted &&
+        visibilityTimelineCompleted &&
+        visibilityTestCompleted
+
+    const weakSignalVisibility =
+        visibilitySignal.mainSignal.trim().toLowerCase() === 'quiero ser más visible' ||
+        (visibilitySignal.mainSignal.trim().length > 0 &&
+            visibilitySignal.mainSignal.trim().toLowerCase().includes('ser más visible') &&
+            !visibilitySignal.mainSignal.trim().includes(','))
+    const noVisibilityEvidence =
+        visibilitySection.visibilityMatrixRows.every((row) => row.concreteEvidence.trim().length === 0) &&
+        visibilitySignal.visibleProofs.trim().length === 0
+
+    const internalSurfaces = new Set([
+        'reuniones uno a uno',
+        'reuniones de equipo',
+        'reuniones de alto nivel',
+        'reportes ejecutivos',
+        'presentaciones',
+        'correos de síntesis',
+        'espacios transversales',
+        'networking interno',
+        'visibilidad por terceros',
+        'reporte ejecutivo'
+    ])
+    const externalSurfaces = new Set(['networking externo', 'presencia digital / linkedin', 'linkedin / red externa'])
+
+    const selectedSurfaces = [
+        ...visibilitySection.visibilityMatrixRows.map((row) => row.visibilitySurface.trim().toLowerCase()),
+        ...visibilitySection.visibilityPortfolioRows.map((row) => row.visibilitySurface.trim().toLowerCase())
+    ].filter((surface) => surface.length > 0)
+
+    const hasInternalSurface = selectedSurfaces.some((surface) => internalSurfaces.has(surface))
+    const hasExternalSurface = selectedSurfaces.some((surface) => externalSurfaces.has(surface))
+    const visibilitySurfaceOverconcentrated = selectedSurfaces.length > 0 && (hasInternalSurface ? !hasExternalSurface : hasExternalSurface)
+
+    const noTimelineIndicators = visibilitySection.visibilityTimelineRows.some((row) => row.progressIndicator.trim().length === 0)
+    const evaluation = state.evaluation
+    const mentorRowsCompleted = evaluation.mentorRows.every(
+        (row) => row.level !== '' && row.evidence.trim().length > 0 && row.decision !== ''
+    )
+    const mentorClosingCompleted =
+        evaluation.mentorGeneralNotes.trim().length > 0 && evaluation.mentorGlobalDecision.trim().length > 0
+    const leaderRowsCompleted = evaluation.leaderRows.every(
+        (row) => row.response.trim().length > 0 && row.evidence.trim().length > 0 && row.action.trim().length > 0
+    )
+    const agreementsCompleted = evaluation.agreementsSynthesis.trim().length > 0
+    const section8Completed = mentorRowsCompleted && mentorClosingCompleted && leaderRowsCompleted && agreementsCompleted
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: section3Completed,
         4: section4Completed,
         5: section5Completed,
-        6: section6Completed
+        6: section6Completed,
+        7: section7Completed,
+        8: section8Completed
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -1823,7 +2498,7 @@ export function WB7Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb7-print-page wb7-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 6"
+                                data-print-page="Página 1 de 8"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1916,7 +2591,7 @@ export function WB7Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 6"
+                                data-print-page="Página 2 de 8"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2049,7 +2724,7 @@ export function WB7Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 6"
+                                data-print-page="Página 3 de 8"
                                 data-print-title="Mapeo de stakeholders (niveles 1, 2 y 3)"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2891,7 +3566,7 @@ export function WB7Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 6"
+                                data-print-page="Página 4 de 8"
                                 data-print-title="Identificación de sponsors"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3619,7 +4294,7 @@ export function WB7Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 5 de 6"
+                                data-print-page="Página 5 de 8"
                                 data-print-title="Red de alto valor"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4547,7 +5222,7 @@ export function WB7Digital() {
                         {isPageVisible(6) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 6 de 6"
+                                data-print-page="Página 6 de 8"
                                 data-print-title="Estrategia de networking consciente"
                                 data-print-meta={printMetaLabel}
                             >
@@ -5334,6 +6009,1141 @@ export function WB7Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(7) && (
+                            <article
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 7 de 8"
+                                data-print-title="Plan de visibilidad estratégica"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 7</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Plan de visibilidad estratégica
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Diseña una arquitectura de visibilidad para hacer visible tu aporte en las audiencias correctas, con pruebas concretas y
+                                        una secuencia 30-60-90 que fortalezca reputación, legitimidad y acceso.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowVisibilityHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Visibilidad estratégica: hacer visible tu valor donde esa señal genera legitimidad, influencia o acceso.',
+                                            'Huella ejecutiva visible: percepción consistente que dejas por resultados, criterio e intervenciones.',
+                                            'Señal de valor: evidencia breve y comprensible de tu aporte (síntesis, resultado, recomendación).',
+                                            'Visibilidad directa e indirecta: lo que muestras tú y lo que terceros amplifican de tu trabajo.',
+                                            'Arquitectura de visibilidad: qué mostrar, dónde, ante quién, con qué prueba y con qué frecuencia.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Auditoría de visibilidad actual</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                visibilityAuditCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {visibilityAuditCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Haz una lectura real de tu visibilidad actual antes de diseñar el plan.',
+                                                'Distingue qué valor ya se percibe y qué aportes siguen invisibles para audiencias clave.',
+                                                'Identifica espacios que no estás ocupando y la percepción probable que estás dejando.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Espacios visibles: reuniones operativas y conversaciones uno a uno.',
+                                                'Audiencias que sí me ven: jefe directo y pares cercanos.',
+                                                'Valor percibido: ejecución sólida y confiable.',
+                                                'Aportes invisibles: pensamiento estratégico y capacidad de ordenar escenarios.',
+                                                'Espacios no ocupados: comités ampliados y reportes ejecutivos.',
+                                                'Percepción probable: buen ejecutor, aún no claramente referente.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Mi lectura actual</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {[
+                                                    ['Espacios donde hoy soy visible', visibilityAudit.currentVisibleSpaces, 'currentVisibleSpaces'],
+                                                    ['Audiencias que sí me ven', visibilityAudit.currentVisibleAudiences, 'currentVisibleAudiences'],
+                                                    ['Valor que hoy se percibe de mí', visibilityAudit.currentPerceivedValue, 'currentPerceivedValue'],
+                                                    ['Aportes que siguen invisibles', visibilityAudit.invisibleContributions, 'invisibleContributions'],
+                                                    ['Espacios clave que no estoy ocupando', visibilityAudit.unoccupiedKeySpaces, 'unoccupiedKeySpaces'],
+                                                    ['Percepción probable que estoy dejando', visibilityAudit.probablePerception, 'probablePerception']
+                                                ].map(([label, value, key]) => (
+                                                    <tr key={`wb7-visibility-audit-${key}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{label}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={value as string}
+                                                                onChange={(event) =>
+                                                                    updateVisibilityAudit(
+                                                                        key as keyof WB7State['strategicVisibilitySection']['visibilityAudit'],
+                                                                        event.target.value
+                                                                    )
+                                                                }
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityBlock('Paso 1 — Auditoría de visibilidad actual')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz visibilidad–audiencia–valor–prueba</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                visibilityMatrixCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {visibilityMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define para cada audiencia clave el valor visible que quieres instalar.',
+                                                'Sostén ese valor con evidencia concreta y una superficie de visibilidad adecuada.',
+                                                'Declara qué error debes evitar para no perder efectividad.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Directora de unidad | Criterio estratégico | Síntesis con foco/riesgo/recomendación | Reunión ejecutiva | Evitar sobreexplicar.',
+                                                'Sponsor potencial | Valor transversal | Caso de impacto visible | Conversación puente / correo ejecutivo | Evitar pedir apoyo antes de mostrar valor.',
+                                                'Referente externo | Especialidad | Insight aplicable del sector | Evento / publicación breve | Evitar tono genérico.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={importStakeholdersIntoVisibility}
+                                            disabled={isLocked}
+                                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Traer stakeholders
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={importSponsorsIntoVisibility}
+                                            disabled={isLocked}
+                                            className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Traer sponsors
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1280px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Audiencia clave</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Valor que quiero hacer visible</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Prueba / evidencia concreta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Superficie de visibilidad</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Error a evitar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {visibilitySection.visibilityMatrixRows.map((row, index) => (
+                                                    <tr key={`wb7-visibility-matrix-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.keyAudience}
+                                                                onChange={(event) => updateVisibilityMatrixRow(index, 'keyAudience', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[260px]">
+                                                            <select
+                                                                value={row.valueToMakeVisible}
+                                                                onChange={(event) => updateVisibilityMatrixRow(index, 'valueToMakeVisible', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_VALUE_OPTIONS.map((option) => (
+                                                                    <option key={`wb7-visibility-value-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.concreteEvidence}
+                                                                onChange={(event) => updateVisibilityMatrixRow(index, 'concreteEvidence', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[260px]">
+                                                            <select
+                                                                value={row.visibilitySurface}
+                                                                onChange={(event) => updateVisibilityMatrixRow(index, 'visibilitySurface', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_SURFACE_OPTIONS.map((option) => (
+                                                                    <option key={`wb7-visibility-surface-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.errorToAvoid}
+                                                                onChange={(event) => updateVisibilityMatrixRow(index, 'errorToAvoid', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityBlock('Paso 2 — Matriz visibilidad-audiencia-valor-prueba')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Arquitectura de señal visible</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                visibilitySignalCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {visibilitySignalCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define una señal principal clara que quieras instalar en tu reputación visible.',
+                                                'Especifica atributos y pruebas observables que la vuelvan creíble.',
+                                                'Aclara contextos de alta prioridad y posibles incoherencias que puedan debilitar la señal.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Señal principal: aporto claridad estratégica y foco.',
+                                                'Atributos: síntesis, criterio y capacidad de ordenar.',
+                                                'Pruebas: reportes claros, intervenciones breves y recomendaciones sustentadas.',
+                                                'Contextos: comités, reuniones transversales y espacios con dirección.',
+                                                'Incoherencias: exceso de detalle, mensaje confuso o baja visibilidad de resultados.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <label className="space-y-1 md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Señal principal</span>
+                                            <textarea
+                                                value={visibilitySignal.mainSignal}
+                                                onChange={(event) => updateVisibilitySignalArchitecture('mainSignal', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Tres atributos visibles</span>
+                                            <textarea
+                                                value={visibilitySignal.visibleAttributes}
+                                                onChange={(event) => updateVisibilitySignalArchitecture('visibleAttributes', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={4}
+                                                placeholder={'• atributo 1\n• atributo 2\n• atributo 3'}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Pruebas visibles</span>
+                                            <textarea
+                                                value={visibilitySignal.visibleProofs}
+                                                onChange={(event) => updateVisibilitySignalArchitecture('visibleProofs', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={4}
+                                                placeholder={'• prueba 1\n• prueba 2\n• prueba 3'}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Contextos donde debe aparecer</span>
+                                            <textarea
+                                                value={visibilitySignal.strongerContexts}
+                                                onChange={(event) => updateVisibilitySignalArchitecture('strongerContexts', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Incoherencias que podrían debilitarla</span>
+                                            <textarea
+                                                value={visibilitySignal.weakeningIncoherences}
+                                                onChange={(event) => updateVisibilitySignalArchitecture('weakeningIncoherences', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityBlock('Paso 3 — Arquitectura de señal visible')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Portafolio de superficies de visibilidad</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                visibilityPortfolioCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {visibilityPortfolioCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Trabaja las 4 superficies propuestas (ya cargadas) y define qué mostrarás en cada una.',
+                                                'Selecciona formato y frecuencia mínima para sostener una presencia consistente.',
+                                                'Evita concentrar toda la visibilidad en un solo tipo de espacio.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Reunión ejecutiva | Criterio y síntesis | Intervención breve + recomendación | 2 veces al mes.',
+                                                'Reporte ejecutivo | Claridad de avance y foco | Resumen de una página | Mensual.',
+                                                'Networking interno | Colaboración transversal | Conversaciones de valor | 2 contactos al mes.',
+                                                'LinkedIn / red externa | Especialidad y contexto | Publicación breve | 2 veces al mes.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1120px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Superficie de visibilidad</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué quiero mostrar aquí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Formato</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Frecuencia mínima</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {visibilitySection.visibilityPortfolioRows.map((row, index) => (
+                                                    <tr key={`wb7-visibility-portfolio-${index}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">
+                                                            {row.visibilitySurface}
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[280px]">
+                                                            <select
+                                                                value={row.whatToShow}
+                                                                onChange={(event) => updateVisibilityPortfolioRow(index, 'whatToShow', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_SHOW_OPTIONS.map((option) => (
+                                                                    <option key={`wb7-visibility-show-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.format}
+                                                                onChange={(event) => updateVisibilityPortfolioRow(index, 'format', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.minimumFrequency}
+                                                                onChange={(event) => updateVisibilityPortfolioRow(index, 'minimumFrequency', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_FREQUENCY_OPTIONS.map((option) => (
+                                                                    <option key={`wb7-visibility-frequency-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityBlock('Paso 4 — Portafolio de superficies de visibilidad')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Calendario 30-60-90 de visibilidad estratégica</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                visibilityTimelineCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {visibilityTimelineCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'En 30 días define una visibilidad mínima viable.',
+                                                'En 60 días define consolidación de señal y en 90 días ampliación de reputación.',
+                                                'Incluye un indicador observable por horizonte.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                '30 días: hacer visible síntesis ejecutiva en reuniones/reportes | indicador: 3 entregables visibles.',
+                                                '60 días: criterio estratégico en espacios transversales | indicador: ser consultado en decisión relevante.',
+                                                '90 días: reputación de referente interno/externo | indicador: mayor reconocimiento e invitaciones.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Horizonte</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué quiero haber hecho visible</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">En qué espacio</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Indicador de avance</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {visibilitySection.visibilityTimelineRows.map((row, index) => (
+                                                    <tr key={`wb7-visibility-timeline-${row.horizon}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.horizon}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.targetVisibleOutcome}
+                                                                onChange={(event) => updateVisibilityTimelineRow(index, 'targetVisibleOutcome', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.space}
+                                                                onChange={(event) => updateVisibilityTimelineRow(index, 'space', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.progressIndicator}
+                                                                onChange={(event) => updateVisibilityTimelineRow(index, 'progressIndicator', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <article className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-4">
+                                        <h4 className="text-sm font-bold text-slate-900">Esquema visual 30-60-90</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            {visibilitySection.visibilityTimelineRows.map((row) => (
+                                                <div key={`wb7-timeline-card-${row.horizon}`} className="rounded-xl border border-blue-200 bg-white p-3">
+                                                    <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">{row.horizon}</p>
+                                                    <p className="mt-2 text-sm font-semibold text-slate-800">
+                                                        {row.targetVisibleOutcome || 'Define qué harás visible'}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-slate-600">{row.space || 'Define espacio'}</p>
+                                                    <p className="mt-1 text-xs text-slate-500">{row.progressIndicator || 'Define indicador'}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </article>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityBlock('Paso 5 — Calendario 30-60-90')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Test de visibilidad estratégica</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                visibilityTestCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {visibilityTestCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Responde Sí/No basado en evidencia de diseño real del plan.',
+                                                'Completa ajuste necesario cuando detectes brechas.',
+                                                'Verifica coherencia entre señal, audiencia, prueba y calendario.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Señal débil: “quiero que me vean más”.',
+                                                'Señal mejorada: “quiero que alta dirección perciba síntesis estratégica y claridad en decisiones complejas, con pruebas concretas”.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí / No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {visibilitySection.visibilityTest.map((row, index) => (
+                                                    <tr key={`wb7-visibility-test-${index}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.verdict}
+                                                                onChange={(event) => updateVisibilityTestRow(index, 'verdict', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="yes">Sí</option>
+                                                                <option value="no">No</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateVisibilityTestRow(index, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityBlock('Paso 6 — Test de visibilidad estratégica')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-3">
+                                    <h3 className="text-base font-bold text-slate-900">Cierre de la sección</h3>
+                                    <p className="text-sm text-slate-700 leading-relaxed">
+                                        Al finalizar, deberías poder responder con mayor claridad:
+                                    </p>
+                                    <ul className="space-y-1.5">
+                                        {[
+                                            'Qué valor quieres hacer visible.',
+                                            'Ante qué audiencias debe volverse visible.',
+                                            'Qué pruebas sostienen esa visibilidad.',
+                                            'En qué superficies conviene amplificar tu reputación.',
+                                            'Cómo convertir la visibilidad en una práctica estratégica y no accidental.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+                                    <h3 className="text-base font-bold text-slate-900">Validaciones suaves</h3>
+                                    {weakSignalVisibility && (
+                                        <p className="text-sm text-amber-800">Sugerencia: aclara qué aporte específico quieres hacer visible.</p>
+                                    )}
+                                    {noVisibilityEvidence && (
+                                        <p className="text-sm text-amber-800">Sugerencia: define qué prueba concreta sostiene esa señal.</p>
+                                    )}
+                                    {visibilitySurfaceOverconcentrated && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: revisa si tu portafolio de visibilidad está demasiado concentrado.
+                                        </p>
+                                    )}
+                                    {noTimelineIndicators && (
+                                        <p className="text-sm text-amber-800">Sugerencia: agrega cómo medirás el avance de tu visibilidad.</p>
+                                    )}
+                                    {!weakSignalVisibility && !noVisibilityEvidence && !visibilitySurfaceOverconcentrated && !noTimelineIndicators && (
+                                        <p className="text-sm text-emerald-700">
+                                            Sin alertas: tu plan de visibilidad está bien anclado en valor, prueba y secuencia temporal.
+                                        </p>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">Estado de la sección</p>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                {section7Completed
+                                                    ? 'Completado: auditoría, matriz, arquitectura, portafolio, calendario 30-60-90 y test diligenciados.'
+                                                    : 'Pendiente: define señal visible, audiencias y horizonte 30-60-90, junto con los demás bloques.'}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                section7Completed
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {section7Completed ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {isPageVisible(8) && (
+                            <article
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 8 de 8"
+                                data-print-title="Evaluación"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 8</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Evaluación</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-4xl">
+                                        Objetivo: permitir que mentor y líder evalúen con evidencia, definan decisiones por criterio y cierren con síntesis de
+                                        acuerdos.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">A) Instrucciones para el mentor (rúbricas)</h3>
+                                    <ul className="space-y-1.5">
+                                        {[
+                                            'Evalúa cada criterio con base en evidencia observable (idealmente de los últimos 20 días).',
+                                            'Marca un solo nivel por criterio (N1, N2, N3 o N4).',
+                                            'Registra comentario u observación concreta por criterio (hechos, conversación o conducta observada).',
+                                            'Define decisión por criterio: Consolidado, En desarrollo o Prioritario.',
+                                            'Cierra el WB con observaciones generales y una decisión global de seguimiento.'
+                                        ].map((instruction) => (
+                                            <li key={`wb7-evaluation-mentor-instruction-${instruction}`} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6 space-y-4">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Referencia de niveles (1-4)</h3>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[640px] w-full border border-blue-200 rounded-lg overflow-hidden bg-white">
+                                            <thead>
+                                                <tr className="bg-blue-100">
+                                                    <th className="px-3 py-2 text-left text-xs font-bold text-blue-800 border-b border-blue-200">Nivel</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-bold text-blue-800 border-b border-blue-200">Descriptor</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {MENTOR_LEVEL_REFERENCE.map((item) => (
+                                                    <tr key={`wb7-evaluation-level-reference-${item.level}`} className="odd:bg-white even:bg-blue-50/40">
+                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-blue-100">{item.level}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-blue-100">{item.descriptor}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Formato de evaluación del mentor (marcar y comentar)</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                mentorRowsCompleted && mentorClosingCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {mentorRowsCompleted && mentorClosingCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1400px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Criterio</th>
+                                                    {MENTOR_LEVEL_OPTIONS.map((level) => (
+                                                        <th
+                                                            key={`wb7-evaluation-header-${level}`}
+                                                            className="px-3 py-3 text-center text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200"
+                                                        >
+                                                            {level}
+                                                        </th>
+                                                    ))}
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Comentario / evidencia observable</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Decisión del mentor</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {evaluation.mentorRows.map((row, index) => (
+                                                    <tr key={`wb7-evaluation-mentor-row-${row.criterion}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.criterion}</td>
+                                                        {MENTOR_LEVEL_OPTIONS.map((level) => (
+                                                            <td
+                                                                key={`wb7-evaluation-level-cell-${index}-${level}`}
+                                                                className="px-3 py-2 border-b border-slate-100 text-center"
+                                                            >
+                                                                <input
+                                                                    type="radio"
+                                                                    name={`wb7-evaluation-level-${index}`}
+                                                                    checked={row.level === level}
+                                                                    onChange={() => updateMentorEvaluationRow(index, 'level', level)}
+                                                                    disabled={isLocked}
+                                                                    className="h-4 w-4"
+                                                                />
+                                                            </td>
+                                                        ))}
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <textarea
+                                                                value={row.evidence}
+                                                                onChange={(event) => updateMentorEvaluationRow(index, 'evidence', event.target.value)}
+                                                                disabled={isLocked}
+                                                                rows={2}
+                                                                placeholder='Evidencia observable (si falta, escribe "Completar").'
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.decision}
+                                                                onChange={(event) => updateMentorEvaluationRow(index, 'decision', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {MENTOR_DECISION_OPTIONS.map((option) => (
+                                                                    <option key={`wb7-evaluation-decision-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Observaciones generales del mentor</span>
+                                            <textarea
+                                                value={evaluation.mentorGeneralNotes}
+                                                onChange={(event) => updateMentorGeneralNotes(event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <fieldset className="space-y-2">
+                                            <legend className="text-xs uppercase tracking-[0.12em] text-slate-500">Decisión global del WB</legend>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {MENTOR_DECISION_OPTIONS.map((option) => (
+                                                    <label
+                                                        key={`wb7-evaluation-global-decision-${option}`}
+                                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name="wb7-evaluation-global-decision"
+                                                            checked={evaluation.mentorGlobalDecision === option}
+                                                            onChange={() => updateMentorGlobalDecision(option)}
+                                                            disabled={isLocked}
+                                                            className="h-4 w-4"
+                                                        />
+                                                        <span>{option}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </fieldset>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveEvaluationBlock('Bloque mentor')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">B) Instrucciones para el líder (autoevaluación)</h3>
+                                    <ul className="space-y-1.5">
+                                        {[
+                                            'Responde cada pregunta desde hechos concretos y recientes, no desde intención.',
+                                            'Incluye al menos un ejemplo o evidencia por respuesta.',
+                                            'Define una acción o compromiso de 30 días para cada respuesta clave.',
+                                            'Usa este bloque como insumo para acordar el plan de desarrollo con el mentor.'
+                                        ].map((instruction) => (
+                                            <li key={`wb7-evaluation-leader-instruction-${instruction}`} className="text-sm text-slate-700 flex items-start gap-2">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
+                                                <span>{instruction}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Preguntas de autoevaluación del líder</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                leaderRowsCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {leaderRowsCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1280px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Respuesta del líder</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Evidencia / ejemplo</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Acción o compromiso (30 días)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {evaluation.leaderRows.map((row, index) => (
+                                                    <tr key={`wb7-evaluation-leader-row-${row.question}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <textarea
+                                                                value={row.response}
+                                                                onChange={(event) => updateLeaderEvaluationRow(index, 'response', event.target.value)}
+                                                                disabled={isLocked}
+                                                                rows={2}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <textarea
+                                                                value={row.evidence}
+                                                                onChange={(event) => updateLeaderEvaluationRow(index, 'evidence', event.target.value)}
+                                                                disabled={isLocked}
+                                                                rows={2}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <textarea
+                                                                value={row.action}
+                                                                onChange={(event) => updateLeaderEvaluationRow(index, 'action', event.target.value)}
+                                                                disabled={isLocked}
+                                                                rows={2}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveEvaluationBlock('Bloque líder')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">C) Síntesis de acuerdos Mentor-Líder</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                agreementsCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {agreementsCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <textarea
+                                        value={evaluation.agreementsSynthesis}
+                                        onChange={(event) => updateEvaluationAgreements(event.target.value)}
+                                        disabled={isLocked}
+                                        rows={6}
+                                        placeholder="Registra acuerdos concretos entre mentor y líder."
+                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                    />
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveEvaluationBlock('Síntesis de acuerdos')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">Estado de la sección</p>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                {section8Completed
+                                                    ? 'Completado: rúbrica del mentor, autoevaluación del líder y síntesis de acuerdos diligenciadas.'
+                                                    : 'Pendiente: completa mentor + líder + síntesis para cerrar la evaluación.'}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                section8Completed
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {section8Completed ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+
+                                <div className="flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => savePage(8)}
+                                        disabled={isLocked}
+                                        className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Guardar página 8
+                                    </button>
+                                </div>
+                            </article>
+                        )}
+
                         {!isExportingAll && (
                             <nav className={`wb7-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button type="button" onClick={goPrevPage} disabled={!hasPrevPage} className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}>
@@ -5471,6 +7281,37 @@ export function WB7Digital() {
                                         </li>
                                         <li className="text-sm text-slate-700 leading-relaxed">
                                             Si tu red depende solo de urgencias, sigue siendo circunstancial.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showVisibilityHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
+                                <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl p-6 space-y-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Ayuda — Plan de visibilidad estratégica</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowVisibilityHelp(false)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Visibilidad estratégica no es exposición por exposición: primero define qué valor quieres hacer visible.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            La reputación se fortalece cuando cada señal tiene evidencia concreta y coherencia sostenida.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Diseña superficies de visibilidad internas y externas para evitar sobreconcentración.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Si tu valor existe pero no es visible para las audiencias correctas, pierde impacto estratégico.
                                         </li>
                                     </ul>
                                 </div>
