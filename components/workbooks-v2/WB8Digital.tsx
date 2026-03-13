@@ -2674,8 +2674,8 @@ export function WB8Digital() {
                 </div>
             </header>
 
-            <main className="max-w-[1280px] mx-auto px-5 md:px-8 py-8 overflow-x-auto">
-                <div className={`grid gap-6 items-start ${isExportingAll ? 'grid-cols-1 min-w-0' : 'grid-cols-[240px_minmax(0,1fr)] min-w-[920px]'}`}>
+            <main className="max-w-[1280px] mx-auto px-3 sm:px-5 md:px-8 py-6 md:py-8 overflow-x-hidden">
+                <div className={`grid gap-6 items-start ${isExportingAll ? 'grid-cols-1 min-w-0' : 'grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] min-w-0'}`}>
                     <aside className={`wb8-sidebar ${WORKBOOK_V2_EDITORIAL.classes.sidebar} ${isExportingAll ? 'hidden' : ''}`}>
                         <p className={WORKBOOK_V2_EDITORIAL.classes.sidebarTitle}>{WORKBOOK_V2_EDITORIAL.labels.index}</p>
                         <nav className="space-y-1.5">
