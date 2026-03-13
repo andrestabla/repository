@@ -5,10 +5,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7
 type YesNoAnswer = '' | 'yes' | 'no'
 type PresenceImpact = '' | 'Suma' | 'Resta'
 type LeakageLevel = '' | 'Verde' | 'Amarillo' | 'Rojo'
+type VisibilityLevel = '' | 'Bajo' | 'Medio' | 'Alto'
 type ObjectionType =
     | ''
     | 'Contenido'
@@ -184,6 +185,47 @@ type WB6State = {
             adjustment: string
         }>
     }
+    highLevelMeetingsSection: {
+        roomReadingMap: {
+            realDecisionMaker: string
+            informalInfluencer: string
+            blockerOrCooler: string
+            mainTension: string
+            dominantLanguage: string
+            highestValueContributionPoint: string
+        }
+        positioningMatrix: {
+            primaryRole: string
+            visibilityLevel: VisibilityLevel
+            expectedContributionType: string
+            overtalkingRisk: string
+            undertalkingRisk: string
+            desiredPresenceSignal: string
+        }
+        interventionArchitecture: {
+            briefOpening: string
+            centralThesis: string
+            criterionOrEvidence: string
+            executiveImplication: string
+            shortClosing: string
+        }
+        timingMap: Array<{
+            momentOrSignal: string
+            plannedAction: string
+        }>
+        executiveFootprintAudit: {
+            entryQuality: string
+            spaceSustainment: string
+            realContribution: string
+            likelyPerception: string
+            nextAdjustment: string
+        }
+        highLevelMeetingTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 const PAGES: WorkbookPage[] = [
@@ -192,7 +234,8 @@ const PAGES: WorkbookPage[] = [
     { id: 3, label: '3. Lenguaje corporal ejecutivo', shortLabel: 'Lenguaje corporal' },
     { id: 4, label: '4. Manejo de objeciones', shortLabel: 'Objeciones' },
     { id: 5, label: '5. Tono y ritmo de voz', shortLabel: 'Voz ejecutiva' },
-    { id: 6, label: '6. Comunicación bajo presión', shortLabel: 'Bajo presión' }
+    { id: 6, label: '6. Comunicación bajo presión', shortLabel: 'Bajo presión' },
+    { id: 7, label: '7. Presencia en reuniones de alto nivel', shortLabel: 'Reuniones alto nivel' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb6-state'
@@ -697,6 +740,87 @@ const EXAMPLE_PRESSURE_SIMULATOR = {
     recoveryAction: 'Registrar qué pasó, qué hice bien y qué debo ajustar antes de la siguiente reunión.'
 }
 
+const VISIBILITY_LEVELS: VisibilityLevel[] = ['Bajo', 'Medio', 'Alto']
+
+const MEETING_TIMING_SIGNALS = [
+    'Momento ideal para intervenir',
+    'Momento que debo evitar',
+    'Señal de que la reunión necesita orden',
+    'Señal de que conviene preguntar',
+    'Señal de que conviene sintetizar',
+    'Señal de que conviene retirarme'
+] as const
+
+const MEETING_TEST_QUESTIONS = [
+    '¿Leí bien la dinámica de la sala?',
+    '¿Elegí bien el momento para intervenir?',
+    '¿Mi intervención agregó valor ejecutivo?',
+    '¿Transmití seguridad tranquila?',
+    '¿Ocupé el espacio con legitimidad?',
+    '¿Dejé una huella ejecutiva útil?'
+] as const
+
+const EXAMPLE_MEETING_READING_MAP = {
+    realDecisionMaker: 'La directora del área.',
+    informalInfluencer: 'El financiero y el sponsor político.',
+    blockerOrCooler: 'El líder técnico si siente pérdida de control.',
+    mainTension: 'Resultado rápido vs. capacidad real.',
+    dominantLanguage: 'Ejecutivo y orientado a riesgo.',
+    highestValueContributionPoint: 'Sintetizar escenario y ordenar criterios de decisión.'
+}
+
+const EXAMPLE_MEETING_POSITIONING = {
+    primaryRole: 'Ordenar información y proponer foco.',
+    visibilityLevel: 'Medio' as VisibilityLevel,
+    expectedContributionType: 'Sintetizar, proponer y responder objeciones.',
+    overtalkingRisk: 'Parecer ansioso o invadir espacios de decisión.',
+    undertalkingRisk: 'Perder oportunidad de instalar criterio.',
+    desiredPresenceSignal: 'Calma con claridad y buen juicio.'
+}
+
+const EXAMPLE_MEETING_ARCHITECTURE = {
+    briefOpening: 'Quiero ordenar este punto en una idea central.',
+    centralThesis: 'Hoy el problema no es ambición, sino dispersión de foco.',
+    criterionOrEvidence: 'Ya estamos viendo saturación operativa y pérdida de calidad.',
+    executiveImplication: 'Si no priorizamos ahora, la ejecución se va a degradar.',
+    shortClosing: 'Mi recomendación es definir hoy tres frentes y dejar dos fuera del ciclo actual.'
+}
+
+const EXAMPLE_MEETING_TIMING_MAP = [
+    {
+        momentOrSignal: 'Momento ideal para intervenir',
+        plannedAction: 'Cuando ya se expusieron posiciones, pero aún no se cierra decisión.'
+    },
+    {
+        momentOrSignal: 'Momento que debo evitar',
+        plannedAction: 'Interrumpir una definición jerárquica sin haber leído el clima.'
+    },
+    {
+        momentOrSignal: 'Señal de que la reunión necesita orden',
+        plannedAction: 'Hay repetición de puntos y pérdida de foco.'
+    },
+    {
+        momentOrSignal: 'Señal de que conviene preguntar',
+        plannedAction: 'Falta información crítica o los supuestos no están claros.'
+    },
+    {
+        momentOrSignal: 'Señal de que conviene sintetizar',
+        plannedAction: 'Hay demasiadas intervenciones y la decisión se está diluyendo.'
+    },
+    {
+        momentOrSignal: 'Señal de que conviene retirarme',
+        plannedAction: 'La insistencia ya no suma y empieza a sonar defensiva.'
+    }
+] as const
+
+const EXAMPLE_MEETING_FOOTPRINT_AUDIT = {
+    entryQuality: 'Entré algo acelerado y tardé en centrarme.',
+    spaceSustainment: 'Mejoré cuando fui al punto y bajé velocidad.',
+    realContribution: 'Ordené la decisión y reduje dispersión.',
+    likelyPerception: 'Criterio útil, aunque al inicio algo ansioso.',
+    nextAdjustment: 'Preparar mejor apertura y leer antes la dinámica de sala.'
+}
+
 const DEFAULT_STATE: WB6State = {
     identification: {
         leaderName: '',
@@ -856,6 +980,47 @@ const DEFAULT_STATE: WB6State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    highLevelMeetingsSection: {
+        roomReadingMap: {
+            realDecisionMaker: '',
+            informalInfluencer: '',
+            blockerOrCooler: '',
+            mainTension: '',
+            dominantLanguage: '',
+            highestValueContributionPoint: ''
+        },
+        positioningMatrix: {
+            primaryRole: '',
+            visibilityLevel: '' as VisibilityLevel,
+            expectedContributionType: '',
+            overtalkingRisk: '',
+            undertalkingRisk: '',
+            desiredPresenceSignal: ''
+        },
+        interventionArchitecture: {
+            briefOpening: '',
+            centralThesis: '',
+            criterionOrEvidence: '',
+            executiveImplication: '',
+            shortClosing: ''
+        },
+        timingMap: MEETING_TIMING_SIGNALS.map((momentOrSignal) => ({
+            momentOrSignal,
+            plannedAction: ''
+        })),
+        executiveFootprintAudit: {
+            entryQuality: '',
+            spaceSustainment: '',
+            realContribution: '',
+            likelyPerception: '',
+            nextAdjustment: ''
+        },
+        highLevelMeetingTest: MEETING_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
     }
 }
 
@@ -881,6 +1046,9 @@ const normalizeState = (raw: unknown): WB6State => {
     const pressureRaw = (parsed.pressureCommunicationSection ?? {}) as Record<string, unknown>
     const pressureDisorderRaw = Array.isArray(pressureRaw.communicationDisorderMatrix) ? pressureRaw.communicationDisorderMatrix : []
     const pressureTestRaw = Array.isArray(pressureRaw.executivePressureTest) ? pressureRaw.executivePressureTest : []
+    const meetingsRaw = (parsed.highLevelMeetingsSection ?? {}) as Record<string, unknown>
+    const meetingsTimingRaw = Array.isArray(meetingsRaw.timingMap) ? meetingsRaw.timingMap : []
+    const meetingsTestRaw = Array.isArray(meetingsRaw.highLevelMeetingTest) ? meetingsRaw.highLevelMeetingTest : []
 
     const normalizeVerdict = (value: unknown): YesNoAnswer => {
         if (value === 'yes' || value === 'no') return value
@@ -894,6 +1062,11 @@ const normalizeState = (raw: unknown): WB6State => {
 
     const normalizeLeakageLevel = (value: unknown): LeakageLevel => {
         if (value === 'Verde' || value === 'Amarillo' || value === 'Rojo') return value
+        return ''
+    }
+
+    const normalizeVisibilityLevel = (value: unknown): VisibilityLevel => {
+        if (value === 'Bajo' || value === 'Medio' || value === 'Alto') return value
         return ''
     }
 
@@ -1252,6 +1425,118 @@ const normalizeState = (raw: unknown): WB6State => {
                     adjustment: typeof candidate.adjustment === 'string' ? candidate.adjustment : ''
                 }
             })
+        },
+        highLevelMeetingsSection: {
+            roomReadingMap: {
+                realDecisionMaker:
+                    typeof (meetingsRaw.roomReadingMap as Record<string, unknown> | undefined)?.realDecisionMaker === 'string'
+                        ? ((meetingsRaw.roomReadingMap as Record<string, unknown>).realDecisionMaker as string)
+                        : '',
+                informalInfluencer:
+                    typeof (meetingsRaw.roomReadingMap as Record<string, unknown> | undefined)?.informalInfluencer === 'string'
+                        ? ((meetingsRaw.roomReadingMap as Record<string, unknown>).informalInfluencer as string)
+                        : '',
+                blockerOrCooler:
+                    typeof (meetingsRaw.roomReadingMap as Record<string, unknown> | undefined)?.blockerOrCooler === 'string'
+                        ? ((meetingsRaw.roomReadingMap as Record<string, unknown>).blockerOrCooler as string)
+                        : '',
+                mainTension:
+                    typeof (meetingsRaw.roomReadingMap as Record<string, unknown> | undefined)?.mainTension === 'string'
+                        ? ((meetingsRaw.roomReadingMap as Record<string, unknown>).mainTension as string)
+                        : '',
+                dominantLanguage:
+                    typeof (meetingsRaw.roomReadingMap as Record<string, unknown> | undefined)?.dominantLanguage === 'string'
+                        ? ((meetingsRaw.roomReadingMap as Record<string, unknown>).dominantLanguage as string)
+                        : '',
+                highestValueContributionPoint:
+                    typeof (meetingsRaw.roomReadingMap as Record<string, unknown> | undefined)?.highestValueContributionPoint === 'string'
+                        ? ((meetingsRaw.roomReadingMap as Record<string, unknown>).highestValueContributionPoint as string)
+                        : ''
+            },
+            positioningMatrix: {
+                primaryRole:
+                    typeof (meetingsRaw.positioningMatrix as Record<string, unknown> | undefined)?.primaryRole === 'string'
+                        ? ((meetingsRaw.positioningMatrix as Record<string, unknown>).primaryRole as string)
+                        : '',
+                visibilityLevel: normalizeVisibilityLevel(
+                    (meetingsRaw.positioningMatrix as Record<string, unknown> | undefined)?.visibilityLevel
+                ),
+                expectedContributionType:
+                    typeof (meetingsRaw.positioningMatrix as Record<string, unknown> | undefined)?.expectedContributionType === 'string'
+                        ? ((meetingsRaw.positioningMatrix as Record<string, unknown>).expectedContributionType as string)
+                        : '',
+                overtalkingRisk:
+                    typeof (meetingsRaw.positioningMatrix as Record<string, unknown> | undefined)?.overtalkingRisk === 'string'
+                        ? ((meetingsRaw.positioningMatrix as Record<string, unknown>).overtalkingRisk as string)
+                        : '',
+                undertalkingRisk:
+                    typeof (meetingsRaw.positioningMatrix as Record<string, unknown> | undefined)?.undertalkingRisk === 'string'
+                        ? ((meetingsRaw.positioningMatrix as Record<string, unknown>).undertalkingRisk as string)
+                        : '',
+                desiredPresenceSignal:
+                    typeof (meetingsRaw.positioningMatrix as Record<string, unknown> | undefined)?.desiredPresenceSignal === 'string'
+                        ? ((meetingsRaw.positioningMatrix as Record<string, unknown>).desiredPresenceSignal as string)
+                        : ''
+            },
+            interventionArchitecture: {
+                briefOpening:
+                    typeof (meetingsRaw.interventionArchitecture as Record<string, unknown> | undefined)?.briefOpening === 'string'
+                        ? ((meetingsRaw.interventionArchitecture as Record<string, unknown>).briefOpening as string)
+                        : '',
+                centralThesis:
+                    typeof (meetingsRaw.interventionArchitecture as Record<string, unknown> | undefined)?.centralThesis === 'string'
+                        ? ((meetingsRaw.interventionArchitecture as Record<string, unknown>).centralThesis as string)
+                        : '',
+                criterionOrEvidence:
+                    typeof (meetingsRaw.interventionArchitecture as Record<string, unknown> | undefined)?.criterionOrEvidence === 'string'
+                        ? ((meetingsRaw.interventionArchitecture as Record<string, unknown>).criterionOrEvidence as string)
+                        : '',
+                executiveImplication:
+                    typeof (meetingsRaw.interventionArchitecture as Record<string, unknown> | undefined)?.executiveImplication === 'string'
+                        ? ((meetingsRaw.interventionArchitecture as Record<string, unknown>).executiveImplication as string)
+                        : '',
+                shortClosing:
+                    typeof (meetingsRaw.interventionArchitecture as Record<string, unknown> | undefined)?.shortClosing === 'string'
+                        ? ((meetingsRaw.interventionArchitecture as Record<string, unknown>).shortClosing as string)
+                        : ''
+            },
+            timingMap: MEETING_TIMING_SIGNALS.map((momentOrSignal, index) => {
+                const candidate = (meetingsTimingRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    momentOrSignal,
+                    plannedAction: typeof candidate.plannedAction === 'string' ? candidate.plannedAction : ''
+                }
+            }),
+            executiveFootprintAudit: {
+                entryQuality:
+                    typeof (meetingsRaw.executiveFootprintAudit as Record<string, unknown> | undefined)?.entryQuality === 'string'
+                        ? ((meetingsRaw.executiveFootprintAudit as Record<string, unknown>).entryQuality as string)
+                        : '',
+                spaceSustainment:
+                    typeof (meetingsRaw.executiveFootprintAudit as Record<string, unknown> | undefined)?.spaceSustainment === 'string'
+                        ? ((meetingsRaw.executiveFootprintAudit as Record<string, unknown>).spaceSustainment as string)
+                        : '',
+                realContribution:
+                    typeof (meetingsRaw.executiveFootprintAudit as Record<string, unknown> | undefined)?.realContribution === 'string'
+                        ? ((meetingsRaw.executiveFootprintAudit as Record<string, unknown>).realContribution as string)
+                        : '',
+                likelyPerception:
+                    typeof (meetingsRaw.executiveFootprintAudit as Record<string, unknown> | undefined)?.likelyPerception === 'string'
+                        ? ((meetingsRaw.executiveFootprintAudit as Record<string, unknown>).likelyPerception as string)
+                        : '',
+                nextAdjustment:
+                    typeof (meetingsRaw.executiveFootprintAudit as Record<string, unknown> | undefined)?.nextAdjustment === 'string'
+                        ? ((meetingsRaw.executiveFootprintAudit as Record<string, unknown>).nextAdjustment as string)
+                        : ''
+            },
+            highLevelMeetingTest: MEETING_TEST_QUESTIONS.map((question, index) => {
+                const candidate = (meetingsTestRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: normalizeVerdict(candidate.verdict),
+                    adjustment: typeof candidate.adjustment === 'string' ? candidate.adjustment : ''
+                }
+            })
         }
     }
 }
@@ -1295,6 +1580,13 @@ export function WB6Digital() {
     const [showPressureExampleStep4, setShowPressureExampleStep4] = useState(false)
     const [showPressureExampleStep5, setShowPressureExampleStep5] = useState(false)
     const [showPressureExampleStep6, setShowPressureExampleStep6] = useState(false)
+    const [showMeetingHelp, setShowMeetingHelp] = useState(false)
+    const [showMeetingExampleStep1, setShowMeetingExampleStep1] = useState(false)
+    const [showMeetingExampleStep2, setShowMeetingExampleStep2] = useState(false)
+    const [showMeetingExampleStep3, setShowMeetingExampleStep3] = useState(false)
+    const [showMeetingExampleStep4, setShowMeetingExampleStep4] = useState(false)
+    const [showMeetingExampleStep5, setShowMeetingExampleStep5] = useState(false)
+    const [showMeetingExampleStep6, setShowMeetingExampleStep6] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1903,6 +2195,120 @@ export function WB6Digital() {
         announceSave(`${blockLabel} guardado.`)
     }
 
+    const updateMeetingRoomReading = (
+        field: keyof WB6State['highLevelMeetingsSection']['roomReadingMap'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            highLevelMeetingsSection: {
+                ...prev.highLevelMeetingsSection,
+                roomReadingMap: {
+                    ...prev.highLevelMeetingsSection.roomReadingMap,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateMeetingPositioning = (
+        field: keyof WB6State['highLevelMeetingsSection']['positioningMatrix'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            highLevelMeetingsSection: {
+                ...prev.highLevelMeetingsSection,
+                positioningMatrix: {
+                    ...prev.highLevelMeetingsSection.positioningMatrix,
+                    [field]:
+                        field === 'visibilityLevel'
+                            ? value === 'Bajo' || value === 'Medio' || value === 'Alto'
+                                ? value
+                                : ''
+                            : value
+                }
+            }
+        }))
+    }
+
+    const updateMeetingArchitecture = (
+        field: keyof WB6State['highLevelMeetingsSection']['interventionArchitecture'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            highLevelMeetingsSection: {
+                ...prev.highLevelMeetingsSection,
+                interventionArchitecture: {
+                    ...prev.highLevelMeetingsSection.interventionArchitecture,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateMeetingTimingRow = (
+        rowIndex: number,
+        field: keyof WB6State['highLevelMeetingsSection']['timingMap'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            highLevelMeetingsSection: {
+                ...prev.highLevelMeetingsSection,
+                timingMap: prev.highLevelMeetingsSection.timingMap.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updateMeetingAudit = (
+        field: keyof WB6State['highLevelMeetingsSection']['executiveFootprintAudit'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            highLevelMeetingsSection: {
+                ...prev.highLevelMeetingsSection,
+                executiveFootprintAudit: {
+                    ...prev.highLevelMeetingsSection.executiveFootprintAudit,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateMeetingTestRow = (
+        rowIndex: number,
+        field: keyof WB6State['highLevelMeetingsSection']['highLevelMeetingTest'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            highLevelMeetingsSection: {
+                ...prev.highLevelMeetingsSection,
+                highLevelMeetingTest: prev.highLevelMeetingsSection.highLevelMeetingTest.map((row, index) =>
+                    index === rowIndex
+                        ? { ...row, [field]: field === 'verdict' ? ((value === 'yes' || value === 'no' ? value : '') as YesNoAnswer) : value }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const saveMeetingBlock = (blockLabel: string) => {
+        markVisited(7)
+        announceSave(`${blockLabel} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -1975,6 +2381,12 @@ export function WB6Digital() {
     const pressureShortMessageTemplate = state.pressureCommunicationSection.shortMessageTemplate
     const pressureSimulator = state.pressureCommunicationSection.pressureSimulator
     const pressureExecutiveTest = state.pressureCommunicationSection.executivePressureTest
+    const meetingRoomReadingMap = state.highLevelMeetingsSection.roomReadingMap
+    const meetingPositioningMatrix = state.highLevelMeetingsSection.positioningMatrix
+    const meetingInterventionArchitecture = state.highLevelMeetingsSection.interventionArchitecture
+    const meetingTimingMap = state.highLevelMeetingsSection.timingMap
+    const meetingExecutiveFootprintAudit = state.highLevelMeetingsSection.executiveFootprintAudit
+    const meetingHighLevelTest = state.highLevelMeetingsSection.highLevelMeetingTest
 
     const baselineCompleted = baselineScan.every(
         (row) => row.observation.trim().length > 0 && row.effect.trim().length > 0
@@ -2210,13 +2622,54 @@ export function WB6Digital() {
         pressureSimulator.probableCriticalScenario.trim().length > 0 &&
         pressureSimulator.recoveryAction.trim().length === 0
 
+    const meetingReadingCompleted = Object.values(meetingRoomReadingMap).every((value) => value.trim().length > 0)
+    const meetingPositioningCompleted =
+        meetingPositioningMatrix.primaryRole.trim().length > 0 &&
+        meetingPositioningMatrix.visibilityLevel !== '' &&
+        meetingPositioningMatrix.expectedContributionType.trim().length > 0 &&
+        meetingPositioningMatrix.overtalkingRisk.trim().length > 0 &&
+        meetingPositioningMatrix.undertalkingRisk.trim().length > 0 &&
+        meetingPositioningMatrix.desiredPresenceSignal.trim().length > 0
+    const meetingArchitectureCompleted = Object.values(meetingInterventionArchitecture).every((value) => value.trim().length > 0)
+    const meetingTimingCompleted = meetingTimingMap.every((row) => row.plannedAction.trim().length > 0)
+    const meetingAuditCompleted = Object.values(meetingExecutiveFootprintAudit).every((value) => value.trim().length > 0)
+    const meetingTestCompleted = meetingHighLevelTest.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
+
+    const meetingSectionMinimal = meetingReadingCompleted && meetingArchitectureCompleted
+    const meetingSectionCompleted =
+        meetingReadingCompleted &&
+        meetingPositioningCompleted &&
+        meetingArchitectureCompleted &&
+        meetingTimingCompleted &&
+        meetingAuditCompleted &&
+        meetingTestCompleted
+
+    const meetingDefinedAudienceWithoutDecision =
+        (meetingRoomReadingMap.dominantLanguage.trim().length > 0 ||
+            meetingRoomReadingMap.mainTension.trim().length > 0 ||
+            meetingRoomReadingMap.highestValueContributionPoint.trim().length > 0) &&
+        meetingRoomReadingMap.realDecisionMaker.trim().length === 0
+    const meetingArchitectureMissingThesis =
+        meetingInterventionArchitecture.briefOpening.trim().length > 0 &&
+        meetingInterventionArchitecture.centralThesis.trim().length === 0
+    const meetingTimingNotDifferentiated =
+        meetingTimingMap[0]?.plannedAction.trim().length > 0 &&
+        meetingTimingMap[1]?.plannedAction.trim().length > 0 &&
+        meetingTimingMap[0].plannedAction.trim().toLowerCase() === meetingTimingMap[1].plannedAction.trim().toLowerCase()
+    const meetingAuditMissingPerception =
+        (meetingExecutiveFootprintAudit.entryQuality.trim().length > 0 ||
+            meetingExecutiveFootprintAudit.spaceSustainment.trim().length > 0 ||
+            meetingExecutiveFootprintAudit.realContribution.trim().length > 0) &&
+        meetingExecutiveFootprintAudit.likelyPerception.trim().length === 0
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: bodySectionCompleted,
         4: objectionSectionCompleted,
         5: voiceSectionCompleted,
-        6: pressureSectionCompleted
+        6: pressureSectionCompleted,
+        7: meetingSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -2295,7 +2748,7 @@ export function WB6Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb6-print-page wb6-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 6"
+                                data-print-page="Página 1 de 7"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2388,7 +2841,7 @@ export function WB6Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 6"
+                                data-print-page="Página 2 de 7"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2510,7 +2963,7 @@ export function WB6Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 6"
+                                data-print-page="Página 3 de 7"
                                 data-print-title="Lenguaje corporal ejecutivo"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3196,7 +3649,7 @@ export function WB6Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 6"
+                                data-print-page="Página 4 de 7"
                                 data-print-title="Manejo de objeciones"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3813,7 +4266,7 @@ export function WB6Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 5 de 6"
+                                data-print-page="Página 5 de 7"
                                 data-print-title="Tono y ritmo de voz"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4445,7 +4898,7 @@ export function WB6Digital() {
                         {isPageVisible(6) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 6 de 6"
+                                data-print-page="Página 6 de 7"
                                 data-print-title="Comunicación bajo presión"
                                 data-print-meta={printMetaLabel}
                             >
@@ -5072,6 +5525,641 @@ export function WB6Digital() {
                                             className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             Guardar página 6
+                                        </button>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {isPageVisible(7) && (
+                            <article
+                                className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 7 de 7"
+                                data-print-title="Presencia en reuniones de alto nivel"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 7</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Presencia en reuniones de alto nivel
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Proyecta una presencia ejecutiva sólida para intervenir con criterio, leer la dinámica de la sala y contribuir con claridad,
+                                        peso y oportunidad sin sobreactuar ni diluirte.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMeetingHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Presencia en reuniones de alto nivel: participar con claridad, oportunidad y lectura política sin desaparecer ni sobreactuar.',
+                                            'Presencia ejecutiva e híbrida: proyectar claridad, inspiración y autoridad en sala física y entorno virtual.',
+                                            'Gravitas situacional: peso ejecutivo visible en contextos complejos desde calma, firmeza y criterio.',
+                                            'Lectura de sala: identificar jerarquías, alianzas, tensiones, ritmos y focos de decisión.',
+                                            'Economía de intervención: entrar con precisión sin sobreparticipar ni diluirte.',
+                                            'Anclaje de estatus: ocupar el espacio con legitimidad, sin ansiedad por validación.',
+                                            'Participación estratégica: elegir cuándo escuchar, preguntar, sintetizar, desafiar o cerrar.'
+                                        ].map((item) => (
+                                            <li key={`wb6-meeting-concept-${item}`} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Mapa de lectura de sala</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMeetingExampleStep1(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    meetingReadingCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {meetingReadingCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Trabaja con una reunión real de alto nivel (comité, sponsor review, junta o reunión con dirección). Antes de hablar,
+                                            registra lectura estratégica del entorno.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Identifica quién decide, quién influye, quién podría bloquear, la tensión principal, el lenguaje dominante y dónde tu aporte
+                                            puede ordenar la conversación.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Elemento de lectura</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tu respuesta</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {([
+                                                    { label: 'Quién decide realmente', field: 'realDecisionMaker' },
+                                                    { label: 'Quién influye sin decidir formalmente', field: 'informalInfluencer' },
+                                                    { label: 'Quién puede bloquear o enfriar', field: 'blockerOrCooler' },
+                                                    { label: 'Tensión principal en la reunión', field: 'mainTension' },
+                                                    { label: 'Lenguaje que domina el espacio', field: 'dominantLanguage' },
+                                                    { label: 'Punto donde mi aporte puede ser más útil', field: 'highestValueContributionPoint' }
+                                                ] as const).map((row) => (
+                                                    <tr key={`wb6-meeting-reading-${row.field}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.label}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={meetingRoomReadingMap[row.field]}
+                                                                onChange={(event) => updateMeetingRoomReading(row.field, event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {meetingDefinedAudienceWithoutDecision && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: aclara quién toma realmente la decisión en esta reunión para ajustar mejor tu intervención.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveMeetingBlock('Paso 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz de posicionamiento en reunión</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMeetingExampleStep2(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    meetingPositioningCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {meetingPositioningCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Define cómo vas a estar en la reunión: rol principal, nivel de visibilidad y tipo de contribución esperada.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Especifica el riesgo de hablar de más, el riesgo de hablar poco y la señal de presencia que quieres dejar instalada.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Mi rol principal en esta reunión:</span>
+                                            <input
+                                                type="text"
+                                                value={meetingPositioningMatrix.primaryRole}
+                                                onChange={(event) => updateMeetingPositioning('primaryRole', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Nivel de visibilidad requerido:</span>
+                                            <select
+                                                value={meetingPositioningMatrix.visibilityLevel}
+                                                onChange={(event) => updateMeetingPositioning('visibilityLevel', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            >
+                                                <option value="">Selecciona nivel</option>
+                                                {VISIBILITY_LEVELS.map((level) => (
+                                                    <option key={`wb6-meeting-visibility-${level}`} value={level}>
+                                                        {level}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Tipo de contribución esperada:</span>
+                                            <input
+                                                type="text"
+                                                value={meetingPositioningMatrix.expectedContributionType}
+                                                onChange={(event) => updateMeetingPositioning('expectedContributionType', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Riesgo si hablo demasiado:</span>
+                                            <input
+                                                type="text"
+                                                value={meetingPositioningMatrix.overtalkingRisk}
+                                                onChange={(event) => updateMeetingPositioning('overtalkingRisk', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Riesgo si hablo demasiado poco:</span>
+                                            <input
+                                                type="text"
+                                                value={meetingPositioningMatrix.undertalkingRisk}
+                                                onChange={(event) => updateMeetingPositioning('undertalkingRisk', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Señal de presencia que quiero dejar:</span>
+                                            <input
+                                                type="text"
+                                                value={meetingPositioningMatrix.desiredPresenceSignal}
+                                                onChange={(event) => updateMeetingPositioning('desiredPresenceSignal', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveMeetingBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Arquitectura de intervención de alto nivel</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMeetingExampleStep3(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    meetingArchitectureCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {meetingArchitectureCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Prepara tu intervención en cinco partes: apertura breve, tesis central, criterio/evidencia, implicación ejecutiva y cierre
+                                            corto.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            La estructura debe ayudarte a entrar con precisión, aportar valor y dejar claro por qué tu punto importa para la decisión.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Apertura breve:</span>
+                                            <textarea
+                                                value={meetingInterventionArchitecture.briefOpening}
+                                                onChange={(event) => updateMeetingArchitecture('briefOpening', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Tesis central:</span>
+                                            <textarea
+                                                value={meetingInterventionArchitecture.centralThesis}
+                                                onChange={(event) => updateMeetingArchitecture('centralThesis', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Criterio o evidencia:</span>
+                                            <textarea
+                                                value={meetingInterventionArchitecture.criterionOrEvidence}
+                                                onChange={(event) => updateMeetingArchitecture('criterionOrEvidence', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2">
+                                            <span className="text-sm font-semibold text-slate-700">Implicación ejecutiva:</span>
+                                            <textarea
+                                                value={meetingInterventionArchitecture.executiveImplication}
+                                                onChange={(event) => updateMeetingArchitecture('executiveImplication', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-2 md:col-span-2">
+                                            <span className="text-sm font-semibold text-slate-700">Cierre corto:</span>
+                                            <textarea
+                                                value={meetingInterventionArchitecture.shortClosing}
+                                                onChange={(event) => updateMeetingArchitecture('shortClosing', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {meetingArchitectureMissingThesis && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: define en una frase qué vas a instalar (tesis central) para ganar foco ejecutivo.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveMeetingBlock('Paso 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Mapa de timing e intervención</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMeetingExampleStep4(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    meetingTimingCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {meetingTimingCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Define qué harás según señal/momento: cuándo entrar, cuándo evitar intervenir, cuándo preguntar, sintetizar u ordenar.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            El timing correcto aumenta valor; intervenir fuera de momento puede diluir tu aporte aunque el contenido sea bueno.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[920px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Momento / señal</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué haré</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {meetingTimingMap.map((row, rowIndex) => (
+                                                    <tr key={`wb6-meeting-timing-${row.momentOrSignal}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.momentOrSignal}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.plannedAction}
+                                                                onChange={(event) => updateMeetingTimingRow(rowIndex, 'plannedAction', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {meetingTimingNotDifferentiated && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: diferencia mejor el momento ideal frente al momento a evitar para que tu timing sea más estratégico.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveMeetingBlock('Paso 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Auditoría de huella ejecutiva</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMeetingExampleStep5(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    meetingAuditCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {meetingAuditCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Evalúa tu reunión más reciente para identificar cómo entraste, cómo sostuviste el espacio, qué aportaste y qué impresión
+                                            probable dejaste.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Cierra con un ajuste concreto para la siguiente reunión de alto nivel.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[900px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Mi lectura posterior</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {([
+                                                    { label: 'Cómo entré a la reunión', field: 'entryQuality' },
+                                                    { label: 'Cómo sostuve el espacio', field: 'spaceSustainment' },
+                                                    { label: 'Qué aporté realmente', field: 'realContribution' },
+                                                    { label: 'Qué percepción probable dejé', field: 'likelyPerception' },
+                                                    { label: 'Qué haría distinto la próxima vez', field: 'nextAdjustment' }
+                                                ] as const).map((row) => (
+                                                    <tr key={`wb6-meeting-audit-${row.field}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.label}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={meetingExecutiveFootprintAudit[row.field]}
+                                                                onChange={(event) => updateMeetingAudit(row.field, event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {meetingAuditMissingPerception && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: formula qué lectura ejecutiva pudo dejar tu presencia para cerrar el aprendizaje con más precisión.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveMeetingBlock('Paso 5')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Test de presencia en reuniones de alto nivel</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMeetingExampleStep6(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    meetingTestCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {meetingTestCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Aplica el test a una reunión real o simulada y evalúa lectura de sala, timing, valor de intervención, seguridad tranquila y
+                                            huella ejecutiva.
+                                        </p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                            Marca Sí/No con honestidad y deja un ajuste puntual por criterio.
+                                        </p>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {meetingHighLevelTest.map((row, rowIndex) => (
+                                                    <tr key={`wb6-meeting-test-${row.question}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`wb6-meeting-test-${rowIndex}`}
+                                                                checked={row.verdict === 'yes'}
+                                                                onChange={() => updateMeetingTestRow(rowIndex, 'verdict', 'yes')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`wb6-meeting-test-${rowIndex}`}
+                                                                checked={row.verdict === 'no'}
+                                                                onChange={() => updateMeetingTestRow(rowIndex, 'verdict', 'no')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateMeetingTestRow(rowIndex, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Ajuste necesario"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveMeetingBlock('Paso 6')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
+                                    <ul className="mt-4 space-y-2.5">
+                                        {[
+                                            'Cómo leer una reunión antes de intervenir.',
+                                            'Qué rol te conviene asumir según el contexto.',
+                                            'Cómo estructurar intervenciones breves de alto valor.',
+                                            'Cómo elegir mejor el momento para entrar o retirarte.',
+                                            'Qué huella ejecutiva dejas en espacios de alto nivel.'
+                                        ].map((item) => (
+                                            <li key={`wb6-meeting-close-${item}`} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-5 flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                meetingSectionCompleted
+                                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                    : meetingSectionMinimal
+                                                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                                      : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                            }`}
+                                        >
+                                            {meetingSectionCompleted
+                                                ? 'Sección completada'
+                                                : meetingSectionMinimal
+                                                  ? 'Pendiente (falta completar bloques)'
+                                                  : 'Sección pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => savePage(7)}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar página 7
                                         </button>
                                     </div>
                                 </section>
@@ -5889,6 +6977,221 @@ export function WB6Digital() {
                                         </p>
                                         <p>
                                             <span className="font-semibold">Señal mejorada:</span> pausar, nombrar el punto crítico y responder con secuencia breve y firme.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showMeetingHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Presencia en reuniones de alto nivel</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMeetingHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>• En reuniones de alto nivel no solo importa hablar bien; importa leer la sala y elegir el momento.</p>
+                                        <p>• Presencia ejecutiva = claridad + autoridad + oportunidad.</p>
+                                        <p>• Presencia híbrida exige la misma calidad de intervención en sala física y entorno virtual.</p>
+                                        <p>• Tu objetivo no es dominar la conversación; es agregar criterio y orden cuando más se necesita.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showMeetingExampleStep1 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1 (Lectura de sala)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMeetingExampleStep1(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[760px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Elemento</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Ejemplo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {([
+                                                    { label: 'Quién decide realmente', value: EXAMPLE_MEETING_READING_MAP.realDecisionMaker },
+                                                    { label: 'Quién influye sin decidir', value: EXAMPLE_MEETING_READING_MAP.informalInfluencer },
+                                                    { label: 'Quién puede bloquear o enfriar', value: EXAMPLE_MEETING_READING_MAP.blockerOrCooler },
+                                                    { label: 'Tensión principal', value: EXAMPLE_MEETING_READING_MAP.mainTension },
+                                                    { label: 'Lenguaje dominante', value: EXAMPLE_MEETING_READING_MAP.dominantLanguage },
+                                                    { label: 'Punto de aporte útil', value: EXAMPLE_MEETING_READING_MAP.highestValueContributionPoint }
+                                                ] as const).map((row) => (
+                                                    <tr key={`wb6-meeting-modal-step1-${row.label}`}>
+                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-slate-100">{row.label}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.value}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showMeetingExampleStep2 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2 (Posicionamiento)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMeetingExampleStep2(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Rol principal:</span> {EXAMPLE_MEETING_POSITIONING.primaryRole}</p>
+                                        <p><span className="font-semibold">Nivel de visibilidad:</span> {EXAMPLE_MEETING_POSITIONING.visibilityLevel}</p>
+                                        <p><span className="font-semibold">Contribución esperada:</span> {EXAMPLE_MEETING_POSITIONING.expectedContributionType}</p>
+                                        <p><span className="font-semibold">Riesgo si hablo demasiado:</span> {EXAMPLE_MEETING_POSITIONING.overtalkingRisk}</p>
+                                        <p><span className="font-semibold">Riesgo si hablo poco:</span> {EXAMPLE_MEETING_POSITIONING.undertalkingRisk}</p>
+                                        <p><span className="font-semibold">Señal de presencia:</span> {EXAMPLE_MEETING_POSITIONING.desiredPresenceSignal}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showMeetingExampleStep3 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3 (Arquitectura de intervención)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMeetingExampleStep3(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Apertura:</span> {EXAMPLE_MEETING_ARCHITECTURE.briefOpening}</p>
+                                        <p><span className="font-semibold">Tesis central:</span> {EXAMPLE_MEETING_ARCHITECTURE.centralThesis}</p>
+                                        <p><span className="font-semibold">Criterio / evidencia:</span> {EXAMPLE_MEETING_ARCHITECTURE.criterionOrEvidence}</p>
+                                        <p><span className="font-semibold">Implicación ejecutiva:</span> {EXAMPLE_MEETING_ARCHITECTURE.executiveImplication}</p>
+                                        <p><span className="font-semibold">Cierre corto:</span> {EXAMPLE_MEETING_ARCHITECTURE.shortClosing}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showMeetingExampleStep4 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4 (Timing e intervención)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMeetingExampleStep4(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Momento / señal</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Qué haré</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_MEETING_TIMING_MAP.map((row) => (
+                                                    <tr key={`wb6-meeting-modal-step4-${row.momentOrSignal}`}>
+                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-slate-100">{row.momentOrSignal}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.plannedAction}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showMeetingExampleStep5 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 5 (Auditoría de huella)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMeetingExampleStep5(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[860px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Ejemplo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {([
+                                                    { label: 'Cómo entré', value: EXAMPLE_MEETING_FOOTPRINT_AUDIT.entryQuality },
+                                                    { label: 'Cómo sostuve el espacio', value: EXAMPLE_MEETING_FOOTPRINT_AUDIT.spaceSustainment },
+                                                    { label: 'Qué aporté', value: EXAMPLE_MEETING_FOOTPRINT_AUDIT.realContribution },
+                                                    { label: 'Percepción probable', value: EXAMPLE_MEETING_FOOTPRINT_AUDIT.likelyPerception },
+                                                    { label: 'Qué haría distinto', value: EXAMPLE_MEETING_FOOTPRINT_AUDIT.nextAdjustment }
+                                                ] as const).map((row) => (
+                                                    <tr key={`wb6-meeting-modal-step5-${row.label}`}>
+                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-slate-100">{row.label}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.value}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showMeetingExampleStep6 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 6 (Test de presencia)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMeetingExampleStep6(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>
+                                            <span className="font-semibold">Señal débil:</span> hablar por nervio, repetir puntos ya dichos o entrar fuera de timing.
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">Señal mejorada:</span> intervenir en el momento justo, sintetizar con criterio y cerrar con una recomendación breve.
                                         </p>
                                     </div>
                                 </div>
