@@ -79,5 +79,15 @@ export const WORKBOOKS_V2_CATALOG: WorkbookV2CatalogItem[] = [
         statusLabel: 'Portada y presentación activas',
         progress: 15,
         summary: 'Nueva versión digital con portada e identificación, presentación informativa completa y continuidad automática por sesión.'
+    },
+    {
+        id: 'wb8',
+        slug: 'wb8',
+        code: 'WB8',
+        title: 'Pensamiento estratégico y toma de decisiones',
+        pillar: 'Shine Up',
+        statusLabel: 'Construcción activa',
+        progress: 35,
+        summary: 'Portada, presentación y sección Escalera de valor con pasos, ejemplos, validaciones suaves y esquema visual interactivo.'
     }
 ]
