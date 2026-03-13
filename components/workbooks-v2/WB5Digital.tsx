@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5
 type YesNoAnswer = '' | 'yes' | 'no'
 
 type WorkbookPage = {
@@ -87,13 +87,37 @@ type WB5State = {
             adjustment: string
         }>
     }
+    influenceCommunicationSection: {
+        matrix: {
+            rational: string
+            emotional: string
+            decisional: string
+        }
+        levers: Array<{
+            lever: string
+            whatToSay: string
+            weight: '' | 'Alta' | 'Media' | 'Baja'
+        }>
+        dualMessage: {
+            contextOpening: string
+            rationalCore: string
+            emotionalCore: string
+            decisionalClose: string
+        }
+        ethicalCheck: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Estructura de mensaje ejecutivo', shortLabel: 'Mensaje ejecutivo' },
-    { id: 4, label: '4. Ingeniería del lenguaje', shortLabel: 'Promesas y pedidos' }
+    { id: 4, label: '4. Ingeniería del lenguaje', shortLabel: 'Promesas y pedidos' },
+    { id: 5, label: '5. Influencia racional y emocional', shortLabel: 'Influencia ética' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb5-state'
@@ -122,6 +146,22 @@ const LANGUAGE_TRACEABILITY_QUESTIONS = [
     '¿Hay condiciones de satisfacción explícitas?',
     '¿Hubo confirmación o renegociación explícita?',
     '¿Quedó definido el seguimiento?'
+]
+const INFLUENCE_LEVERS = [
+    'Evidencia / datos',
+    'Riesgo / consecuencia',
+    'Beneficio / oportunidad',
+    'Valores compartidos',
+    'Confianza / credibilidad',
+    'Pertenencia / impacto en otros',
+    'Sentido / propósito'
+]
+const INFLUENCE_ETHICS_QUESTIONS = [
+    '¿Mi propuesta está respaldada con hechos o criterio?',
+    '¿Estoy conectando con algo que realmente importa a la audiencia?',
+    '¿Dejo espacio para escuchar y ajustar?',
+    '¿Estoy influyendo sin imponer?',
+    '¿Mi mensaje seguiría siendo sólido si me pidieran explicarlo mejor?'
 ]
 
 const DEFAULT_STATE: WB5State = {
@@ -193,6 +233,29 @@ const DEFAULT_STATE: WB5State = {
             verdict: '',
             adjustment: ''
         }))
+    },
+    influenceCommunicationSection: {
+        matrix: {
+            rational: '',
+            emotional: '',
+            decisional: ''
+        },
+        levers: INFLUENCE_LEVERS.map((lever) => ({
+            lever,
+            whatToSay: '',
+            weight: ''
+        })),
+        dualMessage: {
+            contextOpening: '',
+            rationalCore: '',
+            emotionalCore: '',
+            decisionalClose: ''
+        },
+        ethicalCheck: INFLUENCE_ETHICS_QUESTIONS.map((question) => ({
+            question,
+            verdict: '',
+            adjustment: ''
+        }))
     }
 }
 
@@ -204,8 +267,15 @@ const normalizeState = (raw: unknown): WB5State => {
     const calibrationRaw = Array.isArray(languageRaw.calibration) ? languageRaw.calibration : []
     const promisesRaw = Array.isArray(languageRaw.activePromises) ? languageRaw.activePromises : []
     const traceabilityRaw = Array.isArray(languageRaw.traceabilityTest) ? languageRaw.traceabilityTest : []
+    const influenceRaw = parsed.influenceCommunicationSection ?? {}
+    const leversRaw = Array.isArray(influenceRaw.levers) ? influenceRaw.levers : []
+    const ethicalRaw = Array.isArray(influenceRaw.ethicalCheck) ? influenceRaw.ethicalCheck : []
     const normalizedRiskLevel = (value: unknown): '' | 'Bajo' | 'Medio' | 'Alto' => {
         if (value === 'Bajo' || value === 'Medio' || value === 'Alto') return value
+        return ''
+    }
+    const normalizedLeverWeight = (value: unknown): '' | 'Alta' | 'Media' | 'Baja' => {
+        if (value === 'Alta' || value === 'Media' || value === 'Baja') return value
         return ''
     }
 
@@ -272,6 +342,32 @@ const normalizeState = (raw: unknown): WB5State => {
                     adjustment: typeof candidate?.adjustment === 'string' ? candidate.adjustment : ''
                 }
             })
+        },
+        influenceCommunicationSection: {
+            matrix: {
+                ...DEFAULT_STATE.influenceCommunicationSection.matrix,
+                ...(influenceRaw.matrix ?? {})
+            },
+            levers: INFLUENCE_LEVERS.map((lever, index) => {
+                const candidate = leversRaw[index] ?? {}
+                return {
+                    lever,
+                    whatToSay: typeof candidate.whatToSay === 'string' ? candidate.whatToSay : '',
+                    weight: normalizedLeverWeight(candidate.weight)
+                }
+            }),
+            dualMessage: {
+                ...DEFAULT_STATE.influenceCommunicationSection.dualMessage,
+                ...(influenceRaw.dualMessage ?? {})
+            },
+            ethicalCheck: INFLUENCE_ETHICS_QUESTIONS.map((question, index) => {
+                const candidate = ethicalRaw[index]
+                return {
+                    question,
+                    verdict: candidate?.verdict === 'yes' || candidate?.verdict === 'no' ? candidate.verdict : '',
+                    adjustment: typeof candidate?.adjustment === 'string' ? candidate.adjustment : ''
+                }
+            })
         }
     }
 }
@@ -298,6 +394,11 @@ export function WB5Digital() {
     const [showLanguageExampleStep4, setShowLanguageExampleStep4] = useState(false)
     const [showLanguageExampleStep5, setShowLanguageExampleStep5] = useState(false)
     const [showLanguageCanvasPreview, setShowLanguageCanvasPreview] = useState(false)
+    const [showInfluenceHelp, setShowInfluenceHelp] = useState(false)
+    const [showInfluenceExampleStep1, setShowInfluenceExampleStep1] = useState(false)
+    const [showInfluenceExampleStep2, setShowInfluenceExampleStep2] = useState(false)
+    const [showInfluenceExampleStep3, setShowInfluenceExampleStep3] = useState(false)
+    const [showInfluenceExampleStep4, setShowInfluenceExampleStep4] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -616,6 +717,91 @@ export function WB5Digital() {
         announceSave(`${blockLabel} guardado.`)
     }
 
+    const updateInfluenceMatrix = (
+        field: keyof WB5State['influenceCommunicationSection']['matrix'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            influenceCommunicationSection: {
+                ...prev.influenceCommunicationSection,
+                matrix: {
+                    ...prev.influenceCommunicationSection.matrix,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateInfluenceLever = (
+        rowIndex: number,
+        field: keyof WB5State['influenceCommunicationSection']['levers'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            influenceCommunicationSection: {
+                ...prev.influenceCommunicationSection,
+                levers: prev.influenceCommunicationSection.levers.map((row, index) =>
+                    index === rowIndex
+                        ? {
+                              ...row,
+                              [field]:
+                                  field === 'weight'
+                                      ? value === 'Alta' || value === 'Media' || value === 'Baja'
+                                          ? value
+                                          : ''
+                                      : value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateInfluenceDual = (
+        field: keyof WB5State['influenceCommunicationSection']['dualMessage'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            influenceCommunicationSection: {
+                ...prev.influenceCommunicationSection,
+                dualMessage: {
+                    ...prev.influenceCommunicationSection.dualMessage,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateInfluenceEthics = (
+        rowIndex: number,
+        field: keyof WB5State['influenceCommunicationSection']['ethicalCheck'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            influenceCommunicationSection: {
+                ...prev.influenceCommunicationSection,
+                ethicalCheck: prev.influenceCommunicationSection.ethicalCheck.map((row, index) =>
+                    index === rowIndex
+                        ? { ...row, [field]: field === 'verdict' ? (value as YesNoAnswer) : value }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const saveInfluenceBlock = (blockLabel: string) => {
+        markVisited(5)
+        announceSave(`${blockLabel} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -696,6 +882,10 @@ export function WB5Digital() {
     const languagePromises = state.languageEngineeringSection.activePromises
     const languageRenegotiation = state.languageEngineeringSection.renegotiationProtocol
     const languageTraceability = state.languageEngineeringSection.traceabilityTest
+    const influenceMatrix = state.influenceCommunicationSection.matrix
+    const influenceLevers = state.influenceCommunicationSection.levers
+    const influenceDual = state.influenceCommunicationSection.dualMessage
+    const influenceEthics = state.influenceCommunicationSection.ethicalCheck
 
     const blufCompleted = Object.values(executiveBluf).every((value) => value.trim().length > 0)
     const pyramidCompleted = Object.values(executivePyramid).every((value) => value.trim().length > 0)
@@ -715,6 +905,14 @@ export function WB5Digital() {
         languagePromisesCompleted &&
         languageRenegotiationCompleted &&
         languageTraceabilityCompleted
+    const influenceMatrixCompleted = Object.values(influenceMatrix).every((value) => value.trim().length > 0)
+    const influenceLeversCompleted = influenceLevers.every(
+        (row) => row.whatToSay.trim().length > 0 && row.weight !== ''
+    )
+    const influenceDualCompleted = Object.values(influenceDual).every((value) => value.trim().length > 0)
+    const influenceEthicsCompleted = influenceEthics.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
+    const influenceSectionCompleted =
+        influenceMatrixCompleted && influenceLeversCompleted && influenceDualCompleted && influenceEthicsCompleted
 
     const bottomLineWordCount = executiveBluf.bottomLine.trim().split(/\s+/).filter(Boolean).length
     const bottomLineTooLong = bottomLineWordCount > 18
@@ -757,12 +955,34 @@ export function WB5Digital() {
         languageRenegotiation.alternativeProposal.trim().length > 0 &&
         languageRenegotiation.confirmationNeeded.trim().length > 0
     const highRiskWithoutRenegotiation = hasHighRiskPromise && !hasRenegotiationPlan
+    const rationalSignals = ['dato', 'datos', 'criterio', 'riesgo', 'consecuencia', 'impacto', 'evidencia', 'si ', 'porque']
+    const hasRationalSignal = rationalSignals.some((signal) => influenceMatrix.rational.toLowerCase().includes(signal))
+    const rationalNeedsSupport = influenceMatrix.rational.trim().length > 0 && !hasRationalSignal
+    const emotionalSignals = [
+        'valor',
+        'confianza',
+        'equipo',
+        'importa',
+        'preocup',
+        'aspira',
+        'sentido',
+        'riesgo',
+        'beneficio'
+    ]
+    const hasEmotionalSignal = emotionalSignals.some((signal) => influenceMatrix.emotional.toLowerCase().includes(signal))
+    const emotionalNeedsSupport = influenceMatrix.emotional.trim().length > 0 && !hasEmotionalSignal
+    const decisionalSignals = ['decidir', 'acordar', 'definir', 'hacer', 'confirmar', 'aprobar', 'priorizar', 'siguiente']
+    const hasDecisionalSignal = decisionalSignals.some((signal) =>
+        influenceDual.decisionalClose.toLowerCase().includes(signal)
+    )
+    const decisionalNeedsSupport = influenceDual.decisionalClose.trim().length > 0 && !hasDecisionalSignal
 
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: executiveSectionCompleted,
-        4: languageSectionCompleted
+        4: languageSectionCompleted,
+        5: influenceSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -842,7 +1062,7 @@ export function WB5Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb5-print-page wb5-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 4"
+                                data-print-page="Página 1 de 5"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -935,7 +1155,7 @@ export function WB5Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 4"
+                                data-print-page="Página 2 de 5"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1069,7 +1289,7 @@ export function WB5Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 4"
+                                data-print-page="Página 3 de 5"
                                 data-print-title="Estructura de mensaje ejecutivo"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1593,7 +1813,7 @@ export function WB5Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 4"
+                                data-print-page="Página 4 de 5"
                                 data-print-title="Ingeniería del lenguaje (promesas y pedidos)"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2207,6 +2427,410 @@ export function WB5Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(5) && (
+                            <article
+                                className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 5 de 5"
+                                data-print-title="Comunicación de influencia racional y emocional"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 5</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Comunicación de influencia racional y emocional
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Desarrolla una influencia ética combinando argumentos racionales con conexión emocional para movilizar comprensión, decisión y compromiso sin imposición.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowInfluenceHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Influencia racional: datos, hechos, criterios y consecuencias que sostienen una propuesta.',
+                                            'Influencia emocional: conexión con valores, preocupaciones y aspiraciones relevantes para la audiencia.',
+                                            'Influencia ética: movilizar sin manipulación ni abuso de autoridad.',
+                                            'Construcción de confianza: consistencia, respeto, transparencia y cumplimiento.',
+                                            'Escucha activa y empática: comprender al otro y ajustar el mensaje desde esa comprensión.',
+                                            'Palancas de influencia: evidencia, riesgo, beneficio, valores, confianza, pertenencia y sentido.',
+                                            'Mensaje dual: línea racional sólida + línea emocional relevante.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Matriz Racional – Emocional – Decisional</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowInfluenceExampleStep1(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    influenceMatrixCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {influenceMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Lo racional</span>
+                                            <textarea
+                                                rows={2}
+                                                value={influenceMatrix.rational}
+                                                onChange={(event) => updateInfluenceMatrix('rational', event.target.value)}
+                                                disabled={isLocked}
+                                                placeholder="Hechos, datos, criterio o consecuencias"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Lo emocional</span>
+                                            <textarea
+                                                rows={2}
+                                                value={influenceMatrix.emotional}
+                                                onChange={(event) => updateInfluenceMatrix('emotional', event.target.value)}
+                                                disabled={isLocked}
+                                                placeholder="Qué le importa o qué puede movilizar al otro"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Lo decisional</span>
+                                            <textarea
+                                                rows={2}
+                                                value={influenceMatrix.decisional}
+                                                onChange={(event) => updateInfluenceMatrix('decisional', event.target.value)}
+                                                disabled={isLocked}
+                                                placeholder="Qué debe ocurrir después de la conversación"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {rationalNeedsSupport && (
+                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                                Sugerencia: fortalece la base racional con dato, lógica o criterio.
+                                            </p>
+                                        )}
+                                        {emotionalNeedsSupport && (
+                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                                Sugerencia: aclara qué valor, riesgo o aspiración compartida está en juego.
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveInfluenceBlock('Paso 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Mapa de palancas de influencia</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowInfluenceExampleStep2(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    influenceLeversCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {influenceLeversCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Palanca</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué podría decir aquí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Peso</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {influenceLevers.map((row, rowIndex) => (
+                                                    <tr key={`influence-lever-${rowIndex}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.lever}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.whatToSay}
+                                                                onChange={(event) => updateInfluenceLever(rowIndex, 'whatToSay', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <select
+                                                                value={row.weight}
+                                                                onChange={(event) => updateInfluenceLever(rowIndex, 'weight', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Seleccionar</option>
+                                                                <option value="Alta">Alta</option>
+                                                                <option value="Media">Media</option>
+                                                                <option value="Baja">Baja</option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveInfluenceBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Diseño de mensaje dual (cabeza + corazón)</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowInfluenceExampleStep3(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    influenceDualCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {influenceDualCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Apertura de contexto</span>
+                                            <textarea
+                                                rows={2}
+                                                value={influenceDual.contextOpening}
+                                                onChange={(event) => updateInfluenceDual('contextOpening', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Núcleo racional</span>
+                                            <textarea
+                                                rows={2}
+                                                value={influenceDual.rationalCore}
+                                                onChange={(event) => updateInfluenceDual('rationalCore', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Núcleo emocional / movilizador</span>
+                                            <textarea
+                                                rows={2}
+                                                value={influenceDual.emotionalCore}
+                                                onChange={(event) => updateInfluenceDual('emotionalCore', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Cierre decisional</span>
+                                            <textarea
+                                                rows={2}
+                                                value={influenceDual.decisionalClose}
+                                                onChange={(event) => updateInfluenceDual('decisionalClose', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {decisionalNeedsSupport && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: define qué necesitas que ocurra después (decisión o acción concreta).
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveInfluenceBlock('Paso 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Chequeo de influencia ética</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowInfluenceExampleStep4(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    influenceEthicsCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {influenceEthicsCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[920px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {influenceEthics.map((row, rowIndex) => (
+                                                    <tr key={`influence-ethics-${rowIndex}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`influence-ethics-${rowIndex}`}
+                                                                checked={row.verdict === 'yes'}
+                                                                onChange={() => updateInfluenceEthics(rowIndex, 'verdict', 'yes')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`influence-ethics-${rowIndex}`}
+                                                                checked={row.verdict === 'no'}
+                                                                onChange={() => updateInfluenceEthics(rowIndex, 'verdict', 'no')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateInfluenceEthics(rowIndex, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Escribe ajuste o Completar"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveInfluenceBlock('Paso 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
+                                    <ul className="mt-4 space-y-2.5">
+                                        {[
+                                            'Qué parte racional sostiene mi influencia.',
+                                            'Qué parte emocional moviliza a la audiencia.',
+                                            'Cómo combinar ambas sin manipular.',
+                                            'Qué palancas pesan más según la conversación.',
+                                            'Cómo influir con ética, claridad y confianza.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-5 flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                influenceSectionCompleted
+                                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                    : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                            }`}
+                                        >
+                                            {influenceSectionCompleted ? 'Sección completada' : 'Sección pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => savePage(5)}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar página 5
+                                        </button>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {showExecutiveHelp && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
@@ -2457,6 +3081,118 @@ export function WB5Digital() {
                                     <div className="space-y-2.5 text-sm text-slate-700">
                                         <p><span className="font-semibold">Compromiso débil:</span> “Sí, yo miro eso.”</p>
                                         <p><span className="font-semibold">Compromiso trazable:</span> “Sí, reviso las cinco slides y te mando comentarios antes de hoy a las 6:00 p. m., enfocándome en claridad del mensaje y orden de ideas.”</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showInfluenceHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Influencia racional y emocional</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowInfluenceHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>• Influencia racional = hechos, criterio y lógica.</p>
+                                        <p>• Influencia emocional = valores, preocupaciones y sentido compartido.</p>
+                                        <p>• Influencia ética combina ambas sin manipulación.</p>
+                                        <p>• El cierre debe explicitar la decisión o acción esperada.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showInfluenceExampleStep1 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1 (Matriz)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowInfluenceExampleStep1(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Lo racional:</span> Si mantenemos cinco prioridades simultáneas, bajará la calidad y aumentará el retrabajo.</li>
+                                        <li><span className="font-semibold">Lo emocional:</span> El equipo necesita foco y seguridad, no sensación de caos.</li>
+                                        <li><span className="font-semibold">Lo decisional:</span> Necesito acordar tres prioridades y descartar dos hoy.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showInfluenceExampleStep2 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2 (Palancas)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowInfluenceExampleStep2(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Evidencia:</span> Ya vemos retrasos por dispersión (Alta).</li>
+                                        <li><span className="font-semibold">Riesgo:</span> Sin foco perderemos calidad y credibilidad (Alta).</li>
+                                        <li><span className="font-semibold">Valores compartidos:</span> Queremos un equipo confiable y sostenible (Media).</li>
+                                        <li><span className="font-semibold">Sentido:</span> Este ajuste protege el trabajo bien hecho (Media).</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showInfluenceExampleStep3 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3 (Mensaje dual)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowInfluenceExampleStep3(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Apertura:</span> Aumentó el volumen de frentes y el equipo perdió foco.</li>
+                                        <li><span className="font-semibold">Núcleo racional:</span> La carga supera capacidad real y afecta tiempos y calidad.</li>
+                                        <li><span className="font-semibold">Núcleo emocional:</span> Si seguimos así, bajan resultados y confianza del equipo.</li>
+                                        <li><span className="font-semibold">Cierre:</span> Definir tres prioridades, responsables y lo que sale del foco hoy.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showInfluenceExampleStep4 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4 (Chequeo ético)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowInfluenceExampleStep4(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Mensaje débil:</span> “Necesitamos hacer esto porque yo sé que es lo correcto.”</p>
+                                        <p><span className="font-semibold">Mensaje mejorado:</span> “Necesitamos ajustar porque los datos muestran dispersión y proteger foco y calidad es coherente con el equipo que queremos ser.”</p>
                                     </div>
                                 </div>
                             </div>
