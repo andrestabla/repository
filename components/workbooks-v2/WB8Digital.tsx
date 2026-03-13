@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5
 type YesNoAnswer = '' | 'yes' | 'no'
 type Score15 = '' | '1' | '2' | '3' | '4' | '5'
 type LadderLevel = 'Entrada' | 'Núcleo' | 'Escalamiento'
@@ -96,13 +96,67 @@ type WB8State = {
             adjustment: string
         }>
     }
+    visibilityStrategySection: {
+        thematicAuditRows: Array<{
+            possibleTopic: string
+            realExperience: Score15
+            differential: Score15
+            audienceRelevance: Score15
+            offerConnection: Score15
+        }>
+        audienceMapRows: Array<{
+            keyAudience: string
+            mainTension: string
+            strategicMessage: string
+            mainChannel: string
+            suggestedFormat: string
+        }>
+        editorialArchitecture: {
+            contentPillars: string[]
+            contentTypes: {
+                attraction: string
+                depth: string
+                conversion: string
+            }
+            mainChannels: string[]
+        }
+        channelRoleMatrixRows: Array<{
+            channel: string
+            primaryRole: string
+            minimumFrequency: string
+            shownSignal: string
+            primaryMetric: string
+        }>
+        backlogRows: Array<{
+            topicPiece: string
+            pillar: string
+            objective: string
+            channel: string
+            format: string
+            valueSignal: string
+            priority: string
+        }>
+        executionBoard: {
+            minimumCadence: string
+            creationBlock: string
+            distributionBlock: string
+            reviewBlock: string
+            monthlyLearningCriteria: string
+        }
+        visibilityCoherenceTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Escalera de valor', shortLabel: 'Escalera de valor' },
-    { id: 4, label: '4. Modelo de negocio', shortLabel: 'Modelo de negocio' }
+    { id: 4, label: '4. Modelo de negocio', shortLabel: 'Modelo de negocio' },
+    { id: 5, label: '5. Estrategia de visibilidad', shortLabel: 'Visibilidad' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb8-state'
@@ -117,6 +171,10 @@ const INTERNAL_ROUTES_ROWS = 4
 const EXTERNAL_ROUTES_ROWS = 4
 const VALUE_CAPTURE_ROWS = 3
 const PORTFOLIO_ROWS = 4
+const THEMATIC_ROWS = 5
+const AUDIENCE_MAP_ROWS = 3
+const VISIBILITY_MATRIX_ROWS = 4
+const BACKLOG_ROWS = 8
 
 const LADDER_LEVELS: LadderLevel[] = ['Entrada', 'Núcleo', 'Escalamiento']
 
@@ -202,6 +260,74 @@ const MONETIZABLE_UNIT_SIGNALS = [
     'oferta',
     'framework'
 ] as const
+const VISIBILITY_COHERENCE_QUESTIONS = [
+    '¿Definí pilares temáticos claros?',
+    '¿La visibilidad conecta con mis ofertas?',
+    '¿Cada canal tiene un rol definido?',
+    '¿Tengo backlog priorizado?',
+    '¿La cadencia es sostenible?',
+    '¿Podré medir visibilidad útil y no solo ruido?'
+] as const
+const CONTENT_TYPE_OPTIONS = [
+    'Ideas breves / insights',
+    'Hallazgos',
+    'Frameworks',
+    'Casos',
+    'Análisis aplicable',
+    'Invitaciones a conversación',
+    'Invitaciones a diagnóstico',
+    'Convocatorias a sesión',
+    'Recomendaciones accionables'
+] as const
+const VISIBILITY_CHANNEL_OPTIONS = [
+    'LinkedIn',
+    'Reuniones',
+    'Reuniones internas',
+    'Correo ejecutivo',
+    'Newsletter',
+    'Eventos',
+    'Comités',
+    'Espacios internos',
+    'Sesiones 1:1',
+    'Webinars',
+    'Podcast',
+    'Blog',
+    'YouTube',
+    'Red interna'
+] as const
+const VISIBILITY_FORMAT_OPTIONS = [
+    'Post',
+    'Carrusel',
+    'Artículo corto',
+    'Insight breve',
+    'Síntesis ejecutiva',
+    'Reporte',
+    'Conversación 1:1',
+    'Mensaje directo',
+    'Newsletter',
+    'Presentación'
+] as const
+const VISIBILITY_FREQUENCY_OPTIONS = [
+    '2 veces por semana',
+    'Semanal',
+    'Quincenal',
+    'Mensual',
+    '2-4 veces por mes',
+    '4 por mes'
+] as const
+const VISIBILITY_METRIC_OPTIONS = [
+    'Alcance',
+    'Conversaciones iniciadas',
+    'Invitaciones recibidas',
+    'Solicitudes de reunión',
+    'Respuestas',
+    'Aperturas',
+    'Leads',
+    'Oportunidades abiertas'
+] as const
+const VISIBILITY_OBJECTIVE_OPTIONS = ['Atracción', 'Profundidad', 'Conversión'] as const
+const VISIBILITY_PRIORITY_OPTIONS = ['Alta', 'Media-alta', 'Media', 'Baja'] as const
+const GENERIC_TOPIC_TERMS = ['liderazgo', 'productividad', 'estrategia', 'marca', 'comunicación', 'negocio'] as const
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '')
 const readYesNo = (value: unknown): YesNoAnswer => (value === 'yes' || value === 'no' ? value : '')
@@ -215,6 +341,41 @@ const buildFocusPriority = (row: WB8State['valueLadderSection']['focusDecisionRo
     if (total >= 19) return 'Alta'
     if (total >= 15) return 'Media'
     return 'Baja'
+}
+
+const buildThematicDecision = (row: WB8State['visibilityStrategySection']['thematicAuditRows'][number]): string => {
+    const scores = [row.realExperience, row.differential, row.audienceRelevance, row.offerConnection]
+    if (scores.some((item) => item === '')) return ''
+    const total = scores.reduce((sum, item) => sum + Number(item), 0)
+    if (total >= 18) return 'Pilar principal'
+    if (total >= 15) return 'Pilar secundario'
+    if (total >= 12) return 'Pilar de apoyo'
+    return 'No priorizar'
+}
+
+const buildChannelPrimaryRole = (channel: string): string => {
+    const normalized = channel.trim().toLowerCase()
+    if (!normalized) return ''
+    if (normalized.includes('linkedin') || normalized.includes('blog') || normalized.includes('youtube') || normalized.includes('podcast')) {
+        return 'Visibilidad y autoridad'
+    }
+    if (
+        normalized.includes('reuni') ||
+        normalized.includes('comit') ||
+        normalized.includes('intern')
+    ) {
+        return 'Influencia y reputación'
+    }
+    if (normalized.includes('newsletter') || normalized.includes('correo')) {
+        return 'Profundidad y nurturing'
+    }
+    if (normalized.includes('1:1') || normalized.includes('sesion') || normalized.includes('sesión')) {
+        return 'Conversión y relacionamiento'
+    }
+    if (normalized.includes('evento') || normalized.includes('webinar')) {
+        return 'Relacionamiento y posicionamiento'
+    }
+    return 'Visibilidad estratégica'
 }
 
 const computeTokenSimilarity = (left: string, right: string): number => {
@@ -318,6 +479,59 @@ const DEFAULT_STATE: WB8State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    visibilityStrategySection: {
+        thematicAuditRows: Array.from({ length: THEMATIC_ROWS }, () => ({
+            possibleTopic: '',
+            realExperience: '' as Score15,
+            differential: '' as Score15,
+            audienceRelevance: '' as Score15,
+            offerConnection: '' as Score15
+        })),
+        audienceMapRows: Array.from({ length: AUDIENCE_MAP_ROWS }, () => ({
+            keyAudience: '',
+            mainTension: '',
+            strategicMessage: '',
+            mainChannel: '',
+            suggestedFormat: ''
+        })),
+        editorialArchitecture: {
+            contentPillars: Array.from({ length: 3 }, () => ''),
+            contentTypes: {
+                attraction: '',
+                depth: '',
+                conversion: ''
+            },
+            mainChannels: Array.from({ length: 3 }, () => '')
+        },
+        channelRoleMatrixRows: Array.from({ length: VISIBILITY_MATRIX_ROWS }, () => ({
+            channel: '',
+            primaryRole: '',
+            minimumFrequency: '',
+            shownSignal: '',
+            primaryMetric: ''
+        })),
+        backlogRows: Array.from({ length: BACKLOG_ROWS }, () => ({
+            topicPiece: '',
+            pillar: '',
+            objective: '',
+            channel: '',
+            format: '',
+            valueSignal: '',
+            priority: ''
+        })),
+        executionBoard: {
+            minimumCadence: '',
+            creationBlock: '',
+            distributionBlock: '',
+            reviewBlock: '',
+            monthlyLearningCriteria: ''
+        },
+        visibilityCoherenceTest: VISIBILITY_COHERENCE_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
     }
 }
 
@@ -327,6 +541,7 @@ const normalizeState = (raw: unknown): WB8State => {
     const identification = (parsed.identification ?? {}) as Record<string, unknown>
     const valueLadderSection = (parsed.valueLadderSection ?? {}) as Record<string, unknown>
     const businessModelSection = (parsed.businessModelSection ?? {}) as Record<string, unknown>
+    const visibilityStrategySection = (parsed.visibilityStrategySection ?? {}) as Record<string, unknown>
 
     const rawAssetsInventory = Array.isArray(valueLadderSection.assetsInventory) ? valueLadderSection.assetsInventory : []
     const rawMatrixRows = Array.isArray(valueLadderSection.problemTransformationRows) ? valueLadderSection.problemTransformationRows : []
@@ -343,6 +558,22 @@ const normalizeState = (raw: unknown): WB8State => {
     const rawPortfolioRows = Array.isArray(businessModelSection.portfolioRows) ? businessModelSection.portfolioRows : []
     const rawMonetizationHypothesis = (businessModelSection.monetizationHypothesis ?? {}) as Record<string, unknown>
     const rawModelCoherenceTest = Array.isArray(businessModelSection.modelCoherenceTest) ? businessModelSection.modelCoherenceTest : []
+    const rawThematicAuditRows = Array.isArray(visibilityStrategySection.thematicAuditRows)
+        ? visibilityStrategySection.thematicAuditRows
+        : []
+    const rawAudienceMapRows = Array.isArray(visibilityStrategySection.audienceMapRows) ? visibilityStrategySection.audienceMapRows : []
+    const rawEditorialArchitecture = (visibilityStrategySection.editorialArchitecture ?? {}) as Record<string, unknown>
+    const rawContentPillars = Array.isArray(rawEditorialArchitecture.contentPillars) ? rawEditorialArchitecture.contentPillars : []
+    const rawContentTypes = (rawEditorialArchitecture.contentTypes ?? {}) as Record<string, unknown>
+    const rawMainChannels = Array.isArray(rawEditorialArchitecture.mainChannels) ? rawEditorialArchitecture.mainChannels : []
+    const rawChannelRoleMatrixRows = Array.isArray(visibilityStrategySection.channelRoleMatrixRows)
+        ? visibilityStrategySection.channelRoleMatrixRows
+        : []
+    const rawBacklogRows = Array.isArray(visibilityStrategySection.backlogRows) ? visibilityStrategySection.backlogRows : []
+    const rawExecutionBoard = (visibilityStrategySection.executionBoard ?? {}) as Record<string, unknown>
+    const rawVisibilityCoherenceTest = Array.isArray(visibilityStrategySection.visibilityCoherenceTest)
+        ? visibilityStrategySection.visibilityCoherenceTest
+        : []
 
     return {
         identification: {
@@ -450,6 +681,74 @@ const normalizeState = (raw: unknown): WB8State => {
                     adjustment: readString(row.adjustment)
                 }
             })
+        },
+        visibilityStrategySection: {
+            thematicAuditRows: Array.from({ length: THEMATIC_ROWS }, (_, index) => {
+                const row = (rawThematicAuditRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    possibleTopic: readString(row.possibleTopic),
+                    realExperience: readScore(row.realExperience),
+                    differential: readScore(row.differential),
+                    audienceRelevance: readScore(row.audienceRelevance),
+                    offerConnection: readScore(row.offerConnection)
+                }
+            }),
+            audienceMapRows: Array.from({ length: AUDIENCE_MAP_ROWS }, (_, index) => {
+                const row = (rawAudienceMapRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    keyAudience: readString(row.keyAudience),
+                    mainTension: readString(row.mainTension),
+                    strategicMessage: readString(row.strategicMessage),
+                    mainChannel: readString(row.mainChannel),
+                    suggestedFormat: readString(row.suggestedFormat)
+                }
+            }),
+            editorialArchitecture: {
+                contentPillars: Array.from({ length: 3 }, (_, index) => readString(rawContentPillars[index])),
+                contentTypes: {
+                    attraction: readString(rawContentTypes.attraction),
+                    depth: readString(rawContentTypes.depth),
+                    conversion: readString(rawContentTypes.conversion)
+                },
+                mainChannels: Array.from({ length: 3 }, (_, index) => readString(rawMainChannels[index]))
+            },
+            channelRoleMatrixRows: Array.from({ length: VISIBILITY_MATRIX_ROWS }, (_, index) => {
+                const row = (rawChannelRoleMatrixRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    channel: readString(row.channel),
+                    primaryRole: readString(row.primaryRole),
+                    minimumFrequency: readString(row.minimumFrequency),
+                    shownSignal: readString(row.shownSignal),
+                    primaryMetric: readString(row.primaryMetric)
+                }
+            }),
+            backlogRows: Array.from({ length: BACKLOG_ROWS }, (_, index) => {
+                const row = (rawBacklogRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    topicPiece: readString(row.topicPiece),
+                    pillar: readString(row.pillar),
+                    objective: readString(row.objective),
+                    channel: readString(row.channel),
+                    format: readString(row.format),
+                    valueSignal: readString(row.valueSignal),
+                    priority: readString(row.priority)
+                }
+            }),
+            executionBoard: {
+                minimumCadence: readString(rawExecutionBoard.minimumCadence),
+                creationBlock: readString(rawExecutionBoard.creationBlock),
+                distributionBlock: readString(rawExecutionBoard.distributionBlock),
+                reviewBlock: readString(rawExecutionBoard.reviewBlock),
+                monthlyLearningCriteria: readString(rawExecutionBoard.monthlyLearningCriteria)
+            },
+            visibilityCoherenceTest: VISIBILITY_COHERENCE_QUESTIONS.map((question, index) => {
+                const row = (rawVisibilityCoherenceTest[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: readYesNo(row.verdict),
+                    adjustment: readString(row.adjustment)
+                }
+            })
         }
     }
 }
@@ -466,6 +765,7 @@ export function WB8Digital() {
     const [isExportingAll, setIsExportingAll] = useState(false)
     const [showValueLadderHelp, setShowValueLadderHelp] = useState(false)
     const [showBusinessModelHelp, setShowBusinessModelHelp] = useState(false)
+    const [showVisibilityStrategyHelp, setShowVisibilityStrategyHelp] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -867,6 +1167,199 @@ export function WB8Digital() {
         announceSave(`${label} guardado.`)
     }
 
+    const updateThematicAuditRow = (
+        index: number,
+        field: keyof WB8State['visibilityStrategySection']['thematicAuditRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const thematicAuditRows = [...prev.visibilityStrategySection.thematicAuditRows]
+            thematicAuditRows[index] =
+                field === 'possibleTopic'
+                    ? { ...thematicAuditRows[index], possibleTopic: value }
+                    : { ...thematicAuditRows[index], [field]: readScore(value) }
+            return {
+                ...prev,
+                visibilityStrategySection: {
+                    ...prev.visibilityStrategySection,
+                    thematicAuditRows
+                }
+            }
+        })
+    }
+
+    const updateAudienceMapRow = (
+        index: number,
+        field: keyof WB8State['visibilityStrategySection']['audienceMapRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const audienceMapRows = [...prev.visibilityStrategySection.audienceMapRows]
+            audienceMapRows[index] = {
+                ...audienceMapRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                visibilityStrategySection: {
+                    ...prev.visibilityStrategySection,
+                    audienceMapRows
+                }
+            }
+        })
+    }
+
+    const updateEditorialPillar = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const contentPillars = [...prev.visibilityStrategySection.editorialArchitecture.contentPillars]
+            contentPillars[index] = value
+            return {
+                ...prev,
+                visibilityStrategySection: {
+                    ...prev.visibilityStrategySection,
+                    editorialArchitecture: {
+                        ...prev.visibilityStrategySection.editorialArchitecture,
+                        contentPillars
+                    }
+                }
+            }
+        })
+    }
+
+    const updateEditorialContentType = (
+        field: keyof WB8State['visibilityStrategySection']['editorialArchitecture']['contentTypes'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            visibilityStrategySection: {
+                ...prev.visibilityStrategySection,
+                editorialArchitecture: {
+                    ...prev.visibilityStrategySection.editorialArchitecture,
+                    contentTypes: {
+                        ...prev.visibilityStrategySection.editorialArchitecture.contentTypes,
+                        [field]: value
+                    }
+                }
+            }
+        }))
+    }
+
+    const updateEditorialChannel = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const mainChannels = [...prev.visibilityStrategySection.editorialArchitecture.mainChannels]
+            mainChannels[index] = value
+            return {
+                ...prev,
+                visibilityStrategySection: {
+                    ...prev.visibilityStrategySection,
+                    editorialArchitecture: {
+                        ...prev.visibilityStrategySection.editorialArchitecture,
+                        mainChannels
+                    }
+                }
+            }
+        })
+    }
+
+    const updateChannelRoleMatrixRow = (
+        index: number,
+        field: keyof WB8State['visibilityStrategySection']['channelRoleMatrixRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const channelRoleMatrixRows = [...prev.visibilityStrategySection.channelRoleMatrixRows]
+            if (field === 'channel') {
+                channelRoleMatrixRows[index] = {
+                    ...channelRoleMatrixRows[index],
+                    channel: value,
+                    primaryRole: buildChannelPrimaryRole(value)
+                }
+            } else {
+                channelRoleMatrixRows[index] = {
+                    ...channelRoleMatrixRows[index],
+                    [field]: value
+                }
+            }
+
+            return {
+                ...prev,
+                visibilityStrategySection: {
+                    ...prev.visibilityStrategySection,
+                    channelRoleMatrixRows
+                }
+            }
+        })
+    }
+
+    const updateBacklogRow = (
+        index: number,
+        field: keyof WB8State['visibilityStrategySection']['backlogRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const backlogRows = [...prev.visibilityStrategySection.backlogRows]
+            backlogRows[index] = {
+                ...backlogRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                visibilityStrategySection: {
+                    ...prev.visibilityStrategySection,
+                    backlogRows
+                }
+            }
+        })
+    }
+
+    const updateExecutionBoard = (
+        field: keyof WB8State['visibilityStrategySection']['executionBoard'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            visibilityStrategySection: {
+                ...prev.visibilityStrategySection,
+                executionBoard: {
+                    ...prev.visibilityStrategySection.executionBoard,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateVisibilityCoherenceTestRow = (index: number, field: 'verdict' | 'adjustment', value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const visibilityCoherenceTest = [...prev.visibilityStrategySection.visibilityCoherenceTest]
+            visibilityCoherenceTest[index] =
+                field === 'verdict'
+                    ? { ...visibilityCoherenceTest[index], verdict: readYesNo(value) }
+                    : { ...visibilityCoherenceTest[index], adjustment: value }
+            return {
+                ...prev,
+                visibilityStrategySection: {
+                    ...prev.visibilityStrategySection,
+                    visibilityCoherenceTest
+                }
+            }
+        })
+    }
+
+    const saveVisibilityStrategyBlock = (label: string) => {
+        savePage(5)
+        announceSave(`${label} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -1067,11 +1560,111 @@ export function WB8Digital() {
         hypothesis.minimumViableTest.trim().length === 0 ||
         hypothesis.validationWindow.trim().length === 0
 
+    const visibilityStrategySection = state.visibilityStrategySection
+    const thematicRows = visibilityStrategySection.thematicAuditRows
+    const audienceMapRows = visibilityStrategySection.audienceMapRows
+    const editorialArchitecture = visibilityStrategySection.editorialArchitecture
+    const channelRoleMatrixRows = visibilityStrategySection.channelRoleMatrixRows
+    const backlogRows = visibilityStrategySection.backlogRows
+    const executionBoard = visibilityStrategySection.executionBoard
+
+    const thematicAuditCompleted = thematicRows.every(
+        (row) =>
+            row.possibleTopic.trim().length > 0 &&
+            row.realExperience !== '' &&
+            row.differential !== '' &&
+            row.audienceRelevance !== '' &&
+            row.offerConnection !== ''
+    )
+    const audienceMapCompleted = audienceMapRows.every(
+        (row) =>
+            row.keyAudience.trim().length > 0 &&
+            row.mainTension.trim().length > 0 &&
+            row.strategicMessage.trim().length > 0 &&
+            row.mainChannel.trim().length > 0 &&
+            row.suggestedFormat.trim().length > 0
+    )
+    const editorialArchitectureCompleted =
+        editorialArchitecture.contentPillars.every((item) => item.trim().length > 0) &&
+        editorialArchitecture.contentTypes.attraction.trim().length > 0 &&
+        editorialArchitecture.contentTypes.depth.trim().length > 0 &&
+        editorialArchitecture.contentTypes.conversion.trim().length > 0 &&
+        editorialArchitecture.mainChannels.every((item) => item.trim().length > 0)
+    const channelRoleMatrixCompleted = channelRoleMatrixRows.every(
+        (row) =>
+            row.channel.trim().length > 0 &&
+            row.primaryRole.trim().length > 0 &&
+            row.minimumFrequency.trim().length > 0 &&
+            row.shownSignal.trim().length > 0 &&
+            row.primaryMetric.trim().length > 0
+    )
+    const backlogCompleted = backlogRows.every(
+        (row) =>
+            row.topicPiece.trim().length > 0 &&
+            row.pillar.trim().length > 0 &&
+            row.objective.trim().length > 0 &&
+            row.channel.trim().length > 0 &&
+            row.format.trim().length > 0 &&
+            row.valueSignal.trim().length > 0 &&
+            row.priority.trim().length > 0
+    )
+    const executionBoardCompleted =
+        executionBoard.minimumCadence.trim().length > 0 &&
+        executionBoard.creationBlock.trim().length > 0 &&
+        executionBoard.distributionBlock.trim().length > 0 &&
+        executionBoard.reviewBlock.trim().length > 0 &&
+        executionBoard.monthlyLearningCriteria.trim().length > 0
+    const visibilityCoherenceCompleted = visibilityStrategySection.visibilityCoherenceTest.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+
+    const section5Completed =
+        thematicAuditCompleted &&
+        audienceMapCompleted &&
+        editorialArchitectureCompleted &&
+        channelRoleMatrixCompleted &&
+        backlogCompleted &&
+        executionBoardCompleted &&
+        visibilityCoherenceCompleted
+
+    const hasPillars = editorialArchitecture.contentPillars.some((item) => item.trim().length > 0)
+    const hasChannels = editorialArchitecture.mainChannels.some((item) => item.trim().length > 0)
+    const hasCadence = executionBoard.minimumCadence.trim().length > 0
+    const section5MinimumReady = hasPillars && hasChannels && hasCadence
+
+    const nonEmptyTopics = thematicRows.map((row) => row.possibleTopic.trim()).filter((item) => item.length > 0)
+    const topicsTooGeneric =
+        nonEmptyTopics.length > 0 &&
+        nonEmptyTopics.every((topic) => {
+            const normalized = topic.toLowerCase()
+            return normalized.split(/\s+/).length <= 2 || GENERIC_TOPIC_TERMS.some((term) => normalized === term)
+        })
+
+    const noOfferOrMonetizationConnection =
+        thematicRows.some((row) => row.possibleTopic.trim().length > 0) &&
+        thematicRows
+            .filter((row) => row.offerConnection !== '')
+            .every((row) => Number(row.offerConnection) <= 2)
+
+    const selectedChannelsWithRole = channelRoleMatrixRows
+        .filter((row) => row.channel.trim().length > 0)
+        .map((row) => row.primaryRole.trim())
+        .filter((role) => role.length > 0)
+    const sameRoleAcrossChannels =
+        selectedChannelsWithRole.length >= 2 && new Set(selectedChannelsWithRole).size === 1
+
+    const missingPrimaryMetric = channelRoleMatrixRows.some(
+        (row) => row.channel.trim().length > 0 && row.primaryMetric.trim().length === 0
+    )
+
+    const cadenceTooAmbitious = /diari|todos los d[ií]as|7\s*piezas|5\s*piezas|4\s*piezas/i.test(executionBoard.minimumCadence)
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: section3Completed,
-        4: section4Completed
+        4: section4Completed,
+        5: section5Completed
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -1156,7 +1749,7 @@ export function WB8Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb8-print-page wb8-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 4"
+                                data-print-page="Página 1 de 5"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1228,7 +1821,7 @@ export function WB8Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-6 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 4"
+                                data-print-page="Página 2 de 5"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1362,7 +1955,7 @@ export function WB8Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 4"
+                                data-print-page="Página 3 de 5"
                                 data-print-title="Escalera de valor"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2123,7 +2716,7 @@ export function WB8Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 4"
+                                data-print-page="Página 4 de 5"
                                 data-print-title="Modelo de negocio"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2946,6 +3539,1030 @@ export function WB8Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(5) && (
+                            <article
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 5 de 5"
+                                data-print-title="Estrategia de visibilidad"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 5</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Estrategia de visibilidad: plan de contenidos y canales
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Diseñar una estrategia de visibilidad basada en contenidos y canales que traduzca tu pensamiento
+                                        estratégico en presencia sostenida, legible y útil, para fortalecer posicionamiento, autoridad
+                                        temática y generación de oportunidades.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowVisibilityStrategyHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Estrategia de visibilidad: diseño deliberado de qué valor hacer visible, ante qué audiencias, por medio de qué contenidos, en qué canales y con qué frecuencia.',
+                                            'Contenido estratégico: pieza de comunicación creada no solo para informar, sino para instalar una percepción, demostrar criterio, abrir conversación o activar una oportunidad.',
+                                            'Pilar de contenido: eje temático estable que organiza tu visibilidad y evita dispersión.',
+                                            'Canal: superficie o medio a través del cual distribuyes una señal de valor, por ejemplo reuniones, LinkedIn, correo ejecutivo, newsletter, eventos, comités o espacios internos.',
+                                            'Rol del canal: función específica que cumple cada canal dentro de tu estrategia, como visibilidad, autoridad, relacionamiento, conversión o reputación.',
+                                            'Señal de autoridad: evidencia visible de que dominas un campo, lees contextos, aportas criterio y produces valor confiable.',
+                                            'Arquitectura editorial: estructura que conecta pilares temáticos, formatos, frecuencia, objetivos y audiencias en un sistema coherente.',
+                                            'Cadencia de contenidos: ritmo mínimo y sostenible con el que haces visible tu valor sin depender de inspiración ocasional.',
+                                            'Contenido de atracción: contenido que llama atención y amplía alcance.',
+                                            'Contenido de profundidad: contenido que aumenta credibilidad y demuestra pensamiento propio.',
+                                            'Contenido de conversión: contenido o pieza que abre una conversación, una solicitud, una reunión, una mentoría o una oportunidad.',
+                                            'Sistema de distribución: lógica mediante la cual un mismo tema se traduce en distintos formatos y canales.',
+                                            'ROI de visibilidad: retorno que la visibilidad genera en forma de oportunidades, conversaciones, reputación, leads, acceso o monetización.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Auditoría de autoridad temática</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                thematicAuditCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {thematicAuditCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Identifica temas donde tengas experiencia real, diferencial y conexión con tu oferta.',
+                                                'Evalúa relevancia para la audiencia con escala de 1 a 5.',
+                                                'No busques cubrir todo: decide foco temático y evita dispersión.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Narrativa ejecutiva: 5, 5, 5, 5, decisión Pilar principal.',
+                                                'Claridad estratégica: 5, 4, 5, 5, decisión Pilar principal.',
+                                                'Desarrollo de liderazgo: 4, 4, 4, 4, decisión Pilar secundario.',
+                                                'Productividad general: 2, 2, 3, 1, decisión No priorizar.',
+                                                'Marca profesional: 4, 4, 5, 4, decisión Pilar de apoyo.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1280px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tema posible</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Experiencia real</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Diferencial</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Relevancia audiencia</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Conexión con oferta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Decisión (auto)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {thematicRows.map((row, index) => (
+                                                    <tr key={`wb8-thematic-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.possibleTopic}
+                                                                onChange={(event) => updateThematicAuditRow(index, 'possibleTopic', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        {(['realExperience', 'differential', 'audienceRelevance', 'offerConnection'] as const).map((field) => (
+                                                            <td key={`wb8-thematic-score-${index}-${field}`} className="px-3 py-2 border-b border-slate-100 w-[160px]">
+                                                                <select
+                                                                    value={row[field]}
+                                                                    onChange={(event) => updateThematicAuditRow(index, field, event.target.value)}
+                                                                    disabled={isLocked}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {['1', '2', '3', '4', '5'].map((option) => (
+                                                                        <option key={`wb8-thematic-option-${index}-${field}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                        ))}
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">
+                                                            {buildThematicDecision(row) || 'Pendiente de datos'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityStrategyBlock('Paso 1 — Auditoría temática')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Mapa audiencia–problema–mensaje–canal</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                audienceMapCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {audienceMapCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define para cada audiencia su tensión principal y el mensaje estratégico a instalar.',
+                                                'Selecciona un canal principal y formato sugerido de mayor ajuste.',
+                                                'Conecta visibilidad con problema real de audiencia, no con intuición.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Líderes en transición | Tienen valor, pero no logran articularlo | Tu valor debe volverse legible y visible | LinkedIn / sesión 1:1 | post + carrusel + conversación.',
+                                                'Sponsors internos | Ven ejecución, pero no siempre criterio estratégico | También aporto claridad y foco de decisión | reuniones / reportes | síntesis ejecutiva.',
+                                                'Referentes externos | No me conocen lo suficiente | Tengo una lectura propia aplicable al liderazgo | LinkedIn / evento / newsletter | insight breve / artículo corto.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1280px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Audiencia clave</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Problema/tensión principal</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Mensaje estratégico</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Canal principal</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Formato sugerido</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {audienceMapRows.map((row, index) => (
+                                                    <tr key={`wb8-audience-map-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.keyAudience}
+                                                                onChange={(event) => updateAudienceMapRow(index, 'keyAudience', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.mainTension}
+                                                                onChange={(event) => updateAudienceMapRow(index, 'mainTension', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.strategicMessage}
+                                                                onChange={(event) => updateAudienceMapRow(index, 'strategicMessage', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.mainChannel}
+                                                                onChange={(event) => updateAudienceMapRow(index, 'mainChannel', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_CHANNEL_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-audience-channel-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.suggestedFormat}
+                                                                onChange={(event) => updateAudienceMapRow(index, 'suggestedFormat', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_FORMAT_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-audience-format-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityStrategyBlock('Paso 2 — Mapa audiencia-problema-mensaje-canal')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Arquitectura editorial 3x3</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                editorialArchitectureCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {editorialArchitectureCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define 3 pilares de contenido para sostener reputación temática.',
+                                                'Selecciona 3 tipos de contenido: atracción, profundidad y conversión.',
+                                                'Elige 3 canales principales que realmente puedas sostener.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Pilares: Narrativa profesional, Claridad estratégica, Desarrollo de liderazgo.',
+                                                'Tipos: Atracción (ideas breves e insights), Profundidad (frameworks/casos), Conversión (invitaciones a sesión o diagnóstico).',
+                                                'Canales: LinkedIn, reuniones/espacios internos, newsletter o correo ejecutivo.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+                                            <h4 className="text-sm font-bold text-slate-900">3 pilares de contenido</h4>
+                                            {editorialArchitecture.contentPillars.map((pillar, index) => (
+                                                <label key={`wb8-visibility-pillar-${index}`} className="space-y-1 block">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Pilar {index + 1}</span>
+                                                    <input
+                                                        type="text"
+                                                        value={pillar}
+                                                        onChange={(event) => updateEditorialPillar(index, event.target.value)}
+                                                        disabled={isLocked}
+                                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                    />
+                                                </label>
+                                            ))}
+                                        </article>
+                                        <article className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
+                                            <h4 className="text-sm font-bold text-slate-900">3 tipos de contenido</h4>
+                                            <label className="space-y-1 block">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Atracción</span>
+                                                <select
+                                                    value={editorialArchitecture.contentTypes.attraction}
+                                                    onChange={(event) => updateEditorialContentType('attraction', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                >
+                                                    <option value="">Selecciona</option>
+                                                    {CONTENT_TYPE_OPTIONS.map((option) => (
+                                                        <option key={`wb8-content-type-attraction-${option}`} value={option}>
+                                                            {option}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                            <label className="space-y-1 block">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Profundidad</span>
+                                                <select
+                                                    value={editorialArchitecture.contentTypes.depth}
+                                                    onChange={(event) => updateEditorialContentType('depth', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                >
+                                                    <option value="">Selecciona</option>
+                                                    {CONTENT_TYPE_OPTIONS.map((option) => (
+                                                        <option key={`wb8-content-type-depth-${option}`} value={option}>
+                                                            {option}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                            <label className="space-y-1 block">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Conversión</span>
+                                                <select
+                                                    value={editorialArchitecture.contentTypes.conversion}
+                                                    onChange={(event) => updateEditorialContentType('conversion', event.target.value)}
+                                                    disabled={isLocked}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                >
+                                                    <option value="">Selecciona</option>
+                                                    {CONTENT_TYPE_OPTIONS.map((option) => (
+                                                        <option key={`wb8-content-type-conversion-${option}`} value={option}>
+                                                            {option}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        </article>
+                                        <article className="rounded-xl border border-violet-200 bg-violet-50 p-4 space-y-3">
+                                            <h4 className="text-sm font-bold text-slate-900">3 canales principales</h4>
+                                            {editorialArchitecture.mainChannels.map((channel, index) => (
+                                                <label key={`wb8-visibility-channel-${index}`} className="space-y-1 block">
+                                                    <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Canal {index + 1}</span>
+                                                    <select
+                                                        value={channel}
+                                                        onChange={(event) => updateEditorialChannel(index, event.target.value)}
+                                                        disabled={isLocked}
+                                                        className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                    >
+                                                        <option value="">Selecciona</option>
+                                                        {VISIBILITY_CHANNEL_OPTIONS.map((option) => (
+                                                            <option key={`wb8-editorial-channel-${index}-${option}`} value={option}>
+                                                                {option}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </label>
+                                            ))}
+                                        </article>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityStrategyBlock('Paso 3 — Arquitectura editorial 3x3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Matriz canal–rol–frecuencia–métrica</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                channelRoleMatrixCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {channelRoleMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Asigna a cada canal un rol principal (automático según canal seleccionado).',
+                                                'Define frecuencia mínima sostenible, señal visible y métrica principal.',
+                                                'No repitas canales sin función diferenciada.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'LinkedIn | Rol: Visibilidad y autoridad | Frecuencia: 2 veces por semana | Señal: lectura propia + claridad | Métrica: alcance y conversaciones iniciadas.',
+                                                'Reuniones internas | Rol: Influencia y reputación | Frecuencia: 2–4 veces por mes | Señal: síntesis y criterio | Métrica: invitaciones a nuevas conversaciones.',
+                                                'Newsletter | Rol: Profundidad y nurturing | Frecuencia: quincenal | Señal: análisis aplicable | Métrica: aperturas y respuestas.',
+                                                '1:1 estratégicos | Rol: Conversión y relación | Frecuencia: 4 por mes | Señal: valor adaptado al interlocutor | Métrica: oportunidades abiertas.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1280px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Canal</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Rol principal (auto)</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Frecuencia mínima</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Señal que mostraré</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Métrica principal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {channelRoleMatrixRows.map((row, index) => (
+                                                    <tr key={`wb8-channel-role-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.channel}
+                                                                onChange={(event) => updateChannelRoleMatrixRow(index, 'channel', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_CHANNEL_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-channel-role-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <input
+                                                                type="text"
+                                                                value={row.primaryRole}
+                                                                disabled
+                                                                className="w-full rounded-xl border border-slate-300 bg-slate-100 text-slate-700 px-3 py-2 text-sm cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.minimumFrequency}
+                                                                onChange={(event) => updateChannelRoleMatrixRow(index, 'minimumFrequency', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_FREQUENCY_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-frequency-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.shownSignal}
+                                                                onChange={(event) => updateChannelRoleMatrixRow(index, 'shownSignal', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.primaryMetric}
+                                                                onChange={(event) => updateChannelRoleMatrixRow(index, 'primaryMetric', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_METRIC_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-metric-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityStrategyBlock('Paso 4 — Matriz canal-rol-frecuencia-métrica')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Backlog estratégico de contenidos</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                backlogCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {backlogCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Construye mínimo 8 piezas con tema, pilar, objetivo, canal, formato, señal de valor y prioridad.',
+                                                'Prioriza piezas que conecten con oferta y oportunidad.',
+                                                'Convierte ideas sueltas en backlog ejecutable.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Errores comunes al narrar valor profesional | Pilar: Narrativa profesional | Objetivo: Atracción | Canal: LinkedIn | Formato: Carrusel | Señal: claridad aplicable | Prioridad: Alta.',
+                                                'Cómo traducir complejidad en decisión | Pilar: Claridad estratégica | Objetivo: Profundidad | Canal: LinkedIn/Newsletter | Formato: Artículo breve | Señal: criterio estratégico | Prioridad: Alta.',
+                                                'Invitación a diagnóstico express | Pilar: Narrativa profesional | Objetivo: Conversión | Canal: LinkedIn/1:1 | Formato: Post + mensaje | Señal: puerta de entrada | Prioridad: Alta.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1480px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tema / pieza</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pilar</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Objetivo</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Canal</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Formato</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Señal de valor</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {backlogRows.map((row, index) => (
+                                                    <tr key={`wb8-backlog-row-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.topicPiece}
+                                                                onChange={(event) => updateBacklogRow(index, 'topicPiece', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.pillar}
+                                                                onChange={(event) => updateBacklogRow(index, 'pillar', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {editorialArchitecture.contentPillars
+                                                                    .map((item) => item.trim())
+                                                                    .filter((item) => item.length > 0)
+                                                                    .map((item) => (
+                                                                        <option key={`wb8-backlog-pillar-${index}-${item}`} value={item}>
+                                                                            {item}
+                                                                        </option>
+                                                                    ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.objective}
+                                                                onChange={(event) => updateBacklogRow(index, 'objective', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_OBJECTIVE_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-backlog-objective-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[200px]">
+                                                            <select
+                                                                value={row.channel}
+                                                                onChange={(event) => updateBacklogRow(index, 'channel', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_CHANNEL_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-backlog-channel-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.format}
+                                                                onChange={(event) => updateBacklogRow(index, 'format', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_FORMAT_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-backlog-format-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.valueSignal}
+                                                                onChange={(event) => updateBacklogRow(index, 'valueSignal', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.priority}
+                                                                onChange={(event) => updateBacklogRow(index, 'priority', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {VISIBILITY_PRIORITY_OPTIONS.map((option) => (
+                                                                    <option key={`wb8-backlog-priority-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityStrategyBlock('Paso 5 — Backlog estratégico')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Tablero mínimo de ejecución editorial</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                executionBoardCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {executionBoardCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define cadencia mínima y bloques operativos de creación, distribución y revisión.',
+                                                'Evita depender de inspiración ocasional: estructura un sistema repetible.',
+                                                'Incluye criterio de aprendizaje mensual para iterar la estrategia.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Cadencia mínima: 2 piezas por semana + 2 intervenciones internas relevantes al mes.',
+                                                'Bloque de creación: martes 7:00–8:00 a. m.',
+                                                'Bloque de distribución: jueves al mediodía y seguimiento viernes.',
+                                                'Bloque de revisión: último viernes del mes.',
+                                                'Criterio de aprendizaje: identificar qué temas, canales y formatos abren más conversaciones valiosas.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Cadencia mínima</span>
+                                            <input
+                                                type="text"
+                                                value={executionBoard.minimumCadence}
+                                                onChange={(event) => updateExecutionBoard('minimumCadence', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Bloque de creación</span>
+                                            <input
+                                                type="text"
+                                                value={executionBoard.creationBlock}
+                                                onChange={(event) => updateExecutionBoard('creationBlock', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Bloque de distribución / amplificación</span>
+                                            <input
+                                                type="text"
+                                                value={executionBoard.distributionBlock}
+                                                onChange={(event) => updateExecutionBoard('distributionBlock', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Bloque de revisión de resultados</span>
+                                            <input
+                                                type="text"
+                                                value={executionBoard.reviewBlock}
+                                                onChange={(event) => updateExecutionBoard('reviewBlock', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1 md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Criterio de aprendizaje mensual</span>
+                                            <textarea
+                                                value={executionBoard.monthlyLearningCriteria}
+                                                onChange={(event) => updateExecutionBoard('monthlyLearningCriteria', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={3}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityStrategyBlock('Paso 6 — Tablero de ejecución editorial')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 7 — Test de coherencia de la estrategia de visibilidad</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                visibilityCoherenceCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {visibilityCoherenceCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Verifica alineación entre pilares, oferta, canales, backlog y cadencia.',
+                                                'Confirma que puedas medir visibilidad útil y no solo actividad.',
+                                                'Declara ajustes concretos por cada respuesta No.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Botón ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Señal débil: publicar de forma esporádica sobre temas distintos sin conexión con oferta ni audiencia.',
+                                                'Señal mejorada: sistema editorial con pilares, canales, formatos, frecuencia y criterios de medición.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí / No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {visibilityStrategySection.visibilityCoherenceTest.map((row, index) => (
+                                                    <tr key={`wb8-visibility-coherence-row-${index}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.verdict}
+                                                                onChange={(event) => updateVisibilityCoherenceTestRow(index, 'verdict', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="yes">Sí</option>
+                                                                <option value="no">No</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateVisibilityCoherenceTestRow(index, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveVisibilityStrategyBlock('Paso 7 — Test de coherencia de visibilidad')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-3">
+                                    <h3 className="text-base font-bold text-slate-900">Cierre de la sección</h3>
+                                    <p className="text-sm text-slate-700 leading-relaxed">Cuando termines esta sección, deberías poder responder con más claridad:</p>
+                                    <ul className="space-y-1.5">
+                                        {[
+                                            'Sobre qué temas te conviene ser visible.',
+                                            'Qué audiencias quieres impactar.',
+                                            'Qué canales realmente debes sostener.',
+                                            'Qué backlog de contenidos vas a ejecutar.',
+                                            'Cómo transformar la visibilidad en un sistema, no en improvisación.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <p className="text-sm text-slate-700">
+                                        Esta sección se alinea con Visibilidad estratégica como capacidad de ser percibido como influyente y relevante
+                                        mediante presencia y comunicación efectivas y con Pensamiento estratégico como competencia de lectura del entorno
+                                        y priorización de largo plazo.
+                                    </p>
+                                </section>
+
+                                <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+                                    <h3 className="text-base font-bold text-slate-900">Validaciones suaves</h3>
+                                    {topicsTooGeneric && (
+                                        <p className="text-sm text-amber-800">Sugerencia: convierte los temas en pilares más específicos y diferenciados.</p>
+                                    )}
+                                    {noOfferOrMonetizationConnection && (
+                                        <p className="text-sm text-amber-800">Sugerencia: aclara cómo esta visibilidad apoya tu propuesta de valor.</p>
+                                    )}
+                                    {sameRoleAcrossChannels && (
+                                        <p className="text-sm text-amber-800">Sugerencia: diferencia mejor para qué sirve cada canal.</p>
+                                    )}
+                                    {missingPrimaryMetric && (
+                                        <p className="text-sm text-amber-800">Sugerencia: define cómo sabrás si ese canal está funcionando.</p>
+                                    )}
+                                    {cadenceTooAmbitious && (
+                                        <p className="text-sm text-amber-800">Sugerencia: ajusta a un ritmo sostenible.</p>
+                                    )}
+                                    {!topicsTooGeneric &&
+                                        !noOfferOrMonetizationConnection &&
+                                        !sameRoleAcrossChannels &&
+                                        !missingPrimaryMetric &&
+                                        !cadenceTooAmbitious && (
+                                            <p className="text-sm text-emerald-700">
+                                                Sin alertas: la estrategia tiene foco temático, roles diferenciados y operación sostenible.
+                                            </p>
+                                        )}
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">Estado de la sección</p>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                {section5Completed
+                                                    ? 'Completado: auditoría + mapa + arquitectura + matriz + backlog + tablero + test diligenciados.'
+                                                    : !section5MinimumReady
+                                                      ? 'Pendiente: define pilares temáticos, canales y cadencia mínima.'
+                                                      : 'Pendiente: completa todos los bloques para cerrar la sección.'}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                section5Completed
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {section5Completed ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {!isExportingAll && (
                             <nav className={`wb8-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button type="button" onClick={goPrevPage} disabled={!hasPrevPage} className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}>
@@ -3021,6 +4638,37 @@ export function WB8Digital() {
                                         </li>
                                         <li className="text-sm text-slate-700 leading-relaxed">
                                             Antes de escalar, conviene validar hipótesis con pruebas pequeñas.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showVisibilityStrategyHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
+                                <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl p-6 space-y-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Ayuda — Estrategia de visibilidad</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowVisibilityStrategyHelp(false)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Visibilidad estratégica no es publicar más: es hacer visible un valor claro para audiencias concretas.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            El contenido debe conectarse con audiencias, oferta y oportunidad.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Cada canal debe cumplir un rol, no replicar exactamente lo mismo.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Una estrategia madura convierte ideas en backlog, cadencia y métricas.
                                         </li>
                                     </ul>
                                 </div>
