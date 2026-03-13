@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5
 type YesNoAnswer = '' | 'yes' | 'no'
 type StakeholderLevel = '' | '1' | '2' | '3'
 type StakeholderSymbol = '' | '★' | '▲' | '!' | '○'
@@ -85,6 +85,38 @@ type WB7State = {
             adjustment: string
         }>
     }
+    highValueNetworkSection: {
+        relationsInventory: string[]
+        valueTrustAccessRows: Array<{
+            strategicValue: Score15
+            currentTrust: Score15
+            accessAmplification: Score15
+            dominantValueType: string
+            currentState: string
+        }>
+        segmentationRows: Array<{
+            mainSegment: string
+            reason: string
+            suggestedMove: string
+        }>
+        reciprocityRows: Array<{
+            relationship: string
+            valueReceived: string
+            valueProvided: string
+            currentBalance: string
+            nextGesture: string
+        }>
+        actionMapRows: Array<{
+            actionState: string
+            justification: string
+            action30Days: string
+        }>
+        qualityTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 type Score15 = '' | '1' | '2' | '3' | '4' | '5'
@@ -93,7 +125,8 @@ const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Mapeo de stakeholders (niveles 1, 2 y 3)', shortLabel: 'Stakeholders' },
-    { id: 4, label: '4. Identificación de sponsors', shortLabel: 'Sponsors' }
+    { id: 4, label: '4. Identificación de sponsors', shortLabel: 'Sponsors' },
+    { id: 5, label: '5. Red de alto valor', shortLabel: 'Red de valor' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb7-state'
@@ -103,6 +136,8 @@ const INTRO_SEEN_KEY = 'workbooks-v2-wb7-presentation-seen'
 
 const INVENTORY_ROWS = 10
 const SPONSOR_ROWS = 6
+const HIGH_VALUE_RELATIONS_ROWS = 12
+const HIGH_VALUE_RECIPROCITY_ROWS = 3
 const MAP_RING_SYMBOLS: StakeholderSymbol[] = ['', '★', '▲', '!', '○']
 const BOND_TYPE_OPTIONS = [
     'Jerárquico / coordinación',
@@ -144,6 +179,27 @@ const SPONSOR_TEST_QUESTIONS = [
     '¿Estoy evitando pedir patrocinio demasiado pronto?'
 ] as const
 const SPONSOR_ACCESS_OPTIONS = ['Directa', 'Por puente', 'Por visibilidad gradual'] as const
+const NETWORK_VALUE_TYPE_OPTIONS = [
+    'Aprendizaje',
+    'Acceso',
+    'Reputación',
+    'Patrocinio',
+    'Colaboración',
+    'Inteligencia política',
+    'Visibilidad',
+    'Amplificación'
+] as const
+const NETWORK_STATE_OPTIONS = ['Activa', 'Mantenida', 'Dormida', 'Frágil'] as const
+const NETWORK_SEGMENT_OPTIONS = ['Núcleo', 'Puente', 'Multiplicadora', 'Aprendizaje', 'A reactivar', 'A profundizar'] as const
+const NETWORK_ACTION_OPTIONS = ['Mantener', 'Reactivar', 'Expandir', 'Despriorizar'] as const
+const NETWORK_QUALITY_TEST_QUESTIONS = [
+    '¿Diferencio valor estratégico de simple cercanía?',
+    '¿Sé qué tipo de valor aporta cada relación?',
+    '¿Identifiqué relaciones dormidas de alto valor?',
+    '¿Estoy aportando valor antes de pedir?',
+    '¿Mi red cumple funciones diversas?',
+    '¿Definí acciones concretas sobre la red?'
+] as const
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '')
 
@@ -272,6 +328,38 @@ const DEFAULT_STATE: WB7State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    highValueNetworkSection: {
+        relationsInventory: Array.from({ length: HIGH_VALUE_RELATIONS_ROWS }, () => ''),
+        valueTrustAccessRows: Array.from({ length: HIGH_VALUE_RELATIONS_ROWS }, () => ({
+            strategicValue: '' as Score15,
+            currentTrust: '' as Score15,
+            accessAmplification: '' as Score15,
+            dominantValueType: '',
+            currentState: ''
+        })),
+        segmentationRows: Array.from({ length: HIGH_VALUE_RELATIONS_ROWS }, () => ({
+            mainSegment: '',
+            reason: '',
+            suggestedMove: ''
+        })),
+        reciprocityRows: Array.from({ length: HIGH_VALUE_RECIPROCITY_ROWS }, () => ({
+            relationship: '',
+            valueReceived: '',
+            valueProvided: '',
+            currentBalance: '',
+            nextGesture: ''
+        })),
+        actionMapRows: Array.from({ length: HIGH_VALUE_RELATIONS_ROWS }, () => ({
+            actionState: '',
+            justification: '',
+            action30Days: ''
+        })),
+        qualityTest: NETWORK_QUALITY_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
     }
 }
 
@@ -295,6 +383,13 @@ const normalizeState = (raw: unknown): WB7State => {
     const rawValueBeforeAskingRows = Array.isArray(sponsorSection.valueBeforeAskingRows) ? sponsorSection.valueBeforeAskingRows : []
     const rawActivationRoute = (sponsorSection.activationRoute ?? {}) as Record<string, unknown>
     const rawSponsorReadTest = Array.isArray(sponsorSection.sponsorReadTest) ? sponsorSection.sponsorReadTest : []
+    const highValueSection = (parsed.highValueNetworkSection ?? {}) as Record<string, unknown>
+    const rawRelationsInventory = Array.isArray(highValueSection.relationsInventory) ? highValueSection.relationsInventory : []
+    const rawValueTrustAccessRows = Array.isArray(highValueSection.valueTrustAccessRows) ? highValueSection.valueTrustAccessRows : []
+    const rawSegmentationRows = Array.isArray(highValueSection.segmentationRows) ? highValueSection.segmentationRows : []
+    const rawReciprocityRows = Array.isArray(highValueSection.reciprocityRows) ? highValueSection.reciprocityRows : []
+    const rawActionMapRows = Array.isArray(highValueSection.actionMapRows) ? highValueSection.actionMapRows : []
+    const rawQualityTest = Array.isArray(highValueSection.qualityTest) ? highValueSection.qualityTest : []
 
     return {
         identification: {
@@ -387,6 +482,55 @@ const normalizeState = (raw: unknown): WB7State => {
                     adjustment: readString(row.adjustment)
                 }
             })
+        },
+        highValueNetworkSection: {
+            relationsInventory: Array.from({ length: HIGH_VALUE_RELATIONS_ROWS }, (_, index) =>
+                readString(rawRelationsInventory[index])
+            ),
+            valueTrustAccessRows: Array.from({ length: HIGH_VALUE_RELATIONS_ROWS }, (_, index) => {
+                const row = (rawValueTrustAccessRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    strategicValue: readScore(row.strategicValue),
+                    currentTrust: readScore(row.currentTrust),
+                    accessAmplification: readScore(row.accessAmplification),
+                    dominantValueType: readString(row.dominantValueType),
+                    currentState: readString(row.currentState)
+                }
+            }),
+            segmentationRows: Array.from({ length: HIGH_VALUE_RELATIONS_ROWS }, (_, index) => {
+                const row = (rawSegmentationRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    mainSegment: readString(row.mainSegment),
+                    reason: readString(row.reason),
+                    suggestedMove: readString(row.suggestedMove)
+                }
+            }),
+            reciprocityRows: Array.from({ length: HIGH_VALUE_RECIPROCITY_ROWS }, (_, index) => {
+                const row = (rawReciprocityRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    relationship: readString(row.relationship),
+                    valueReceived: readString(row.valueReceived),
+                    valueProvided: readString(row.valueProvided),
+                    currentBalance: readString(row.currentBalance),
+                    nextGesture: readString(row.nextGesture)
+                }
+            }),
+            actionMapRows: Array.from({ length: HIGH_VALUE_RELATIONS_ROWS }, (_, index) => {
+                const row = (rawActionMapRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    actionState: readString(row.actionState),
+                    justification: readString(row.justification),
+                    action30Days: readString(row.action30Days)
+                }
+            }),
+            qualityTest: NETWORK_QUALITY_TEST_QUESTIONS.map((question, index) => {
+                const row = (rawQualityTest[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: readYesNo(row.verdict),
+                    adjustment: readString(row.adjustment)
+                }
+            })
         }
     }
 }
@@ -403,6 +547,7 @@ export function WB7Digital() {
     const [isExportingAll, setIsExportingAll] = useState(false)
     const [showStakeholderHelp, setShowStakeholderHelp] = useState(false)
     const [showSponsorHelp, setShowSponsorHelp] = useState(false)
+    const [showHighValueHelp, setShowHighValueHelp] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -788,6 +933,173 @@ export function WB7Digital() {
         announceSave(`${label} guardado.`)
     }
 
+    const mergeNetworkInventory = (incoming: string[]) => {
+        if (isLocked) return
+        const normalizedIncoming = incoming.map((item) => item.trim()).filter((item) => item.length > 0)
+        if (!normalizedIncoming.length) return
+        setState((prev) => {
+            const relationsInventory = [...prev.highValueNetworkSection.relationsInventory]
+            const existing = new Set(relationsInventory.map((item) => item.trim().toLowerCase()).filter((item) => item.length > 0))
+            const candidates = normalizedIncoming.filter((item) => !existing.has(item.toLowerCase()))
+            if (!candidates.length) return prev
+
+            let pointer = 0
+            for (let index = 0; index < relationsInventory.length && pointer < candidates.length; index += 1) {
+                if (relationsInventory[index].trim().length === 0) {
+                    relationsInventory[index] = candidates[pointer]
+                    pointer += 1
+                }
+            }
+
+            return {
+                ...prev,
+                highValueNetworkSection: {
+                    ...prev.highValueNetworkSection,
+                    relationsInventory
+                }
+            }
+        })
+    }
+
+    const importStakeholdersIntoNetwork = () => {
+        mergeNetworkInventory(state.stakeholderMappingSection.actorInventory)
+        savePage(5)
+        announceSave('Se importaron stakeholders al inventario de red de alto valor.')
+    }
+
+    const importSponsorsIntoNetwork = () => {
+        mergeNetworkInventory(state.sponsorIdentificationSection.possibleSponsors)
+        savePage(5)
+        announceSave('Se importaron sponsors al inventario de red de alto valor.')
+    }
+
+    const updateHighValueRelation = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const relationsInventory = [...prev.highValueNetworkSection.relationsInventory]
+            relationsInventory[index] = value
+            return {
+                ...prev,
+                highValueNetworkSection: {
+                    ...prev.highValueNetworkSection,
+                    relationsInventory
+                }
+            }
+        })
+    }
+
+    const updateValueTrustAccessRow = (
+        index: number,
+        field: keyof WB7State['highValueNetworkSection']['valueTrustAccessRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const valueTrustAccessRows = [...prev.highValueNetworkSection.valueTrustAccessRows]
+            valueTrustAccessRows[index] = {
+                ...valueTrustAccessRows[index],
+                [field]:
+                    field === 'strategicValue' || field === 'currentTrust' || field === 'accessAmplification'
+                        ? readScore(value)
+                        : value
+            }
+            return {
+                ...prev,
+                highValueNetworkSection: {
+                    ...prev.highValueNetworkSection,
+                    valueTrustAccessRows
+                }
+            }
+        })
+    }
+
+    const updateSegmentationRow = (
+        index: number,
+        field: keyof WB7State['highValueNetworkSection']['segmentationRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const segmentationRows = [...prev.highValueNetworkSection.segmentationRows]
+            segmentationRows[index] = {
+                ...segmentationRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                highValueNetworkSection: {
+                    ...prev.highValueNetworkSection,
+                    segmentationRows
+                }
+            }
+        })
+    }
+
+    const updateReciprocityRow = (
+        index: number,
+        field: keyof WB7State['highValueNetworkSection']['reciprocityRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const reciprocityRows = [...prev.highValueNetworkSection.reciprocityRows]
+            reciprocityRows[index] = {
+                ...reciprocityRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                highValueNetworkSection: {
+                    ...prev.highValueNetworkSection,
+                    reciprocityRows
+                }
+            }
+        })
+    }
+
+    const updateActionMapRow = (
+        index: number,
+        field: keyof WB7State['highValueNetworkSection']['actionMapRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const actionMapRows = [...prev.highValueNetworkSection.actionMapRows]
+            actionMapRows[index] = {
+                ...actionMapRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                highValueNetworkSection: {
+                    ...prev.highValueNetworkSection,
+                    actionMapRows
+                }
+            }
+        })
+    }
+
+    const updateNetworkQualityTest = (index: number, field: 'verdict' | 'adjustment', value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const qualityTest = [...prev.highValueNetworkSection.qualityTest]
+            qualityTest[index] =
+                field === 'verdict' ? { ...qualityTest[index], verdict: readYesNo(value) } : { ...qualityTest[index], adjustment: value }
+            return {
+                ...prev,
+                highValueNetworkSection: {
+                    ...prev.highValueNetworkSection,
+                    qualityTest
+                }
+            }
+        })
+    }
+
+    const saveHighValueBlock = (label: string) => {
+        savePage(5)
+        announceSave(`${label} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -957,11 +1269,119 @@ export function WB7Digital() {
         sponsorsDefined.every((item) => scoreToNumber(item.row.influenceAccess) >= 4 && scoreToNumber(item.row.valueExposure) <= 2)
     const activationRouteVague = !sponsorActivationCompleted
 
+    const highValueSection = state.highValueNetworkSection
+    const highValueRows = highValueSection.relationsInventory.map((name, index) => ({
+        index,
+        name: name.trim(),
+        matrix: highValueSection.valueTrustAccessRows[index],
+        segment: highValueSection.segmentationRows[index],
+        action: highValueSection.actionMapRows[index]
+    }))
+    const highValueDefinedRows = highValueRows.filter((item) => item.name.length > 0)
+    const highValueInventoryCompleted = highValueDefinedRows.length >= 8
+    const highValueMatrixCompleted =
+        highValueDefinedRows.length > 0 &&
+        highValueDefinedRows.every(
+            (item) =>
+                item.matrix.strategicValue !== '' &&
+                item.matrix.currentTrust !== '' &&
+                item.matrix.accessAmplification !== '' &&
+                item.matrix.dominantValueType.trim().length > 0 &&
+                item.matrix.currentState.trim().length > 0
+        )
+    const highValueSegmentationCompleted =
+        highValueDefinedRows.length > 0 &&
+        highValueDefinedRows.every(
+            (item) =>
+                item.segment.mainSegment.trim().length > 0 &&
+                item.segment.reason.trim().length > 0 &&
+                item.segment.suggestedMove.trim().length > 0
+        )
+    const highValueReciprocityCompleted = highValueSection.reciprocityRows.every(
+        (row) =>
+            row.relationship.trim().length > 0 &&
+            row.valueReceived.trim().length > 0 &&
+            row.valueProvided.trim().length > 0 &&
+            row.currentBalance.trim().length > 0 &&
+            row.nextGesture.trim().length > 0
+    )
+    const highValueActionMapCompleted =
+        highValueDefinedRows.length > 0 &&
+        highValueDefinedRows.every(
+            (item) =>
+                item.action.actionState.trim().length > 0 &&
+                item.action.justification.trim().length > 0 &&
+                item.action.action30Days.trim().length > 0
+        )
+    const highValueTestCompleted = highValueSection.qualityTest.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+    const hasMaintenanceOrReactivationAction = highValueRows.some(
+        (item) => item.name.length > 0 && (item.action.actionState === 'Mantener' || item.action.actionState === 'Reactivar')
+    )
+    const section5Completed =
+        highValueInventoryCompleted &&
+        highValueMatrixCompleted &&
+        highValueSegmentationCompleted &&
+        highValueReciprocityCompleted &&
+        highValueActionMapCompleted &&
+        highValueTestCompleted &&
+        hasMaintenanceOrReactivationAction
+
+    const level1ActorsSet = new Set(ring1Actors.map((item) => item.actor.toLowerCase()))
+    const onlyCloseRelationships =
+        highValueDefinedRows.length > 0 && highValueDefinedRows.every((item) => level1ActorsSet.has(item.name.toLowerCase()))
+    const noDormantRelationship =
+        highValueDefinedRows.length > 0 &&
+        highValueDefinedRows.every((item) => item.matrix.currentState.trim().length > 0 && item.matrix.currentState !== 'Dormida')
+    const reciprocityUnclear = highValueSection.reciprocityRows.some(
+        (row) =>
+            (row.relationship.trim().length > 0 || row.valueReceived.trim().length > 0 || row.valueProvided.trim().length > 0) &&
+            (row.valueProvided.trim().length === 0 || row.currentBalance.trim().length === 0)
+    )
+    const noAction30Days = highValueDefinedRows.every((item) => item.action.action30Days.trim().length === 0)
+
+    const highValueSpiderRows = highValueDefinedRows.slice(0, HIGH_VALUE_RELATIONS_ROWS)
+    const highValueSpiderNodes = highValueSpiderRows.map((item, index) => {
+        const trust = scoreToNumber(item.matrix.currentTrust)
+        const radius = trust >= 5 ? 18 : trust === 4 ? 24 : trust === 3 ? 31 : trust === 2 ? 38 : trust === 1 ? 45 : 42
+        const position = getConcentricPosition(index, highValueSpiderRows.length, radius, -90)
+        return {
+            ...item,
+            position
+        }
+    })
+
+    const segmentColorMap: Record<string, { node: string; border: string; text: string; line: string }> = {
+        Núcleo: { node: 'bg-blue-600', border: 'border-blue-600', text: 'text-blue-700', line: '#2563eb' },
+        Puente: { node: 'bg-emerald-600', border: 'border-emerald-600', text: 'text-emerald-700', line: '#059669' },
+        Multiplicadora: { node: 'bg-amber-500', border: 'border-amber-500', text: 'text-amber-700', line: '#f59e0b' },
+        Aprendizaje: { node: 'bg-cyan-600', border: 'border-cyan-600', text: 'text-cyan-700', line: '#0891b2' },
+        'A reactivar': { node: 'bg-rose-600', border: 'border-rose-600', text: 'text-rose-700', line: '#e11d48' },
+        'A profundizar': { node: 'bg-indigo-600', border: 'border-indigo-600', text: 'text-indigo-700', line: '#4f46e5' }
+    }
+
+    const highValueSegmentNodes = highValueSpiderRows.map((item, index) => {
+        const position = getConcentricPosition(index, highValueSpiderRows.length, 40, -90)
+        const colors = segmentColorMap[item.segment.mainSegment] ?? {
+            node: 'bg-slate-500',
+            border: 'border-slate-500',
+            text: 'text-slate-700',
+            line: '#64748b'
+        }
+        return {
+            ...item,
+            position,
+            colors
+        }
+    })
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: section3Completed,
-        4: section4Completed
+        4: section4Completed,
+        5: section5Completed
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -1040,7 +1460,7 @@ export function WB7Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb7-print-page wb7-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 4"
+                                data-print-page="Página 1 de 5"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1133,7 +1553,7 @@ export function WB7Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 4"
+                                data-print-page="Página 2 de 5"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1266,7 +1686,7 @@ export function WB7Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 4"
+                                data-print-page="Página 3 de 5"
                                 data-print-title="Mapeo de stakeholders (niveles 1, 2 y 3)"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2108,7 +2528,7 @@ export function WB7Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 4"
+                                data-print-page="Página 4 de 5"
                                 data-print-title="Identificación de sponsors"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2833,6 +3253,934 @@ export function WB7Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(5) && (
+                            <article
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 5 de 5"
+                                data-print-title="Red de alto valor"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 5</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Red de alto valor</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Diferencia dentro de tu ecosistema qué relaciones realmente movilizan confianza, acceso, aprendizaje y oportunidades para
+                                        convertir tu red en capital relacional activo.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowHighValueHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Red de alto valor: subconjunto de relaciones que sí movilizan acceso, aprendizaje, confianza, reputación o visibilidad.',
+                                            'Valor relacional: utilidad estratégica más allá de simpatía o frecuencia de contacto.',
+                                            'Reciprocidad estratégica: intercambio útil y sostenible en ambas direcciones.',
+                                            'Capital relacional activo: vínculos movilizables con legitimidad por historia y confianza.',
+                                            'Expansión consciente: crecimiento deliberado de la red con criterio y valor mutuo.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Inventario de relaciones de alto valor</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                highValueInventoryCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {highValueInventoryCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Selecciona entre 8 y 12 relaciones estratégicamente relevantes hoy.',
+                                                'No priorices solo cercanía; incluye relaciones que abren acceso, aprendizaje, reputación o amplificación.',
+                                                'Usa los botones para traer stakeholders o sponsors ya definidos y luego ajusta el inventario.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Relación 1: Jefe directo',
+                                                'Relación 2: Directora de unidad',
+                                                'Relación 3: Sponsor informal',
+                                                'Relación 4: Exjefe con reputación',
+                                                'Relación 5: Mentor ejecutivo',
+                                                'Relación 6: Par de operaciones',
+                                                'Relación 7: Líder comercial',
+                                                'Relación 8: Cliente interno clave',
+                                                'Relación 9: Referente externo del sector',
+                                                'Relación 10: Partner estratégico'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={importStakeholdersIntoNetwork}
+                                            disabled={isLocked}
+                                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Traer stakeholders
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={importSponsorsIntoNetwork}
+                                            disabled={isLocked}
+                                            className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Traer sponsors
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {highValueSection.relationsInventory.map((relation, index) => (
+                                            <label key={`wb7-high-value-rel-${index}`} className="space-y-1">
+                                                <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                    Relación {index + 1}
+                                                    {index >= 10 ? ' (opcional)' : ''}
+                                                </span>
+                                                <input
+                                                    type="text"
+                                                    value={relation}
+                                                    onChange={(event) => updateHighValueRelation(index, event.target.value)}
+                                                    disabled={isLocked}
+                                                    placeholder="Ej: Directora de unidad"
+                                                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                />
+                                            </label>
+                                        ))}
+                                    </div>
+
+                                    <article className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <h4 className="text-sm font-bold text-slate-900">Visualización tipo networking (telaraña) por cercanía</h4>
+                                            <p className="text-xs text-slate-600">Cercanía estimada desde matriz valor–confianza–acceso</p>
+                                        </div>
+                                        <div className="relative mx-auto w-full max-w-[860px] h-[420px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
+                                            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+                                                <circle cx="50" cy="50" r="17" fill="none" stroke="#93c5fd" strokeDasharray="0" />
+                                                <circle cx="50" cy="50" r="25" fill="none" stroke="#bfdbfe" strokeDasharray="1.2 1.6" />
+                                                <circle cx="50" cy="50" r="33" fill="none" stroke="#dbeafe" strokeDasharray="1.2 1.8" />
+                                                <circle cx="50" cy="50" r="41" fill="none" stroke="#e2e8f0" strokeDasharray="1.4 2" />
+                                                {highValueSpiderNodes.map((node) => (
+                                                    <line
+                                                        key={`wb7-high-value-line-${node.index}`}
+                                                        x1="50"
+                                                        y1="50"
+                                                        x2={node.position.x}
+                                                        y2={node.position.y}
+                                                        stroke="#94a3b8"
+                                                        strokeWidth="0.35"
+                                                        strokeOpacity="0.7"
+                                                    />
+                                                ))}
+                                            </svg>
+                                            <div className="absolute inset-0">
+                                                {highValueSpiderNodes.map((node) => (
+                                                    <div
+                                                        key={`wb7-high-value-node-${node.index}`}
+                                                        style={{ left: `${node.position.x}%`, top: `${node.position.y}%` }}
+                                                        className="absolute -translate-x-1/2 -translate-y-1/2 max-w-[170px] rounded-full border border-blue-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 text-center shadow-sm"
+                                                    >
+                                                        <span className="block truncate">{node.name}</span>
+                                                    </div>
+                                                ))}
+                                                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-blue-500 bg-white px-4 py-2 shadow-sm text-center">
+                                                    <p className="text-[10px] uppercase tracking-[0.14em] text-blue-700 font-semibold">Centro</p>
+                                                    <p className="text-sm font-bold text-slate-900">{state.identification.role.trim() || 'Tu rol actual'}</p>
+                                                </div>
+                                            </div>
+                                            {highValueSpiderNodes.length === 0 && (
+                                                <div className="absolute inset-x-6 bottom-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center">
+                                                    <p className="text-xs text-amber-800">
+                                                        Completa relaciones y/o la matriz de confianza para visualizar la red tipo telaraña.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-slate-600">
+                                            Referencia visual: mayor confianza = nodo más cercano al centro. Menor confianza = nodo más periférico.
+                                        </p>
+                                    </article>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveHighValueBlock('Paso 1 — Inventario de relaciones de alto valor')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz valor–confianza–acceso</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                highValueMatrixCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {highValueMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Valora cada relación de 1 a 5 en valor estratégico, confianza actual y acceso/amplificación.',
+                                                'Define el tipo de valor dominante: aprendizaje, acceso, reputación, patrocinio, colaboración o inteligencia política.',
+                                                'Marca el estado real de la relación: activa, mantenida, dormida o frágil.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Directora de unidad: valor 5, confianza 2, acceso 5, tipo visibilidad/acceso, estado frágil.',
+                                                'Exjefe con reputación: valor 4, confianza 4, acceso 4, tipo reputación/referencia, estado mantenida.',
+                                                'Sponsor informal: valor 4, confianza 2, acceso 4, tipo patrocinio potencial, estado dormida.',
+                                                'Mentor ejecutivo: valor 3, confianza 5, acceso 3, tipo criterio/aprendizaje, estado activa.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1280px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Relación</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Valor estratégico (1–5)</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Confianza actual (1–5)</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Acceso / amplificación (1–5)</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tipo de valor dominante</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Estado actual</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {highValueRows.map((item) => {
+                                                    const disabledRow = isLocked || item.name.length === 0
+                                                    return (
+                                                        <tr key={`wb7-high-value-matrix-${item.index}`}>
+                                                            <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">
+                                                                {item.name || `Relación ${item.index + 1} (sin definir)`}
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <select
+                                                                    value={item.matrix.strategicValue}
+                                                                    onChange={(event) => updateValueTrustAccessRow(item.index, 'strategicValue', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {['1', '2', '3', '4', '5'].map((option) => (
+                                                                        <option key={`wb7-hv-value-${item.index}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <select
+                                                                    value={item.matrix.currentTrust}
+                                                                    onChange={(event) => updateValueTrustAccessRow(item.index, 'currentTrust', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {['1', '2', '3', '4', '5'].map((option) => (
+                                                                        <option key={`wb7-hv-trust-${item.index}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <select
+                                                                    value={item.matrix.accessAmplification}
+                                                                    onChange={(event) =>
+                                                                        updateValueTrustAccessRow(item.index, 'accessAmplification', event.target.value)
+                                                                    }
+                                                                    disabled={disabledRow}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {['1', '2', '3', '4', '5'].map((option) => (
+                                                                        <option key={`wb7-hv-access-${item.index}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <select
+                                                                    value={item.matrix.dominantValueType}
+                                                                    onChange={(event) => updateValueTrustAccessRow(item.index, 'dominantValueType', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {NETWORK_VALUE_TYPE_OPTIONS.map((option) => (
+                                                                        <option key={`wb7-hv-dominant-${item.index}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <select
+                                                                    value={item.matrix.currentState}
+                                                                    onChange={(event) => updateValueTrustAccessRow(item.index, 'currentState', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {NETWORK_STATE_OPTIONS.map((option) => (
+                                                                        <option key={`wb7-hv-state-${item.index}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveHighValueBlock('Paso 2 — Matriz valor–confianza–acceso')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Segmentación de la red de alto valor</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                highValueSegmentationCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {highValueSegmentationCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Asigna a cada relación un segmento principal: núcleo, puente, multiplicadora, aprendizaje, a reactivar o a profundizar.',
+                                                'Explica por qué entra en ese segmento desde función estratégica real.',
+                                                'Define un movimiento sugerido que convierta la lectura en acción concreta.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Jefe directo → Núcleo: impacta legitimidad diaria. Movimiento: sostener alineación visible.',
+                                                'Exjefe con reputación → Multiplicadora: amplifica referencia externa. Movimiento: reactivar con actualización de valor.',
+                                                'Referente externo → Puente: conecta con industria. Movimiento: abrir conversación breve con aporte útil.',
+                                                'Mentor ejecutivo → Aprendizaje: aporta criterio político. Movimiento: profundizar con una pregunta de alto nivel.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1180px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Relación</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Segmento principal</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Por qué entra aquí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Movimiento sugerido</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {highValueRows.map((item) => {
+                                                    const disabledRow = isLocked || item.name.length === 0
+                                                    return (
+                                                        <tr key={`wb7-high-value-segment-${item.index}`}>
+                                                            <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">
+                                                                {item.name || `Relación ${item.index + 1} (sin definir)`}
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                                <select
+                                                                    value={item.segment.mainSegment}
+                                                                    onChange={(event) => updateSegmentationRow(item.index, 'mainSegment', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {NETWORK_SEGMENT_OPTIONS.map((option) => (
+                                                                        <option key={`wb7-hv-segment-${item.index}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <input
+                                                                    type="text"
+                                                                    value={item.segment.reason}
+                                                                    onChange={(event) => updateSegmentationRow(item.index, 'reason', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    placeholder="Justificación estratégica"
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                />
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <input
+                                                                    type="text"
+                                                                    value={item.segment.suggestedMove}
+                                                                    onChange={(event) => updateSegmentationRow(item.index, 'suggestedMove', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    placeholder="Movimiento concreto"
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <article className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <h4 className="text-sm font-bold text-slate-900">Mapa segmentado (telaraña por función)</h4>
+                                            <p className="text-xs text-slate-600">Colores por segmento estratégico</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4">
+                                            <div className="relative mx-auto w-full max-w-[860px] h-[420px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
+                                                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+                                                    <circle cx="50" cy="50" r="41" fill="none" stroke="#dbeafe" />
+                                                    <circle cx="50" cy="50" r="28" fill="none" stroke="#bfdbfe" strokeDasharray="1.2 1.8" />
+                                                    {highValueSegmentNodes.map((node) => (
+                                                        <line
+                                                            key={`wb7-high-value-segment-line-${node.index}`}
+                                                            x1="50"
+                                                            y1="50"
+                                                            x2={node.position.x}
+                                                            y2={node.position.y}
+                                                            stroke={node.colors.line}
+                                                            strokeWidth="0.5"
+                                                            strokeOpacity="0.65"
+                                                        />
+                                                    ))}
+                                                </svg>
+                                                <div className="absolute inset-0">
+                                                    {highValueSegmentNodes.map((node) => (
+                                                        <div
+                                                            key={`wb7-high-value-segment-node-${node.index}`}
+                                                            style={{ left: `${node.position.x}%`, top: `${node.position.y}%` }}
+                                                            className={`absolute -translate-x-1/2 -translate-y-1/2 max-w-[180px] rounded-full border px-2.5 py-1 text-xs font-semibold text-center shadow-sm bg-white ${node.colors.border}`}
+                                                        >
+                                                            <span className="block truncate text-slate-800">{node.name}</span>
+                                                            <span className={`block text-[10px] uppercase tracking-[0.08em] ${node.colors.text}`}>
+                                                                {node.segment.mainSegment || 'Sin segmento'}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-blue-500 bg-white px-4 py-2 shadow-sm text-center">
+                                                        <p className="text-[10px] uppercase tracking-[0.14em] text-blue-700 font-semibold">Centro</p>
+                                                        <p className="text-sm font-bold text-slate-900">Red de alto valor</p>
+                                                    </div>
+                                                </div>
+                                                {highValueSegmentNodes.length === 0 && (
+                                                    <div className="absolute inset-x-6 bottom-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center">
+                                                        <p className="text-xs text-amber-800">
+                                                            Completa segmentación para visualizar etiquetas y colores por función.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                                <p className="text-xs uppercase tracking-[0.14em] text-slate-500 font-semibold">Convenciones</p>
+                                                <div className="mt-3 space-y-2.5">
+                                                    {NETWORK_SEGMENT_OPTIONS.map((segment) => {
+                                                        const colors = segmentColorMap[segment]
+                                                        return (
+                                                            <div key={`wb7-segment-legend-${segment}`} className="flex items-center gap-2 text-xs text-slate-700">
+                                                                <span className={`inline-block h-3 w-3 rounded-full ${colors?.node ?? 'bg-slate-500'}`} />
+                                                                <span>{segment}</span>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </article>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveHighValueBlock('Paso 3 — Segmentación de la red')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Índice de reciprocidad estratégica</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                highValueReciprocityCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {highValueReciprocityCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Selecciona tres relaciones clave y define qué valor recibes y qué valor aportas.',
+                                                'Declara el balance actual de la relación: equilibrado, desbalanceado a tu favor o desbalanceado a favor de la otra parte.',
+                                                'Define un gesto concreto de reciprocidad en el corto plazo.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Mentor ejecutivo: recibo criterio, aporto preparación seria, balance relativamente equilibrado, gesto: compartir avance aplicado.',
+                                                'Exjefe con reputación: recibo legitimidad, aporto actualización parcial, balance a mi favor, gesto: ofrecer apoyo puntual.',
+                                                'Sponsor informal: recibo acceso potencial, aporto poco valor visible, balance bajo, gesto: llevar lectura útil de iniciativa transversal.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1240px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Relación</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Valor que recibo</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Valor que aporto</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Balance actual</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Próximo gesto de reciprocidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {highValueSection.reciprocityRows.map((row, index) => (
+                                                    <tr key={`wb7-high-value-reciprocity-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[230px]">
+                                                            <select
+                                                                value={row.relationship}
+                                                                onChange={(event) => updateReciprocityRow(index, 'relationship', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona relación</option>
+                                                                {highValueDefinedRows.map((item) => (
+                                                                    <option key={`wb7-hv-relation-option-${item.index}`} value={item.name}>
+                                                                        {item.name}
+                                                                    </option>
+                                                                ))}
+                                                                {row.relationship &&
+                                                                    !highValueDefinedRows.some((item) => item.name === row.relationship) && (
+                                                                        <option value={row.relationship}>{row.relationship}</option>
+                                                                    )}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.valueReceived}
+                                                                onChange={(event) => updateReciprocityRow(index, 'valueReceived', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Qué recibo de esta relación"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.valueProvided}
+                                                                onChange={(event) => updateReciprocityRow(index, 'valueProvided', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Qué aporto yo"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.currentBalance}
+                                                                onChange={(event) => updateReciprocityRow(index, 'currentBalance', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Ej: Equilibrado / A mi favor"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.nextGesture}
+                                                                onChange={(event) => updateReciprocityRow(index, 'nextGesture', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Gesto concreto en 30 días"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveHighValueBlock('Paso 4 — Índice de reciprocidad estratégica')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Mapa de mantenimiento, reactivación y expansión</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                highValueActionMapCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {highValueActionMapCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define por relación si debes mantener, reactivar, expandir o despriorizar.',
+                                                'Justifica la decisión desde valor mutuo y contribución estratégica.',
+                                                'Convierte cada decisión en una acción concreta para los próximos 30 días.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Jefe directo → Mantener: relación núcleo. Acción: preparar síntesis ejecutivas semanales.',
+                                                'Referente externo → Reactivar: alto valor y baja actividad. Acción: retomar contacto con aporte útil.',
+                                                'Directora de unidad → Expandir: alta influencia y baja cercanía. Acción: buscar punto de valor visible.',
+                                                'Vínculo superficial sin reciprocidad → Despriorizar: alto consumo y bajo retorno.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1200px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Relación</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Mantener / Reactivar / Expandir / Despriorizar</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Justificación</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Acción de 30 días</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {highValueRows.map((item) => {
+                                                    const disabledRow = isLocked || item.name.length === 0
+                                                    return (
+                                                        <tr key={`wb7-high-value-action-${item.index}`}>
+                                                            <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">
+                                                                {item.name || `Relación ${item.index + 1} (sin definir)`}
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100 w-[320px]">
+                                                                <select
+                                                                    value={item.action.actionState}
+                                                                    onChange={(event) => updateActionMapRow(item.index, 'actionState', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                >
+                                                                    <option value="">Selecciona</option>
+                                                                    {NETWORK_ACTION_OPTIONS.map((option) => (
+                                                                        <option key={`wb7-hv-action-option-${item.index}-${option}`} value={option}>
+                                                                            {option}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <input
+                                                                    type="text"
+                                                                    value={item.action.justification}
+                                                                    onChange={(event) => updateActionMapRow(item.index, 'justification', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    placeholder="Razón estratégica"
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                />
+                                                            </td>
+                                                            <td className="px-3 py-2 border-b border-slate-100">
+                                                                <input
+                                                                    type="text"
+                                                                    value={item.action.action30Days}
+                                                                    onChange={(event) => updateActionMapRow(item.index, 'action30Days', event.target.value)}
+                                                                    disabled={disabledRow}
+                                                                    placeholder="Movimiento concreto en 30 días"
+                                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveHighValueBlock('Paso 5 — Mapa de mantenimiento, reactivación y expansión')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Test de calidad de la red de alto valor</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                highValueTestCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {highValueTestCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Responde Sí/No con base en evidencia real de tus relaciones actuales.',
+                                                'Si marcas No, registra el ajuste necesario con precisión práctica.',
+                                                'Asegura que la lectura termine en acciones de mantenimiento, reactivación o expansión.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Señal débil: red compuesta solo por vínculos frecuentes, sin lectura de valor ni reciprocidad.',
+                                                'Señal mejorada: red segmentada por función estratégica, con relaciones activas, dormidas y acciones concretas.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí / No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {highValueSection.qualityTest.map((row, index) => (
+                                                    <tr key={`wb7-high-value-test-${index}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[180px]">
+                                                            <select
+                                                                value={row.verdict}
+                                                                onChange={(event) => updateNetworkQualityTest(index, 'verdict', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="yes">Sí</option>
+                                                                <option value="no">No</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateNetworkQualityTest(index, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="¿Qué necesitas ajustar?"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveHighValueBlock('Paso 6 — Test de calidad de la red')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+                                    <h3 className="text-base font-bold text-slate-900">Validaciones suaves</h3>
+                                    {onlyCloseRelationships && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: incluye también relaciones puente, multiplicadoras o externas.
+                                        </p>
+                                    )}
+                                    {noDormantRelationship && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: revisa si estás dejando fuera vínculos valiosos que hoy están inactivos.
+                                        </p>
+                                    )}
+                                    {reciprocityUnclear && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: aclara qué valor aportas tú antes de pedir apoyo.
+                                        </p>
+                                    )}
+                                    {noAction30Days && (
+                                        <p className="text-sm text-amber-800">Sugerencia: convierte la lectura en movimientos concretos.</p>
+                                    )}
+                                    {!onlyCloseRelationships && !noDormantRelationship && !reciprocityUnclear && !noAction30Days && (
+                                        <p className="text-sm text-emerald-700">
+                                            Sin alertas: tu red muestra diversidad funcional y acciones tácticas de mantenimiento/expansión.
+                                        </p>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">Estado de la sección</p>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                {section5Completed
+                                                    ? 'Completado: inventario, matriz, segmentación, reciprocidad, mapa de acciones y test diligenciados.'
+                                                    : 'Pendiente: identifica relaciones de alto valor y define al menos una acción de mantenimiento o reactivación, junto con los demás bloques.'}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                section5Completed
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {section5Completed ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {!isExportingAll && (
                             <nav className={`wb7-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button type="button" onClick={goPrevPage} disabled={!hasPrevPage} className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}>
@@ -2908,6 +4256,37 @@ export function WB7Digital() {
                                         </li>
                                         <li className="text-sm text-slate-700 leading-relaxed">
                                             Diseña primero qué aportas; luego activa la conversación de patrocinio.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showHighValueHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
+                                <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl p-6 space-y-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Ayuda — Red de alto valor</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowHighValueHelp(false)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Una red de alto valor no es la más grande, sino la más estratégica.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            El valor relacional puede venir por acceso, confianza, aprendizaje, reputación o amplificación.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Networking estratégico implica valor mutuo, no extracción unilateral.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Una red madura combina mantenimiento, reciprocidad, reactivación y expansión consciente.
                                         </li>
                                     </ul>
                                 </div>
