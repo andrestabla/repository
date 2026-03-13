@@ -2609,7 +2609,7 @@ export function WB7Digital() {
                 </div>
             </header>
 
-            <main className="max-w-[1280px] mx-auto px-3 sm:px-5 md:px-8 py-6 md:py-8 overflow-x-hidden">
+            <main className="wbv2-main max-w-[1280px] mx-auto px-2 sm:px-5 md:px-8 py-5 md:py-8 overflow-x-hidden">
                 <div className={`grid gap-6 items-start ${isExportingAll ? 'grid-cols-1 min-w-0' : 'grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] min-w-0'}`}>
                     <aside className={`wb7-sidebar ${WORKBOOK_V2_EDITORIAL.classes.sidebar} ${isExportingAll ? 'hidden' : ''}`}>
                         <p className={WORKBOOK_V2_EDITORIAL.classes.sidebarTitle}>{WORKBOOK_V2_EDITORIAL.labels.index}</p>
@@ -2653,7 +2653,7 @@ export function WB7Digital() {
                                     </div>
                                 </div>
 
-                                <div className="p-6 md:p-8 border-t border-slate-200">
+                                <div className="p-4 sm:p-6 md:p-8 border-t border-slate-200">
                                     <h2 className="text-xl md:text-2xl font-extrabold text-slate-900">Datos de identificación</h2>
                                     <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <label className="space-y-1">
@@ -2727,7 +2727,7 @@ export function WB7Digital() {
 
                         {isPageVisible(2) && (
                             <article
-                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 2 de 8"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
@@ -2860,7 +2860,7 @@ export function WB7Digital() {
 
                         {isPageVisible(3) && (
                             <article
-                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 3 de 8"
                                 data-print-title="Mapeo de stakeholders (niveles 1, 2 y 3)"
                                 data-print-meta={printMetaLabel}
@@ -3423,7 +3423,7 @@ export function WB7Digital() {
 
                                     <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5 space-y-5">
                                         <div className="grid grid-cols-1 xl:grid-cols-[1fr_220px] gap-4 items-start">
-                                            <div className="relative mx-auto w-full max-w-[780px] h-[460px] md:h-[560px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
+                                            <div className="relative mx-auto w-full max-w-[780px] h-[360px] sm:h-[460px] md:h-[560px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
                                                 <div className="absolute inset-0 flex items-center justify-center">
                                                     <div className="relative w-[94%] h-[94%]">
                                                         <div className="absolute left-1/2 top-1/2 w-[92%] h-[92%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-200 bg-blue-50/20" />
@@ -3702,7 +3702,7 @@ export function WB7Digital() {
 
                         {isPageVisible(4) && (
                             <article
-                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 4 de 8"
                                 data-print-title="Identificación de sponsors"
                                 data-print-meta={printMetaLabel}
@@ -4430,7 +4430,7 @@ export function WB7Digital() {
 
                         {isPageVisible(5) && (
                             <article
-                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 5 de 8"
                                 data-print-title="Red de alto valor"
                                 data-print-meta={printMetaLabel}
@@ -4563,7 +4563,7 @@ export function WB7Digital() {
                                             <h4 className="text-sm font-bold text-slate-900">Visualización tipo networking (telaraña) por cercanía</h4>
                                             <p className="text-xs text-slate-600">Cercanía estimada desde matriz valor–confianza–acceso</p>
                                         </div>
-                                        <div className="relative mx-auto w-full max-w-[860px] h-[420px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
+                                        <div className="relative mx-auto w-full max-w-[860px] h-[320px] sm:h-[420px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
                                             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
                                                 <circle cx="50" cy="50" r="17" fill="none" stroke="#93c5fd" strokeDasharray="0" />
                                                 <circle cx="50" cy="50" r="25" fill="none" stroke="#bfdbfe" strokeDasharray="1.2 1.6" />
@@ -4891,7 +4891,7 @@ export function WB7Digital() {
                                             <p className="text-xs text-slate-600">Colores por segmento estratégico</p>
                                         </div>
                                         <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4">
-                                            <div className="relative mx-auto w-full max-w-[860px] h-[420px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
+                                            <div className="relative mx-auto w-full max-w-[860px] h-[320px] sm:h-[420px] rounded-2xl border border-blue-200 bg-gradient-to-b from-[#f8fbff] to-[#edf4ff] overflow-hidden">
                                                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
                                                     <circle cx="50" cy="50" r="41" fill="none" stroke="#dbeafe" />
                                                     <circle cx="50" cy="50" r="28" fill="none" stroke="#bfdbfe" strokeDasharray="1.2 1.8" />
@@ -5358,7 +5358,7 @@ export function WB7Digital() {
 
                         {isPageVisible(6) && (
                             <article
-                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 6 de 8"
                                 data-print-title="Estrategia de networking consciente"
                                 data-print-meta={printMetaLabel}
@@ -6148,7 +6148,7 @@ export function WB7Digital() {
 
                         {isPageVisible(7) && (
                             <article
-                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 7 de 8"
                                 data-print-title="Plan de visibilidad estratégica"
                                 data-print-meta={printMetaLabel}
@@ -6942,7 +6942,7 @@ export function WB7Digital() {
 
                         {isPageVisible(8) && (
                             <article
-                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 8 de 8"
                                 data-print-title="Evaluación"
                                 data-print-meta={printMetaLabel}

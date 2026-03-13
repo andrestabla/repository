@@ -1,6 +1,6 @@
 export const WORKBOOK_V2_EDITORIAL = {
     classes: {
-        shell: 'min-h-screen bg-[#f4f7fb] text-[#0f172a] overflow-x-hidden',
+        shell: 'wbv2-shell min-h-screen bg-[#f4f7fb] text-[#0f172a] overflow-x-hidden',
         toolbar: 'sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
         toolbarInner: 'max-w-[1280px] mx-auto w-full px-3 sm:px-5 md:px-8 py-3 md:py-4 flex flex-wrap items-center gap-2 sm:gap-3',
         backButton:

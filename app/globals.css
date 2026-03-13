@@ -98,3 +98,53 @@ body {
 .animate-progress-ind {
   animation: progress-ind 1.5s infinite linear;
 }
+
+/* Workbooks v2: responsive + touch-first behavior */
+.wbv2-shell .overflow-x-auto {
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.wbv2-shell :is(h1, h2, h3, h4, p, li, th, td) {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1024px) {
+  .wbv2-shell [class*='-print-page'] {
+    border-radius: 1rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .wbv2-main {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1.25rem !important;
+  }
+
+  .wbv2-shell .overflow-x-auto {
+    margin-left: -0.125rem;
+    margin-right: -0.125rem;
+    padding-left: 0.125rem;
+    padding-right: 0.125rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .wbv2-shell .overflow-x-auto table {
+    font-size: 0.8125rem;
+  }
+
+  .wbv2-shell :is(input, textarea, select) {
+    font-size: 16px !important;
+  }
+
+  .wbv2-shell [class*='-cover-hero'] {
+    min-height: 48vh !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}

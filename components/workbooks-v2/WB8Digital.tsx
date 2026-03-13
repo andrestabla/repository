@@ -2674,7 +2674,7 @@ export function WB8Digital() {
                 </div>
             </header>
 
-            <main className="max-w-[1280px] mx-auto px-3 sm:px-5 md:px-8 py-6 md:py-8 overflow-x-hidden">
+            <main className="wbv2-main max-w-[1280px] mx-auto px-2 sm:px-5 md:px-8 py-5 md:py-8 overflow-x-hidden">
                 <div className={`grid gap-6 items-start ${isExportingAll ? 'grid-cols-1 min-w-0' : 'grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] min-w-0'}`}>
                     <aside className={`wb8-sidebar ${WORKBOOK_V2_EDITORIAL.classes.sidebar} ${isExportingAll ? 'hidden' : ''}`}>
                         <p className={WORKBOOK_V2_EDITORIAL.classes.sidebarTitle}>{WORKBOOK_V2_EDITORIAL.labels.index}</p>
@@ -2719,7 +2719,7 @@ export function WB8Digital() {
                                     </div>
                                 </div>
 
-                                <div className="p-6 md:p-8 border-t border-slate-200">
+                                <div className="p-4 sm:p-6 md:p-8 border-t border-slate-200">
                                     <h2 className="text-xl md:text-2xl font-extrabold text-slate-900">Datos de identificación</h2>
                                     <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <label className="space-y-1">
@@ -2772,7 +2772,7 @@ export function WB8Digital() {
 
                         {isPageVisible(2) && (
                             <article
-                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-6 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-6 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 2 de 7"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
@@ -2906,7 +2906,7 @@ export function WB8Digital() {
 
                         {isPageVisible(3) && (
                             <article
-                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 3 de 7"
                                 data-print-title="Escalera de valor"
                                 data-print-meta={printMetaLabel}
@@ -3667,7 +3667,7 @@ export function WB8Digital() {
 
                         {isPageVisible(4) && (
                             <article
-                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 4 de 7"
                                 data-print-title="Modelo de negocio"
                                 data-print-meta={printMetaLabel}
@@ -4493,7 +4493,7 @@ export function WB8Digital() {
 
                         {isPageVisible(5) && (
                             <article
-                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 5 de 7"
                                 data-print-title="Estrategia de visibilidad"
                                 data-print-meta={printMetaLabel}
@@ -5517,7 +5517,7 @@ export function WB8Digital() {
 
                         {isPageVisible(6) && (
                             <article
-                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 6 de 7"
                                 data-print-title="Tablero de control de KPIs y ROI"
                                 data-print-meta={printMetaLabel}
@@ -6719,7 +6719,7 @@ export function WB8Digital() {
 
                         {isPageVisible(7) && (
                             <article
-                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                className="wb8-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
                                 data-print-page="Página 7 de 7"
                                 data-print-title="Evaluación"
                                 data-print-meta={printMetaLabel}

@@ -2199,7 +2199,7 @@ export function WB3Digital() {
                     </div>
             </header>
 
-            <main className="max-w-[1280px] mx-auto px-3 sm:px-5 md:px-8 py-6 md:py-8 overflow-x-hidden">
+            <main className="wbv2-main max-w-[1280px] mx-auto px-2 sm:px-5 md:px-8 py-5 md:py-8 overflow-x-hidden">
                 <div className={`grid gap-6 items-start ${isExportingAll ? 'grid-cols-1 min-w-0' : 'grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] min-w-0'}`}>
                     <aside className={`wb3-sidebar ${WORKBOOK_V2_EDITORIAL.classes.sidebar} ${isExportingAll ? 'hidden' : ''}`}>
                         <p className={WORKBOOK_V2_EDITORIAL.classes.sidebarTitle}>{WORKBOOK_V2_EDITORIAL.labels.index}</p>
@@ -2251,7 +2251,7 @@ export function WB3Digital() {
                                 </div>
                             </div>
 
-                            <div className="p-6 md:p-8 border-t border-slate-200">
+                            <div className="p-4 sm:p-6 md:p-8 border-t border-slate-200">
                                 <h2 className="text-xl md:text-2xl font-extrabold text-slate-900">Datos de identificación</h2>
                                 <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <label className="space-y-1">
@@ -2323,7 +2323,7 @@ export function WB3Digital() {
                         </article>
 
                         <article
-                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(2) ? '' : 'hidden'}`}
+                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(2) ? '' : 'hidden'}`}
                             data-print-page="Página 2 de 9"
                             data-print-title="Presentación del workbook"
                             data-print-meta={printMetaLabel}
@@ -2411,7 +2411,7 @@ export function WB3Digital() {
                         </article>
 
                         <article
-                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(3) ? '' : 'hidden'}`}
+                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(3) ? '' : 'hidden'}`}
                             data-print-page="Página 3 de 9"
                             data-print-title="Definición de propósito personal"
                             data-print-meta={printMetaLabel}
@@ -2821,7 +2821,7 @@ export function WB3Digital() {
                         </article>
 
                         <article
-                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(4) ? '' : 'hidden'}`}
+                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(4) ? '' : 'hidden'}`}
                             data-print-page="Página 4 de 9"
                             data-print-title="Vocación, misión y pasión"
                             data-print-meta={printMetaLabel}
@@ -3165,7 +3165,7 @@ export function WB3Digital() {
                         </article>
 
                         <article
-                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(5) ? '' : 'hidden'}`}
+                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(5) ? '' : 'hidden'}`}
                             data-print-page="Página 5 de 9"
                             data-print-title="Rueda de la vida"
                             data-print-meta={printMetaLabel}
@@ -3317,7 +3317,7 @@ export function WB3Digital() {
                                     <div className="rounded-2xl border border-slate-200 bg-white p-3 overflow-x-auto">
                                         <svg
                                             viewBox={`0 0 ${lifeWheelChartGeometry.size} ${lifeWheelChartGeometry.size}`}
-                                            className="mx-auto h-[420px] w-[420px] max-w-full"
+                                            className="mx-auto h-auto w-full max-w-[420px]"
                                             role="img"
                                             aria-label="Gráfico radar de la rueda de la vida"
                                         >
@@ -3565,7 +3565,7 @@ export function WB3Digital() {
                         </article>
 
                         <article
-                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(6) ? '' : 'hidden'}`}
+                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(6) ? '' : 'hidden'}`}
                             data-print-page="Página 6 de 9"
                             data-print-title="Declaración de éxito personal"
                             data-print-meta={printMetaLabel}
@@ -3899,7 +3899,7 @@ export function WB3Digital() {
                         </article>
 
                         <article
-                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(7) ? '' : 'hidden'}`}
+                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(7) ? '' : 'hidden'}`}
                             data-print-page="Página 7 de 9"
                             data-print-title="Alineación propósito–visión"
                             data-print-meta={printMetaLabel}
@@ -4204,7 +4204,7 @@ export function WB3Digital() {
                         </article>
 
                         <article
-                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(8) ? '' : 'hidden'}`}
+                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-7 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(8) ? '' : 'hidden'}`}
                             data-print-page="Página 8 de 9"
                             data-print-title="Diseño de visión a largo plazo"
                             data-print-meta={printMetaLabel}
@@ -4560,7 +4560,7 @@ export function WB3Digital() {
                         </article>
 
                         <article
-                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(9) ? '' : 'hidden'}`}
+                            className={`wb3-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)] ${isPageVisible(9) ? '' : 'hidden'}`}
                             data-print-page="Página 9 de 9"
                             data-print-title="Evaluación"
                             data-print-meta={printMetaLabel}
