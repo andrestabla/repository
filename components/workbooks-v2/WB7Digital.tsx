@@ -5,11 +5,12 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6
 type YesNoAnswer = '' | 'yes' | 'no'
 type StakeholderLevel = '' | '1' | '2' | '3'
 type StakeholderSymbol = '' | '★' | '▲' | '!' | '○'
 type SponsorLevel = '' | 'bajo' | 'medio' | 'alto'
+type CalibrationLevel = '' | 'bajo' | 'medio' | 'alto'
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -117,6 +118,47 @@ type WB7State = {
             adjustment: string
         }>
     }
+    consciousNetworkingSection: {
+        intentionDeclaration: {
+            strategicObjective: string
+            neededRelationshipType: string
+            strongWeakRelationshipType: string
+            relationalErrorToAvoid: string
+            guidingPrinciple: string
+        }
+        objectiveMatrixRows: Array<{
+            relationalObjective: string
+            audienceActor: string
+            firstValueContribution: string
+            realisticInitialMove: string
+            expectedProgressSignal: string
+        }>
+        movementSegmentationRows: Array<{
+            relationActor: string
+            movementType: string
+            concreteAction: string
+            valueAtStake: string
+        }>
+        cadenceRows: Array<{
+            relation: string
+            suggestedCadence: string
+            contactFormat: string
+            contactObjective: string
+        }>
+        scorecardRows: Array<{
+            dimension: string
+            level: CalibrationLevel
+            evidence: string
+        }>
+        plan30Days: {
+            nourishRelationships: string
+            reactivateRelationships: string
+            exploreRelationships: string
+            visibleReciprocityAction: string
+            maintenanceHabit: string
+            progressCriteria: string
+        }
+    }
 }
 
 type Score15 = '' | '1' | '2' | '3' | '4' | '5'
@@ -126,7 +168,8 @@ const PAGES: WorkbookPage[] = [
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
     { id: 3, label: '3. Mapeo de stakeholders (niveles 1, 2 y 3)', shortLabel: 'Stakeholders' },
     { id: 4, label: '4. Identificación de sponsors', shortLabel: 'Sponsors' },
-    { id: 5, label: '5. Red de alto valor', shortLabel: 'Red de valor' }
+    { id: 5, label: '5. Red de alto valor', shortLabel: 'Red de valor' },
+    { id: 6, label: '6. Estrategia de networking consciente', shortLabel: 'Networking' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb7-state'
@@ -138,6 +181,9 @@ const INVENTORY_ROWS = 10
 const SPONSOR_ROWS = 6
 const HIGH_VALUE_RELATIONS_ROWS = 12
 const HIGH_VALUE_RECIPROCITY_ROWS = 3
+const NETWORK_OBJECTIVE_ROWS = 3
+const NETWORK_MOVEMENT_ROWS = 6
+const NETWORK_CADENCE_ROWS = 4
 const MAP_RING_SYMBOLS: StakeholderSymbol[] = ['', '★', '▲', '!', '○']
 const BOND_TYPE_OPTIONS = [
     'Jerárquico / coordinación',
@@ -200,6 +246,25 @@ const NETWORK_QUALITY_TEST_QUESTIONS = [
     '¿Mi red cumple funciones diversas?',
     '¿Definí acciones concretas sobre la red?'
 ] as const
+const CONSCIOUS_NETWORKING_MOVEMENT_TYPES = ['Activar', 'Nutrir', 'Profundizar', 'Expandir', 'Amplificar', 'Reciprocar'] as const
+const CONSCIOUS_NETWORKING_CADENCE_OPTIONS = ['Mensual', 'Bimensual', 'Trimestral', 'Semestral', 'Según hito'] as const
+const CONSCIOUS_NETWORKING_FORMAT_OPTIONS = [
+    'Mensaje breve',
+    'Café / llamada',
+    'Actualización ejecutiva',
+    'Reconocimiento',
+    'Introducción útil',
+    'Intercambio de valor'
+] as const
+const CONSCIOUS_NETWORKING_SCORECARD_DIMENSIONS = [
+    'Intención clara',
+    'Valor antes de pedir',
+    'Diversidad de la red',
+    'Consistencia de contacto',
+    'Calidad de reciprocidad',
+    'Expansión deliberada',
+    'Coherencia con objetivos'
+] as const
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '')
 
@@ -211,6 +276,8 @@ const readScore = (value: unknown): Score15 => (value === '1' || value === '2' |
 
 const readSymbol = (value: unknown): StakeholderSymbol => (MAP_RING_SYMBOLS.includes(value as StakeholderSymbol) ? (value as StakeholderSymbol) : '')
 const readSponsorLevel = (value: unknown): SponsorLevel => (value === 'bajo' || value === 'medio' || value === 'alto' ? value : '')
+const readCalibrationLevel = (value: unknown): CalibrationLevel =>
+    value === 'bajo' || value === 'medio' || value === 'alto' ? value : ''
 
 const scoreToNumber = (value: Score15): number => (value ? Number(value) : 0)
 
@@ -360,6 +427,47 @@ const DEFAULT_STATE: WB7State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    consciousNetworkingSection: {
+        intentionDeclaration: {
+            strategicObjective: '',
+            neededRelationshipType: '',
+            strongWeakRelationshipType: '',
+            relationalErrorToAvoid: '',
+            guidingPrinciple: ''
+        },
+        objectiveMatrixRows: Array.from({ length: NETWORK_OBJECTIVE_ROWS }, () => ({
+            relationalObjective: '',
+            audienceActor: '',
+            firstValueContribution: '',
+            realisticInitialMove: '',
+            expectedProgressSignal: ''
+        })),
+        movementSegmentationRows: Array.from({ length: NETWORK_MOVEMENT_ROWS }, () => ({
+            relationActor: '',
+            movementType: '',
+            concreteAction: '',
+            valueAtStake: ''
+        })),
+        cadenceRows: Array.from({ length: NETWORK_CADENCE_ROWS }, () => ({
+            relation: '',
+            suggestedCadence: '',
+            contactFormat: '',
+            contactObjective: ''
+        })),
+        scorecardRows: CONSCIOUS_NETWORKING_SCORECARD_DIMENSIONS.map((dimension) => ({
+            dimension,
+            level: '' as CalibrationLevel,
+            evidence: ''
+        })),
+        plan30Days: {
+            nourishRelationships: '',
+            reactivateRelationships: '',
+            exploreRelationships: '',
+            visibleReciprocityAction: '',
+            maintenanceHabit: '',
+            progressCriteria: ''
+        }
     }
 }
 
@@ -390,6 +498,17 @@ const normalizeState = (raw: unknown): WB7State => {
     const rawReciprocityRows = Array.isArray(highValueSection.reciprocityRows) ? highValueSection.reciprocityRows : []
     const rawActionMapRows = Array.isArray(highValueSection.actionMapRows) ? highValueSection.actionMapRows : []
     const rawQualityTest = Array.isArray(highValueSection.qualityTest) ? highValueSection.qualityTest : []
+    const consciousNetworkingSection = (parsed.consciousNetworkingSection ?? {}) as Record<string, unknown>
+    const rawIntentionDeclaration = (consciousNetworkingSection.intentionDeclaration ?? {}) as Record<string, unknown>
+    const rawObjectiveMatrixRows = Array.isArray(consciousNetworkingSection.objectiveMatrixRows)
+        ? consciousNetworkingSection.objectiveMatrixRows
+        : []
+    const rawMovementSegmentationRows = Array.isArray(consciousNetworkingSection.movementSegmentationRows)
+        ? consciousNetworkingSection.movementSegmentationRows
+        : []
+    const rawCadenceRows = Array.isArray(consciousNetworkingSection.cadenceRows) ? consciousNetworkingSection.cadenceRows : []
+    const rawScorecardRows = Array.isArray(consciousNetworkingSection.scorecardRows) ? consciousNetworkingSection.scorecardRows : []
+    const rawPlan30Days = (consciousNetworkingSection.plan30Days ?? {}) as Record<string, unknown>
 
     return {
         identification: {
@@ -531,6 +650,59 @@ const normalizeState = (raw: unknown): WB7State => {
                     adjustment: readString(row.adjustment)
                 }
             })
+        },
+        consciousNetworkingSection: {
+            intentionDeclaration: {
+                strategicObjective: readString(rawIntentionDeclaration.strategicObjective),
+                neededRelationshipType: readString(rawIntentionDeclaration.neededRelationshipType),
+                strongWeakRelationshipType: readString(rawIntentionDeclaration.strongWeakRelationshipType),
+                relationalErrorToAvoid: readString(rawIntentionDeclaration.relationalErrorToAvoid),
+                guidingPrinciple: readString(rawIntentionDeclaration.guidingPrinciple)
+            },
+            objectiveMatrixRows: Array.from({ length: NETWORK_OBJECTIVE_ROWS }, (_, index) => {
+                const row = (rawObjectiveMatrixRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    relationalObjective: readString(row.relationalObjective),
+                    audienceActor: readString(row.audienceActor),
+                    firstValueContribution: readString(row.firstValueContribution),
+                    realisticInitialMove: readString(row.realisticInitialMove),
+                    expectedProgressSignal: readString(row.expectedProgressSignal)
+                }
+            }),
+            movementSegmentationRows: Array.from({ length: NETWORK_MOVEMENT_ROWS }, (_, index) => {
+                const row = (rawMovementSegmentationRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    relationActor: readString(row.relationActor),
+                    movementType: readString(row.movementType),
+                    concreteAction: readString(row.concreteAction),
+                    valueAtStake: readString(row.valueAtStake)
+                }
+            }),
+            cadenceRows: Array.from({ length: NETWORK_CADENCE_ROWS }, (_, index) => {
+                const row = (rawCadenceRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    relation: readString(row.relation),
+                    suggestedCadence: readString(row.suggestedCadence),
+                    contactFormat: readString(row.contactFormat),
+                    contactObjective: readString(row.contactObjective)
+                }
+            }),
+            scorecardRows: CONSCIOUS_NETWORKING_SCORECARD_DIMENSIONS.map((dimension, index) => {
+                const row = (rawScorecardRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    dimension,
+                    level: readCalibrationLevel(row.level),
+                    evidence: readString(row.evidence)
+                }
+            }),
+            plan30Days: {
+                nourishRelationships: readString(rawPlan30Days.nourishRelationships),
+                reactivateRelationships: readString(rawPlan30Days.reactivateRelationships),
+                exploreRelationships: readString(rawPlan30Days.exploreRelationships),
+                visibleReciprocityAction: readString(rawPlan30Days.visibleReciprocityAction),
+                maintenanceHabit: readString(rawPlan30Days.maintenanceHabit),
+                progressCriteria: readString(rawPlan30Days.progressCriteria)
+            }
         }
     }
 }
@@ -548,6 +720,7 @@ export function WB7Digital() {
     const [showStakeholderHelp, setShowStakeholderHelp] = useState(false)
     const [showSponsorHelp, setShowSponsorHelp] = useState(false)
     const [showHighValueHelp, setShowHighValueHelp] = useState(false)
+    const [showConsciousNetworkingHelp, setShowConsciousNetworkingHelp] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1100,6 +1273,129 @@ export function WB7Digital() {
         announceSave(`${label} guardado.`)
     }
 
+    const updateNetworkingIntention = (
+        field: keyof WB7State['consciousNetworkingSection']['intentionDeclaration'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            consciousNetworkingSection: {
+                ...prev.consciousNetworkingSection,
+                intentionDeclaration: {
+                    ...prev.consciousNetworkingSection.intentionDeclaration,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateNetworkingObjectiveMatrixRow = (
+        index: number,
+        field: keyof WB7State['consciousNetworkingSection']['objectiveMatrixRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const objectiveMatrixRows = [...prev.consciousNetworkingSection.objectiveMatrixRows]
+            objectiveMatrixRows[index] = {
+                ...objectiveMatrixRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                consciousNetworkingSection: {
+                    ...prev.consciousNetworkingSection,
+                    objectiveMatrixRows
+                }
+            }
+        })
+    }
+
+    const updateNetworkingMovementRow = (
+        index: number,
+        field: keyof WB7State['consciousNetworkingSection']['movementSegmentationRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const movementSegmentationRows = [...prev.consciousNetworkingSection.movementSegmentationRows]
+            movementSegmentationRows[index] = {
+                ...movementSegmentationRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                consciousNetworkingSection: {
+                    ...prev.consciousNetworkingSection,
+                    movementSegmentationRows
+                }
+            }
+        })
+    }
+
+    const updateNetworkingCadenceRow = (
+        index: number,
+        field: keyof WB7State['consciousNetworkingSection']['cadenceRows'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => {
+            const cadenceRows = [...prev.consciousNetworkingSection.cadenceRows]
+            cadenceRows[index] = {
+                ...cadenceRows[index],
+                [field]: value
+            }
+            return {
+                ...prev,
+                consciousNetworkingSection: {
+                    ...prev.consciousNetworkingSection,
+                    cadenceRows
+                }
+            }
+        })
+    }
+
+    const updateNetworkingScorecardRow = (index: number, field: 'level' | 'evidence', value: string) => {
+        if (isLocked) return
+        setState((prev) => {
+            const scorecardRows = [...prev.consciousNetworkingSection.scorecardRows]
+            scorecardRows[index] =
+                field === 'level'
+                    ? { ...scorecardRows[index], level: readCalibrationLevel(value) }
+                    : { ...scorecardRows[index], evidence: value }
+            return {
+                ...prev,
+                consciousNetworkingSection: {
+                    ...prev.consciousNetworkingSection,
+                    scorecardRows
+                }
+            }
+        })
+    }
+
+    const updateNetworkingPlan30Days = (
+        field: keyof WB7State['consciousNetworkingSection']['plan30Days'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            consciousNetworkingSection: {
+                ...prev.consciousNetworkingSection,
+                plan30Days: {
+                    ...prev.consciousNetworkingSection.plan30Days,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const saveConsciousNetworkingBlock = (label: string) => {
+        savePage(6)
+        announceSave(`${label} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -1376,12 +1672,79 @@ export function WB7Digital() {
         }
     })
 
+    const consciousNetworkingSection = state.consciousNetworkingSection
+    const intentionDeclaration = consciousNetworkingSection.intentionDeclaration
+    const networkingIntentionCompleted =
+        intentionDeclaration.strategicObjective.trim().length > 0 &&
+        intentionDeclaration.neededRelationshipType.trim().length > 0 &&
+        intentionDeclaration.strongWeakRelationshipType.trim().length > 0 &&
+        intentionDeclaration.relationalErrorToAvoid.trim().length > 0 &&
+        intentionDeclaration.guidingPrinciple.trim().length > 0
+    const networkingObjectiveMatrixCompleted = consciousNetworkingSection.objectiveMatrixRows.every(
+        (row) =>
+            row.relationalObjective.trim().length > 0 &&
+            row.audienceActor.trim().length > 0 &&
+            row.firstValueContribution.trim().length > 0 &&
+            row.realisticInitialMove.trim().length > 0 &&
+            row.expectedProgressSignal.trim().length > 0
+    )
+    const networkingMovementCompleted = consciousNetworkingSection.movementSegmentationRows.every(
+        (row) =>
+            row.relationActor.trim().length > 0 &&
+            row.movementType.trim().length > 0 &&
+            row.concreteAction.trim().length > 0 &&
+            row.valueAtStake.trim().length > 0
+    )
+    const networkingCadenceCompleted = consciousNetworkingSection.cadenceRows.every(
+        (row) =>
+            row.relation.trim().length > 0 &&
+            row.suggestedCadence.trim().length > 0 &&
+            row.contactFormat.trim().length > 0 &&
+            row.contactObjective.trim().length > 0
+    )
+    const networkingScorecardCompleted = consciousNetworkingSection.scorecardRows.every(
+        (row) => row.level !== '' && row.evidence.trim().length > 0
+    )
+    const plan30Days = consciousNetworkingSection.plan30Days
+    const networkingPlanCompleted =
+        plan30Days.nourishRelationships.trim().length > 0 &&
+        plan30Days.reactivateRelationships.trim().length > 0 &&
+        plan30Days.exploreRelationships.trim().length > 0 &&
+        plan30Days.visibleReciprocityAction.trim().length > 0 &&
+        plan30Days.maintenanceHabit.trim().length > 0 &&
+        plan30Days.progressCriteria.trim().length > 0
+    const section6Completed =
+        networkingIntentionCompleted &&
+        networkingObjectiveMatrixCompleted &&
+        networkingMovementCompleted &&
+        networkingCadenceCompleted &&
+        networkingScorecardCompleted &&
+        networkingPlanCompleted
+
+    const noFirstValueBeforeAsking = consciousNetworkingSection.objectiveMatrixRows.some(
+        (row) =>
+            (row.relationalObjective.trim().length > 0 ||
+                row.audienceActor.trim().length > 0 ||
+                row.realisticInitialMove.trim().length > 0 ||
+                row.expectedProgressSignal.trim().length > 0) &&
+            row.firstValueContribution.trim().length === 0
+    )
+    const movementTypesUsed = new Set(
+        consciousNetworkingSection.movementSegmentationRows
+            .map((row) => row.movementType.trim())
+            .filter((row) => row.length > 0)
+    )
+    const movementsOnlyActivation = movementTypesUsed.size > 0 && [...movementTypesUsed].every((type) => type === 'Activar')
+    const cadenceMissing = consciousNetworkingSection.cadenceRows.every((row) => row.suggestedCadence.trim().length === 0)
+    const planMissingReciprocity = plan30Days.visibleReciprocityAction.trim().length === 0
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
         3: section3Completed,
         4: section4Completed,
-        5: section5Completed
+        5: section5Completed,
+        6: section6Completed
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -1460,7 +1823,7 @@ export function WB7Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb7-print-page wb7-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 5"
+                                data-print-page="Página 1 de 6"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1553,7 +1916,7 @@ export function WB7Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 5"
+                                data-print-page="Página 2 de 6"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1686,7 +2049,7 @@ export function WB7Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 5"
+                                data-print-page="Página 3 de 6"
                                 data-print-title="Mapeo de stakeholders (niveles 1, 2 y 3)"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2528,7 +2891,7 @@ export function WB7Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 5"
+                                data-print-page="Página 4 de 6"
                                 data-print-title="Identificación de sponsors"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3256,7 +3619,7 @@ export function WB7Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 5 de 5"
+                                data-print-page="Página 5 de 6"
                                 data-print-title="Red de alto valor"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4181,6 +4544,796 @@ export function WB7Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(6) && (
+                            <article
+                                className="wb7-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 6 de 6"
+                                data-print-title="Estrategia de networking consciente"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 6</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Estrategia de networking consciente
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Diseña una estrategia relacional basada en intención, valor mutuo y lectura estratégica para construir conexiones sostenibles
+                                        y evitar networking por inercia o urgencia.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConsciousNetworkingHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Networking consciente: construir relaciones con intención, criterio y reciprocidad, no por urgencia.',
+                                            'Intención relacional: claridad de para qué quieres activar, cuidar o expandir una relación.',
+                                            'Tesis de valor relacional: qué valor puedes aportar tú antes de esperar retorno.',
+                                            'Cadencia de contacto: frecuencia y formato para que la red no dependa de impulsos esporádicos.',
+                                            'Reciprocidad sostenible: intercambio que fortalece confianza y legitimidad sin instrumentalizar.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Declaración de intención relacional</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                networkingIntentionCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {networkingIntentionCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define el objetivo estratégico que quieres apoyar con tu red en este momento.',
+                                                'Aclara qué relaciones necesitas más, cuáles tienes fuertes y cuáles están subdesarrolladas.',
+                                                'Declara el error relacional que quieres evitar y el principio que guiará tu networking.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Objetivo: ganar visibilidad y acceso en iniciativas transversales.',
+                                                'Relaciones que más necesito: sponsors potenciales, puentes interáreas y referentes externos.',
+                                                'Relaciones fuerte/débil: fuerte en red operativa, débil en red de amplificación.',
+                                                'Error a evitar: aparecer solo cuando necesito apoyo.',
+                                                'Principio: aportar valor antes de pedir exposición o acceso.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <label className="space-y-1 md:col-span-2">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Objetivo estratégico</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.intentionDeclaration.strategicObjective}
+                                                onChange={(event) => updateNetworkingIntention('strategicObjective', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                Tipo de relaciones que más necesito
+                                            </span>
+                                            <textarea
+                                                value={consciousNetworkingSection.intentionDeclaration.neededRelationshipType}
+                                                onChange={(event) => updateNetworkingIntention('neededRelationshipType', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                                                Relaciones fuerte / débil
+                                            </span>
+                                            <textarea
+                                                value={consciousNetworkingSection.intentionDeclaration.strongWeakRelationshipType}
+                                                onChange={(event) => updateNetworkingIntention('strongWeakRelationshipType', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Error relacional a evitar</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.intentionDeclaration.relationalErrorToAvoid}
+                                                onChange={(event) => updateNetworkingIntention('relationalErrorToAvoid', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Principio que ordena mi networking</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.intentionDeclaration.guidingPrinciple}
+                                                onChange={(event) => updateNetworkingIntention('guidingPrinciple', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveConsciousNetworkingBlock('Paso 1 — Declaración de intención relacional')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz objetivo–audiencia–valor–movimiento</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                networkingObjectiveMatrixCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {networkingObjectiveMatrixCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-slate-700 leading-relaxed">
+                                        Traduce la intención en una lógica accionable: objetivo, actor, valor aportado primero, movimiento inicial y señal de avance.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Completa las 3 filas con focos relacionales concretos.',
+                                                'Asegura que cada fila explicite valor aportado antes de pedir.',
+                                                'Define una señal de avance observable para no quedarte en intención.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Aumentar visibilidad interna | Directora de unidad | Síntesis ejecutivas útiles | Llevar lectura preparada | Que pida seguimiento.',
+                                                'Reactivar sponsor potencial | Exjefe con reputación | Actualización clara | Enviar nota breve con pregunta puntual | Que responda con apertura.',
+                                                'Expandir red externa | Referente sectorial | Insight útil | Solicitar conversación breve | Que recomiende otro contacto.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1320px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Objetivo relacional</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Audiencia / actor</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Valor que puedo aportar primero</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Movimiento inicial realista</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Señal de avance esperada</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {consciousNetworkingSection.objectiveMatrixRows.map((row, index) => (
+                                                    <tr key={`wb7-network-objective-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.relationalObjective}
+                                                                onChange={(event) => updateNetworkingObjectiveMatrixRow(index, 'relationalObjective', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.audienceActor}
+                                                                onChange={(event) => updateNetworkingObjectiveMatrixRow(index, 'audienceActor', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.firstValueContribution}
+                                                                onChange={(event) =>
+                                                                    updateNetworkingObjectiveMatrixRow(index, 'firstValueContribution', event.target.value)
+                                                                }
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.realisticInitialMove}
+                                                                onChange={(event) =>
+                                                                    updateNetworkingObjectiveMatrixRow(index, 'realisticInitialMove', event.target.value)
+                                                                }
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.expectedProgressSignal}
+                                                                onChange={(event) =>
+                                                                    updateNetworkingObjectiveMatrixRow(index, 'expectedProgressSignal', event.target.value)
+                                                                }
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveConsciousNetworkingBlock('Paso 2 — Matriz objetivo-audiencia-valor-movimiento')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Segmentación de movimientos de networking</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                networkingMovementCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {networkingMovementCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Diseña al menos 6 movimientos distribuidos entre activar, nutrir, profundizar, expandir, amplificar y reciprocar.',
+                                                'Para cada movimiento, define exactamente qué harás y qué valor está en juego.',
+                                                'Evita una estrategia concentrada solo en activación sin mantenimiento relacional.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Exjefe con reputación | Reactivar | Compartir actualización breve con logro visible | Reputación y referencia.',
+                                                'Sponsor informal | Nutrir | Enviar lectura útil sobre iniciativa transversal | Patrocinio potencial.',
+                                                'Referente externo | Expandir | Pedir conversación de 20 minutos con foco claro | Posicionamiento y puente.',
+                                                'Mentor | Reciprocar | Compartir aplicación concreta de una recomendación | Confianza y aprendizaje.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1120px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Relación / actor</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tipo de movimiento</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué haré concretamente</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué valor está en juego</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {consciousNetworkingSection.movementSegmentationRows.map((row, index) => (
+                                                    <tr key={`wb7-network-movement-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.relationActor}
+                                                                onChange={(event) => updateNetworkingMovementRow(index, 'relationActor', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.movementType}
+                                                                onChange={(event) => updateNetworkingMovementRow(index, 'movementType', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {CONSCIOUS_NETWORKING_MOVEMENT_TYPES.map((option) => (
+                                                                    <option key={`wb7-network-movement-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.concreteAction}
+                                                                onChange={(event) => updateNetworkingMovementRow(index, 'concreteAction', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.valueAtStake}
+                                                                onChange={(event) => updateNetworkingMovementRow(index, 'valueAtStake', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveConsciousNetworkingBlock('Paso 3 — Segmentación de movimientos')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Cadencia de contacto y mantenimiento consciente</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                networkingCadenceCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {networkingCadenceCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define una cadencia mínima por relación (mensual, bimensual, trimestral o por hito).',
+                                                'Selecciona formato de contacto según contexto: mensaje, llamada, actualización ejecutiva, reconocimiento, introducción o intercambio.',
+                                                'Deja explícito el objetivo de cada contacto.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Jefe directo | Mensual | Síntesis ejecutiva + conversación | Mantener alineación y visibilidad.',
+                                                'Exjefe con reputación | Trimestral | Actualización breve | Cuidar relación multiplicadora.',
+                                                'Referente externo | Bimensual | Mensaje con insight | Expandir puente sectorial.',
+                                                'Sponsor informal | Mensual | Aporte útil corto | Nutrir disposición y credibilidad.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1120px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Relación</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Cadencia sugerida</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Formato de contacto</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Objetivo del contacto</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {consciousNetworkingSection.cadenceRows.map((row, index) => (
+                                                    <tr key={`wb7-network-cadence-${index}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.relation}
+                                                                onChange={(event) => updateNetworkingCadenceRow(index, 'relation', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.suggestedCadence}
+                                                                onChange={(event) => updateNetworkingCadenceRow(index, 'suggestedCadence', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {CONSCIOUS_NETWORKING_CADENCE_OPTIONS.map((option) => (
+                                                                    <option key={`wb7-network-cadence-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[260px]">
+                                                            <select
+                                                                value={row.contactFormat}
+                                                                onChange={(event) => updateNetworkingCadenceRow(index, 'contactFormat', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {CONSCIOUS_NETWORKING_FORMAT_OPTIONS.map((option) => (
+                                                                    <option key={`wb7-network-format-option-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.contactObjective}
+                                                                onChange={(event) => updateNetworkingCadenceRow(index, 'contactObjective', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveConsciousNetworkingBlock('Paso 4 — Cadencia de contacto')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Scorecard de networking consciente</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                networkingScorecardCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {networkingScorecardCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Califica cada dimensión en Bajo, Medio o Alto con evidencia concreta.',
+                                                'Evita calificaciones sin señal observable.',
+                                                'Usa el scorecard para orientar decisiones de 30 días.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                'Intención clara: Medio — tengo focos definidos, falta traducirlos siempre en acción.',
+                                                'Diversidad de red: Bajo — la red sigue centrada en lo interno.',
+                                                'Consistencia de contacto: Medio — algunas relaciones se sostienen, otras dependen del impulso.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Dimensión</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Bajo / Medio / Alto</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Evidencia / señal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {consciousNetworkingSection.scorecardRows.map((row, index) => (
+                                                    <tr key={`wb7-network-scorecard-${index}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.dimension}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100 w-[220px]">
+                                                            <select
+                                                                value={row.level}
+                                                                onChange={(event) => updateNetworkingScorecardRow(index, 'level', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                <option value="bajo">Bajo</option>
+                                                                <option value="medio">Medio</option>
+                                                                <option value="alto">Alto</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.evidence}
+                                                                onChange={(event) => updateNetworkingScorecardRow(index, 'evidence', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveConsciousNetworkingBlock('Paso 5 — Scorecard de networking consciente')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Plan de networking consciente a 30 días</h3>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                networkingPlanCompleted
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {networkingPlanCompleted ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <ul className="space-y-1.5">
+                                            {[
+                                                'Define 3 relaciones a nutrir, 2 a reactivar y 2 nuevas a explorar.',
+                                                'Incluye una acción visible de reciprocidad y un hábito mínimo de mantenimiento.',
+                                                'Cierra con un criterio de evaluación en 30 días.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <ul className="mt-2 space-y-1.5">
+                                            {[
+                                                '3 a nutrir: jefe directo, sponsor informal, mentor.',
+                                                '2 a reactivar: exjefe con reputación, referente externo.',
+                                                '2 nuevas: directora de unidad, partner sectorial.',
+                                                'Reciprocidad visible: hacer visible aporte de un aliado en reunión clave.',
+                                                'Hábito: 20 minutos semanales de acciones relacionales conscientes.',
+                                                'Criterio: ejecutar 6 movimientos con evidencia de respuesta o avance.'
+                                            ].map((item) => (
+                                                <li key={item} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2">
+                                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">3 relaciones a nutrir</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.plan30Days.nourishRelationships}
+                                                onChange={(event) => updateNetworkingPlan30Days('nourishRelationships', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">2 relaciones a reactivar</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.plan30Days.reactivateRelationships}
+                                                onChange={(event) => updateNetworkingPlan30Days('reactivateRelationships', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">2 relaciones nuevas a explorar</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.plan30Days.exploreRelationships}
+                                                onChange={(event) => updateNetworkingPlan30Days('exploreRelationships', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">1 acción de reciprocidad visible</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.plan30Days.visibleReciprocityAction}
+                                                onChange={(event) => updateNetworkingPlan30Days('visibleReciprocityAction', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">1 hábito de mantenimiento relacional</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.plan30Days.maintenanceHabit}
+                                                onChange={(event) => updateNetworkingPlan30Days('maintenanceHabit', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.12em] text-slate-500">1 criterio para evaluar avance en 30 días</span>
+                                            <textarea
+                                                value={consciousNetworkingSection.plan30Days.progressCriteria}
+                                                onChange={(event) => updateNetworkingPlan30Days('progressCriteria', event.target.value)}
+                                                disabled={isLocked}
+                                                rows={2}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm resize-y disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveConsciousNetworkingBlock('Paso 6 — Plan de networking consciente a 30 días')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+                                    <h3 className="text-base font-bold text-slate-900">Validaciones suaves</h3>
+                                    {noFirstValueBeforeAsking && (
+                                        <p className="text-sm text-amber-800">Sugerencia: aclara qué puedes ofrecer primero.</p>
+                                    )}
+                                    {movementsOnlyActivation && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: incluye también cuidado de relaciones ya valiosas.
+                                        </p>
+                                    )}
+                                    {cadenceMissing && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: define una frecuencia mínima para sostener la red.
+                                        </p>
+                                    )}
+                                    {planMissingReciprocity && (
+                                        <p className="text-sm text-amber-800">
+                                            Sugerencia: agrega un gesto concreto de valor hacia otros.
+                                        </p>
+                                    )}
+                                    {!noFirstValueBeforeAsking && !movementsOnlyActivation && !cadenceMissing && !planMissingReciprocity && (
+                                        <p className="text-sm text-emerald-700">
+                                            Sin alertas: la estrategia de networking muestra intención, reciprocidad y mantenimiento consciente.
+                                        </p>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-600 font-semibold">Estado de la sección</p>
+                                            <p className="mt-1 text-sm text-slate-700">
+                                                {section6Completed
+                                                    ? 'Completado: intención, matriz, movimientos, cadencia, scorecard y plan de 30 días diligenciados.'
+                                                    : 'Pendiente: define intención relacional y un plan mínimo a 30 días, junto con los demás bloques.'}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                section6Completed
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }`}
+                                        >
+                                            {section6Completed ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {!isExportingAll && (
                             <nav className={`wb7-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button type="button" onClick={goPrevPage} disabled={!hasPrevPage} className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}>
@@ -4287,6 +5440,37 @@ export function WB7Digital() {
                                         </li>
                                         <li className="text-sm text-slate-700 leading-relaxed">
                                             Una red madura combina mantenimiento, reciprocidad, reactivación y expansión consciente.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showConsciousNetworkingHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
+                                <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl p-6 space-y-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Ayuda — Estrategia de networking consciente</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConsciousNetworkingHelp(false)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Networking consciente no es acumular contactos, sino construir relaciones con intención y valor mutuo.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            No toda relación necesita la misma cadencia ni el mismo movimiento.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Una estrategia madura combina nutrición, reciprocidad, reactivación y expansión.
+                                        </li>
+                                        <li className="text-sm text-slate-700 leading-relaxed">
+                                            Si tu red depende solo de urgencias, sigue siendo circunstancial.
                                         </li>
                                     </ul>
                                 </div>
