@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3
+type WorkbookPageId = 1 | 2 | 3 | 4
 type YesNoAnswer = '' | 'yes' | 'no'
 
 type WorkbookPage = {
@@ -51,12 +51,49 @@ type WB5State = {
             adjustment: string
         }>
     }
+    languageEngineeringSection: {
+        canvas: {
+            requiredResult: string
+            owner: string
+            dateTime: string
+            satisfactionCriteria: string
+            contextMeaning: string
+            expectedExplicitResponse: string
+            followUpPoint: string
+        }
+        calibration: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+        activePromises: Array<{
+            activePromise: string
+            promisedTo: string
+            agreedDate: string
+            riskLevel: '' | 'Bajo' | 'Medio' | 'Alto'
+            earlySignal: string
+            preventiveAction: string
+        }>
+        renegotiationProtocol: {
+            atRiskCommitment: string
+            maxNotice: string
+            objectiveChange: string
+            alternativeProposal: string
+            confirmationNeeded: string
+        }
+        traceabilityTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
-    { id: 3, label: '3. Estructura de mensaje ejecutivo', shortLabel: 'Mensaje ejecutivo' }
+    { id: 3, label: '3. Estructura de mensaje ejecutivo', shortLabel: 'Mensaje ejecutivo' },
+    { id: 4, label: '4. Ingeniería del lenguaje', shortLabel: 'Promesas y pedidos' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb5-state'
@@ -69,6 +106,22 @@ const EXECUTIVE_TEST_QUESTIONS = [
     '¿Queda claro qué debe pasar después?',
     '¿El mensaje es creíble y verificable?',
     '¿El nivel de detalle está bien calibrado?'
+]
+const LANGUAGE_CALIBRATION_QUESTIONS = [
+    '¿El pedido define exactamente qué se necesita?',
+    '¿La fecha es clara y realista?',
+    '¿Las condiciones de satisfacción son verificables?',
+    '¿La otra parte tiene capacidad real para asumirlo?',
+    '¿Estoy dejando espacio para que acepte o renegocie?',
+    '¿Podría rastrear este compromiso una semana después?'
+]
+const LANGUAGE_TRACEABILITY_QUESTIONS = [
+    '¿Se entiende exactamente qué se pidió o prometió?',
+    '¿Está claro quién es responsable?',
+    '¿Está definida la fecha?',
+    '¿Hay condiciones de satisfacción explícitas?',
+    '¿Hubo confirmación o renegociación explícita?',
+    '¿Quedó definido el seguimiento?'
 ]
 
 const DEFAULT_STATE: WB5State = {
@@ -107,6 +160,39 @@ const DEFAULT_STATE: WB5State = {
             verdict: '',
             adjustment: ''
         }))
+    },
+    languageEngineeringSection: {
+        canvas: {
+            requiredResult: '',
+            owner: '',
+            dateTime: '',
+            satisfactionCriteria: '',
+            contextMeaning: '',
+            expectedExplicitResponse: '',
+            followUpPoint: ''
+        },
+        calibration: LANGUAGE_CALIBRATION_QUESTIONS.map((question) => ({
+            question,
+            verdict: '',
+            adjustment: ''
+        })),
+        activePromises: [
+            { activePromise: '', promisedTo: '', agreedDate: '', riskLevel: '', earlySignal: '', preventiveAction: '' },
+            { activePromise: '', promisedTo: '', agreedDate: '', riskLevel: '', earlySignal: '', preventiveAction: '' },
+            { activePromise: '', promisedTo: '', agreedDate: '', riskLevel: '', earlySignal: '', preventiveAction: '' }
+        ],
+        renegotiationProtocol: {
+            atRiskCommitment: '',
+            maxNotice: '',
+            objectiveChange: '',
+            alternativeProposal: '',
+            confirmationNeeded: ''
+        },
+        traceabilityTest: LANGUAGE_TRACEABILITY_QUESTIONS.map((question) => ({
+            question,
+            verdict: '',
+            adjustment: ''
+        }))
     }
 }
 
@@ -114,6 +200,14 @@ const normalizeState = (raw: unknown): WB5State => {
     const parsed = typeof raw === 'object' && raw !== null ? (raw as Record<string, any>) : {}
     const executiveRaw = parsed.executiveMessageSection ?? {}
     const clarityRaw = Array.isArray(executiveRaw.clarityTest) ? executiveRaw.clarityTest : []
+    const languageRaw = parsed.languageEngineeringSection ?? {}
+    const calibrationRaw = Array.isArray(languageRaw.calibration) ? languageRaw.calibration : []
+    const promisesRaw = Array.isArray(languageRaw.activePromises) ? languageRaw.activePromises : []
+    const traceabilityRaw = Array.isArray(languageRaw.traceabilityTest) ? languageRaw.traceabilityTest : []
+    const normalizedRiskLevel = (value: unknown): '' | 'Bajo' | 'Medio' | 'Alto' => {
+        if (value === 'Bajo' || value === 'Medio' || value === 'Alto') return value
+        return ''
+    }
 
     return {
         identification: {
@@ -141,6 +235,43 @@ const normalizeState = (raw: unknown): WB5State => {
                     adjustment: typeof candidate?.adjustment === 'string' ? candidate.adjustment : ''
                 }
             })
+        },
+        languageEngineeringSection: {
+            canvas: {
+                ...DEFAULT_STATE.languageEngineeringSection.canvas,
+                ...(languageRaw.canvas ?? {})
+            },
+            calibration: LANGUAGE_CALIBRATION_QUESTIONS.map((question, index) => {
+                const candidate = calibrationRaw[index]
+                return {
+                    question,
+                    verdict: candidate?.verdict === 'yes' || candidate?.verdict === 'no' ? candidate.verdict : '',
+                    adjustment: typeof candidate?.adjustment === 'string' ? candidate.adjustment : ''
+                }
+            }),
+            activePromises: DEFAULT_STATE.languageEngineeringSection.activePromises.map((row, index) => {
+                const candidate = promisesRaw[index] ?? {}
+                return {
+                    activePromise: typeof candidate.activePromise === 'string' ? candidate.activePromise : row.activePromise,
+                    promisedTo: typeof candidate.promisedTo === 'string' ? candidate.promisedTo : row.promisedTo,
+                    agreedDate: typeof candidate.agreedDate === 'string' ? candidate.agreedDate : row.agreedDate,
+                    riskLevel: normalizedRiskLevel(candidate.riskLevel),
+                    earlySignal: typeof candidate.earlySignal === 'string' ? candidate.earlySignal : row.earlySignal,
+                    preventiveAction: typeof candidate.preventiveAction === 'string' ? candidate.preventiveAction : row.preventiveAction
+                }
+            }),
+            renegotiationProtocol: {
+                ...DEFAULT_STATE.languageEngineeringSection.renegotiationProtocol,
+                ...(languageRaw.renegotiationProtocol ?? {})
+            },
+            traceabilityTest: LANGUAGE_TRACEABILITY_QUESTIONS.map((question, index) => {
+                const candidate = traceabilityRaw[index]
+                return {
+                    question,
+                    verdict: candidate?.verdict === 'yes' || candidate?.verdict === 'no' ? candidate.verdict : '',
+                    adjustment: typeof candidate?.adjustment === 'string' ? candidate.adjustment : ''
+                }
+            })
         }
     }
 }
@@ -160,6 +291,13 @@ export function WB5Digital() {
     const [showExecutiveExampleStep2, setShowExecutiveExampleStep2] = useState(false)
     const [showExecutiveExampleStep3, setShowExecutiveExampleStep3] = useState(false)
     const [showExecutiveExampleStep4, setShowExecutiveExampleStep4] = useState(false)
+    const [showLanguageHelp, setShowLanguageHelp] = useState(false)
+    const [showLanguageExampleStep1, setShowLanguageExampleStep1] = useState(false)
+    const [showLanguageExampleStep2, setShowLanguageExampleStep2] = useState(false)
+    const [showLanguageExampleStep3, setShowLanguageExampleStep3] = useState(false)
+    const [showLanguageExampleStep4, setShowLanguageExampleStep4] = useState(false)
+    const [showLanguageExampleStep5, setShowLanguageExampleStep5] = useState(false)
+    const [showLanguageCanvasPreview, setShowLanguageCanvasPreview] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -371,6 +509,113 @@ export function WB5Digital() {
         announceSave(`${blockLabel} guardado.`)
     }
 
+    const updateLanguageCanvas = (
+        field: keyof WB5State['languageEngineeringSection']['canvas'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            languageEngineeringSection: {
+                ...prev.languageEngineeringSection,
+                canvas: {
+                    ...prev.languageEngineeringSection.canvas,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateLanguageCalibration = (
+        rowIndex: number,
+        field: keyof WB5State['languageEngineeringSection']['calibration'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            languageEngineeringSection: {
+                ...prev.languageEngineeringSection,
+                calibration: prev.languageEngineeringSection.calibration.map((row, index) =>
+                    index === rowIndex
+                        ? { ...row, [field]: field === 'verdict' ? (value as YesNoAnswer) : value }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateLanguagePromiseRow = (
+        rowIndex: number,
+        field: keyof WB5State['languageEngineeringSection']['activePromises'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            languageEngineeringSection: {
+                ...prev.languageEngineeringSection,
+                activePromises: prev.languageEngineeringSection.activePromises.map((row, index) =>
+                    index === rowIndex
+                        ? {
+                              ...row,
+                              [field]:
+                                  field === 'riskLevel'
+                                      ? value === 'Bajo' || value === 'Medio' || value === 'Alto'
+                                          ? value
+                                          : ''
+                                      : value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateLanguageRenegotiation = (
+        field: keyof WB5State['languageEngineeringSection']['renegotiationProtocol'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            languageEngineeringSection: {
+                ...prev.languageEngineeringSection,
+                renegotiationProtocol: {
+                    ...prev.languageEngineeringSection.renegotiationProtocol,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateLanguageTraceability = (
+        rowIndex: number,
+        field: keyof WB5State['languageEngineeringSection']['traceabilityTest'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            languageEngineeringSection: {
+                ...prev.languageEngineeringSection,
+                traceabilityTest: prev.languageEngineeringSection.traceabilityTest.map((row, index) =>
+                    index === rowIndex
+                        ? { ...row, [field]: field === 'verdict' ? (value as YesNoAnswer) : value }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const saveLanguageBlock = (blockLabel: string) => {
+        markVisited(4)
+        if (blockLabel === 'Paso 1') {
+            setShowLanguageCanvasPreview(true)
+        }
+        announceSave(`${blockLabel} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -446,12 +691,30 @@ export function WB5Digital() {
     const executivePyramid = state.executiveMessageSection.pyramid
     const executiveScqa = state.executiveMessageSection.scqa
     const executiveClarityTest = state.executiveMessageSection.clarityTest
+    const languageCanvas = state.languageEngineeringSection.canvas
+    const languageCalibration = state.languageEngineeringSection.calibration
+    const languagePromises = state.languageEngineeringSection.activePromises
+    const languageRenegotiation = state.languageEngineeringSection.renegotiationProtocol
+    const languageTraceability = state.languageEngineeringSection.traceabilityTest
 
     const blufCompleted = Object.values(executiveBluf).every((value) => value.trim().length > 0)
     const pyramidCompleted = Object.values(executivePyramid).every((value) => value.trim().length > 0)
     const scqaCompleted = Object.values(executiveScqa).every((value) => value.trim().length > 0)
     const executiveTestCompleted = executiveClarityTest.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
     const executiveSectionCompleted = blufCompleted && pyramidCompleted && scqaCompleted && executiveTestCompleted
+    const languageCanvasCompleted = Object.values(languageCanvas).every((value) => value.trim().length > 0)
+    const languageCalibrationCompleted = languageCalibration.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
+    const languagePromisesCompleted = languagePromises.every((row) =>
+        Object.values(row).every((value) => value.toString().trim().length > 0)
+    )
+    const languageRenegotiationCompleted = Object.values(languageRenegotiation).every((value) => value.trim().length > 0)
+    const languageTraceabilityCompleted = languageTraceability.every((row) => row.verdict !== '' && row.adjustment.trim().length > 0)
+    const languageSectionCompleted =
+        languageCanvasCompleted &&
+        languageCalibrationCompleted &&
+        languagePromisesCompleted &&
+        languageRenegotiationCompleted &&
+        languageTraceabilityCompleted
 
     const bottomLineWordCount = executiveBluf.bottomLine.trim().split(/\s+/).filter(Boolean).length
     const bottomLineTooLong = bottomLineWordCount > 18
@@ -480,11 +743,26 @@ export function WB5Digital() {
         computeTokenSimilarity(executiveScqa.question, executiveScqa.answer) < 0.08
 
     const actionClarityNeedsAdjustment = executiveClarityTest[2]?.verdict === 'no'
+    const languageCanvasHasContent = Object.values(languageCanvas).some((value) => value.trim().length > 0)
+    const missingLanguageDate = languageCanvasHasContent && languageCanvas.dateTime.trim().length === 0
+    const missingLanguageSatisfaction = languageCanvasHasContent && languageCanvas.satisfactionCriteria.trim().length === 0
+    const missingLanguageConfirmation = languageCanvasHasContent && languageCanvas.expectedExplicitResponse.trim().length === 0
+    const highRiskWithoutPreventiveAction = languagePromises.some(
+        (row) => row.riskLevel === 'Alto' && row.preventiveAction.trim().length === 0
+    )
+    const hasHighRiskPromise = languagePromises.some((row) => row.riskLevel === 'Alto')
+    const hasRenegotiationPlan =
+        languageRenegotiation.atRiskCommitment.trim().length > 0 &&
+        languageRenegotiation.maxNotice.trim().length > 0 &&
+        languageRenegotiation.alternativeProposal.trim().length > 0 &&
+        languageRenegotiation.confirmationNeeded.trim().length > 0
+    const highRiskWithoutRenegotiation = hasHighRiskPromise && !hasRenegotiationPlan
 
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
-        3: executiveSectionCompleted
+        3: executiveSectionCompleted,
+        4: languageSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -564,7 +842,7 @@ export function WB5Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb5-print-page wb5-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 3"
+                                data-print-page="Página 1 de 4"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -657,7 +935,7 @@ export function WB5Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 3"
+                                data-print-page="Página 2 de 4"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -791,7 +1069,7 @@ export function WB5Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 3"
+                                data-print-page="Página 3 de 4"
                                 data-print-title="Estructura de mensaje ejecutivo"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1312,6 +1590,623 @@ export function WB5Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(4) && (
+                            <article
+                                className="wb5-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 4 de 4"
+                                data-print-title="Ingeniería del lenguaje (promesas y pedidos)"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 4</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                                        Ingeniería del lenguaje (promesas y pedidos)
+                                    </h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Domina pedidos y promesas con precisión conversacional para reducir ambigüedad, evitar retrabajos y fortalecer la confianza en las relaciones de trabajo.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLanguageHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Pedido impecable: define qué se requiere, quién lo hace, para cuándo, cómo se evalúa y qué compromiso explícito hubo.',
+                                            'Promesa confiable: se cumple o se renegocia a tiempo antes del vencimiento.',
+                                            'Condiciones de satisfacción: criterios verificables de contenido, calidad, formato y alcance.',
+                                            'Confirmación explícita: sí, no, condición o contrapropuesta; nunca suposición.',
+                                            'Renegociación: ajuste de alcance, fecha o formato antes del incumplimiento.',
+                                            'Quiebre conversacional: brecha entre lo esperado y lo posible que exige aclarar o renegociar.',
+                                            'Trazabilidad: reconstruir con claridad qué se pidió, quién aceptó, fecha y seguimiento.',
+                                            'Ambigüedad operativa: zona gris donde no queda claro quién hace qué, para cuándo y con qué estándar.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Canvas del pedido impecable</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowLanguageExampleStep1(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    languageCanvasCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {languageCanvasCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Resultado requerido</span>
+                                            <textarea
+                                                rows={2}
+                                                value={languageCanvas.requiredResult}
+                                                onChange={(event) => updateLanguageCanvas('requiredResult', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Responsable</span>
+                                            <input
+                                                type="text"
+                                                value={languageCanvas.owner}
+                                                onChange={(event) => updateLanguageCanvas('owner', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Fecha y hora</span>
+                                            <input
+                                                type="text"
+                                                value={languageCanvas.dateTime}
+                                                onChange={(event) => updateLanguageCanvas('dateTime', event.target.value)}
+                                                disabled={isLocked}
+                                                placeholder="Ej: Miércoles 4:00 p. m."
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Condiciones de satisfacción</span>
+                                            <textarea
+                                                rows={2}
+                                                value={languageCanvas.satisfactionCriteria}
+                                                onChange={(event) => updateLanguageCanvas('satisfactionCriteria', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">5. Contexto y sentido</span>
+                                            <textarea
+                                                rows={2}
+                                                value={languageCanvas.contextMeaning}
+                                                onChange={(event) => updateLanguageCanvas('contextMeaning', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">6. Respuesta explícita esperada</span>
+                                            <textarea
+                                                rows={2}
+                                                value={languageCanvas.expectedExplicitResponse}
+                                                onChange={(event) => updateLanguageCanvas('expectedExplicitResponse', event.target.value)}
+                                                disabled={isLocked}
+                                                placeholder="Sí / No / Propuesta alternativa"
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">7. Punto de seguimiento</span>
+                                            <input
+                                                type="text"
+                                                value={languageCanvas.followUpPoint}
+                                                onChange={(event) => updateLanguageCanvas('followUpPoint', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        {missingLanguageDate && (
+                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                                Sugerencia: aclara para cuándo lo necesitas.
+                                            </p>
+                                        )}
+                                        {missingLanguageSatisfaction && (
+                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                                Sugerencia: define cómo se verá que está bien hecho.
+                                            </p>
+                                        )}
+                                        {missingLanguageConfirmation && (
+                                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                                Sugerencia: verifica si hubo compromiso real o solo suposición.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveLanguageBlock('Paso 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+
+                                    {(showLanguageCanvasPreview || languageCanvasCompleted) && (
+                                        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 md:p-5 space-y-3">
+                                            <p className="text-xs uppercase tracking-[0.14em] text-blue-700 font-semibold">Canvas visual del pedido</p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {[
+                                                    { label: 'Resultado requerido', value: languageCanvas.requiredResult },
+                                                    { label: 'Responsable', value: languageCanvas.owner },
+                                                    { label: 'Fecha y hora', value: languageCanvas.dateTime },
+                                                    { label: 'Condiciones de satisfacción', value: languageCanvas.satisfactionCriteria },
+                                                    { label: 'Contexto y sentido', value: languageCanvas.contextMeaning },
+                                                    { label: 'Respuesta explícita esperada', value: languageCanvas.expectedExplicitResponse },
+                                                    { label: 'Punto de seguimiento', value: languageCanvas.followUpPoint }
+                                                ].map((item) => (
+                                                    <div key={item.label} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{item.label}</p>
+                                                        <p className="mt-1 text-sm text-slate-800">{item.value.trim() || 'Completar'}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz de calibración del pedido</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowLanguageExampleStep2(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    languageCalibrationCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {languageCalibrationCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[920px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Criterio</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué debo ajustar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {languageCalibration.map((row, rowIndex) => (
+                                                    <tr key={`language-calibration-${rowIndex}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`language-calibration-${rowIndex}`}
+                                                                checked={row.verdict === 'yes'}
+                                                                onChange={() => updateLanguageCalibration(rowIndex, 'verdict', 'yes')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`language-calibration-${rowIndex}`}
+                                                                checked={row.verdict === 'no'}
+                                                                onChange={() => updateLanguageCalibration(rowIndex, 'verdict', 'no')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateLanguageCalibration(rowIndex, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Escribe ajuste o Completar"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveLanguageBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Tablero de promesas y riesgos</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowLanguageExampleStep3(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    languagePromisesCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {languagePromisesCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1180px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Promesa activa</th>
+                                                    <th className="px-3 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">A quién le prometí</th>
+                                                    <th className="px-3 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Fecha acordada</th>
+                                                    <th className="px-3 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Riesgo actual</th>
+                                                    <th className="px-3 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Señal temprana</th>
+                                                    <th className="px-3 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Acción preventiva inmediata</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {languagePromises.map((row, rowIndex) => (
+                                                    <tr key={`language-promises-${rowIndex}`}>
+                                                        <td className="px-2 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.activePromise}
+                                                                onChange={(event) => updateLanguagePromiseRow(rowIndex, 'activePromise', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-2 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.promisedTo}
+                                                                onChange={(event) => updateLanguagePromiseRow(rowIndex, 'promisedTo', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-2 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.agreedDate}
+                                                                onChange={(event) => updateLanguagePromiseRow(rowIndex, 'agreedDate', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-2 py-2 border-b border-slate-100">
+                                                            <select
+                                                                value={row.riskLevel}
+                                                                onChange={(event) => updateLanguagePromiseRow(rowIndex, 'riskLevel', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Seleccionar</option>
+                                                                <option value="Bajo">Bajo</option>
+                                                                <option value="Medio">Medio</option>
+                                                                <option value="Alto">Alto</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-2 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.earlySignal}
+                                                                onChange={(event) => updateLanguagePromiseRow(rowIndex, 'earlySignal', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-2 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.preventiveAction}
+                                                                onChange={(event) => updateLanguagePromiseRow(rowIndex, 'preventiveAction', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {highRiskWithoutPreventiveAction && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: si una promesa tiene riesgo alto, agrega acción preventiva inmediata.
+                                        </p>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveLanguageBlock('Paso 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Protocolo de renegociación anticipada</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowLanguageExampleStep4(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    languageRenegotiationCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {languageRenegotiationCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Compromiso en riesgo</span>
+                                            <input
+                                                type="text"
+                                                value={languageRenegotiation.atRiskCommitment}
+                                                onChange={(event) => updateLanguageRenegotiation('atRiskCommitment', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Cuándo debo avisar como máximo</span>
+                                            <input
+                                                type="text"
+                                                value={languageRenegotiation.maxNotice}
+                                                onChange={(event) => updateLanguageRenegotiation('maxNotice', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Qué cambió objetivamente</span>
+                                            <textarea
+                                                rows={2}
+                                                value={languageRenegotiation.objectiveChange}
+                                                onChange={(event) => updateLanguageRenegotiation('objectiveChange', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Qué alternativa voy a proponer</span>
+                                            <textarea
+                                                rows={2}
+                                                value={languageRenegotiation.alternativeProposal}
+                                                onChange={(event) => updateLanguageRenegotiation('alternativeProposal', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">5. Qué confirmación necesito recibir</span>
+                                            <textarea
+                                                rows={2}
+                                                value={languageRenegotiation.confirmationNeeded}
+                                                onChange={(event) => updateLanguageRenegotiation('confirmationNeeded', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    {highRiskWithoutRenegotiation && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: diseña una renegociación antes del vencimiento para proteger la confianza.
+                                        </p>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveLanguageBlock('Paso 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Test de trazabilidad conversacional</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowLanguageExampleStep5(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    languageTraceabilityCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {languageTraceabilityCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[920px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {languageTraceability.map((row, rowIndex) => (
+                                                    <tr key={`language-traceability-${rowIndex}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`language-traceability-${rowIndex}`}
+                                                                checked={row.verdict === 'yes'}
+                                                                onChange={() => updateLanguageTraceability(rowIndex, 'verdict', 'yes')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`language-traceability-${rowIndex}`}
+                                                                checked={row.verdict === 'no'}
+                                                                onChange={() => updateLanguageTraceability(rowIndex, 'verdict', 'no')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateLanguageTraceability(rowIndex, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Escribe ajuste o Completar"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveLanguageBlock('Paso 5')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
+                                    <ul className="mt-4 space-y-2.5">
+                                        {[
+                                            'Cómo diseñar un pedido que no dependa de interpretación.',
+                                            'Cómo evaluar si una promesa está en riesgo antes de incumplir.',
+                                            'Cómo renegociar sin perder confianza.',
+                                            'Cómo dejar trazabilidad real en conversaciones de coordinación.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <p className="mt-4 text-sm text-slate-700">
+                                        En la rúbrica de WB5, esta competencia progresa desde pedidos ambiguos hacia comunicación clara, escucha genuina y compromisos definidos.
+                                    </p>
+                                    <div className="mt-5 flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                languageSectionCompleted
+                                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                    : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                            }`}
+                                        >
+                                            {languageSectionCompleted ? 'Sección completada' : 'Sección pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => savePage(4)}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar página 4
+                                        </button>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {showExecutiveHelp && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
@@ -1425,6 +2320,143 @@ export function WB5Digital() {
                                         <p>
                                             <span className="font-semibold">Mensaje mejorado:</span> “Necesitamos redefinir prioridades hoy porque la carga actual supera la capacidad del equipo y ya está afectando calidad. Quiero cerrar esta reunión con tres focos, responsables y límites claros.”
                                         </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showLanguageHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Ingeniería del lenguaje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLanguageHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>• Pedido impecable = qué + quién + para cuándo + cómo se verá bien hecho + confirmación explícita.</p>
+                                        <p>• Promesa confiable = compromiso explícito + cumplimiento o renegociación anticipada.</p>
+                                        <p>• La ambigüedad conversacional genera retrabajo, frustración y erosión de confianza.</p>
+                                        <p>• En 4Shine, la competencia se observa cuando el líder deja de asumir compromiso y empieza a verificarlo explícitamente.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showLanguageExampleStep1 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1 (Canvas del pedido)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLanguageExampleStep1(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Resultado requerido:</span> Borrador ejecutivo de una página con foco, riesgos y decisiones.</li>
+                                        <li><span className="font-semibold">Responsable:</span> Laura.</li>
+                                        <li><span className="font-semibold">Fecha y hora:</span> Mañana, 4:00 p. m.</li>
+                                        <li><span className="font-semibold">Condiciones de satisfacción:</span> Máximo una página, tres prioridades, dos riesgos y recomendación final.</li>
+                                        <li><span className="font-semibold">Contexto:</span> Preparar reunión con dirección del jueves.</li>
+                                        <li><span className="font-semibold">Respuesta esperada:</span> “Sí, lo entrego mañana antes de las 4; si no llego, te aviso a las 2.”</li>
+                                        <li><span className="font-semibold">Seguimiento:</span> Revisión rápida mañana a la 1:00 p. m.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showLanguageExampleStep2 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2 (Calibración)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLanguageExampleStep2(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Pedido débil:</span> “Revísalo y me dices.”</p>
+                                        <p><span className="font-semibold">Pedido calibrado:</span> “Necesito que revises estas 5 slides y me envíes comentarios antes de hoy a las 6:00 p. m., enfocándote en claridad del mensaje, orden lógico y nivel ejecutivo.”</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showLanguageExampleStep3 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3 (Promesas y riesgo)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLanguageExampleStep3(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Enviar versión final del pitch</span> · Mentor · Jueves 6:00 p. m. · Riesgo alto · Señal: no cierro versión breve · Acción: avisar hoy y proponer hito parcial.</li>
+                                        <li><span className="font-semibold">Compartir feedback al equipo</span> · Equipo · Miércoles · Riesgo medio · Señal: postergación diaria · Acción: bloquear 30 min en agenda.</li>
+                                        <li><span className="font-semibold">Entregar resumen al sponsor</span> · Sponsor · Viernes 10:00 a. m. · Riesgo bajo · Señal: depende de validación externa · Acción: pedir validación hoy.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showLanguageExampleStep4 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4 (Renegociación)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLanguageExampleStep4(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5 text-sm text-slate-700">
+                                        <li><span className="font-semibold">Compromiso en riesgo:</span> Entregar versión final del documento el jueves.</li>
+                                        <li><span className="font-semibold">Aviso máximo:</span> Miércoles 3:00 p. m.</li>
+                                        <li><span className="font-semibold">Cambio objetivo:</span> Entró validación adicional que afecta calidad final.</li>
+                                        <li><span className="font-semibold">Alternativa:</span> Entregar versión parcial jueves y final viernes 11:00 a. m.</li>
+                                        <li><span className="font-semibold">Confirmación:</span> Aceptación explícita del nuevo plan y fecha revisada.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {showLanguageExampleStep5 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 5 (Trazabilidad)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLanguageExampleStep5(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Compromiso débil:</span> “Sí, yo miro eso.”</p>
+                                        <p><span className="font-semibold">Compromiso trazable:</span> “Sí, reviso las cinco slides y te mando comentarios antes de hoy a las 6:00 p. m., enfocándome en claridad del mensaje y orden de ideas.”</p>
                                     </div>
                                 </div>
                             </div>
