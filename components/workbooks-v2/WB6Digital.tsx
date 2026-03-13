@@ -5,10 +5,18 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3
+type WorkbookPageId = 1 | 2 | 3 | 4
 type YesNoAnswer = '' | 'yes' | 'no'
 type PresenceImpact = '' | 'Suma' | 'Resta'
 type LeakageLevel = '' | 'Verde' | 'Amarillo' | 'Rojo'
+type ObjectionType =
+    | ''
+    | 'Contenido'
+    | 'Proceso'
+    | 'Confianza'
+    | 'Identidad o estatus'
+    | 'Confianza / estatus'
+    | 'Otro'
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -60,12 +68,50 @@ type WB6State = {
             adjustment: string
         }>
     }
+    objectionHandlingSection: {
+        cartography: Array<{
+            objection: string
+            objectionType: ObjectionType
+            whatActivatedMe: string
+            response: string
+            responseEffect: string
+            betterResponse: string
+        }>
+        diagnosis: {
+            literal: string
+            emotionalIntensity: string
+            whatItProtects: string
+            firstLayerToRespond: string
+        }
+        protocol: {
+            receive: string
+            clarificationQuestion: string
+            recognition: string
+            focalResponse: string
+            advanceVerification: string
+        }
+        bridgeBank: Array<{
+            scenario: string
+            bridgeResponse: string
+        }>
+        reframeLab: Array<{
+            originalObjection: string
+            usefulReframe: string
+            proposalImprovement: string
+        }>
+        executiveTest: Array<{
+            question: string
+            verdict: YesNoAnswer
+            adjustment: string
+        }>
+    }
 }
 
 const PAGES: WorkbookPage[] = [
     { id: 1, label: '1. Portada e identificación', shortLabel: 'Portada' },
     { id: 2, label: '2. Presentación del workbook', shortLabel: 'Presentación' },
-    { id: 3, label: '3. Lenguaje corporal ejecutivo', shortLabel: 'Lenguaje corporal' }
+    { id: 3, label: '3. Lenguaje corporal ejecutivo', shortLabel: 'Lenguaje corporal' },
+    { id: 4, label: '4. Manejo de objeciones', shortLabel: 'Objeciones' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb6-state'
@@ -201,6 +247,109 @@ const EXAMPLE_AUTHORITY_PATTERN = {
     returnToCenter: 'Exhalo, suelto mandíbula, reanclo pies y bajo velocidad de movimiento.'
 }
 
+const OBJECTION_TYPES: ObjectionType[] = [
+    'Contenido',
+    'Proceso',
+    'Confianza',
+    'Identidad o estatus',
+    'Confianza / estatus',
+    'Otro'
+]
+
+const BRIDGE_SCENARIOS = [
+    'Objeción agresiva',
+    'Objeción confusa',
+    'Objeción legítima pero mal formulada',
+    'Objeción política o de estatus',
+    'Objeción basada en desconfianza'
+] as const
+
+const OBJECTION_TEST_QUESTIONS = [
+    '¿Escuché antes de responder?',
+    '¿Diagnostiqué bien el tipo de objeción?',
+    '¿Respondí a la capa correcta?',
+    '¿Transmití seguridad tranquila?',
+    '¿Ordené mejor la objeción?',
+    '¿Verifiqué si hubo avance real?'
+] as const
+
+const EXAMPLE_OBJECTION_CARTOGRAPHY = [
+    {
+        objection: '“Eso no es viable en este trimestre”.',
+        objectionType: 'Contenido',
+        whatActivatedMe: 'Urgencia por defender mi idea.',
+        response: 'Expliqué demasiado rápido.',
+        responseEffect: 'Saturé y perdí foco.',
+        betterResponse: 'Aclarar criterio de viabilidad antes de argumentar.'
+    },
+    {
+        objection: '“No veo por qué cambiar lo que ya funciona”.',
+        objectionType: 'Proceso',
+        whatActivatedMe: 'Frustración.',
+        response: 'Reaccioné comparando con el pasado.',
+        responseEffect: 'Más resistencia.',
+        betterResponse: 'Reconocer primero la lógica del otro y luego mostrar el nuevo riesgo.'
+    },
+    {
+        objection: '“No estoy seguro de que tú debas liderar esto”.',
+        objectionType: 'Confianza / estatus',
+        whatActivatedMe: 'Defensividad.',
+        response: 'Justifiqué mi trayectoria.',
+        responseEffect: 'Soné inseguro.',
+        betterResponse: 'Preguntar qué condición de confianza faltaba y responder con evidencia puntual.'
+    }
+] as const
+
+const EXAMPLE_OBJECTION_DIAGNOSIS = {
+    literal: '“No creo que este sea el momento para mover prioridades”.',
+    emotionalIntensity: 'Tensión y molestia contenida.',
+    whatItProtects: 'Control del plan y credibilidad frente al equipo.',
+    firstLayerToRespond: 'La preocupación de control, no solo el argumento de timing.'
+}
+
+const EXAMPLE_OBJECTION_PROTOCOL = {
+    receive: 'Haré una pausa, mantendré mirada y no entraré a justificarme de inmediato.',
+    clarificationQuestion: '“¿Cuál es para ti el principal riesgo de hacerlo ahora?”.',
+    recognition: '“Entiendo que tu preocupación principal es no abrir más dispersión.”',
+    focalResponse: '“Justamente por eso propongo reducir focos y no ampliarlos.”',
+    advanceVerification: '“¿Con eso responde tu objeción principal o hay otra condición que debamos mirar?”.'
+}
+
+const EXAMPLE_BRIDGE_BANK = [
+    { scenario: 'Objeción agresiva', bridgeResponse: '“Voy a tomar tu punto y responderlo con precisión.”' },
+    { scenario: 'Objeción confusa', bridgeResponse: '“Ayúdame a precisar qué parte te preocupa más.”' },
+    {
+        scenario: 'Objeción legítima pero mal formulada',
+        bridgeResponse: '“Hay una preocupación válida ahí; déjame ordenarla para responder mejor.”'
+    },
+    {
+        scenario: 'Objeción política o de estatus',
+        bridgeResponse: '“Entiendo que aquí también hay una preocupación por cómo se verá esta decisión.”'
+    },
+    {
+        scenario: 'Objeción basada en desconfianza',
+        bridgeResponse: '“Quiero responder eso con hechos, no solo con opinión.”'
+    }
+] as const
+
+const EXAMPLE_REFRAME_LAB = [
+    {
+        originalObjection: '“Eso no está suficientemente claro”.',
+        usefulReframe: 'Necesito explicitar mejor el criterio central.',
+        proposalImprovement: 'Mejora claridad.'
+    },
+    {
+        originalObjection: '“No sé si este es el momento”.',
+        usefulReframe: 'Debo mostrar mejor el costo de no actuar ahora.',
+        proposalImprovement: 'Mejora sentido de oportunidad.'
+    },
+    {
+        originalObjection: '“No veo quién respondería por esto”.',
+        usefulReframe: 'Debo hacer visible la trazabilidad y responsables.',
+        proposalImprovement: 'Mejora confianza operativa.'
+    }
+] as const
+
 const DEFAULT_STATE: WB6State = {
     identification: {
         leaderName: '',
@@ -244,6 +393,43 @@ const DEFAULT_STATE: WB6State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
+    },
+    objectionHandlingSection: {
+        cartography: Array.from({ length: 3 }, () => ({
+            objection: '',
+            objectionType: '' as ObjectionType,
+            whatActivatedMe: '',
+            response: '',
+            responseEffect: '',
+            betterResponse: ''
+        })),
+        diagnosis: {
+            literal: '',
+            emotionalIntensity: '',
+            whatItProtects: '',
+            firstLayerToRespond: ''
+        },
+        protocol: {
+            receive: '',
+            clarificationQuestion: '',
+            recognition: '',
+            focalResponse: '',
+            advanceVerification: ''
+        },
+        bridgeBank: BRIDGE_SCENARIOS.map((scenario) => ({
+            scenario,
+            bridgeResponse: ''
+        })),
+        reframeLab: Array.from({ length: 3 }, () => ({
+            originalObjection: '',
+            usefulReframe: '',
+            proposalImprovement: ''
+        })),
+        executiveTest: OBJECTION_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
     }
 }
 
@@ -256,6 +442,11 @@ const normalizeState = (raw: unknown): WB6State => {
     const presenceRaw = Array.isArray(bodyRaw.presenceMatrix) ? bodyRaw.presenceMatrix : []
     const leakageRaw = Array.isArray(bodyRaw.leakageTraffic) ? bodyRaw.leakageTraffic : []
     const coherenceRaw = Array.isArray(bodyRaw.coherenceTest) ? bodyRaw.coherenceTest : []
+    const objectionRaw = (parsed.objectionHandlingSection ?? {}) as Record<string, unknown>
+    const objectionCartographyRaw = Array.isArray(objectionRaw.cartography) ? objectionRaw.cartography : []
+    const objectionBridgeRaw = Array.isArray(objectionRaw.bridgeBank) ? objectionRaw.bridgeBank : []
+    const objectionReframeRaw = Array.isArray(objectionRaw.reframeLab) ? objectionRaw.reframeLab : []
+    const objectionTestRaw = Array.isArray(objectionRaw.executiveTest) ? objectionRaw.executiveTest : []
 
     const normalizeVerdict = (value: unknown): YesNoAnswer => {
         if (value === 'yes' || value === 'no') return value
@@ -269,6 +460,20 @@ const normalizeState = (raw: unknown): WB6State => {
 
     const normalizeLeakageLevel = (value: unknown): LeakageLevel => {
         if (value === 'Verde' || value === 'Amarillo' || value === 'Rojo') return value
+        return ''
+    }
+
+    const normalizeObjectionType = (value: unknown): ObjectionType => {
+        if (
+            value === 'Contenido' ||
+            value === 'Proceso' ||
+            value === 'Confianza' ||
+            value === 'Identidad o estatus' ||
+            value === 'Confianza / estatus' ||
+            value === 'Otro'
+        ) {
+            return value
+        }
         return ''
     }
 
@@ -354,6 +559,84 @@ const normalizeState = (raw: unknown): WB6State => {
                     adjustment: typeof candidate.adjustment === 'string' ? candidate.adjustment : ''
                 }
             })
+        },
+        objectionHandlingSection: {
+            cartography: Array.from({ length: 3 }, (_, index) => {
+                const candidate = (objectionCartographyRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    objection: typeof candidate.objection === 'string' ? candidate.objection : '',
+                    objectionType: normalizeObjectionType(candidate.objectionType),
+                    whatActivatedMe: typeof candidate.whatActivatedMe === 'string' ? candidate.whatActivatedMe : '',
+                    response: typeof candidate.response === 'string' ? candidate.response : '',
+                    responseEffect: typeof candidate.responseEffect === 'string' ? candidate.responseEffect : '',
+                    betterResponse: typeof candidate.betterResponse === 'string' ? candidate.betterResponse : ''
+                }
+            }),
+            diagnosis: {
+                literal:
+                    typeof (objectionRaw.diagnosis as Record<string, unknown> | undefined)?.literal === 'string'
+                        ? ((objectionRaw.diagnosis as Record<string, unknown>).literal as string)
+                        : '',
+                emotionalIntensity:
+                    typeof (objectionRaw.diagnosis as Record<string, unknown> | undefined)?.emotionalIntensity === 'string'
+                        ? ((objectionRaw.diagnosis as Record<string, unknown>).emotionalIntensity as string)
+                        : '',
+                whatItProtects:
+                    typeof (objectionRaw.diagnosis as Record<string, unknown> | undefined)?.whatItProtects === 'string'
+                        ? ((objectionRaw.diagnosis as Record<string, unknown>).whatItProtects as string)
+                        : '',
+                firstLayerToRespond:
+                    typeof (objectionRaw.diagnosis as Record<string, unknown> | undefined)?.firstLayerToRespond === 'string'
+                        ? ((objectionRaw.diagnosis as Record<string, unknown>).firstLayerToRespond as string)
+                        : ''
+            },
+            protocol: {
+                receive:
+                    typeof (objectionRaw.protocol as Record<string, unknown> | undefined)?.receive === 'string'
+                        ? ((objectionRaw.protocol as Record<string, unknown>).receive as string)
+                        : '',
+                clarificationQuestion:
+                    typeof (objectionRaw.protocol as Record<string, unknown> | undefined)?.clarificationQuestion === 'string'
+                        ? ((objectionRaw.protocol as Record<string, unknown>).clarificationQuestion as string)
+                        : '',
+                recognition:
+                    typeof (objectionRaw.protocol as Record<string, unknown> | undefined)?.recognition === 'string'
+                        ? ((objectionRaw.protocol as Record<string, unknown>).recognition as string)
+                        : '',
+                focalResponse:
+                    typeof (objectionRaw.protocol as Record<string, unknown> | undefined)?.focalResponse === 'string'
+                        ? ((objectionRaw.protocol as Record<string, unknown>).focalResponse as string)
+                        : '',
+                advanceVerification:
+                    typeof (objectionRaw.protocol as Record<string, unknown> | undefined)?.advanceVerification === 'string'
+                        ? ((objectionRaw.protocol as Record<string, unknown>).advanceVerification as string)
+                        : ''
+            },
+            bridgeBank: BRIDGE_SCENARIOS.map((scenario, index) => {
+                const candidate = (objectionBridgeRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    scenario,
+                    bridgeResponse: typeof candidate.bridgeResponse === 'string' ? candidate.bridgeResponse : ''
+                }
+            }),
+            reframeLab: Array.from({ length: 3 }, (_, index) => {
+                const candidate = (objectionReframeRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    originalObjection:
+                        typeof candidate.originalObjection === 'string' ? candidate.originalObjection : '',
+                    usefulReframe: typeof candidate.usefulReframe === 'string' ? candidate.usefulReframe : '',
+                    proposalImprovement:
+                        typeof candidate.proposalImprovement === 'string' ? candidate.proposalImprovement : ''
+                }
+            }),
+            executiveTest: OBJECTION_TEST_QUESTIONS.map((question, index) => {
+                const candidate = (objectionTestRaw[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: normalizeVerdict(candidate.verdict),
+                    adjustment: typeof candidate.adjustment === 'string' ? candidate.adjustment : ''
+                }
+            })
         }
     }
 }
@@ -376,6 +659,13 @@ export function WB6Digital() {
     const [showBodyExampleStep5, setShowBodyExampleStep5] = useState(false)
     const [showBodyExampleStep6, setShowBodyExampleStep6] = useState(false)
     const [showBodySketch, setShowBodySketch] = useState(false)
+    const [showObjectionHelp, setShowObjectionHelp] = useState(false)
+    const [showObjectionExampleStep1, setShowObjectionExampleStep1] = useState(false)
+    const [showObjectionExampleStep2, setShowObjectionExampleStep2] = useState(false)
+    const [showObjectionExampleStep3, setShowObjectionExampleStep3] = useState(false)
+    const [showObjectionExampleStep4, setShowObjectionExampleStep4] = useState(false)
+    const [showObjectionExampleStep5, setShowObjectionExampleStep5] = useState(false)
+    const [showObjectionExampleStep6, setShowObjectionExampleStep6] = useState(false)
 
     const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -637,6 +927,125 @@ export function WB6Digital() {
         announceSave(`${blockLabel} guardado.`)
     }
 
+    const updateObjectionCartographyRow = (
+        rowIndex: number,
+        field: keyof WB6State['objectionHandlingSection']['cartography'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            objectionHandlingSection: {
+                ...prev.objectionHandlingSection,
+                cartography: prev.objectionHandlingSection.cartography.map((row, index) =>
+                    index === rowIndex
+                        ? {
+                              ...row,
+                              [field]:
+                                  field === 'objectionType'
+                                      ? OBJECTION_TYPES.includes(value as ObjectionType)
+                                          ? value
+                                          : ''
+                                      : value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateObjectionDiagnosis = (
+        field: keyof WB6State['objectionHandlingSection']['diagnosis'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            objectionHandlingSection: {
+                ...prev.objectionHandlingSection,
+                diagnosis: {
+                    ...prev.objectionHandlingSection.diagnosis,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateObjectionProtocol = (
+        field: keyof WB6State['objectionHandlingSection']['protocol'],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            objectionHandlingSection: {
+                ...prev.objectionHandlingSection,
+                protocol: {
+                    ...prev.objectionHandlingSection.protocol,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateObjectionBridgeRow = (
+        rowIndex: number,
+        field: keyof WB6State['objectionHandlingSection']['bridgeBank'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            objectionHandlingSection: {
+                ...prev.objectionHandlingSection,
+                bridgeBank: prev.objectionHandlingSection.bridgeBank.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updateObjectionReframeRow = (
+        rowIndex: number,
+        field: keyof WB6State['objectionHandlingSection']['reframeLab'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            objectionHandlingSection: {
+                ...prev.objectionHandlingSection,
+                reframeLab: prev.objectionHandlingSection.reframeLab.map((row, index) =>
+                    index === rowIndex ? { ...row, [field]: value } : row
+                )
+            }
+        }))
+    }
+
+    const updateObjectionExecutiveTestRow = (
+        rowIndex: number,
+        field: keyof WB6State['objectionHandlingSection']['executiveTest'][number],
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            objectionHandlingSection: {
+                ...prev.objectionHandlingSection,
+                executiveTest: prev.objectionHandlingSection.executiveTest.map((row, index) =>
+                    index === rowIndex
+                        ? { ...row, [field]: field === 'verdict' ? ((value === 'yes' || value === 'no' ? value : '') as YesNoAnswer) : value }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const saveObjectionBlock = (blockLabel: string) => {
+        markVisited(4)
+        announceSave(`${blockLabel} guardado.`)
+    }
+
     const waitForRenderCycle = () =>
         new Promise<void>((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -691,6 +1100,12 @@ export function WB6Digital() {
     const entryProtocol = state.bodyLanguageSection.entryProtocol
     const calmAuthorityPattern = state.bodyLanguageSection.calmAuthorityPattern
     const coherenceTest = state.bodyLanguageSection.coherenceTest
+    const objectionCartography = state.objectionHandlingSection.cartography
+    const objectionDiagnosis = state.objectionHandlingSection.diagnosis
+    const objectionProtocol = state.objectionHandlingSection.protocol
+    const objectionBridgeBank = state.objectionHandlingSection.bridgeBank
+    const objectionReframeLab = state.objectionHandlingSection.reframeLab
+    const objectionExecutiveTest = state.objectionHandlingSection.executiveTest
 
     const baselineCompleted = baselineScan.every(
         (row) => row.observation.trim().length > 0 && row.effect.trim().length > 0
@@ -759,10 +1174,59 @@ export function WB6Digital() {
         return acc
     }, {})
 
+    const isObjectionCartographyRowComplete = (row: WB6State['objectionHandlingSection']['cartography'][number]) =>
+        row.objection.trim().length > 0 &&
+        row.objectionType !== '' &&
+        row.whatActivatedMe.trim().length > 0 &&
+        row.response.trim().length > 0 &&
+        row.responseEffect.trim().length > 0 &&
+        row.betterResponse.trim().length > 0
+
+    const objectionCartographyCompleted = objectionCartography.every((row) => isObjectionCartographyRowComplete(row))
+    const objectionDiagnosisCompleted = Object.values(objectionDiagnosis).every((value) => value.trim().length > 0)
+    const objectionProtocolCompleted = Object.values(objectionProtocol).every((value) => value.trim().length > 0)
+    const objectionBridgeCompleted = objectionBridgeBank.every((row) => row.bridgeResponse.trim().length > 0)
+    const objectionReframeCompleted = objectionReframeLab.every(
+        (row) =>
+            row.originalObjection.trim().length > 0 &&
+            row.usefulReframe.trim().length > 0 &&
+            row.proposalImprovement.trim().length > 0
+    )
+    const objectionExecutiveTestCompleted = objectionExecutiveTest.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+
+    const oneCartographyComplete = objectionCartography.some((row) => isObjectionCartographyRowComplete(row))
+    const objectionSectionMinimal = oneCartographyComplete && objectionProtocolCompleted
+    const objectionSectionCompleted =
+        objectionCartographyCompleted &&
+        objectionDiagnosisCompleted &&
+        objectionProtocolCompleted &&
+        objectionBridgeCompleted &&
+        objectionReframeCompleted &&
+        objectionExecutiveTestCompleted
+
+    const objectionMissingTypeBeforeResponse = objectionCartography.some(
+        (row) => row.objection.trim().length > 0 && row.response.trim().length > 0 && row.objectionType === ''
+    )
+
+    const focalResponseWordCount = objectionProtocol.focalResponse.trim().split(/\s+/).filter(Boolean).length
+    const focalResponseTooLong = focalResponseWordCount > 32
+    const objectionProtocolHasContent = Object.values(objectionProtocol).some((value) => value.trim().length > 0)
+    const objectionMissingAdvanceVerification =
+        objectionProtocolHasContent && objectionProtocol.advanceVerification.trim().length === 0
+    const objectionReframeWithoutImprovement = objectionReframeLab.some(
+        (row) =>
+            row.originalObjection.trim().length > 0 &&
+            row.usefulReframe.trim().length > 0 &&
+            row.proposalImprovement.trim().length === 0
+    )
+
     const pageCompletionMap: Record<WorkbookPageId, boolean> = {
         1: state.identification.leaderName.trim().length > 0 && state.identification.role.trim().length > 0,
         2: true,
-        3: bodySectionCompleted
+        3: bodySectionCompleted,
+        4: objectionSectionCompleted
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -841,7 +1305,7 @@ export function WB6Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb6-print-page wb6-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 3"
+                                data-print-page="Página 1 de 4"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -934,7 +1398,7 @@ export function WB6Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 3"
+                                data-print-page="Página 2 de 4"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1056,7 +1520,7 @@ export function WB6Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 3"
+                                data-print-page="Página 3 de 4"
                                 data-print-title="Lenguaje corporal ejecutivo"
                                 data-print-meta={printMetaLabel}
                             >
@@ -1700,6 +2164,559 @@ export function WB6Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(4) && (
+                            <article
+                                className="wb6-print-page rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 4 de 4"
+                                data-print-title="Manejo de objeciones"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-2">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 font-semibold">Página 4</p>
+                                    <h2 className="text-2xl md:text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900">Manejo de objeciones</h2>
+                                    <p className="text-sm md:text-base text-slate-700 max-w-5xl">
+                                        Responde objeciones con claridad, estabilidad y criterio para sostener presencia ejecutiva, proteger la confianza
+                                        conversacional y convertir fricción en precisión y avance.
+                                    </p>
+                                </header>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Conceptos eje</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionHelp(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <ul className="space-y-2.5">
+                                        {[
+                                            'Objeción: duda, resistencia, desacuerdo, riesgo percibido o falta de claridad frente a una propuesta.',
+                                            'Manejo de objeciones: recibir, leer, ordenar y responder sin defensividad.',
+                                            'Tipos de objeción: contenido, proceso, confianza e identidad/estatus.',
+                                            'Carga emocional: nivel de tensión afectiva que acompaña el cuestionamiento.',
+                                            'Escucha desagregada: separar lo factual, lo emocional y lo político.',
+                                            'Respuesta puente: intervención breve para estabilizar antes de argumentar.',
+                                            'Reencuadre: convertir objeción en criterio útil o condición de calidad.',
+                                            'Verificación de avance: confirmar si la objeción quedó atendida o cambió de forma.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 1 — Cartografía de objeciones recurrentes</h3>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowObjectionExampleStep1(true)}
+                                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Ver ejemplo
+                                            </button>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    objectionCartographyCompleted
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                }`}
+                                            >
+                                                {objectionCartographyCompleted ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1320px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Objeción concreta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Tipo de objeción</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué activó en mí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Cómo respondí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Efecto de mi respuesta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué habría sido más efectivo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {objectionCartography.map((row, rowIndex) => (
+                                                    <tr key={`wb6-objection-cartography-${rowIndex}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.objection}
+                                                                onChange={(event) => updateObjectionCartographyRow(rowIndex, 'objection', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <select
+                                                                value={row.objectionType}
+                                                                onChange={(event) => updateObjectionCartographyRow(rowIndex, 'objectionType', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            >
+                                                                <option value="">Selecciona tipo</option>
+                                                                {OBJECTION_TYPES.map((option) => (
+                                                                    <option key={`wb6-objection-type-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.whatActivatedMe}
+                                                                onChange={(event) => updateObjectionCartographyRow(rowIndex, 'whatActivatedMe', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.response}
+                                                                onChange={(event) => updateObjectionCartographyRow(rowIndex, 'response', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.responseEffect}
+                                                                onChange={(event) => updateObjectionCartographyRow(rowIndex, 'responseEffect', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.betterResponse}
+                                                                onChange={(event) => updateObjectionCartographyRow(rowIndex, 'betterResponse', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {objectionMissingTypeBeforeResponse && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: clasifica primero la objeción (contenido, proceso, confianza o estatus) antes de responder.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveObjectionBlock('Paso 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 2 — Diagnóstico de la objeción</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep2(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Lo que dijo literalmente</span>
+                                            <textarea
+                                                rows={2}
+                                                value={objectionDiagnosis.literal}
+                                                onChange={(event) => updateObjectionDiagnosis('literal', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué emoción o intensidad acompañaba la objeción</span>
+                                            <textarea
+                                                rows={2}
+                                                value={objectionDiagnosis.emotionalIntensity}
+                                                onChange={(event) => updateObjectionDiagnosis('emotionalIntensity', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Qué podría estar protegiendo realmente</span>
+                                            <textarea
+                                                rows={2}
+                                                value={objectionDiagnosis.whatItProtects}
+                                                onChange={(event) => updateObjectionDiagnosis('whatItProtects', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Capa que debo responder primero</span>
+                                            <input
+                                                type="text"
+                                                value={objectionDiagnosis.firstLayerToRespond}
+                                                onChange={(event) => updateObjectionDiagnosis('firstLayerToRespond', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveObjectionBlock('Paso 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 3 — Protocolo ejecutivo de respuesta</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep3(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">1. Recibiré la objeción así</span>
+                                            <textarea
+                                                rows={2}
+                                                value={objectionProtocol.receive}
+                                                onChange={(event) => updateObjectionProtocol('receive', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">2. Mi pregunta de aclaración será</span>
+                                            <textarea
+                                                rows={2}
+                                                value={objectionProtocol.clarificationQuestion}
+                                                onChange={(event) => updateObjectionProtocol('clarificationQuestion', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">3. Mi reconocimiento será</span>
+                                            <textarea
+                                                rows={2}
+                                                value={objectionProtocol.recognition}
+                                                onChange={(event) => updateObjectionProtocol('recognition', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">4. Mi respuesta focal será</span>
+                                            <textarea
+                                                rows={2}
+                                                value={objectionProtocol.focalResponse}
+                                                onChange={(event) => updateObjectionProtocol('focalResponse', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                        <label className="space-y-1">
+                                            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">5. Mi verificación de avance será</span>
+                                            <textarea
+                                                rows={2}
+                                                value={objectionProtocol.advanceVerification}
+                                                onChange={(event) => updateObjectionProtocol('advanceVerification', event.target.value)}
+                                                disabled={isLocked}
+                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-4 py-3 text-sm leading-relaxed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                            />
+                                        </label>
+                                    </div>
+                                    {focalResponseTooLong && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: reduce la respuesta focal a una idea central y un criterio claro.
+                                        </p>
+                                    )}
+                                    {objectionMissingAdvanceVerification && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: incluye cómo comprobarás si la objeción quedó atendida.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveObjectionBlock('Paso 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 4 — Banco de respuestas puente</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep4(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[860px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Escenario</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Mi respuesta puente</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {objectionBridgeBank.map((row, rowIndex) => (
+                                                    <tr key={`wb6-objection-bridge-${row.scenario}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.scenario}</td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.bridgeResponse}
+                                                                onChange={(event) => updateObjectionBridgeRow(rowIndex, 'bridgeResponse', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveObjectionBlock('Paso 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 5 — Laboratorio de reencuadre</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep5(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Objeción original</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Reencuadre útil</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Qué mejora en mi propuesta</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {objectionReframeLab.map((row, rowIndex) => (
+                                                    <tr key={`wb6-objection-reframe-${rowIndex}`}>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.originalObjection}
+                                                                onChange={(event) => updateObjectionReframeRow(rowIndex, 'originalObjection', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.usefulReframe}
+                                                                onChange={(event) => updateObjectionReframeRow(rowIndex, 'usefulReframe', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.proposalImprovement}
+                                                                onChange={(event) => updateObjectionReframeRow(rowIndex, 'proposalImprovement', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {objectionReframeWithoutImprovement && (
+                                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                            Sugerencia: aclara qué criterio útil o mejora concreta te deja esa objeción.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveObjectionBlock('Paso 5')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-lg font-bold text-slate-900">Paso 6 — Test de manejo ejecutivo de objeciones</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep6(true)}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Ver ejemplo
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Pregunta</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Sí</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">No</th>
+                                                    <th className="px-4 py-3 text-xs uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {objectionExecutiveTest.map((row, rowIndex) => (
+                                                    <tr key={`wb6-objection-test-${row.question}`}>
+                                                        <td className="px-4 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">{row.question}</td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`wb6-objection-test-${rowIndex}`}
+                                                                checked={row.verdict === 'yes'}
+                                                                onChange={() => updateObjectionExecutiveTestRow(rowIndex, 'verdict', 'yes')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 border-b border-slate-100">
+                                                            <input
+                                                                type="radio"
+                                                                name={`wb6-objection-test-${rowIndex}`}
+                                                                checked={row.verdict === 'no'}
+                                                                onChange={() => updateObjectionExecutiveTestRow(rowIndex, 'verdict', 'no')}
+                                                                disabled={isLocked}
+                                                                className="h-4 w-4 text-blue-700 border-slate-300 focus:ring-blue-400 disabled:cursor-not-allowed"
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-2 border-b border-slate-100">
+                                                            <input
+                                                                type="text"
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateObjectionExecutiveTestRow(rowIndex, 'adjustment', event.target.value)}
+                                                                disabled={isLocked}
+                                                                placeholder="Ajuste necesario"
+                                                                className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed outline-none focus:ring-2 focus:ring-blue-300"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveObjectionBlock('Paso 6')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar bloque
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                    <h3 className="text-base md:text-lg font-bold text-slate-900">Cierre de la sección</h3>
+                                    <ul className="mt-4 space-y-2.5">
+                                        {[
+                                            'Qué tipos de objeciones enfrento con más frecuencia.',
+                                            'Qué capa de la objeción debo leer antes de responder.',
+                                            'Cómo usar una secuencia más ejecutiva y menos reactiva.',
+                                            'Cómo transformar objeciones en criterios útiles.',
+                                            'Cómo sostener autoridad sin perder escucha ni confianza.'
+                                        ].map((item) => (
+                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-5 flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                objectionSectionCompleted
+                                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                    : objectionSectionMinimal
+                                                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                                      : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                            }`}
+                                        >
+                                            {objectionSectionCompleted
+                                                ? 'Sección completada'
+                                                : objectionSectionMinimal
+                                                  ? 'Pendiente (falta completar bloques)'
+                                                  : 'Sección pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => savePage(4)}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-blue-700 text-white px-5 py-2.5 text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Guardar página 4
+                                        </button>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {showBodyHelp && !isExportingAll && (
                             <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
                                 <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
@@ -1886,6 +2903,218 @@ export function WB6Digital() {
                                     <div className="space-y-3 text-sm text-slate-700">
                                         <p><span className="font-semibold">Señal débil:</span> explicar calma mientras el cuerpo se mueve sin parar.</p>
                                         <p><span className="font-semibold">Señal mejorada:</span> sostener idea con torso estable, manos visibles y respiración regulada.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showObjectionHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Manejo de objeciones</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>• Una objeción no siempre es ataque: muchas veces contiene riesgo, confianza o necesidad de precisión.</p>
+                                        <p>• No todas las objeciones se responden igual: primero diagnostica tipo y capa, luego responde.</p>
+                                        <p>• Usa secuencia ejecutiva: recibir, aclarar, reconocer, responder y verificar avance.</p>
+                                        <p>• La calidad de la respuesta combina escucha, foco, criterio y verificación final.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showObjectionExampleStep1 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 1 (Cartografía de objeciones)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep1(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[1240px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Objeción</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Tipo</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Qué activó en mí</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Cómo respondí</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Efecto</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Más efectivo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_OBJECTION_CARTOGRAPHY.map((row, rowIndex) => (
+                                                    <tr key={`wb6-objection-modal-step1-${rowIndex}`}>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.objection}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.objectionType}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.whatActivatedMe}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.response}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.responseEffect}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.betterResponse}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showObjectionExampleStep2 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 2 (Diagnóstico de la objeción)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep2(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Lo que dijo literalmente:</span> {EXAMPLE_OBJECTION_DIAGNOSIS.literal}</p>
+                                        <p><span className="font-semibold">Emoción / intensidad:</span> {EXAMPLE_OBJECTION_DIAGNOSIS.emotionalIntensity}</p>
+                                        <p><span className="font-semibold">Qué podría estar protegiendo:</span> {EXAMPLE_OBJECTION_DIAGNOSIS.whatItProtects}</p>
+                                        <p><span className="font-semibold">Capa a responder primero:</span> {EXAMPLE_OBJECTION_DIAGNOSIS.firstLayerToRespond}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showObjectionExampleStep3 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 3 (Protocolo ejecutivo)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep3(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2.5 text-sm text-slate-700">
+                                        <p><span className="font-semibold">Recibir:</span> {EXAMPLE_OBJECTION_PROTOCOL.receive}</p>
+                                        <p><span className="font-semibold">Aclarar:</span> {EXAMPLE_OBJECTION_PROTOCOL.clarificationQuestion}</p>
+                                        <p><span className="font-semibold">Reconocer:</span> {EXAMPLE_OBJECTION_PROTOCOL.recognition}</p>
+                                        <p><span className="font-semibold">Responder:</span> {EXAMPLE_OBJECTION_PROTOCOL.focalResponse}</p>
+                                        <p><span className="font-semibold">Verificar avance:</span> {EXAMPLE_OBJECTION_PROTOCOL.advanceVerification}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showObjectionExampleStep4 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 4 (Banco de respuestas puente)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep4(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[760px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Escenario</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Respuesta puente</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_BRIDGE_BANK.map((row) => (
+                                                    <tr key={`wb6-objection-modal-step4-${row.scenario}`}>
+                                                        <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-slate-100">{row.scenario}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.bridgeResponse}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showObjectionExampleStep5 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 5 (Laboratorio de reencuadre)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep5(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[980px] text-left border-separate border-spacing-0">
+                                            <thead>
+                                                <tr>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Objeción original</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Reencuadre útil</th>
+                                                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500 border-b border-slate-200">Qué mejora</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {EXAMPLE_REFRAME_LAB.map((row, rowIndex) => (
+                                                    <tr key={`wb6-objection-modal-step5-${rowIndex}`}>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.originalObjection}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.usefulReframe}</td>
+                                                        <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-100">{row.proposalImprovement}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showObjectionExampleStep6 && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900">Ejemplo — Paso 6 (Test ejecutivo)</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowObjectionExampleStep6(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <p>
+                                            <span className="font-semibold">Señal débil:</span> recibir una objeción como ataque y responder desde
+                                            justificación acelerada.
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">Señal mejorada:</span> aclarar primero, reconocer la preocupación central
+                                            y responder con foco y verificación final.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
