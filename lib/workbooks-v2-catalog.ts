@@ -56,8 +56,18 @@ export const WORKBOOKS_V2_CATALOG: WorkbookV2CatalogItem[] = [
         code: 'WB5',
         title: 'Comunicación ejecutiva y estratégica',
         pillar: 'Shine Out',
-        statusLabel: 'Sección 1 activa',
-        progress: 28,
-        summary: 'Portada y presentación completas, más la primera sección operativa de Comunicación de impacto con estructura guiada y guardado por bloques.'
+        statusLabel: 'Construcción activa',
+        progress: 40,
+        summary: 'Estructura digital en desarrollo con portada, presentación y bloques operativos iniciales para comunicación, influencia y conversaciones estratégicas.'
+    },
+    {
+        id: 'wb6',
+        slug: 'wb6',
+        code: 'WB6',
+        title: 'Lenguaje verbal y no verbal de impacto',
+        pillar: 'Shine Out',
+        statusLabel: 'Portada y presentación activas',
+        progress: 15,
+        summary: 'Portada e identificación más presentación informativa inicial, con guardado, continuidad por sesión y exportación completa PDF/HTML.'
     }
 ]
