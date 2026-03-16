@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { title, description, driveId, type, metadata } = body
+        const { title, description, driveId, type, metadata, content } = body
 
         // Generate a unique slug
         const slug = (title || 'workbook')
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
                 type,
                 slug,
                 status: 'Borrador',
+                content: content || null,
                 metadata: metadata || {
                     objectives: [],
                     audience: '',
