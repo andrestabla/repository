@@ -19,9 +19,11 @@ import {
 } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
 type YesNoAnswer = '' | 'yes' | 'no'
 type RatingValue = '' | '1' | '2' | '3' | '4' | '5'
+type MentorLevel = '' | 'N1' | 'N2' | 'N3' | 'N4'
+type MentorDecision = '' | 'Consolidado' | 'En desarrollo' | 'Prioritario'
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -153,6 +155,101 @@ type LinkedInOptimizationCheckRow = {
     adjustment: string
 }
 
+type SocialCauseLegitimacyRow = {
+    possibleCause: string
+    storyConnection: RatingValue
+    purposeCoherence: RatingValue
+    contributionCapacity: RatingValue
+    externalCredibility: RatingValue
+    footprintPotential: RatingValue
+}
+
+type SocialCauseMapRow = {
+    element: string
+    formulation: string
+}
+
+type SocialCauseActivationRow = {
+    vehicle: string
+    concreteAction: string
+    impactedAudience: string
+    visibleSignal: string
+}
+
+type SocialCauseLegitimacyCheckRow = {
+    question: string
+    verdict: YesNoAnswer
+    adjustment: string
+}
+
+type ContentPlanSignal = {
+    perception90Days: string
+    centralIdea: string
+    sustainingTone: string
+    avoidProjecting: string
+    connectionToBrand: string
+}
+
+type ContentPlanPillarRow = {
+    pillar: string
+    whatToShow: string
+    reinforcedPerception: string
+}
+
+type ContentPlanMatrixRow = {
+    piece: string
+    pillar: string
+    channel: string
+    objective: string
+    brandSignal: string
+}
+
+type ContentPlanCalendarRow = {
+    horizon: string
+    stretchObjective: string
+    prioritizedContent: string
+    mainChannel: string
+    expectedResult: string
+}
+
+type ContentPlanBacklogRow = {
+    piece: string
+    pillar: string
+    horizon: string
+    channelFormat: string
+    objective: string
+    priority: string
+}
+
+type ContentPlanCadence = {
+    minimumCadence: string
+    channelRhythm: string
+    creationBlock: string
+    distributionBlock: string
+    reviewBlock: string
+    learningCriteria: string
+}
+
+type ContentPlanCheckRow = {
+    question: string
+    verdict: YesNoAnswer
+    adjustment: string
+}
+
+type EvaluationMentorRow = {
+    criterion: string
+    level: MentorLevel
+    evidence: string
+    decision: MentorDecision
+}
+
+type EvaluationLeaderRow = {
+    question: string
+    response: string
+    evidence: string
+    action: string
+}
+
 type WB9State = {
     identification: {
         leaderName: string
@@ -204,6 +301,30 @@ type WB9State = {
         profileSections: LinkedInProfileSectionRow[]
         optimizationChecks: LinkedInOptimizationCheckRow[]
     }
+    socialCause: {
+        possibleCauses: string[]
+        legitimacyMatrix: SocialCauseLegitimacyRow[]
+        strategicCause: string
+        causeMap: SocialCauseMapRow[]
+        activationVehicles: SocialCauseActivationRow[]
+        legitimacyChecks: SocialCauseLegitimacyCheckRow[]
+    }
+    contentPlan: {
+        centralSignal: ContentPlanSignal
+        pillars: ContentPlanPillarRow[]
+        contentMatrix: ContentPlanMatrixRow[]
+        calendar: ContentPlanCalendarRow[]
+        backlog: ContentPlanBacklogRow[]
+        cadence: ContentPlanCadence
+        coherenceChecks: ContentPlanCheckRow[]
+    }
+    evaluation: {
+        mentorRows: EvaluationMentorRow[]
+        mentorGeneralNotes: string
+        mentorGlobalDecision: MentorDecision
+        leaderRows: EvaluationLeaderRow[]
+        agreementsSynthesis: string
+    }
 }
 
 const PAGES: WorkbookPage[] = [
@@ -213,7 +334,10 @@ const PAGES: WorkbookPage[] = [
     { id: 4, label: '4. Marca ejecutiva', shortLabel: 'Marca ejecutiva' },
     { id: 5, label: '5. Valores de marca', shortLabel: 'Valores de marca' },
     { id: 6, label: '6. Arquetipo de liderazgo', shortLabel: 'Arquetipo' },
-    { id: 7, label: '7. Perfil LinkedIn optimizado', shortLabel: 'LinkedIn' }
+    { id: 7, label: '7. Perfil LinkedIn optimizado', shortLabel: 'LinkedIn' },
+    { id: 8, label: '8. Causa social estratégica', shortLabel: 'Causa social' },
+    { id: 9, label: '9. Plan de contenido 30-60-90 días', shortLabel: '30-60-90' },
+    { id: 10, label: '10. Evaluación', shortLabel: 'Evaluación' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb9-state'
@@ -831,6 +955,447 @@ const LINKEDIN_PROFILE_SECTION_EXAMPLE = [
     ['Pensamiento visible', 'Baja consistencia', 'Activar contenido útil y regular']
 ] as const
 
+const SOCIAL_CAUSE_CONCEPTS = [
+    'Causa social estratégica: causa o problema social al que tu marca ejecutiva decide contribuir de forma coherente, no como accesorio reputacional, sino como extensión real de propósito, valores y trayectoria.',
+    'Impacto social y humano: influencia positiva que el líder ejerce sobre personas, organizaciones y comunidades mediante decisiones responsables y orientación al bien común.',
+    'Legado personal y trascendencia: capacidad de dejar una huella duradera que trascienda al individuo y conecte acciones y valores con impacto positivo en otros.',
+    'Propósito expandido: versión del propósito que no se agota en carrera, rol o éxito individual, sino que se proyecta hacia una contribución de mayor escala.',
+    'Causa oportunista: causa elegida por conveniencia discursiva o reputacional, sin conexión real con trayectoria, decisiones o compromiso sostenido.',
+    'Causa encarnada: causa que ya tiene raíces visibles en tu historia, tus preocupaciones, tus decisiones o tu forma de liderar.',
+    'Territorio de contribución: espacio social, humano, educativo, económico o ambiental donde tu marca puede generar una diferencia creíble.',
+    'Tesis de impacto: formulación clara de la transformación social que quieres favorecer.',
+    'Coherencia causa-marca: alineación entre propósito, valores, arquetipo, promesa de valor y causa social.',
+    'Vehículo de contribución: medio concreto a través del cual tu causa puede expresarse.',
+    'Huella colectiva: evidencia de que tu liderazgo no solo produce resultados, sino también bienestar, desarrollo, empleo, autonomía o transformación más allá de ti.',
+    'Señal de legitimidad social: prueba visible de que tu causa no es declarativa, sino respaldada por acciones, elecciones o compromisos concretos.'
+] as const
+
+const SOCIAL_CAUSE_SECTION_CLOSURE = [
+    'Qué causa social realmente conversa con tu marca ejecutiva.',
+    'Por qué esa causa es creíble en tu trayectoria.',
+    'Qué valores y propósito la sostienen.',
+    'Cómo se hará visible en tu liderazgo.',
+    'Cómo conecta tu marca con una huella que trasciende el logro individual.'
+] as const
+
+const SOCIAL_CAUSE_INVENTORY_EXAMPLE = [
+    'Desarrollo de liderazgo humano en Latinoamérica.',
+    'Empresas más sostenibles y competitivas.',
+    'Generación de empleo y crecimiento económico con sentido.',
+    'Desarrollo de talento y equipos autónomos.',
+    'Transformación de mentalidades empresariales.',
+    'Crecimiento sin sacrificar cultura ni personas.'
+] as const
+
+const SOCIAL_CAUSE_MATRIX_EXAMPLE = [
+    {
+        possibleCause: 'Cambio de mentalidad empresarial en Latinoamérica',
+        storyConnection: '5' as RatingValue,
+        purposeCoherence: '5' as RatingValue,
+        contributionCapacity: '4' as RatingValue,
+        externalCredibility: '5' as RatingValue,
+        footprintPotential: '5' as RatingValue
+    },
+    {
+        possibleCause: 'Desarrollo de equipos autónomos',
+        storyConnection: '5' as RatingValue,
+        purposeCoherence: '4' as RatingValue,
+        contributionCapacity: '5' as RatingValue,
+        externalCredibility: '4' as RatingValue,
+        footprintPotential: '4' as RatingValue
+    },
+    {
+        possibleCause: 'Sostenibilidad competitiva',
+        storyConnection: '4' as RatingValue,
+        purposeCoherence: '5' as RatingValue,
+        contributionCapacity: '4' as RatingValue,
+        externalCredibility: '5' as RatingValue,
+        footprintPotential: '5' as RatingValue
+    },
+    {
+        possibleCause: 'Empleo y crecimiento con impacto',
+        storyConnection: '4' as RatingValue,
+        purposeCoherence: '4' as RatingValue,
+        contributionCapacity: '3' as RatingValue,
+        externalCredibility: '4' as RatingValue,
+        footprintPotential: '5' as RatingValue
+    }
+] as const
+
+const SOCIAL_CAUSE_MAP_ELEMENTS = [
+    'Propósito integrado',
+    'Promesa de valor',
+    'Valores de marca que sostienen la causa',
+    'Arquetipo que mejor la expresa',
+    'Causa social elegida',
+    'Contribución visible que puedo hacer'
+] as const
+
+const SOCIAL_CAUSE_MAP_EXAMPLE = [
+    'Estoy aquí para impulsar el cambio e inspirar crecimiento real en personas y organizaciones.',
+    'Transformo la cadena de suministro en una ventaja competitiva con impacto sostenible.',
+    'Honestidad, coherencia, visión e impacto colectivo.',
+    'El Sabio Estratega.',
+    'Impulsar el cambio de mentalidad en Latinoamérica.',
+    'Compartir criterio, desarrollar líderes y mostrar que crecimiento y humanidad sí pueden convivir.'
+] as const
+
+const SOCIAL_CAUSE_ACTIVATION_EXAMPLE = [
+    {
+        vehicle: 'Contenido LinkedIn',
+        concreteAction: 'Publicar ideas sobre liderazgo, legado y crecimiento sostenible.',
+        impactedAudience: 'Líderes y directivos.',
+        visibleSignal: 'Mayor conversación cualificada.'
+    },
+    {
+        vehicle: 'Mentoría',
+        concreteAction: 'Acompañar líderes en transición.',
+        impactedAudience: 'Directivos o gerentes.',
+        visibleSignal: 'Casos de desarrollo visibles.'
+    },
+    {
+        vehicle: 'Desarrollo de equipos',
+        concreteAction: 'Delegar, formar y multiplicar autonomía.',
+        impactedAudience: 'Equipo propio.',
+        visibleSignal: 'Sucesores más fuertes.'
+    },
+    {
+        vehicle: 'Posicionamiento ejecutivo',
+        concreteAction: 'Hablar de empresas sostenibles y humanas en espacios clave.',
+        impactedAudience: 'Stakeholders internos y externos.',
+        visibleSignal: 'Reconocimiento más claro de la causa.'
+    }
+] as const
+
+const SOCIAL_CAUSE_TEST_QUESTIONS = [
+    '¿Mi causa conversa con mi propósito?',
+    '¿Es creíble desde mi trayectoria?',
+    '¿Está sostenida por valores visibles?',
+    '¿Tengo vehículos concretos de activación?',
+    '¿Mi audiencia la vería consistente?',
+    '¿Amplía mi marca y no la dispersa?'
+] as const
+
+const CONTENT_PLAN_CONCEPTS = [
+    'Plan de contenido 30-60-90: secuencia estratégica de visibilidad organizada por tres horizontes de tiempo: activación, consolidación y expansión.',
+    'Contenido de marca ejecutiva: pieza de comunicación diseñada para hacer visible criterio, experiencia, valores, causa y propuesta de valor, no solo actividad o presencia superficial.',
+    'Cadencia de marca: frecuencia mínima sostenible con la que una marca se vuelve visible sin depender de improvisación.',
+    'Pilar de contenido: eje temático recurrente que organiza el contenido y evita dispersión.',
+    'Contenido de autoridad: contenido que demuestra criterio, profundidad y experiencia.',
+    'Contenido de identidad: contenido que hace visible estilo, valores, propósito o arquetipo.',
+    'Contenido de legado: contenido que conecta la marca con impacto colectivo, desarrollo de otros o causa social.',
+    'Contenido de prueba: contenido que muestra evidencia, caso, resultado, experiencia o señal verificable.',
+    'Canal de expresión: superficie donde la marca se vuelve visible, como LinkedIn, correo, newsletter, conversación, eventos o espacios internos.',
+    'Ritmo de posicionamiento: secuencia con la que una marca pasa de estar formulada a ser reconocida.',
+    'Consistencia narrativa: repetición coherente de señales, ideas y tono a lo largo del tiempo.',
+    'Arquitectura 30-60-90: diseño escalonado donde en 30 días se activa la presencia mínima viable, en 60 días se consolida la señal y en 90 días se amplifica el posicionamiento y la reputación.',
+    'Retorno reputacional: efecto acumulado de la visibilidad en reconocimiento, autoridad, conversaciones, oportunidades e influencia.'
+] as const
+
+const CONTENT_PLAN_SECTION_CLOSURE = [
+    'Qué percepción quieres instalar en 90 días.',
+    'Qué pilares sostendrán tu contenido.',
+    'Qué piezas concretas vas a producir.',
+    'Cómo se organizará tu cadencia.',
+    'Cómo convertir la marca ejecutiva en una presencia visible, consistente y útil.'
+] as const
+
+const CONTENT_PLAN_SIGNAL_FIELDS = [
+    {
+        key: 'perception90Days',
+        label: 'La percepción que quiero instalar en 90 días es',
+        placeholder: 'Qué impresión quieres dejar al final del plan.'
+    },
+    {
+        key: 'centralIdea',
+        label: 'La idea central que quiero repetir es',
+        placeholder: 'Qué idea central debe repetirse de forma sostenida.'
+    },
+    {
+        key: 'sustainingTone',
+        label: 'El tono que debe sostener esa señal es',
+        placeholder: 'Qué tono debe sostener esa visibilidad.'
+    },
+    {
+        key: 'avoidProjecting',
+        label: 'Lo que no quiero proyectar es',
+        placeholder: 'Qué no quieres que tu contenido transmita.'
+    },
+    {
+        key: 'connectionToBrand',
+        label: 'Esta señal se conecta con mi marca ejecutiva porque',
+        placeholder: 'Cómo se conecta esta señal con tu marca.'
+    }
+] as const
+
+type ContentPlanSignalFieldKey = (typeof CONTENT_PLAN_SIGNAL_FIELDS)[number]['key']
+
+const CONTENT_PLAN_SIGNAL_EXAMPLE: Record<ContentPlanSignalFieldKey, string> = {
+    perception90Days: 'Que soy un líder con visión, serenidad y capacidad de transformar complejidad en dirección.',
+    centralIdea: 'Liderazgo sereno con impacto estratégico.',
+    sustainingTone: 'Claro, reflexivo, firme, humano y confiable.',
+    avoidProjecting: 'Improvisación, grandilocuencia o autopromoción vacía.',
+    connectionToBrand: 'Resume mi propósito, mi arquetipo y mi propuesta de valor.'
+}
+
+const CONTENT_PLAN_PILLARS = ['Autoridad', 'Identidad', 'Legado / causa'] as const
+
+const CONTENT_PLAN_PILLAR_EXAMPLE = [
+    {
+        pillar: 'Autoridad',
+        whatToShow: 'Lecturas estratégicas, aprendizajes, experiencia y criterio.',
+        reinforcedPerception: 'Solidez y autoridad.'
+    },
+    {
+        pillar: 'Identidad',
+        whatToShow: 'Valores, propósito, estilo de liderazgo y decisiones.',
+        reinforcedPerception: 'Coherencia y autenticidad.'
+    },
+    {
+        pillar: 'Legado / causa',
+        whatToShow: 'Desarrollo de otros, empresas humanas y visión de impacto.',
+        reinforcedPerception: 'Huella y trascendencia.'
+    }
+] as const
+
+const CONTENT_PLAN_MATRIX_EXAMPLE = [
+    {
+        piece: 'Qué significa liderar con serenidad bajo presión',
+        pillar: 'Identidad',
+        channel: 'LinkedIn',
+        objective: 'Autoridad + identidad',
+        brandSignal: 'Calma con criterio'
+    },
+    {
+        piece: 'Cómo convertir complejidad en decisiones claras',
+        pillar: 'Autoridad',
+        channel: 'LinkedIn / newsletter',
+        objective: 'Autoridad',
+        brandSignal: 'Claridad estratégica'
+    },
+    {
+        piece: 'Empresas humanas y competitivas: falso dilema',
+        pillar: 'Legado / causa',
+        channel: 'LinkedIn / evento',
+        objective: 'Legitimidad + causa',
+        brandSignal: 'Impacto colectivo'
+    },
+    {
+        piece: 'Aprendizajes de formar otros líderes',
+        pillar: 'Legado / identidad',
+        channel: 'LinkedIn / conversación',
+        objective: 'Confianza',
+        brandSignal: 'Liderazgo que trasciende'
+    }
+] as const
+
+const CONTENT_PLAN_HORIZONS = ['30 días', '60 días', '90 días'] as const
+
+const CONTENT_PLAN_CALENDAR_EXAMPLE = [
+    {
+        horizon: '30 días',
+        stretchObjective: 'Activar presencia y coherencia básica.',
+        prioritizedContent: '6 piezas entre autoridad e identidad.',
+        mainChannel: 'LinkedIn + ajuste de perfil.',
+        expectedResult: 'Señal inicial más clara.'
+    },
+    {
+        horizon: '60 días',
+        stretchObjective: 'Consolidar tono y pilares.',
+        prioritizedContent: 'Contenido más profundo + causa social.',
+        mainChannel: 'LinkedIn + conversaciones clave.',
+        expectedResult: 'Mayor reconocimiento y consistencia.'
+    },
+    {
+        horizon: '90 días',
+        stretchObjective: 'Amplificar reputación y abrir oportunidades.',
+        prioritizedContent: 'Contenidos de prueba, legado y visión.',
+        mainChannel: 'LinkedIn + espacios externos / internos.',
+        expectedResult: 'Más autoridad, más conversaciones, más tracción.'
+    }
+] as const
+
+const CONTENT_PLAN_BACKLOG_EXAMPLE = [
+    {
+        piece: 'Liderar desde la claridad y no desde la urgencia',
+        pillar: 'Identidad',
+        horizon: '30 días',
+        channelFormat: 'LinkedIn post',
+        objective: 'Instalar tono',
+        priority: 'Alta'
+    },
+    {
+        piece: 'Qué vuelve estratégica una operación',
+        pillar: 'Autoridad',
+        horizon: '30 días',
+        channelFormat: 'LinkedIn carrusel',
+        objective: 'Autoridad',
+        priority: 'Alta'
+    },
+    {
+        piece: 'Mi causa: empresas humanas y competitivas',
+        pillar: 'Legado',
+        horizon: '30 días',
+        channelFormat: 'LinkedIn post',
+        objective: 'Causa + coherencia',
+        priority: 'Alta'
+    },
+    {
+        piece: '3 decisiones que cambian una cultura',
+        pillar: 'Autoridad',
+        horizon: '60 días',
+        channelFormat: 'Artículo corto',
+        objective: 'Profundidad',
+        priority: 'Alta'
+    },
+    {
+        piece: 'Qué significa dejar legado desde un rol ejecutivo',
+        pillar: 'Legado',
+        horizon: '60 días',
+        channelFormat: 'Post / video corto',
+        objective: 'Huella',
+        priority: 'Media-alta'
+    },
+    {
+        piece: 'Cómo se forma un sucesor de verdad',
+        pillar: 'Legado / identidad',
+        horizon: '60 días',
+        channelFormat: 'LinkedIn post',
+        objective: 'Liderazgo multiplicador',
+        priority: 'Alta'
+    },
+    {
+        piece: 'Caso: transformar complejidad en dirección',
+        pillar: 'Autoridad',
+        horizon: '90 días',
+        channelFormat: 'Carrusel / PDF',
+        objective: 'Prueba reputacional',
+        priority: 'Alta'
+    },
+    {
+        piece: 'Lo que aprendí liderando en presión',
+        pillar: 'Identidad',
+        horizon: '90 días',
+        channelFormat: 'Post / conversación',
+        objective: 'Humanizar autoridad',
+        priority: 'Media'
+    },
+    {
+        piece: 'Por qué el futuro necesita líderes más humanos y más estratégicos',
+        pillar: 'Legado',
+        horizon: '90 días',
+        channelFormat: 'Artículo / keynote / post largo',
+        objective: 'Amplificación',
+        priority: 'Alta'
+    }
+] as const
+
+const CONTENT_PLAN_CADENCE_FIELDS = [
+    { key: 'minimumCadence', label: 'Cadencia mínima total', placeholder: 'Ej. 2 piezas semanales + 1 conversación estratégica cada 15 días.' },
+    { key: 'channelRhythm', label: 'Ritmo por canal', placeholder: 'Cómo se reparte la visibilidad por canal.' },
+    { key: 'creationBlock', label: 'Bloque de creación', placeholder: 'Cuándo crearás el contenido.' },
+    { key: 'distributionBlock', label: 'Bloque de distribución', placeholder: 'Cuándo publicarás o moverás las piezas.' },
+    { key: 'reviewBlock', label: 'Bloque de revisión', placeholder: 'Cuándo revisarás el desempeño del plan.' },
+    { key: 'learningCriteria', label: 'Criterio de aprendizaje', placeholder: 'Qué aprenderás o medirás para ajustar.' }
+] as const
+
+type ContentPlanCadenceFieldKey = (typeof CONTENT_PLAN_CADENCE_FIELDS)[number]['key']
+
+const CONTENT_PLAN_CADENCE_EXAMPLE: Record<ContentPlanCadenceFieldKey, string> = {
+    minimumCadence: '2 piezas semanales + 1 conversación estratégica cada 15 días.',
+    channelRhythm: 'LinkedIn semanal, espacios clave mensuales, ajustes del perfil permanentes.',
+    creationBlock: 'Martes 7:00-8:00 a. m.',
+    distributionBlock: 'Jueves y viernes.',
+    reviewBlock: 'Último viernes del mes.',
+    learningCriteria: 'Identificar qué temas generan más reconocimiento, conversación y autoridad.'
+}
+
+const CONTENT_PLAN_TEST_QUESTIONS = [
+    '¿El plan hace visible mi marca y no solo actividad?',
+    '¿Los pilares están bien conectados con mi identidad?',
+    '¿El 30-60-90 tiene progresión clara?',
+    '¿Tengo backlog concreto y priorizado?',
+    '¿La cadencia es sostenible?',
+    '¿Este plan puede fortalecer reputación externa?'
+] as const
+
+const MENTOR_LEVEL_OPTIONS: MentorLevel[] = ['N1', 'N2', 'N3', 'N4']
+const MENTOR_DECISION_OPTIONS: MentorDecision[] = ['Consolidado', 'En desarrollo', 'Prioritario']
+
+const WB9_MENTOR_INSTRUCTIONS = [
+    'Evalúa cada criterio con base en evidencia observable (idealmente de los últimos 90 días).',
+    'Marca un solo nivel por criterio (N1, N2, N3 o N4).',
+    'Registra comentario u observación concreta por criterio (hechos, conversación o conducta observada).',
+    'Define decisión por criterio: Consolidado, En desarrollo o Prioritario.',
+    'Cierra el WB con observaciones generales y una decisión global de seguimiento.'
+] as const
+
+const WB9_MENTOR_LEVEL_REFERENCE = [
+    {
+        level: 'Nivel 1 – Declarativo',
+        descriptor: 'Posicionamiento difuso; decisiones incoherentes.'
+    },
+    {
+        level: 'Nivel 2 – Consciente',
+        descriptor: 'Reconoce brechas entre identidad y reputación.'
+    },
+    {
+        level: 'Nivel 3 – Integrado',
+        descriptor: 'Marca clara; decisiones alineadas con valores.'
+    },
+    {
+        level: 'Nivel 4 – Alineación Estratégica',
+        descriptor: 'Reputación sólida; forma sucesores y deja huella visible.'
+    }
+] as const
+
+const WB9_MENTOR_EVALUATION_CRITERIA = [
+    'Claridad de marca personal',
+    'Coherencia propósito-posicionamiento',
+    'Integración ética en decisiones',
+    'Desarrollo de otros líderes',
+    'Consistencia entre discurso y reputación externa'
+] as const
+
+const WB9_LEADER_INSTRUCTIONS = [
+    'Responde cada pregunta desde hechos concretos y recientes, no desde intención.',
+    'Incluye al menos un ejemplo o evidencia por respuesta.',
+    'Define una acción o compromiso de 30 días para cada respuesta clave.',
+    'Usa este bloque como insumo para acordar el plan de desarrollo con el mentor.'
+] as const
+
+const WB9_LEADER_EVALUATION_QUESTIONS = [
+    '¿Qué huella estoy dejando hoy en mi equipo y organización?',
+    '¿Mi reputación coincide con mi intención identitaria?',
+    '¿Estoy desarrollando sucesores o centralizando poder?',
+    '¿Qué incoherencia pública debo corregir?',
+    '¿Cómo describirían mi marca ejecutiva tres stakeholders clave?'
+] as const
+
+const createDefaultEvaluationData = (): WB9State['evaluation'] => ({
+    mentorRows: WB9_MENTOR_EVALUATION_CRITERIA.map((criterion) => ({
+        criterion,
+        level: '' as MentorLevel,
+        evidence: '',
+        decision: '' as MentorDecision
+    })),
+    mentorGeneralNotes: '',
+    mentorGlobalDecision: '' as MentorDecision,
+    leaderRows: WB9_LEADER_EVALUATION_QUESTIONS.map((question) => ({
+        question,
+        response: '',
+        evidence: '',
+        action: ''
+    })),
+    agreementsSynthesis: ''
+})
+
+const isMentorEvaluationRowComplete = (row: EvaluationMentorRow): boolean =>
+    row.level !== '' && row.evidence.trim().length > 0 && row.decision !== ''
+
+const isLeaderEvaluationRowComplete = (row: EvaluationLeaderRow): boolean =>
+    row.response.trim().length > 0 && row.evidence.trim().length > 0 && row.action.trim().length > 0
+
 const DEFAULT_STATE: WB9State = {
     identification: {
         leaderName: '',
@@ -965,7 +1530,84 @@ const DEFAULT_STATE: WB9State = {
             verdict: '' as YesNoAnswer,
             adjustment: ''
         }))
-    }
+    },
+    socialCause: {
+        possibleCauses: Array.from({ length: 6 }, () => ''),
+        legitimacyMatrix: Array.from({ length: 4 }, () => ({
+            possibleCause: '',
+            storyConnection: '' as RatingValue,
+            purposeCoherence: '' as RatingValue,
+            contributionCapacity: '' as RatingValue,
+            externalCredibility: '' as RatingValue,
+            footprintPotential: '' as RatingValue
+        })),
+        strategicCause: '',
+        causeMap: SOCIAL_CAUSE_MAP_ELEMENTS.map((element) => ({
+            element,
+            formulation: ''
+        })),
+        activationVehicles: Array.from({ length: 4 }, () => ({
+            vehicle: '',
+            concreteAction: '',
+            impactedAudience: '',
+            visibleSignal: ''
+        })),
+        legitimacyChecks: SOCIAL_CAUSE_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
+    },
+    contentPlan: {
+        centralSignal: {
+            perception90Days: '',
+            centralIdea: '',
+            sustainingTone: '',
+            avoidProjecting: '',
+            connectionToBrand: ''
+        },
+        pillars: CONTENT_PLAN_PILLARS.map((pillar) => ({
+            pillar,
+            whatToShow: '',
+            reinforcedPerception: ''
+        })),
+        contentMatrix: Array.from({ length: 4 }, () => ({
+            piece: '',
+            pillar: '',
+            channel: '',
+            objective: '',
+            brandSignal: ''
+        })),
+        calendar: CONTENT_PLAN_HORIZONS.map((horizon) => ({
+            horizon,
+            stretchObjective: '',
+            prioritizedContent: '',
+            mainChannel: '',
+            expectedResult: ''
+        })),
+        backlog: Array.from({ length: 9 }, () => ({
+            piece: '',
+            pillar: '',
+            horizon: '',
+            channelFormat: '',
+            objective: '',
+            priority: ''
+        })),
+        cadence: {
+            minimumCadence: '',
+            channelRhythm: '',
+            creationBlock: '',
+            distributionBlock: '',
+            reviewBlock: '',
+            learningCriteria: ''
+        },
+        coherenceChecks: CONTENT_PLAN_TEST_QUESTIONS.map((question) => ({
+            question,
+            verdict: '' as YesNoAnswer,
+            adjustment: ''
+        }))
+    },
+    evaluation: createDefaultEvaluationData()
 }
 
 const INPUT_CLASS =
@@ -1023,6 +1665,23 @@ const normalizeState = (raw: unknown): WB9State => {
     const rawLinkedInAbout = Array.isArray(linkedInProfile.aboutMatrix) ? linkedInProfile.aboutMatrix : []
     const rawLinkedInSections = Array.isArray(linkedInProfile.profileSections) ? linkedInProfile.profileSections : []
     const rawLinkedInChecks = Array.isArray(linkedInProfile.optimizationChecks) ? linkedInProfile.optimizationChecks : []
+    const socialCause = (parsed.socialCause ?? {}) as Record<string, unknown>
+    const rawPossibleCauses = Array.isArray(socialCause.possibleCauses) ? socialCause.possibleCauses : []
+    const rawLegitimacyMatrix = Array.isArray(socialCause.legitimacyMatrix) ? socialCause.legitimacyMatrix : []
+    const rawCauseMap = Array.isArray(socialCause.causeMap) ? socialCause.causeMap : []
+    const rawActivationVehicles = Array.isArray(socialCause.activationVehicles) ? socialCause.activationVehicles : []
+    const rawLegitimacyChecks = Array.isArray(socialCause.legitimacyChecks) ? socialCause.legitimacyChecks : []
+    const contentPlan = (parsed.contentPlan ?? {}) as Record<string, unknown>
+    const rawCentralSignal = (contentPlan.centralSignal ?? {}) as Record<string, unknown>
+    const rawPillars = Array.isArray(contentPlan.pillars) ? contentPlan.pillars : []
+    const rawContentMatrix = Array.isArray(contentPlan.contentMatrix) ? contentPlan.contentMatrix : []
+    const rawCalendar = Array.isArray(contentPlan.calendar) ? contentPlan.calendar : []
+    const rawBacklog = Array.isArray(contentPlan.backlog) ? contentPlan.backlog : []
+    const rawCadence = (contentPlan.cadence ?? {}) as Record<string, unknown>
+    const rawContentPlanChecks = Array.isArray(contentPlan.coherenceChecks) ? contentPlan.coherenceChecks : []
+    const evaluation = (parsed.evaluation ?? {}) as Record<string, unknown>
+    const rawMentorRows = Array.isArray(evaluation.mentorRows) ? evaluation.mentorRows : []
+    const rawLeaderRows = Array.isArray(evaluation.leaderRows) ? evaluation.leaderRows : []
 
     return {
         identification: {
@@ -1212,6 +1871,136 @@ const normalizeState = (raw: unknown): WB9State => {
                     adjustment: readString(rawRow.adjustment)
                 }
             })
+        },
+        socialCause: {
+            possibleCauses: Array.from({ length: 6 }, (_, index) => readString(rawPossibleCauses[index])),
+            legitimacyMatrix: Array.from({ length: 4 }, (_, index) => {
+                const rawRow = (rawLegitimacyMatrix[index] ?? {}) as Record<string, unknown>
+                return {
+                    possibleCause: readString(rawRow.possibleCause),
+                    storyConnection: readRating(rawRow.storyConnection),
+                    purposeCoherence: readRating(rawRow.purposeCoherence),
+                    contributionCapacity: readRating(rawRow.contributionCapacity),
+                    externalCredibility: readRating(rawRow.externalCredibility),
+                    footprintPotential: readRating(rawRow.footprintPotential)
+                }
+            }),
+            strategicCause: readString(socialCause.strategicCause),
+            causeMap: SOCIAL_CAUSE_MAP_ELEMENTS.map((element, index) => {
+                const rawRow = (rawCauseMap[index] ?? {}) as Record<string, unknown>
+                return {
+                    element,
+                    formulation: readString(rawRow.formulation)
+                }
+            }),
+            activationVehicles: Array.from({ length: 4 }, (_, index) => {
+                const rawRow = (rawActivationVehicles[index] ?? {}) as Record<string, unknown>
+                return {
+                    vehicle: readString(rawRow.vehicle),
+                    concreteAction: readString(rawRow.concreteAction),
+                    impactedAudience: readString(rawRow.impactedAudience),
+                    visibleSignal: readString(rawRow.visibleSignal)
+                }
+            }),
+            legitimacyChecks: SOCIAL_CAUSE_TEST_QUESTIONS.map((question, index) => {
+                const rawRow = (rawLegitimacyChecks[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: readYesNo(rawRow.verdict),
+                    adjustment: readString(rawRow.adjustment)
+                }
+            })
+        },
+        contentPlan: {
+            centralSignal: {
+                perception90Days: readString(rawCentralSignal.perception90Days),
+                centralIdea: readString(rawCentralSignal.centralIdea),
+                sustainingTone: readString(rawCentralSignal.sustainingTone),
+                avoidProjecting: readString(rawCentralSignal.avoidProjecting),
+                connectionToBrand: readString(rawCentralSignal.connectionToBrand)
+            },
+            pillars: CONTENT_PLAN_PILLARS.map((pillar, index) => {
+                const rawRow = (rawPillars[index] ?? {}) as Record<string, unknown>
+                return {
+                    pillar,
+                    whatToShow: readString(rawRow.whatToShow),
+                    reinforcedPerception: readString(rawRow.reinforcedPerception)
+                }
+            }),
+            contentMatrix: Array.from({ length: 4 }, (_, index) => {
+                const rawRow = (rawContentMatrix[index] ?? {}) as Record<string, unknown>
+                return {
+                    piece: readString(rawRow.piece),
+                    pillar: readString(rawRow.pillar),
+                    channel: readString(rawRow.channel),
+                    objective: readString(rawRow.objective),
+                    brandSignal: readString(rawRow.brandSignal)
+                }
+            }),
+            calendar: CONTENT_PLAN_HORIZONS.map((horizon, index) => {
+                const rawRow = (rawCalendar[index] ?? {}) as Record<string, unknown>
+                return {
+                    horizon,
+                    stretchObjective: readString(rawRow.stretchObjective),
+                    prioritizedContent: readString(rawRow.prioritizedContent),
+                    mainChannel: readString(rawRow.mainChannel),
+                    expectedResult: readString(rawRow.expectedResult)
+                }
+            }),
+            backlog: Array.from({ length: 9 }, (_, index) => {
+                const rawRow = (rawBacklog[index] ?? {}) as Record<string, unknown>
+                return {
+                    piece: readString(rawRow.piece),
+                    pillar: readString(rawRow.pillar),
+                    horizon: readString(rawRow.horizon),
+                    channelFormat: readString(rawRow.channelFormat),
+                    objective: readString(rawRow.objective),
+                    priority: readString(rawRow.priority)
+                }
+            }),
+            cadence: {
+                minimumCadence: readString(rawCadence.minimumCadence),
+                channelRhythm: readString(rawCadence.channelRhythm),
+                creationBlock: readString(rawCadence.creationBlock),
+                distributionBlock: readString(rawCadence.distributionBlock),
+                reviewBlock: readString(rawCadence.reviewBlock),
+                learningCriteria: readString(rawCadence.learningCriteria)
+            },
+            coherenceChecks: CONTENT_PLAN_TEST_QUESTIONS.map((question, index) => {
+                const rawRow = (rawContentPlanChecks[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    verdict: readYesNo(rawRow.verdict),
+                    adjustment: readString(rawRow.adjustment)
+                }
+            })
+        },
+        evaluation: {
+            mentorRows: WB9_MENTOR_EVALUATION_CRITERIA.map((criterion, index) => {
+                const rawRow = (rawMentorRows[index] ?? {}) as Record<string, unknown>
+                const level = readString(rawRow.level) as MentorLevel
+                const decision = readString(rawRow.decision) as MentorDecision
+                return {
+                    criterion,
+                    level: MENTOR_LEVEL_OPTIONS.includes(level) ? level : ('' as MentorLevel),
+                    evidence: readString(rawRow.evidence),
+                    decision: MENTOR_DECISION_OPTIONS.includes(decision) ? decision : ('' as MentorDecision)
+                }
+            }),
+            mentorGeneralNotes: readString(evaluation.mentorGeneralNotes),
+            mentorGlobalDecision: MENTOR_DECISION_OPTIONS.includes(readString(evaluation.mentorGlobalDecision) as MentorDecision)
+                ? (readString(evaluation.mentorGlobalDecision) as MentorDecision)
+                : ('' as MentorDecision),
+            leaderRows: WB9_LEADER_EVALUATION_QUESTIONS.map((question, index) => {
+                const rawRow = (rawLeaderRows[index] ?? {}) as Record<string, unknown>
+                return {
+                    question,
+                    response: readString(rawRow.response),
+                    evidence: readString(rawRow.evidence),
+                    action: readString(rawRow.action)
+                }
+            }),
+            agreementsSynthesis: readString(evaluation.agreementsSynthesis)
         }
     }
 }
@@ -1291,6 +2080,9 @@ export function WB9Digital() {
     const [showBrandValuesHelp, setShowBrandValuesHelp] = useState(false)
     const [showLeadershipArchetypeHelp, setShowLeadershipArchetypeHelp] = useState(false)
     const [showLinkedInProfileHelp, setShowLinkedInProfileHelp] = useState(false)
+    const [showSocialCauseHelp, setShowSocialCauseHelp] = useState(false)
+    const [showContentPlanHelp, setShowContentPlanHelp] = useState(false)
+    const [showEvaluationHelp, setShowEvaluationHelp] = useState(false)
     const saveFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
@@ -2029,6 +2821,316 @@ export function WB9Digital() {
         savePage(7, `${label} guardado.`)
     }
 
+    const updateSocialCausePossible = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            socialCause: {
+                ...prev.socialCause,
+                possibleCauses: prev.socialCause.possibleCauses.map((item, itemIndex) => (itemIndex === index ? value : item))
+            }
+        }))
+    }
+
+    const updateSocialCauseLegitimacyRow = (
+        index: number,
+        field: keyof SocialCauseLegitimacyRow,
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            socialCause: {
+                ...prev.socialCause,
+                legitimacyMatrix: prev.socialCause.legitimacyMatrix.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]:
+                                  field === 'possibleCause'
+                                      ? value
+                                      : (value as RatingValue)
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateSocialCauseStrategicCause = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            socialCause: {
+                ...prev.socialCause,
+                strategicCause: value
+            }
+        }))
+    }
+
+    const updateSocialCauseMapRow = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            socialCause: {
+                ...prev.socialCause,
+                causeMap: prev.socialCause.causeMap.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              formulation: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateSocialCauseActivationVehicle = (
+        index: number,
+        field: keyof SocialCauseActivationRow,
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            socialCause: {
+                ...prev.socialCause,
+                activationVehicles: prev.socialCause.activationVehicles.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateSocialCauseLegitimacyCheck = (index: number, field: 'verdict' | 'adjustment', value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            socialCause: {
+                ...prev.socialCause,
+                legitimacyChecks: prev.socialCause.legitimacyChecks.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: field === 'verdict' ? (value as YesNoAnswer) : value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const saveSocialCauseBlock = (label: string) => {
+        savePage(8, `${label} guardado.`)
+    }
+
+    const updateContentPlanSignalField = (field: keyof ContentPlanSignal, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            contentPlan: {
+                ...prev.contentPlan,
+                centralSignal: {
+                    ...prev.contentPlan.centralSignal,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateContentPlanPillarRow = (index: number, field: keyof ContentPlanPillarRow, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            contentPlan: {
+                ...prev.contentPlan,
+                pillars: prev.contentPlan.pillars.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateContentPlanMatrixRow = (index: number, field: keyof ContentPlanMatrixRow, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            contentPlan: {
+                ...prev.contentPlan,
+                contentMatrix: prev.contentPlan.contentMatrix.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateContentPlanCalendarRow = (index: number, field: keyof ContentPlanCalendarRow, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            contentPlan: {
+                ...prev.contentPlan,
+                calendar: prev.contentPlan.calendar.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateContentPlanBacklogRow = (index: number, field: keyof ContentPlanBacklogRow, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            contentPlan: {
+                ...prev.contentPlan,
+                backlog: prev.contentPlan.backlog.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const updateContentPlanCadenceField = (field: keyof ContentPlanCadence, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            contentPlan: {
+                ...prev.contentPlan,
+                cadence: {
+                    ...prev.contentPlan.cadence,
+                    [field]: value
+                }
+            }
+        }))
+    }
+
+    const updateContentPlanCheck = (index: number, field: 'verdict' | 'adjustment', value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            contentPlan: {
+                ...prev.contentPlan,
+                coherenceChecks: prev.contentPlan.coherenceChecks.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: field === 'verdict' ? (value as YesNoAnswer) : value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const saveContentPlanBlock = (label: string) => {
+        savePage(9, `${label} guardado.`)
+    }
+
+    const updateEvaluationMentorRow = (index: number, field: keyof Omit<EvaluationMentorRow, 'criterion'>, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorRows: prev.evaluation.mentorRows.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]:
+                                  field === 'level'
+                                      ? ((MENTOR_LEVEL_OPTIONS.includes(value as MentorLevel) ? value : '') as MentorLevel)
+                                      : field === 'decision'
+                                        ? ((MENTOR_DECISION_OPTIONS.includes(value as MentorDecision) ? value : '') as MentorDecision)
+                                        : value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const setEvaluationMentorGeneralNotes = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGeneralNotes: value
+            }
+        }))
+    }
+
+    const setEvaluationMentorGlobalDecision = (value: string) => {
+        if (isLocked) return
+        const safeDecision = MENTOR_DECISION_OPTIONS.includes(value as MentorDecision) ? (value as MentorDecision) : ''
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGlobalDecision: safeDecision
+            }
+        }))
+    }
+
+    const updateEvaluationLeaderRow = (index: number, field: keyof Omit<EvaluationLeaderRow, 'question'>, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                leaderRows: prev.evaluation.leaderRows.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const setEvaluationAgreementsSynthesis = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                agreementsSynthesis: value
+            }
+        }))
+    }
+
+    const saveEvaluationBlock = (label: string) => {
+        savePage(10, `${label} guardado.`)
+    }
+
     const assistLinkedInAudit = () => {
         const context = getLinkedInContext()
         const suggestions = [
@@ -2499,6 +3601,196 @@ export function WB9Digital() {
                         linkedInActivityRow.priorityAdjustment.trim().length === 0))
         )
 
+    const socialCauseInventoryComplete = state.socialCause.possibleCauses.every((cause) => cause.trim().length > 0)
+    const socialCauseLegitimacyComplete = state.socialCause.legitimacyMatrix.every(
+        (row) =>
+            row.possibleCause.trim().length > 0 &&
+            row.storyConnection !== '' &&
+            row.purposeCoherence !== '' &&
+            row.contributionCapacity !== '' &&
+            row.externalCredibility !== '' &&
+            row.footprintPotential !== ''
+    )
+    const socialCauseStrategicComplete = state.socialCause.strategicCause.trim().length > 0
+    const socialCauseMapComplete = state.socialCause.causeMap.every((row) => row.formulation.trim().length > 0)
+    const socialCauseActivationComplete = state.socialCause.activationVehicles.every(
+        (row) =>
+            row.vehicle.trim().length > 0 &&
+            row.concreteAction.trim().length > 0 &&
+            row.impactedAudience.trim().length > 0 &&
+            row.visibleSignal.trim().length > 0
+    )
+    const socialCauseChecksComplete = state.socialCause.legitimacyChecks.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+    const socialCauseComplete =
+        socialCauseInventoryComplete &&
+        socialCauseLegitimacyComplete &&
+        socialCauseStrategicComplete &&
+        socialCauseMapComplete &&
+        socialCauseActivationComplete &&
+        socialCauseChecksComplete
+
+    const socialCauseWordCount = state.socialCause.strategicCause.trim().split(/\s+/).filter(Boolean).length
+    const showSocialCauseAbstractSuggestion =
+        state.socialCause.strategicCause.trim().length > 0 &&
+        (socialCauseWordCount < 8 ||
+            !/(latinoam|empresa|organizacion|equipo|lider|persona|comunidad|territorio|industr|sistema)/i.test(
+                state.socialCause.strategicCause
+            ))
+    const trajectoryLegitimacyRow = state.socialCause.legitimacyChecks.find(
+        (row) => row.question === '¿Es creíble desde mi trayectoria?'
+    )
+    const showSocialCauseTrajectorySuggestion = trajectoryLegitimacyRow?.verdict === 'no'
+    const socialCauseHasActivationContent = state.socialCause.activationVehicles.some(
+        (row) =>
+            row.vehicle.trim().length > 0 ||
+            row.concreteAction.trim().length > 0 ||
+            row.impactedAudience.trim().length > 0 ||
+            row.visibleSignal.trim().length > 0
+    )
+    const showSocialCauseActivationSuggestion =
+        state.socialCause.strategicCause.trim().length > 0 && !socialCauseHasActivationContent
+    const causeFocusRow = state.socialCause.legitimacyChecks.find(
+        (row) => row.question === '¿Amplía mi marca y no la dispersa?'
+    )
+    const showSocialCauseDecorativeSuggestion = causeFocusRow?.verdict === 'no'
+
+    const contentPlanSignalComplete = Object.values(state.contentPlan.centralSignal).every((value) => value.trim().length > 0)
+    const contentPlanPillarsComplete = state.contentPlan.pillars.every(
+        (row) => row.whatToShow.trim().length > 0 && row.reinforcedPerception.trim().length > 0
+    )
+    const contentPlanMatrixComplete = state.contentPlan.contentMatrix.every(
+        (row) =>
+            row.piece.trim().length > 0 &&
+            row.pillar.trim().length > 0 &&
+            row.channel.trim().length > 0 &&
+            row.objective.trim().length > 0 &&
+            row.brandSignal.trim().length > 0
+    )
+    const contentPlanCalendarComplete = state.contentPlan.calendar.every(
+        (row) =>
+            row.stretchObjective.trim().length > 0 &&
+            row.prioritizedContent.trim().length > 0 &&
+            row.mainChannel.trim().length > 0 &&
+            row.expectedResult.trim().length > 0
+    )
+    const contentPlanBacklogComplete = state.contentPlan.backlog.every(
+        (row) =>
+            row.piece.trim().length > 0 &&
+            row.pillar.trim().length > 0 &&
+            row.horizon.trim().length > 0 &&
+            row.channelFormat.trim().length > 0 &&
+            row.objective.trim().length > 0 &&
+            row.priority.trim().length > 0
+    )
+    const contentPlanCadenceComplete = Object.values(state.contentPlan.cadence).every((value) => value.trim().length > 0)
+    const contentPlanChecksComplete = state.contentPlan.coherenceChecks.every(
+        (row) => row.verdict !== '' && row.adjustment.trim().length > 0
+    )
+    const contentPlanComplete =
+        contentPlanSignalComplete &&
+        contentPlanPillarsComplete &&
+        contentPlanMatrixComplete &&
+        contentPlanCalendarComplete &&
+        contentPlanBacklogComplete &&
+        contentPlanCadenceComplete &&
+        contentPlanChecksComplete
+
+    const contentPlanHasLooseThemes =
+        state.contentPlan.contentMatrix.some(
+            (row) =>
+                row.piece.trim().length > 0 &&
+                (row.channel.trim().length === 0 || row.objective.trim().length === 0)
+        ) ||
+        state.contentPlan.backlog.some(
+            (row) =>
+                row.piece.trim().length > 0 &&
+                (row.channelFormat.trim().length === 0 || row.objective.trim().length === 0)
+        )
+    const showContentPlanLooseThemesSuggestion = contentPlanHasLooseThemes
+
+    const contentPlanHasBrandContent =
+        state.contentPlan.contentMatrix.some(
+            (row) =>
+                row.piece.trim().length > 0 ||
+                row.pillar.trim().length > 0 ||
+                row.channel.trim().length > 0 ||
+                row.objective.trim().length > 0 ||
+                row.brandSignal.trim().length > 0
+        ) ||
+        Object.values(state.contentPlan.centralSignal).some((value) => value.trim().length > 0)
+    const hasBrandConnectionGap =
+        state.contentPlan.contentMatrix.some(
+            (row) =>
+                (row.piece.trim().length > 0 ||
+                    row.pillar.trim().length > 0 ||
+                    row.channel.trim().length > 0 ||
+                    row.objective.trim().length > 0) &&
+                row.brandSignal.trim().length === 0
+        ) ||
+        state.contentPlan.centralSignal.connectionToBrand.trim().length === 0
+    const showContentPlanBrandSignalSuggestion = contentPlanHasBrandContent && hasBrandConnectionGap
+
+    const calendar30 = state.contentPlan.calendar[0]
+    const calendar60 = state.contentPlan.calendar[1]
+    const calendar90 = state.contentPlan.calendar[2]
+    const thirtyShowsActivation = /(activ|presenc|arran|inicio|base|coher)/i.test(
+        `${calendar30?.stretchObjective ?? ''} ${calendar30?.expectedResult ?? ''}`
+    )
+    const sixtyShowsConsolidation = /(consol|repet|afin|reconoc|consisten|tono)/i.test(
+        `${calendar60?.stretchObjective ?? ''} ${calendar60?.expectedResult ?? ''}`
+    )
+    const ninetyShowsAmplification = /(amplif|oportun|reput|convers|tracci|expan)/i.test(
+        `${calendar90?.stretchObjective ?? ''} ${calendar90?.expectedResult ?? ''}`
+    )
+    const showContentPlanProgressionSuggestion =
+        state.contentPlan.calendar.some(
+            (row) =>
+                row.stretchObjective.trim().length > 0 ||
+                row.prioritizedContent.trim().length > 0 ||
+                row.mainChannel.trim().length > 0 ||
+                row.expectedResult.trim().length > 0
+        ) &&
+        !(thirtyShowsActivation && sixtyShowsConsolidation && ninetyShowsAmplification)
+
+    const cadenceText = [
+        state.contentPlan.cadence.minimumCadence,
+        state.contentPlan.cadence.channelRhythm,
+        state.contentPlan.cadence.creationBlock,
+        state.contentPlan.cadence.distributionBlock
+    ]
+        .join(' ')
+        .toLowerCase()
+    const cadenceLooksUnrealistic =
+        /(diari|cada dia|cada día)/.test(cadenceText) ||
+        /\b([6-9]|[1-9]\d)\s*(piezas|posts|publicaciones)\s*(seman|semana)/.test(cadenceText) ||
+        /\b([2-9]\d)\s*(piezas|posts|publicaciones)\s*(mes|mensual)/.test(cadenceText)
+    const showContentPlanCadenceSuggestion =
+        state.contentPlan.cadence.minimumCadence.trim().length > 0 && cadenceLooksUnrealistic
+
+    const mentorCompletedRows = state.evaluation.mentorRows.filter(isMentorEvaluationRowComplete).length
+    const leaderCompletedRows = state.evaluation.leaderRows.filter(isLeaderEvaluationRowComplete).length
+    const evaluationMentorComplete =
+        mentorCompletedRows === state.evaluation.mentorRows.length &&
+        state.evaluation.mentorGeneralNotes.trim().length > 0 &&
+        state.evaluation.mentorGlobalDecision !== ''
+    const evaluationLeaderComplete = leaderCompletedRows === state.evaluation.leaderRows.length
+    const evaluationSynthesisComplete = state.evaluation.agreementsSynthesis.trim().length > 0
+    const evaluationComplete = evaluationMentorComplete && evaluationLeaderComplete && evaluationSynthesisComplete
+
+    const showEvaluationMentorEvidenceSuggestion =
+        state.evaluation.mentorRows.some(
+            (row) => (row.level !== '' || row.decision !== '') && row.evidence.trim().length === 0
+        )
+    const showEvaluationLeaderActionSuggestion =
+        state.evaluation.leaderRows.some(
+            (row) =>
+                (row.response.trim().length > 0 || row.evidence.trim().length > 0) && row.action.trim().length === 0
+        )
+    const showEvaluationGlobalDecisionSuggestion =
+        mentorCompletedRows > 0 && state.evaluation.mentorGlobalDecision === ''
+
     const lifeWheelSize = 360
     const lifeWheelCenter = 180
     const lifeWheelRadius = 120
@@ -2529,7 +3821,10 @@ export function WB9Digital() {
         4: executiveBrandComplete,
         5: brandValuesComplete,
         6: leadershipArchetypeComplete,
-        7: linkedInProfileComplete
+        7: linkedInProfileComplete,
+        8: socialCauseComplete,
+        9: contentPlanComplete,
+        10: evaluationComplete
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -2622,7 +3917,7 @@ export function WB9Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb9-print-page wb9-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 7"
+                                data-print-page="Página 1 de 10"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2726,7 +4021,7 @@ export function WB9Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 2 de 7"
+                                data-print-page="Página 2 de 10"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -2828,7 +4123,7 @@ export function WB9Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 3 de 7"
+                                data-print-page="Página 3 de 10"
                                 data-print-title="Propósito integrado"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3357,7 +4652,7 @@ export function WB9Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 4 de 7"
+                                data-print-page="Página 4 de 10"
                                 data-print-title="Marca ejecutiva"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3896,7 +5191,7 @@ export function WB9Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 5 de 7"
+                                data-print-page="Página 5 de 10"
                                 data-print-title="Valores de marca"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4535,7 +5830,7 @@ export function WB9Digital() {
                         {isPageVisible(6) && (
                             <article
                                 className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 6 de 7"
+                                data-print-page="Página 6 de 10"
                                 data-print-title="Arquetipo de liderazgo"
                                 data-print-meta={printMetaLabel}
                             >
@@ -5069,7 +6364,7 @@ export function WB9Digital() {
                         {isPageVisible(7) && (
                             <article
                                 className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 7 de 7"
+                                data-print-page="Página 7 de 10"
                                 data-print-title="Perfil LinkedIn optimizado"
                                 data-print-meta={printMetaLabel}
                             >
@@ -5676,6 +6971,1856 @@ export function WB9Digital() {
                             </article>
                         )}
 
+                        {isPageVisible(8) && (
+                            <article
+                                className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 8 de 10"
+                                data-print-title="Causa social estratégica"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">Página 8</p>
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h2 className="text-2xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-4xl">
+                                                Causa social estratégica
+                                            </h2>
+                                            <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-600 md:text-base">
+                                                Define una causa social estratégica que extienda tu marca ejecutiva más allá del logro individual, para
+                                                conectar tu liderazgo con una contribución visible, coherente y sostenible hacia la sociedad.
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSocialCauseHelp(true)}
+                                            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                </header>
+
+                                <section className="grid gap-4 lg:grid-cols-2">
+                                    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                        <h3 className="text-base font-bold text-slate-900 md:text-lg">Conceptos eje</h3>
+                                        <ul className="mt-4 space-y-2.5 text-sm leading-relaxed text-slate-700">
+                                            {SOCIAL_CAUSE_CONCEPTS.map((concept) => (
+                                                <li key={concept}>{concept}</li>
+                                            ))}
+                                        </ul>
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                        <h3 className="text-base font-bold text-slate-900 md:text-lg">Cierre esperado de esta sección</h3>
+                                        <ul className="mt-4 space-y-2.5 text-sm leading-relaxed text-slate-700">
+                                            {SOCIAL_CAUSE_SECTION_CLOSURE.map((item) => (
+                                                <li key={item}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </article>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 1 — Inventario de causas posibles</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Identifica qué problemas humanos, sociales o sistémicos te importan de verdad y cuáles conversan con tu
+                                            trayectoria y tu forma de liderar.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {state.socialCause.possibleCauses.map((cause, index) => (
+                                            <TextInputField
+                                                key={`social-cause-possible-${index}`}
+                                                label={`Causa posible ${index + 1}`}
+                                                value={cause}
+                                                onChange={(value) => updateSocialCausePossible(index, value)}
+                                                placeholder="Describe una causa que realmente resuene contigo."
+                                                disabled={isLocked}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 grid gap-3 md:grid-cols-2 text-sm text-slate-700">
+                                            {SOCIAL_CAUSE_INVENTORY_EXAMPLE.map((item, index) => (
+                                                <p key={`social-cause-example-${index}`}>
+                                                    <span className="font-semibold text-slate-900">Causa posible {index + 1}:</span> {item}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                socialCauseInventoryComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {socialCauseInventoryComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSocialCauseBlock('Bloque 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 2 — Matriz causa-trayectoria-legitimidad</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Evalúa qué causa tiene verdadera legitimidad para formar parte de tu marca ejecutiva.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[1120px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Causa posible</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Conexión con mi historia (1-5)</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Coherencia con mi propósito (1-5)</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Capacidad real de aporte (1-5)</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Credibilidad externa (1-5)</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Potencial de huella (1-5)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.socialCause.legitimacyMatrix.map((row, index) => (
+                                                    <tr key={`social-cause-matrix-${index}`} className="border-t border-slate-200">
+                                                        <td className="px-4 py-3">
+                                                            <input
+                                                                value={row.possibleCause}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseLegitimacyRow(index, 'possibleCause', event.target.value)
+                                                                }
+                                                                placeholder={state.socialCause.possibleCauses[index] || 'Escribe una causa concreta.'}
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-3 py-3">
+                                                            <select
+                                                                value={row.storyConnection}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseLegitimacyRow(index, 'storyConnection', event.target.value)
+                                                                }
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {RATING_OPTIONS.map((option) => (
+                                                                    <option key={`social-cause-story-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-3">
+                                                            <select
+                                                                value={row.purposeCoherence}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseLegitimacyRow(index, 'purposeCoherence', event.target.value)
+                                                                }
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {RATING_OPTIONS.map((option) => (
+                                                                    <option key={`social-cause-purpose-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-3">
+                                                            <select
+                                                                value={row.contributionCapacity}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseLegitimacyRow(index, 'contributionCapacity', event.target.value)
+                                                                }
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {RATING_OPTIONS.map((option) => (
+                                                                    <option key={`social-cause-capacity-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-3">
+                                                            <select
+                                                                value={row.externalCredibility}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseLegitimacyRow(index, 'externalCredibility', event.target.value)
+                                                                }
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {RATING_OPTIONS.map((option) => (
+                                                                    <option key={`social-cause-credibility-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-3 py-3">
+                                                            <select
+                                                                value={row.footprintPotential}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseLegitimacyRow(index, 'footprintPotential', event.target.value)
+                                                                }
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {RATING_OPTIONS.map((option) => (
+                                                                    <option key={`social-cause-footprint-${index}-${option}`} value={option}>
+                                                                        {option}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 overflow-x-auto">
+                                            <table className="min-w-[980px] w-full text-sm text-slate-700">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                        <th className="pb-2 pr-4">Causa posible</th>
+                                                        <th className="pb-2 pr-4">Historia</th>
+                                                        <th className="pb-2 pr-4">Propósito</th>
+                                                        <th className="pb-2 pr-4">Aporte</th>
+                                                        <th className="pb-2 pr-4">Credibilidad</th>
+                                                        <th className="pb-2">Huella</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {SOCIAL_CAUSE_MATRIX_EXAMPLE.map((row) => (
+                                                        <tr key={row.possibleCause} className="border-t border-slate-200">
+                                                            <td className="py-2 pr-4 font-medium text-slate-900">{row.possibleCause}</td>
+                                                            <td className="py-2 pr-4">{row.storyConnection}</td>
+                                                            <td className="py-2 pr-4">{row.purposeCoherence}</td>
+                                                            <td className="py-2 pr-4">{row.contributionCapacity}</td>
+                                                            <td className="py-2 pr-4">{row.externalCredibility}</td>
+                                                            <td className="py-2">{row.footprintPotential}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                socialCauseLegitimacyComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {socialCauseLegitimacyComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSocialCauseBlock('Bloque 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 3 — Formulación de la causa social estratégica</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Estructura recomendada: contribuir a + transformación social o humana + en + población o sistema + mediante +
+                                            tipo de liderazgo, acción o aporte.
+                                        </p>
+                                    </div>
+
+                                    <TextAreaField
+                                        label="Mi causa social estratégica"
+                                        value={state.socialCause.strategicCause}
+                                        onChange={updateSocialCauseStrategicCause}
+                                        placeholder="Contribuir a..."
+                                        disabled={isLocked}
+                                        rows={4}
+                                    />
+
+                                    {showSocialCauseAbstractSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Haz más concreta la transformación que quieres impulsar.
+                                        </div>
+                                    )}
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <p className="mt-4 text-sm leading-relaxed text-slate-700">
+                                            Impulsar el cambio de mentalidad en Latinoamérica: demostrar que sí se puede construir empresas competitivas,
+                                            sostenibles y humanas.
+                                        </p>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                socialCauseStrategicComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {socialCauseStrategicComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSocialCauseBlock('Bloque 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 4 — Mapa causa-marca-contribución</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Integra la causa elegida con tu propósito, tu promesa de valor, tus valores y tu arquetipo para que la
+                                            contribución no quede suelta.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[760px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Elemento</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Mi formulación</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.socialCause.causeMap.map((row, index) => {
+                                                    const placeholders = [
+                                                        state.purposeIntegrated.integratedPurpose || 'Conecta tu propósito integrado.',
+                                                        state.executiveBrand.canvas.transformation || 'Describe la promesa de valor que sostiene la causa.',
+                                                        state.brandValues.coreValues.filter(Boolean).join(', ') || 'Nombra los valores de marca más relevantes.',
+                                                        state.leadershipArchetype.centralChoice.primary || 'Indica el arquetipo que mejor la expresa.',
+                                                        state.socialCause.strategicCause || 'Escribe la causa social elegida.',
+                                                        'Define qué aporte visible harás desde tu liderazgo.'
+                                                    ]
+
+                                                    return (
+                                                        <tr key={row.element} className="border-t border-slate-200">
+                                                            <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.element}</td>
+                                                            <td className="px-4 py-3">
+                                                                <textarea
+                                                                    value={row.formulation}
+                                                                    onChange={(event) => updateSocialCauseMapRow(index, event.target.value)}
+                                                                    placeholder={placeholders[index]}
+                                                                    disabled={isLocked}
+                                                                    rows={3}
+                                                                    className={TEXTAREA_CLASS}
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 space-y-2 text-sm text-slate-700">
+                                            {SOCIAL_CAUSE_MAP_ELEMENTS.map((element, index) => (
+                                                <p key={`social-cause-map-example-${element}`}>
+                                                    <span className="font-semibold text-slate-900">{element}:</span> {SOCIAL_CAUSE_MAP_EXAMPLE[index]}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                socialCauseMapComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {socialCauseMapComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSocialCauseBlock('Bloque 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 5 — Vehículos de activación</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            La causa necesita vehículos concretos para volverse visible, verificable y coherente con tu liderazgo.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[980px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Vehículo de activación</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Qué haré concretamente</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">A quién impacta</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Señal visible de avance</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.socialCause.activationVehicles.map((row, index) => (
+                                                    <tr key={`social-cause-activation-${index}`} className="border-t border-slate-200">
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.vehicle}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseActivationVehicle(index, 'vehicle', event.target.value)
+                                                                }
+                                                                placeholder="Ej. Mentoría, contenidos, decisiones organizacionales."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.concreteAction}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseActivationVehicle(index, 'concreteAction', event.target.value)
+                                                                }
+                                                                placeholder="Qué harás de forma concreta."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.impactedAudience}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseActivationVehicle(index, 'impactedAudience', event.target.value)
+                                                                }
+                                                                placeholder="Qué personas, equipos o comunidades impacta."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.visibleSignal}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseActivationVehicle(index, 'visibleSignal', event.target.value)
+                                                                }
+                                                                placeholder="Qué señal visible confirmará avance."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {showSocialCauseActivationSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Define cómo harás visible esta causa en acciones reales.
+                                        </div>
+                                    )}
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 overflow-x-auto">
+                                            <table className="min-w-[900px] w-full text-sm text-slate-700">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                        <th className="pb-2 pr-4">Vehículo</th>
+                                                        <th className="pb-2 pr-4">Acción</th>
+                                                        <th className="pb-2 pr-4">Impacto</th>
+                                                        <th className="pb-2">Señal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {SOCIAL_CAUSE_ACTIVATION_EXAMPLE.map((row) => (
+                                                        <tr key={row.vehicle} className="border-t border-slate-200">
+                                                            <td className="py-2 pr-4 font-medium text-slate-900">{row.vehicle}</td>
+                                                            <td className="py-2 pr-4">{row.concreteAction}</td>
+                                                            <td className="py-2 pr-4">{row.impactedAudience}</td>
+                                                            <td className="py-2">{row.visibleSignal}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                socialCauseActivationComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {socialCauseActivationComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSocialCauseBlock('Bloque 5')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 6 — Test de legitimidad de la causa</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Verifica si la causa conversa con tu propósito, tu trayectoria, tus valores y tus formas reales de activación.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[840px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pregunta</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Sí / No</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.socialCause.legitimacyChecks.map((row, index) => (
+                                                    <tr key={row.question} className="border-t border-slate-200">
+                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.question}</td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex gap-2">
+                                                                {[
+                                                                    { value: 'yes' as YesNoAnswer, label: 'Sí' },
+                                                                    { value: 'no' as YesNoAnswer, label: 'No' }
+                                                                ].map((option) => (
+                                                                    <button
+                                                                        key={`${row.question}-${option.value}`}
+                                                                        type="button"
+                                                                        onClick={() => updateSocialCauseLegitimacyCheck(index, 'verdict', option.value)}
+                                                                        disabled={isLocked}
+                                                                        className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                                                            row.verdict === option.value
+                                                                                ? option.value === 'yes'
+                                                                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                                                                                    : 'border-rose-300 bg-rose-50 text-rose-800'
+                                                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                                    >
+                                                                        {option.label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.adjustment}
+                                                                onChange={(event) =>
+                                                                    updateSocialCauseLegitimacyCheck(index, 'adjustment', event.target.value)
+                                                                }
+                                                                placeholder="Qué debes ajustar para reforzar la legitimidad de la causa."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {showSocialCauseTrajectorySuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Aclara qué parte de tu experiencia hace creíble esta causa.
+                                        </div>
+                                    )}
+
+                                    {showSocialCauseDecorativeSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Revisa si esta causa amplía tu marca o solo la adorna.
+                                        </div>
+                                    )}
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 space-y-2 text-sm text-slate-700">
+                                            <p>
+                                                <span className="font-semibold text-slate-900">Señal débil:</span> elegir una causa noble pero desconectada
+                                                de la trayectoria, la marca y la capacidad real de aporte.
+                                            </p>
+                                            <p>
+                                                <span className="font-semibold text-slate-900">Señal mejorada:</span> elegir una causa que expande con
+                                                legitimidad el propósito, el arquetipo y la promesa de valor, y que ya tiene vehículos concretos de
+                                                activación.
+                                            </p>
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                socialCauseChecksComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {socialCauseChecksComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSocialCauseBlock('Bloque 6')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Estado de la sección</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                Pendiente si no has formulado una causa social y no has definido cómo activarla. Completado si están
+                                                diligenciados inventario, matriz, causa formulada, mapa, vehículos y test.
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+                                                socialCauseComplete
+                                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                    : 'border-amber-300 bg-amber-50 text-amber-700'
+                                            }`}
+                                        >
+                                            {socialCauseComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {isPageVisible(9) && (
+                            <article
+                                className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 9 de 10"
+                                data-print-title="Plan de contenido 30-60-90 días"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">Página 9</p>
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h2 className="text-2xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-4xl">
+                                                Plan de contenido 30-60-90 días
+                                            </h2>
+                                            <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-600 md:text-base">
+                                                Diseña un plan de contenido 30-60-90 días que convierta tu marca ejecutiva en presencia visible,
+                                                consistente y estratégica, para que propósito, posicionamiento, causa social y reputación empiecen a
+                                                moverse de forma concreta en audiencias relevantes.
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowContentPlanHelp(true)}
+                                            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                </header>
+
+                                <section className="grid gap-4 lg:grid-cols-2">
+                                    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                        <h3 className="text-base font-bold text-slate-900 md:text-lg">Conceptos eje</h3>
+                                        <ul className="mt-4 space-y-2.5 text-sm leading-relaxed text-slate-700">
+                                            {CONTENT_PLAN_CONCEPTS.map((concept) => (
+                                                <li key={concept}>{concept}</li>
+                                            ))}
+                                        </ul>
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                        <h3 className="text-base font-bold text-slate-900 md:text-lg">Cierre esperado de esta sección</h3>
+                                        <ul className="mt-4 space-y-2.5 text-sm leading-relaxed text-slate-700">
+                                            {CONTENT_PLAN_SECTION_CLOSURE.map((item) => (
+                                                <li key={item}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </article>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 1 — Definición de la señal central</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Define la percepción, la idea, el tono y el límite reputacional que quieres instalar con consistencia en los
+                                            próximos 90 días.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {CONTENT_PLAN_SIGNAL_FIELDS.map((field) => (
+                                            <TextAreaField
+                                                key={field.key}
+                                                label={field.label}
+                                                value={state.contentPlan.centralSignal[field.key]}
+                                                onChange={(value) => updateContentPlanSignalField(field.key, value)}
+                                                placeholder={field.placeholder}
+                                                disabled={isLocked}
+                                                rows={field.key === 'connectionToBrand' ? 4 : 3}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 space-y-2 text-sm text-slate-700">
+                                            {CONTENT_PLAN_SIGNAL_FIELDS.map((field, index) => (
+                                                <p key={`content-plan-signal-example-${field.key}`}>
+                                                    <span className="font-semibold text-slate-900">{index + 1}. {field.label}:</span>{' '}
+                                                    {CONTENT_PLAN_SIGNAL_EXAMPLE[field.key]}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                contentPlanSignalComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {contentPlanSignalComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveContentPlanBlock('Bloque 1')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 2 — Arquitectura de pilares</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Define tres pilares simples y estratégicos para que tu visibilidad no se disperse.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[760px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pilar de contenido</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Qué mostraré aquí</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Qué percepción quiero reforzar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.contentPlan.pillars.map((row, index) => (
+                                                    <tr key={row.pillar} className="border-t border-slate-200">
+                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.pillar}</td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.whatToShow}
+                                                                onChange={(event) => updateContentPlanPillarRow(index, 'whatToShow', event.target.value)}
+                                                                placeholder="Qué mostrarás de forma recurrente en este pilar."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.reinforcedPerception}
+                                                                onChange={(event) =>
+                                                                    updateContentPlanPillarRow(index, 'reinforcedPerception', event.target.value)
+                                                                }
+                                                                placeholder="Qué percepción quieres reforzar con este pilar."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 overflow-x-auto">
+                                            <table className="min-w-[760px] w-full text-sm text-slate-700">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                        <th className="pb-2 pr-4">Pilar</th>
+                                                        <th className="pb-2 pr-4">Qué mostraré</th>
+                                                        <th className="pb-2">Percepción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {CONTENT_PLAN_PILLAR_EXAMPLE.map((row) => (
+                                                        <tr key={row.pillar} className="border-t border-slate-200">
+                                                            <td className="py-2 pr-4 font-medium text-slate-900">{row.pillar}</td>
+                                                            <td className="py-2 pr-4">{row.whatToShow}</td>
+                                                            <td className="py-2">{row.reinforcedPerception}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                contentPlanPillarsComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {contentPlanPillarsComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveContentPlanBlock('Bloque 2')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 3 — Matriz contenido-canal-objetivo</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Cada pieza debe reforzar una señal de marca y tener un objetivo claro. No todo contenido persigue lo mismo.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[980px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pieza o tema</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pilar</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Canal</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Objetivo</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Señal de marca que refuerza</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.contentPlan.contentMatrix.map((row, index) => (
+                                                    <tr key={`content-plan-matrix-${index}`} className="border-t border-slate-200">
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.piece}
+                                                                onChange={(event) => updateContentPlanMatrixRow(index, 'piece', event.target.value)}
+                                                                placeholder="Tema o pieza específica."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.pillar}
+                                                                onChange={(event) => updateContentPlanMatrixRow(index, 'pillar', event.target.value)}
+                                                                placeholder="Autoridad, identidad, legado o combinación."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.channel}
+                                                                onChange={(event) => updateContentPlanMatrixRow(index, 'channel', event.target.value)}
+                                                                placeholder="LinkedIn, newsletter, conversación, evento."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.objective}
+                                                                onChange={(event) => updateContentPlanMatrixRow(index, 'objective', event.target.value)}
+                                                                placeholder="Visibilidad, autoridad, confianza, conversación."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.brandSignal}
+                                                                onChange={(event) => updateContentPlanMatrixRow(index, 'brandSignal', event.target.value)}
+                                                                placeholder="Qué señal de marca refuerza esta pieza."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {showContentPlanLooseThemesSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Convierte temas en piezas con objetivo y canal.
+                                        </div>
+                                    )}
+
+                                    {showContentPlanBrandSignalSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Aclara qué señal de marca refuerza cada pieza.
+                                        </div>
+                                    )}
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 overflow-x-auto">
+                                            <table className="min-w-[980px] w-full text-sm text-slate-700">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                        <th className="pb-2 pr-4">Pieza</th>
+                                                        <th className="pb-2 pr-4">Pilar</th>
+                                                        <th className="pb-2 pr-4">Canal</th>
+                                                        <th className="pb-2 pr-4">Objetivo</th>
+                                                        <th className="pb-2">Señal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {CONTENT_PLAN_MATRIX_EXAMPLE.map((row) => (
+                                                        <tr key={row.piece} className="border-t border-slate-200">
+                                                            <td className="py-2 pr-4 font-medium text-slate-900">{row.piece}</td>
+                                                            <td className="py-2 pr-4">{row.pillar}</td>
+                                                            <td className="py-2 pr-4">{row.channel}</td>
+                                                            <td className="py-2 pr-4">{row.objective}</td>
+                                                            <td className="py-2">{row.brandSignal}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                contentPlanMatrixComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {contentPlanMatrixComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveContentPlanBlock('Bloque 3')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 4 — Calendario 30-60-90</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Diseña una progresión real: activar, consolidar y amplificar. Cada horizonte debe tener un objetivo y un
+                                            resultado distinto.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[980px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Horizonte</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Objetivo del tramo</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Qué contenido priorizaré</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Canal / formato principal</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Resultado esperado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.contentPlan.calendar.map((row, index) => (
+                                                    <tr key={row.horizon} className="border-t border-slate-200">
+                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.horizon}</td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.stretchObjective}
+                                                                onChange={(event) => updateContentPlanCalendarRow(index, 'stretchObjective', event.target.value)}
+                                                                placeholder="Qué buscas lograr en este tramo."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.prioritizedContent}
+                                                                onChange={(event) => updateContentPlanCalendarRow(index, 'prioritizedContent', event.target.value)}
+                                                                placeholder="Qué tipo de contenido priorizarás."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.mainChannel}
+                                                                onChange={(event) => updateContentPlanCalendarRow(index, 'mainChannel', event.target.value)}
+                                                                placeholder="Canal o formato principal."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.expectedResult}
+                                                                onChange={(event) => updateContentPlanCalendarRow(index, 'expectedResult', event.target.value)}
+                                                                placeholder="Qué resultado reputacional esperas."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {showContentPlanProgressionSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Diferencia activación, consolidación y amplificación.
+                                        </div>
+                                    )}
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 overflow-x-auto">
+                                            <table className="min-w-[980px] w-full text-sm text-slate-700">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                        <th className="pb-2 pr-4">Horizonte</th>
+                                                        <th className="pb-2 pr-4">Objetivo</th>
+                                                        <th className="pb-2 pr-4">Contenido</th>
+                                                        <th className="pb-2 pr-4">Canal</th>
+                                                        <th className="pb-2">Resultado</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {CONTENT_PLAN_CALENDAR_EXAMPLE.map((row) => (
+                                                        <tr key={row.horizon} className="border-t border-slate-200">
+                                                            <td className="py-2 pr-4 font-medium text-slate-900">{row.horizon}</td>
+                                                            <td className="py-2 pr-4">{row.stretchObjective}</td>
+                                                            <td className="py-2 pr-4">{row.prioritizedContent}</td>
+                                                            <td className="py-2 pr-4">{row.mainChannel}</td>
+                                                            <td className="py-2">{row.expectedResult}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                contentPlanCalendarComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {contentPlanCalendarComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveContentPlanBlock('Bloque 4')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 5 — Backlog priorizado</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Convierte la estrategia en piezas concretas. El backlog debe cubrir los tres horizontes del plan.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[1120px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pieza / tema</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pilar</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Horizonte</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Canal / formato</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Objetivo</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.contentPlan.backlog.map((row, index) => (
+                                                    <tr key={`content-plan-backlog-${index}`} className="border-t border-slate-200">
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.piece}
+                                                                onChange={(event) => updateContentPlanBacklogRow(index, 'piece', event.target.value)}
+                                                                placeholder="Título o pieza concreta."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <input
+                                                                value={row.pillar}
+                                                                onChange={(event) => updateContentPlanBacklogRow(index, 'pillar', event.target.value)}
+                                                                placeholder="Autoridad, identidad, legado."
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <select
+                                                                value={row.horizon}
+                                                                onChange={(event) => updateContentPlanBacklogRow(index, 'horizon', event.target.value)}
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            >
+                                                                <option value="">Selecciona</option>
+                                                                {CONTENT_PLAN_HORIZONS.map((horizon) => (
+                                                                    <option key={`content-plan-backlog-horizon-${index}-${horizon}`} value={horizon}>
+                                                                        {horizon}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <input
+                                                                value={row.channelFormat}
+                                                                onChange={(event) =>
+                                                                    updateContentPlanBacklogRow(index, 'channelFormat', event.target.value)
+                                                                }
+                                                                placeholder="LinkedIn post, carrusel, artículo."
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <input
+                                                                value={row.objective}
+                                                                onChange={(event) => updateContentPlanBacklogRow(index, 'objective', event.target.value)}
+                                                                placeholder="Autoridad, prueba, huella, conversación."
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <input
+                                                                value={row.priority}
+                                                                onChange={(event) => updateContentPlanBacklogRow(index, 'priority', event.target.value)}
+                                                                placeholder="Alta, media-alta, media."
+                                                                disabled={isLocked}
+                                                                className={INPUT_CLASS}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 overflow-x-auto">
+                                            <table className="min-w-[1120px] w-full text-sm text-slate-700">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                                        <th className="pb-2 pr-4">Pieza</th>
+                                                        <th className="pb-2 pr-4">Pilar</th>
+                                                        <th className="pb-2 pr-4">Horizonte</th>
+                                                        <th className="pb-2 pr-4">Canal</th>
+                                                        <th className="pb-2 pr-4">Objetivo</th>
+                                                        <th className="pb-2">Prioridad</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {CONTENT_PLAN_BACKLOG_EXAMPLE.map((row) => (
+                                                        <tr key={`${row.horizon}-${row.piece}`} className="border-t border-slate-200">
+                                                            <td className="py-2 pr-4 font-medium text-slate-900">{row.piece}</td>
+                                                            <td className="py-2 pr-4">{row.pillar}</td>
+                                                            <td className="py-2 pr-4">{row.horizon}</td>
+                                                            <td className="py-2 pr-4">{row.channelFormat}</td>
+                                                            <td className="py-2 pr-4">{row.objective}</td>
+                                                            <td className="py-2">{row.priority}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                contentPlanBacklogComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {contentPlanBacklogComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveContentPlanBlock('Bloque 5')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 6 — Cadencia, ritmo y revisión</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Una marca se consolida por repetición con criterio. Define un ritmo sostenible y una forma de revisar
+                                            aprendizajes.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {CONTENT_PLAN_CADENCE_FIELDS.map((field) => (
+                                            <TextAreaField
+                                                key={field.key}
+                                                label={field.label}
+                                                value={state.contentPlan.cadence[field.key]}
+                                                onChange={(value) => updateContentPlanCadenceField(field.key, value)}
+                                                placeholder={field.placeholder}
+                                                disabled={isLocked}
+                                                rows={3}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {showContentPlanCadenceSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Ajusta a un ritmo sostenible.
+                                        </div>
+                                    )}
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 space-y-2 text-sm text-slate-700">
+                                            {CONTENT_PLAN_CADENCE_FIELDS.map((field) => (
+                                                <p key={`content-plan-cadence-example-${field.key}`}>
+                                                    <span className="font-semibold text-slate-900">{field.label}:</span>{' '}
+                                                    {CONTENT_PLAN_CADENCE_EXAMPLE[field.key]}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                contentPlanCadenceComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {contentPlanCadenceComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveContentPlanBlock('Bloque 6')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Bloque 7 — Test de coherencia del plan</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                            Verifica si el plan hace visible tu marca, tiene lógica progresiva y puede sostener reputación externa.
+                                        </p>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[840px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pregunta</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Sí / No</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ajuste necesario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.contentPlan.coherenceChecks.map((row, index) => (
+                                                    <tr key={row.question} className="border-t border-slate-200">
+                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.question}</td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex gap-2">
+                                                                {[
+                                                                    { value: 'yes' as YesNoAnswer, label: 'Sí' },
+                                                                    { value: 'no' as YesNoAnswer, label: 'No' }
+                                                                ].map((option) => (
+                                                                    <button
+                                                                        key={`${row.question}-${option.value}`}
+                                                                        type="button"
+                                                                        onClick={() => updateContentPlanCheck(index, 'verdict', option.value)}
+                                                                        disabled={isLocked}
+                                                                        className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                                                            row.verdict === option.value
+                                                                                ? option.value === 'yes'
+                                                                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                                                                                    : 'border-rose-300 bg-rose-50 text-rose-800'
+                                                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                                    >
+                                                                        {option.label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.adjustment}
+                                                                onChange={(event) => updateContentPlanCheck(index, 'adjustment', event.target.value)}
+                                                                placeholder="Qué debes ajustar para fortalecer el plan."
+                                                                disabled={isLocked}
+                                                                rows={3}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <details className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Ver ejemplo</summary>
+                                        <div className="mt-4 space-y-2 text-sm text-slate-700">
+                                            <p>
+                                                <span className="font-semibold text-slate-900">Señal débil:</span> plan de contenido abundante, pero
+                                                desconectado de marca, causa y tono.
+                                            </p>
+                                            <p>
+                                                <span className="font-semibold text-slate-900">Señal mejorada:</span> plan donde cada pieza refuerza una
+                                                percepción, una señal y una dirección reputacional.
+                                            </p>
+                                        </div>
+                                    </details>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                contentPlanChecksComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {contentPlanChecksComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => saveContentPlanBlock('Bloque 7')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Estado de la sección</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                Pendiente si no has definido señal central, pilares y calendario 30-60-90. Completado si están
+                                                diligenciados señal, pilares, matriz, calendario, backlog, cadencia y test.
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+                                                contentPlanComplete
+                                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                    : 'border-amber-300 bg-amber-50 text-amber-700'
+                                            }`}
+                                        >
+                                            {contentPlanComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
+                        {isPageVisible(10) && (
+                            <article
+                                className="wb9-print-page rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 md:p-8 space-y-8 shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
+                                data-print-page="Página 10 de 10"
+                                data-print-title="Evaluación"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">Página 10</p>
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h2 className="text-2xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-4xl">
+                                                Evaluación
+                                            </h2>
+                                            <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-600 md:text-base">
+                                                Cierra `WB9` con una evaluación compartida entre mentor y líder para traducir marca, propósito, legado y
+                                                reputación en decisiones concretas de seguimiento.
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEvaluationHelp(true)}
+                                            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                </header>
+
+                                <section className="grid gap-4 lg:grid-cols-2">
+                                    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">A) Instrucciones para el mentor (rúbricas)</h3>
+                                            <span className="text-xs text-slate-500">
+                                                Criterios completos: {mentorCompletedRows}/{state.evaluation.mentorRows.length}
+                                            </span>
+                                        </div>
+                                        <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-700">
+                                            {WB9_MENTOR_INSTRUCTIONS.map((instruction) => (
+                                                <li key={instruction} className="flex items-start gap-2">
+                                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-700" />
+                                                    <span>{instruction}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        <details className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                            <summary className="cursor-pointer text-sm font-semibold text-blue-800">Referencia de niveles (1-4)</summary>
+                                            <div className="mt-4 overflow-x-auto">
+                                                <table className="min-w-[520px] w-full rounded-lg border border-blue-200 overflow-hidden bg-white">
+                                                    <thead>
+                                                        <tr className="bg-blue-100">
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-blue-800 border-b border-blue-200">Nivel</th>
+                                                            <th className="px-3 py-2 text-left text-xs font-bold text-blue-800 border-b border-blue-200">Descriptor</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {WB9_MENTOR_LEVEL_REFERENCE.map((item) => (
+                                                            <tr key={item.level} className="odd:bg-white even:bg-blue-50/40">
+                                                                <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-blue-100">
+                                                                    {item.level}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-sm text-slate-700 border-b border-blue-100">
+                                                                    {item.descriptor}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </details>
+                                    </article>
+
+                                    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <h3 className="text-base md:text-lg font-bold text-slate-900">B) Instrucciones para el líder (autoevaluación)</h3>
+                                            <span className="text-xs text-slate-500">
+                                                Preguntas completas: {leaderCompletedRows}/{state.evaluation.leaderRows.length}
+                                            </span>
+                                        </div>
+                                        <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-700">
+                                            {WB9_LEADER_INSTRUCTIONS.map((instruction) => (
+                                                <li key={instruction} className="flex items-start gap-2">
+                                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-700" />
+                                                    <span>{instruction}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700">
+                                            <p>
+                                                Usa este bloque para conectar hechos recientes con compromisos concretos de 30 días y facilitar una
+                                                conversación de desarrollo útil con el mentor.
+                                            </p>
+                                        </div>
+                                    </article>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Formato de evaluación del mentor</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                Marca un nivel por criterio, registra evidencia observable y define la decisión de seguimiento.
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                evaluationMentorComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {evaluationMentorComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[1180px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Criterio</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nivel</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Comentario / evidencia observable</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Decisión del mentor</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.evaluation.mentorRows.map((row, index) => (
+                                                    <tr key={row.criterion} className="border-t border-slate-200 align-top">
+                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.criterion}</td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {MENTOR_LEVEL_OPTIONS.map((level) => (
+                                                                    <button
+                                                                        key={`${row.criterion}-${level}`}
+                                                                        type="button"
+                                                                        onClick={() => updateEvaluationMentorRow(index, 'level', level)}
+                                                                        disabled={isLocked}
+                                                                        className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                                                            row.level === level
+                                                                                ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                                    >
+                                                                        {level}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.evidence}
+                                                                onChange={(event) => updateEvaluationMentorRow(index, 'evidence', event.target.value)}
+                                                                placeholder="Hechos, conversaciones o conductas observadas en los últimos 90 días."
+                                                                disabled={isLocked}
+                                                                rows={4}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex flex-col gap-2">
+                                                                {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                                    <button
+                                                                        key={`${row.criterion}-${decision}`}
+                                                                        type="button"
+                                                                        onClick={() => updateEvaluationMentorRow(index, 'decision', decision)}
+                                                                        disabled={isLocked}
+                                                                        className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                                                                            row.decision === decision
+                                                                                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                                    >
+                                                                        {decision}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {showEvaluationMentorEvidenceSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Agrega evidencia observable reciente por criterio.
+                                        </div>
+                                    )}
+
+                                    <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+                                        <label className="block space-y-1.5">
+                                            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Observaciones generales del mentor</span>
+                                            <textarea
+                                                value={state.evaluation.mentorGeneralNotes}
+                                                onChange={(event) => setEvaluationMentorGeneralNotes(event.target.value)}
+                                                placeholder="Resume patrones, alertas y recomendaciones globales del workbook."
+                                                disabled={isLocked}
+                                                rows={6}
+                                                className={TEXTAREA_CLASS}
+                                            />
+                                        </label>
+
+                                        <fieldset className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                            <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Decisión global del WB</legend>
+                                            <div className="mt-2 flex flex-col gap-2">
+                                                {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                    <button
+                                                        key={`wb9-mentor-global-${decision}`}
+                                                        type="button"
+                                                        onClick={() => setEvaluationMentorGlobalDecision(decision)}
+                                                        disabled={isLocked}
+                                                        className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                                                            state.evaluation.mentorGlobalDecision === decision
+                                                                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                    >
+                                                        {decision}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </fieldset>
+                                    </div>
+
+                                    {showEvaluationGlobalDecisionSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Cierra la evaluación con una decisión global de seguimiento.
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveEvaluationBlock('Bloque mentor')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar bloque mentor
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Preguntas de autoevaluación del líder</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                Responde desde hechos, evidencia reciente y un compromiso concreto de 30 días por cada pregunta.
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                evaluationLeaderComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {evaluationLeaderComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[1100px] w-full rounded-2xl border border-slate-200 overflow-hidden">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pregunta</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Respuesta del líder</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Evidencia / ejemplo</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Acción o compromiso (30 días)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {state.evaluation.leaderRows.map((row, index) => (
+                                                    <tr key={row.question} className="border-t border-slate-200 align-top">
+                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.question}</td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.response}
+                                                                onChange={(event) => updateEvaluationLeaderRow(index, 'response', event.target.value)}
+                                                                placeholder="Respuesta concreta y reciente."
+                                                                disabled={isLocked}
+                                                                rows={4}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.evidence}
+                                                                onChange={(event) => updateEvaluationLeaderRow(index, 'evidence', event.target.value)}
+                                                                placeholder="Caso, situación o ejemplo observable."
+                                                                disabled={isLocked}
+                                                                rows={4}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <textarea
+                                                                value={row.action}
+                                                                onChange={(event) => updateEvaluationLeaderRow(index, 'action', event.target.value)}
+                                                                placeholder="Compromiso concreto para los próximos 30 días."
+                                                                disabled={isLocked}
+                                                                rows={4}
+                                                                className={TEXTAREA_CLASS}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {showEvaluationLeaderActionSuggestion && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                            Convierte la reflexión en un compromiso de 30 días.
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveEvaluationBlock('Bloque líder')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar bloque líder
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">C) Síntesis de acuerdos Mentor-Líder</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                Registra aquí los acuerdos finales, prioridades de desarrollo y próximos pasos compartidos.
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                evaluationSynthesisComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {evaluationSynthesisComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+
+                                    <label className="block space-y-1.5">
+                                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Síntesis de acuerdos Mentor-Líder</span>
+                                        <textarea
+                                            value={state.evaluation.agreementsSynthesis}
+                                            onChange={(event) => setEvaluationAgreementsSynthesis(event.target.value)}
+                                            placeholder="Resume acuerdos, compromisos, foco de seguimiento y próximos hitos."
+                                            disabled={isLocked}
+                                            rows={7}
+                                            className={TEXTAREA_CLASS}
+                                        />
+                                    </label>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => saveEvaluationBlock('Síntesis de acuerdos')}
+                                            disabled={isLocked}
+                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                        >
+                                            Guardar síntesis
+                                        </button>
+                                    </div>
+                                </section>
+
+                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Estado de la evaluación</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                Pendiente si faltan rúbricas del mentor, autoevaluación del líder o síntesis final. Completado cuando el
+                                                cierre deja decisiones, evidencia y acuerdos listos para seguimiento.
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+                                                evaluationComplete
+                                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                    : 'border-amber-300 bg-amber-50 text-amber-700'
+                                            }`}
+                                        >
+                                            {evaluationComplete ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid gap-3 md:grid-cols-3">
+                                        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                            <p className="font-semibold text-slate-900">Mentor</p>
+                                            <p className="mt-1">{mentorCompletedRows}/{state.evaluation.mentorRows.length} criterios completos</p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                            <p className="font-semibold text-slate-900">Líder</p>
+                                            <p className="mt-1">{leaderCompletedRows}/{state.evaluation.leaderRows.length} respuestas completas</p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                            <p className="font-semibold text-slate-900">Decisión global</p>
+                                            <p className="mt-1">{state.evaluation.mentorGlobalDecision || 'Pendiente'}</p>
+                                        </div>
+                                    </div>
+                                </section>
+                            </article>
+                        )}
+
                         {!isExportingAll && (
                             <nav className={`wb9-page-nav ${WORKBOOK_V2_EDITORIAL.classes.bottomNav}`}>
                                 <button type="button" onClick={goPrevPage} disabled={!hasPrevPage} className={WORKBOOK_V2_EDITORIAL.classes.bottomNavPrev}>
@@ -5837,6 +8982,114 @@ export function WB9Digital() {
                                         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                                             <p className="font-semibold text-slate-900">Principio guía</p>
                                             <p className="mt-2">Ser visible por tu pensamiento, no solo por tu CV.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showSocialCauseHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Causa social estratégica</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSocialCauseHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+                                        <p>Causa social estratégica no es una frase altruista aislada: debe conversar con propósito, valores, promesa de valor y trayectoria.</p>
+                                        <p>Una causa sólida necesita vehículos de activación para que se vuelva visible, verificable y sostenible en el tiempo.</p>
+                                        <p>La causa amplía tu marca cuando agrega huella colectiva, no cuando la desvía o la vuelve decorativa.</p>
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                            <p className="font-semibold text-slate-900">Ejemplo de formulación útil</p>
+                                            <p className="mt-2">
+                                                Impulsar el cambio de mentalidad en Latinoamérica: demostrar que sí se puede construir empresas competitivas,
+                                                sostenibles y humanas.
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                            <p className="font-semibold text-slate-900">Recuerda</p>
+                                            <ul className="mt-2 space-y-2">
+                                                <li>Tu causa debe conectarse con algo que ya sea creíble en tu historia.</li>
+                                                <li>Necesita una forma visible de activarse en decisiones, contenidos, mentoría o liderazgo.</li>
+                                                <li>Si solo adorna tu narrativa, no está ampliando realmente tu marca ejecutiva.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showContentPlanHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Plan de contenido 30-60-90 días</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowContentPlanHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+                                        <p>Un plan 30-60-90 no es una lista de ideas: es una arquitectura de posicionamiento organizada por activación, consolidación y amplificación.</p>
+                                        <p>Cada contenido debería reforzar propósito, marca, valores, arquetipo o causa, y no solo aumentar actividad superficial.</p>
+                                        <p>La repetición coherente instala reputación; por eso necesitas backlog, cadencia y revisión, no improvisación constante.</p>
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                            <p className="font-semibold text-slate-900">Principio guía</p>
+                                            <p className="mt-2">La visibilidad útil aparece cuando cada pieza deja una señal clara y acumulable en el tiempo.</p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                            <p className="font-semibold text-slate-900">Recuerda</p>
+                                            <ul className="mt-2 space-y-2">
+                                                <li>No publiques de todo: define pocos pilares y repítelos con criterio.</li>
+                                                <li>Convierte temas en piezas con objetivo, canal y señal de marca.</li>
+                                                <li>Ajusta la cadencia a un ritmo que realmente puedas sostener.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showEvaluationHelp && !isExportingAll && (
+                            <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm px-4 py-8">
+                                <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <h3 className="text-xl font-bold text-slate-900">Ayuda — Evaluación</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEvaluationHelp(false)}
+                                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+                                        <p>La evaluación final no busca opinión general, sino evidencia observable reciente sobre marca, coherencia, reputación y legado.</p>
+                                        <p>El mentor debe marcar un solo nivel por criterio, registrar evidencia concreta y cerrar con una decisión por criterio y una decisión global del workbook.</p>
+                                        <p>La autoevaluación del líder debe aterrizarse en hechos, ejemplos y acciones de 30 días para facilitar un plan de desarrollo útil.</p>
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                            <p className="font-semibold text-slate-900">Principio guía</p>
+                                            <p className="mt-2">La evaluación cierra `WB9` cuando reputación, intención y seguimiento quedan conectados en decisiones concretas.</p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                            <p className="font-semibold text-slate-900">Recuerda</p>
+                                            <ul className="mt-2 space-y-2">
+                                                <li>Usa evidencia observable de los últimos 90 días.</li>
+                                                <li>Evita respuestas declarativas sin ejemplo o sin compromiso.</li>
+                                                <li>La síntesis final debe dejar acuerdos accionables entre mentor y líder.</li>
+                                            </ul>
                                         </div>
                                     </div>
                                 </div>
