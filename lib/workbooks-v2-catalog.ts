@@ -89,5 +89,15 @@ export const WORKBOOKS_V2_CATALOG: WorkbookV2CatalogItem[] = [
         statusLabel: 'Construcción activa',
         progress: 35,
         summary: 'Portada, presentación y sección Escalera de valor con pasos, ejemplos, validaciones suaves y esquema visual interactivo.'
+    },
+    {
+        id: 'wb9',
+        slug: 'wb9',
+        code: 'WB9',
+        title: 'Latido de marca',
+        pillar: 'Shine Beyond',
+        statusLabel: 'Construcción activa',
+        progress: 20,
+        summary: 'Workbook WB9 v2 importado desde Workbooksfinales. Integración de propósito, posicionamiento y legado.'
     }
 ]
