@@ -96,8 +96,8 @@ export const WORKBOOKS_V2_CATALOG: WorkbookV2CatalogItem[] = [
         code: 'WB9',
         title: 'Latido de marca',
         pillar: 'Shine Beyond',
-        statusLabel: 'Construcción activa',
-        progress: 20,
-        summary: 'Workbook WB9 v2 importado desde Workbooksfinales. Integración de propósito, posicionamiento y legado.'
+        statusLabel: 'Edición premium activa',
+        progress: 100,
+        summary: 'Edición premium completa con propósito integrado, marca ejecutiva, valores, arquetipo de liderazgo y LinkedIn optimizado dentro de una experiencia guiada y exportable.'
     }
 ]
