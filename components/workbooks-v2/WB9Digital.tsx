@@ -24,6 +24,7 @@ type YesNoAnswer = '' | 'yes' | 'no'
 type RatingValue = '' | '1' | '2' | '3' | '4' | '5'
 type MentorLevel = '' | 'N1' | 'N2' | 'N3' | 'N4'
 type MentorDecision = '' | 'Consolidado' | 'En desarrollo' | 'Prioritario'
+type EvaluationStageKey = 'mentor' | 'leader' | 'synthesis' | 'final'
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -1372,6 +1373,13 @@ const WB9_LEADER_EVALUATION_QUESTIONS = [
     '¿Cómo describirían mi marca ejecutiva tres stakeholders clave?'
 ] as const
 
+const EVALUATION_STAGES: Array<{ key: EvaluationStageKey; label: string }> = [
+    { key: 'mentor', label: 'Pantalla 1 - Mentor' },
+    { key: 'leader', label: 'Pantalla 2 - Líder' },
+    { key: 'synthesis', label: 'Pantalla 3 - Síntesis' },
+    { key: 'final', label: 'Cierre' }
+]
+
 const createDefaultEvaluationData = (): WB9State['evaluation'] => ({
     mentorRows: WB9_MENTOR_EVALUATION_CRITERIA.map((criterion) => ({
         criterion,
@@ -2083,6 +2091,8 @@ export function WB9Digital() {
     const [showSocialCauseHelp, setShowSocialCauseHelp] = useState(false)
     const [showContentPlanHelp, setShowContentPlanHelp] = useState(false)
     const [showEvaluationHelp, setShowEvaluationHelp] = useState(false)
+    const [evaluationStage, setEvaluationStage] = useState<EvaluationStageKey>('mentor')
+    const [showEvaluationLevelReference, setShowEvaluationLevelReference] = useState(false)
     const saveFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
@@ -3131,6 +3141,22 @@ export function WB9Digital() {
         savePage(10, `${label} guardado.`)
     }
 
+    const changeEvaluationStage = (stage: EvaluationStageKey) => {
+        setEvaluationStage(stage)
+    }
+
+    const goPrevEvaluationStage = () => {
+        const currentIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+        if (currentIndex <= 0) return
+        setEvaluationStage(EVALUATION_STAGES[currentIndex - 1].key)
+    }
+
+    const goNextEvaluationStage = () => {
+        const currentIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+        if (currentIndex < 0 || currentIndex >= EVALUATION_STAGES.length - 1) return
+        setEvaluationStage(EVALUATION_STAGES[currentIndex + 1].key)
+    }
+
     const assistLinkedInAudit = () => {
         const context = getLinkedInContext()
         const suggestions = [
@@ -3778,6 +3804,15 @@ export function WB9Digital() {
     const evaluationLeaderComplete = leaderCompletedRows === state.evaluation.leaderRows.length
     const evaluationSynthesisComplete = state.evaluation.agreementsSynthesis.trim().length > 0
     const evaluationComplete = evaluationMentorComplete && evaluationLeaderComplete && evaluationSynthesisComplete
+    const evaluationStageIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+    const hasPrevEvaluationStage = evaluationStageIndex > 0
+    const hasNextEvaluationStage = evaluationStageIndex >= 0 && evaluationStageIndex < EVALUATION_STAGES.length - 1
+    const evaluationStageCompletionMap: Record<EvaluationStageKey, boolean> = {
+        mentor: evaluationMentorComplete,
+        leader: evaluationLeaderComplete,
+        synthesis: evaluationSynthesisComplete,
+        final: evaluationComplete
+    }
 
     const showEvaluationMentorEvidenceSuggestion =
         state.evaluation.mentorRows.some(
@@ -8426,8 +8461,8 @@ export function WB9Digital() {
                                                 Evaluación
                                             </h2>
                                             <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-600 md:text-base">
-                                                Cierra `WB9` con una evaluación compartida entre mentor y líder para traducir marca, propósito, legado y
-                                                reputación en decisiones concretas de seguimiento.
+                                                Objetivo: permitir que mentor y líder evalúen con evidencia, definan decisiones por criterio y cierren
+                                                con síntesis de acuerdos de 30 días.
                                             </p>
                                         </div>
 
@@ -8441,383 +8476,509 @@ export function WB9Digital() {
                                     </div>
                                 </header>
 
-                                <section className="grid gap-4 lg:grid-cols-2">
-                                    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <h3 className="text-base md:text-lg font-bold text-slate-900">A) Instrucciones para el mentor (rúbricas)</h3>
-                                            <span className="text-xs text-slate-500">
-                                                Criterios completos: {mentorCompletedRows}/{state.evaluation.mentorRows.length}
-                                            </span>
-                                        </div>
-                                        <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-700">
-                                            {WB9_MENTOR_INSTRUCTIONS.map((instruction) => (
-                                                <li key={instruction} className="flex items-start gap-2">
-                                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-700" />
-                                                    <span>{instruction}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
+                                {!isExportingAll && (
+                                    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
+                                        <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                                            {EVALUATION_STAGES.map((stage) => {
+                                                const isActive = evaluationStage === stage.key
+                                                const isComplete = evaluationStageCompletionMap[stage.key]
 
-                                        <details className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
-                                            <summary className="cursor-pointer text-sm font-semibold text-blue-800">Referencia de niveles (1-4)</summary>
-                                            <div className="mt-4 overflow-x-auto">
-                                                <table className="min-w-[520px] w-full rounded-lg border border-blue-200 overflow-hidden bg-white">
-                                                    <thead>
-                                                        <tr className="bg-blue-100">
-                                                            <th className="px-3 py-2 text-left text-xs font-bold text-blue-800 border-b border-blue-200">Nivel</th>
-                                                            <th className="px-3 py-2 text-left text-xs font-bold text-blue-800 border-b border-blue-200">Descriptor</th>
+                                                return (
+                                                    <button
+                                                        key={`wb9-evaluation-stage-${stage.key}`}
+                                                        type="button"
+                                                        onClick={() => changeEvaluationStage(stage.key)}
+                                                        className={`rounded-xl border px-3 py-2 text-left text-xs font-semibold transition-colors md:text-sm ${
+                                                            isActive
+                                                                ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                                                        }`}
+                                                    >
+                                                        <p>{stage.label}</p>
+                                                        <p className={`mt-1 text-[11px] ${isComplete ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                                            {isComplete ? 'Completado' : 'Pendiente'}
+                                                        </p>
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={goPrevEvaluationStage}
+                                                disabled={!hasPrevEvaluationStage}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                                Atrás
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={goNextEvaluationStage}
+                                                disabled={!hasNextEvaluationStage}
+                                                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                                Siguiente
+                                            </button>
+                                        </div>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'mentor' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-base font-bold text-slate-900 md:text-lg">A) Instrucciones para el mentor (rúbricas)</h3>
+                                                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                        Evalúa cada criterio con evidencia observable reciente y cierra con una decisión global del workbook.
+                                                    </p>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="text-xs text-slate-500">
+                                                        Criterios completos: {mentorCompletedRows}/{state.evaluation.mentorRows.length}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowEvaluationLevelReference((current) => !current)}
+                                                        className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                                                    >
+                                                        {showEvaluationLevelReference ? 'Ocultar referencia' : 'Ver referencia de niveles'}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <ul className="space-y-2 text-sm leading-relaxed text-slate-700">
+                                                {WB9_MENTOR_INSTRUCTIONS.map((instruction) => (
+                                                    <li key={instruction} className="flex items-start gap-2">
+                                                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-700" />
+                                                        <span>{instruction}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+
+                                            {(showEvaluationLevelReference || isExportingAll) && (
+                                                <article className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                                    <p className="text-sm font-semibold text-slate-900">Referencia de niveles (1-4)</p>
+                                                    <div className="mt-4 overflow-x-auto">
+                                                        <table className="min-w-[520px] w-full overflow-hidden rounded-lg border border-blue-200 bg-white">
+                                                            <thead>
+                                                                <tr className="bg-blue-100">
+                                                                    <th className="border-b border-blue-200 px-3 py-2 text-left text-xs font-bold text-blue-800">
+                                                                        Nivel
+                                                                    </th>
+                                                                    <th className="border-b border-blue-200 px-3 py-2 text-left text-xs font-bold text-blue-800">
+                                                                        Descriptor
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {WB9_MENTOR_LEVEL_REFERENCE.map((item) => (
+                                                                    <tr key={item.level} className="odd:bg-white even:bg-blue-50/40">
+                                                                        <td className="border-b border-blue-100 px-3 py-2 text-sm font-semibold text-slate-900">
+                                                                            {item.level}
+                                                                        </td>
+                                                                        <td className="border-b border-blue-100 px-3 py-2 text-sm text-slate-700">
+                                                                            {item.descriptor}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </article>
+                                            )}
+                                        </article>
+
+                                        <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-900">Formato de evaluación del mentor</h3>
+                                                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                        Marca un nivel por criterio, registra evidencia observable y define la decisión de seguimiento.
+                                                    </p>
+                                                </div>
+
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        evaluationMentorComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {evaluationMentorComplete ? 'Completado' : 'Pendiente'}
+                                                </span>
+                                            </div>
+
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-[1180px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                                    <thead className="bg-slate-100">
+                                                        <tr>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                                Criterio
+                                                            </th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                                Nivel
+                                                            </th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                                Comentario / evidencia observable
+                                                            </th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                                Decisión del mentor
+                                                            </th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {WB9_MENTOR_LEVEL_REFERENCE.map((item) => (
-                                                            <tr key={item.level} className="odd:bg-white even:bg-blue-50/40">
-                                                                <td className="px-3 py-2 text-sm font-semibold text-slate-900 border-b border-blue-100">
-                                                                    {item.level}
+                                                        {state.evaluation.mentorRows.map((row, index) => (
+                                                            <tr key={row.criterion} className="border-t border-slate-200 align-top">
+                                                                <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.criterion}</td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {MENTOR_LEVEL_OPTIONS.map((level) => (
+                                                                            <button
+                                                                                key={`${row.criterion}-${level}`}
+                                                                                type="button"
+                                                                                onClick={() => updateEvaluationMentorRow(index, 'level', level)}
+                                                                                disabled={isLocked}
+                                                                                className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                                                                    row.level === level
+                                                                                        ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                                                                            >
+                                                                                {level}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
                                                                 </td>
-                                                                <td className="px-3 py-2 text-sm text-slate-700 border-b border-blue-100">
-                                                                    {item.descriptor}
+                                                                <td className="px-4 py-3">
+                                                                    <textarea
+                                                                        value={row.evidence}
+                                                                        onChange={(event) => updateEvaluationMentorRow(index, 'evidence', event.target.value)}
+                                                                        placeholder="Hechos, conversaciones o conductas observadas en los últimos 90 días."
+                                                                        disabled={isLocked}
+                                                                        rows={4}
+                                                                        className={TEXTAREA_CLASS}
+                                                                    />
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex flex-col gap-2">
+                                                                        {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                                            <button
+                                                                                key={`${row.criterion}-${decision}`}
+                                                                                type="button"
+                                                                                onClick={() => updateEvaluationMentorRow(index, 'decision', decision)}
+                                                                                disabled={isLocked}
+                                                                                className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                                                                                    row.decision === decision
+                                                                                        ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                                                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                                                                            >
+                                                                                {decision}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
                                                                 </td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
                                                 </table>
                                             </div>
-                                        </details>
-                                    </article>
 
-                                    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <h3 className="text-base md:text-lg font-bold text-slate-900">B) Instrucciones para el líder (autoevaluación)</h3>
-                                            <span className="text-xs text-slate-500">
-                                                Preguntas completas: {leaderCompletedRows}/{state.evaluation.leaderRows.length}
+                                            {showEvaluationMentorEvidenceSuggestion && (
+                                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                                    Agrega evidencia observable reciente por criterio.
+                                                </div>
+                                            )}
+
+                                            <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+                                                <label className="block space-y-1.5">
+                                                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                        Observaciones generales del mentor
+                                                    </span>
+                                                    <textarea
+                                                        value={state.evaluation.mentorGeneralNotes}
+                                                        onChange={(event) => setEvaluationMentorGeneralNotes(event.target.value)}
+                                                        placeholder="Resume patrones, alertas y recomendaciones globales del workbook."
+                                                        disabled={isLocked}
+                                                        rows={6}
+                                                        className={TEXTAREA_CLASS}
+                                                    />
+                                                </label>
+
+                                                <fieldset className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                                    <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                        Decisión global del WB
+                                                    </legend>
+                                                    <div className="mt-2 flex flex-col gap-2">
+                                                        {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                            <button
+                                                                key={`wb9-mentor-global-${decision}`}
+                                                                type="button"
+                                                                onClick={() => setEvaluationMentorGlobalDecision(decision)}
+                                                                disabled={isLocked}
+                                                                className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                                                                    state.evaluation.mentorGlobalDecision === decision
+                                                                        ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                                                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                                                            >
+                                                                {decision}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </fieldset>
+                                            </div>
+
+                                            {showEvaluationGlobalDecisionSuggestion && (
+                                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                                    Cierra la evaluación con una decisión global de seguimiento.
+                                                </div>
+                                            )}
+
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => saveEvaluationBlock('Bloque mentor')}
+                                                    disabled={isLocked}
+                                                    className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                                >
+                                                    Guardar bloque mentor
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'leader' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-base font-bold text-slate-900 md:text-lg">B) Instrucciones para el líder (autoevaluación)</h3>
+                                                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                        Responde desde hechos concretos, evidencia observable y compromisos accionables para los próximos 30 días.
+                                                    </p>
+                                                </div>
+                                                <span className="text-xs text-slate-500">
+                                                    Preguntas completas: {leaderCompletedRows}/{state.evaluation.leaderRows.length}
+                                                </span>
+                                            </div>
+
+                                            <ul className="space-y-2 text-sm leading-relaxed text-slate-700">
+                                                {WB9_LEADER_INSTRUCTIONS.map((instruction) => (
+                                                    <li key={instruction} className="flex items-start gap-2">
+                                                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-700" />
+                                                        <span>{instruction}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700">
+                                                Usa este bloque como base para una conversación de desarrollo clara y útil con el mentor.
+                                            </div>
+                                        </article>
+
+                                        <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-900">Preguntas de autoevaluación del líder</h3>
+                                                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                        Responde desde hechos, evidencia reciente y un compromiso concreto de 30 días por cada pregunta.
+                                                    </p>
+                                                </div>
+
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        evaluationLeaderComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {evaluationLeaderComplete ? 'Completado' : 'Pendiente'}
+                                                </span>
+                                            </div>
+
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-[1100px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                                    <thead className="bg-slate-100">
+                                                        <tr>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                                Pregunta
+                                                            </th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                                Respuesta del líder
+                                                            </th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                                Evidencia / ejemplo
+                                                            </th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                                Acción o compromiso (30 días)
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {state.evaluation.leaderRows.map((row, index) => (
+                                                            <tr key={row.question} className="border-t border-slate-200 align-top">
+                                                                <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.question}</td>
+                                                                <td className="px-4 py-3">
+                                                                    <textarea
+                                                                        value={row.response}
+                                                                        onChange={(event) => updateEvaluationLeaderRow(index, 'response', event.target.value)}
+                                                                        placeholder="Respuesta concreta y reciente."
+                                                                        disabled={isLocked}
+                                                                        rows={4}
+                                                                        className={TEXTAREA_CLASS}
+                                                                    />
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <textarea
+                                                                        value={row.evidence}
+                                                                        onChange={(event) => updateEvaluationLeaderRow(index, 'evidence', event.target.value)}
+                                                                        placeholder="Caso, situación o ejemplo observable."
+                                                                        disabled={isLocked}
+                                                                        rows={4}
+                                                                        className={TEXTAREA_CLASS}
+                                                                    />
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <textarea
+                                                                        value={row.action}
+                                                                        onChange={(event) => updateEvaluationLeaderRow(index, 'action', event.target.value)}
+                                                                        placeholder="Compromiso concreto para los próximos 30 días."
+                                                                        disabled={isLocked}
+                                                                        rows={4}
+                                                                        className={TEXTAREA_CLASS}
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {showEvaluationLeaderActionSuggestion && (
+                                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                                    Convierte la reflexión en un compromiso de 30 días.
+                                                </div>
+                                            )}
+
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => saveEvaluationBlock('Bloque líder')}
+                                                    disabled={isLocked}
+                                                    className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                                >
+                                                    Guardar bloque líder
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'synthesis' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-base font-bold text-slate-900 md:text-lg">C) Síntesis de acuerdos Mentor-Líder</h3>
+                                                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                        Cierra la evaluación con acuerdos claros, foco de desarrollo y próximos hitos verificables.
+                                                    </p>
+                                                </div>
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        evaluationSynthesisComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {evaluationSynthesisComplete ? 'Completado' : 'Pendiente'}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm leading-relaxed text-slate-700">
+                                                Resume prioridades compartidas, responsables, compromisos de 30 días y señales que revisarán en el siguiente
+                                                seguimiento.
+                                            </p>
+                                        </article>
+
+                                        <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                            <label className="block space-y-1.5">
+                                                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                                    Síntesis de acuerdos Mentor-Líder
+                                                </span>
+                                                <textarea
+                                                    value={state.evaluation.agreementsSynthesis}
+                                                    onChange={(event) => setEvaluationAgreementsSynthesis(event.target.value)}
+                                                    placeholder="Resume acuerdos, compromisos, foco de seguimiento y próximos hitos."
+                                                    disabled={isLocked}
+                                                    rows={7}
+                                                    className={TEXTAREA_CLASS}
+                                                />
+                                            </label>
+
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => saveEvaluationBlock('Síntesis de acuerdos')}
+                                                    disabled={isLocked}
+                                                    className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                                >
+                                                    Guardar síntesis
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'final' || isExportingAll) && (
+                                    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <h3 className="text-lg font-bold text-slate-900">Cierre</h3>
+                                                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                    Revisa si el mentor, el líder y la síntesis final ya dejan una conversación cerrada con evidencia,
+                                                    decisiones y acuerdos accionables.
+                                                </p>
+                                            </div>
+
+                                            <span
+                                                className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+                                                    evaluationComplete
+                                                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                                }`}
+                                            >
+                                                {evaluationComplete ? 'Completado' : 'Pendiente'}
                                             </span>
                                         </div>
-                                        <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-700">
-                                            {WB9_LEADER_INSTRUCTIONS.map((instruction) => (
-                                                <li key={instruction} className="flex items-start gap-2">
-                                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-700" />
-                                                    <span>{instruction}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700">
-                                            <p>
-                                                Usa este bloque para conectar hechos recientes con compromisos concretos de 30 días y facilitar una
-                                                conversación de desarrollo útil con el mentor.
-                                            </p>
-                                        </div>
-                                    </article>
-                                </section>
 
-                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-900">Formato de evaluación del mentor</h3>
-                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                                                Marca un nivel por criterio, registra evidencia observable y define la decisión de seguimiento.
-                                            </p>
-                                        </div>
-
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                evaluationMentorComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                                            }`}
-                                        >
-                                            {evaluationMentorComplete ? 'Completado' : 'Pendiente'}
-                                        </span>
-                                    </div>
-
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-[1180px] w-full rounded-2xl border border-slate-200 overflow-hidden">
-                                            <thead className="bg-slate-100">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Criterio</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nivel</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Comentario / evidencia observable</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Decisión del mentor</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {state.evaluation.mentorRows.map((row, index) => (
-                                                    <tr key={row.criterion} className="border-t border-slate-200 align-top">
-                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.criterion}</td>
-                                                        <td className="px-4 py-3">
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {MENTOR_LEVEL_OPTIONS.map((level) => (
-                                                                    <button
-                                                                        key={`${row.criterion}-${level}`}
-                                                                        type="button"
-                                                                        onClick={() => updateEvaluationMentorRow(index, 'level', level)}
-                                                                        disabled={isLocked}
-                                                                        className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-                                                                            row.level === level
-                                                                                ? 'border-blue-300 bg-blue-50 text-blue-800'
-                                                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                                                                    >
-                                                                        {level}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <textarea
-                                                                value={row.evidence}
-                                                                onChange={(event) => updateEvaluationMentorRow(index, 'evidence', event.target.value)}
-                                                                placeholder="Hechos, conversaciones o conductas observadas en los últimos 90 días."
-                                                                disabled={isLocked}
-                                                                rows={4}
-                                                                className={TEXTAREA_CLASS}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <div className="flex flex-col gap-2">
-                                                                {MENTOR_DECISION_OPTIONS.map((decision) => (
-                                                                    <button
-                                                                        key={`${row.criterion}-${decision}`}
-                                                                        type="button"
-                                                                        onClick={() => updateEvaluationMentorRow(index, 'decision', decision)}
-                                                                        disabled={isLocked}
-                                                                        className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                                                                            row.decision === decision
-                                                                                ? 'border-amber-300 bg-amber-50 text-amber-900'
-                                                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                                                                    >
-                                                                        {decision}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {showEvaluationMentorEvidenceSuggestion && (
-                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                                            Agrega evidencia observable reciente por criterio.
-                                        </div>
-                                    )}
-
-                                    <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-                                        <label className="block space-y-1.5">
-                                            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Observaciones generales del mentor</span>
-                                            <textarea
-                                                value={state.evaluation.mentorGeneralNotes}
-                                                onChange={(event) => setEvaluationMentorGeneralNotes(event.target.value)}
-                                                placeholder="Resume patrones, alertas y recomendaciones globales del workbook."
-                                                disabled={isLocked}
-                                                rows={6}
-                                                className={TEXTAREA_CLASS}
-                                            />
-                                        </label>
-
-                                        <fieldset className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                            <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Decisión global del WB</legend>
-                                            <div className="mt-2 flex flex-col gap-2">
-                                                {MENTOR_DECISION_OPTIONS.map((decision) => (
-                                                    <button
-                                                        key={`wb9-mentor-global-${decision}`}
-                                                        type="button"
-                                                        onClick={() => setEvaluationMentorGlobalDecision(decision)}
-                                                        disabled={isLocked}
-                                                        className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                                                            state.evaluation.mentorGlobalDecision === decision
-                                                                ? 'border-amber-300 bg-amber-50 text-amber-900'
-                                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                                                    >
-                                                        {decision}
-                                                    </button>
-                                                ))}
+                                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                                <p className="font-semibold text-slate-900">Pantalla 1 - Mentor</p>
+                                                <p className="mt-1">{mentorCompletedRows}/{state.evaluation.mentorRows.length} criterios completos</p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {evaluationMentorComplete ? 'Listo para seguimiento' : 'Faltan evidencia, notas o decisión global'}
+                                                </p>
                                             </div>
-                                        </fieldset>
-                                    </div>
-
-                                    {showEvaluationGlobalDecisionSuggestion && (
-                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                                            Cierra la evaluación con una decisión global de seguimiento.
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                                <p className="font-semibold text-slate-900">Pantalla 2 - Líder</p>
+                                                <p className="mt-1">{leaderCompletedRows}/{state.evaluation.leaderRows.length} respuestas completas</p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {evaluationLeaderComplete ? 'Autodiagnóstico completo' : 'Faltan respuestas, evidencia o compromisos'}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                                <p className="font-semibold text-slate-900">Pantalla 3 - Síntesis</p>
+                                                <p className="mt-1">{evaluationSynthesisComplete ? 'Síntesis lista' : 'Síntesis pendiente'}</p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {evaluationSynthesisComplete ? 'Hay acuerdos compartidos' : 'Falta cerrar acuerdos y próximos pasos'}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                                <p className="font-semibold text-slate-900">Decisión global</p>
+                                                <p className="mt-1">{state.evaluation.mentorGlobalDecision || 'Pendiente'}</p>
+                                                <p className="mt-1 text-xs text-slate-500">Estado final del workbook para el seguimiento</p>
+                                            </div>
                                         </div>
-                                    )}
-
-                                    <div className="flex justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={() => saveEvaluationBlock('Bloque mentor')}
-                                            disabled={isLocked}
-                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
-                                        >
-                                            Guardar bloque mentor
-                                        </button>
-                                    </div>
-                                </section>
-
-                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-900">Preguntas de autoevaluación del líder</h3>
-                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                                                Responde desde hechos, evidencia reciente y un compromiso concreto de 30 días por cada pregunta.
-                                            </p>
-                                        </div>
-
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                evaluationLeaderComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                                            }`}
-                                        >
-                                            {evaluationLeaderComplete ? 'Completado' : 'Pendiente'}
-                                        </span>
-                                    </div>
-
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-[1100px] w-full rounded-2xl border border-slate-200 overflow-hidden">
-                                            <thead className="bg-slate-100">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pregunta</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Respuesta del líder</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Evidencia / ejemplo</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Acción o compromiso (30 días)</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {state.evaluation.leaderRows.map((row, index) => (
-                                                    <tr key={row.question} className="border-t border-slate-200 align-top">
-                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.question}</td>
-                                                        <td className="px-4 py-3">
-                                                            <textarea
-                                                                value={row.response}
-                                                                onChange={(event) => updateEvaluationLeaderRow(index, 'response', event.target.value)}
-                                                                placeholder="Respuesta concreta y reciente."
-                                                                disabled={isLocked}
-                                                                rows={4}
-                                                                className={TEXTAREA_CLASS}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <textarea
-                                                                value={row.evidence}
-                                                                onChange={(event) => updateEvaluationLeaderRow(index, 'evidence', event.target.value)}
-                                                                placeholder="Caso, situación o ejemplo observable."
-                                                                disabled={isLocked}
-                                                                rows={4}
-                                                                className={TEXTAREA_CLASS}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <textarea
-                                                                value={row.action}
-                                                                onChange={(event) => updateEvaluationLeaderRow(index, 'action', event.target.value)}
-                                                                placeholder="Compromiso concreto para los próximos 30 días."
-                                                                disabled={isLocked}
-                                                                rows={4}
-                                                                className={TEXTAREA_CLASS}
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {showEvaluationLeaderActionSuggestion && (
-                                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                                            Convierte la reflexión en un compromiso de 30 días.
-                                        </div>
-                                    )}
-
-                                    <div className="flex justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={() => saveEvaluationBlock('Bloque líder')}
-                                            disabled={isLocked}
-                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
-                                        >
-                                            Guardar bloque líder
-                                        </button>
-                                    </div>
-                                </section>
-
-                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-900">C) Síntesis de acuerdos Mentor-Líder</h3>
-                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                                                Registra aquí los acuerdos finales, prioridades de desarrollo y próximos pasos compartidos.
-                                            </p>
-                                        </div>
-
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                evaluationSynthesisComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                                            }`}
-                                        >
-                                            {evaluationSynthesisComplete ? 'Completado' : 'Pendiente'}
-                                        </span>
-                                    </div>
-
-                                    <label className="block space-y-1.5">
-                                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Síntesis de acuerdos Mentor-Líder</span>
-                                        <textarea
-                                            value={state.evaluation.agreementsSynthesis}
-                                            onChange={(event) => setEvaluationAgreementsSynthesis(event.target.value)}
-                                            placeholder="Resume acuerdos, compromisos, foco de seguimiento y próximos hitos."
-                                            disabled={isLocked}
-                                            rows={7}
-                                            className={TEXTAREA_CLASS}
-                                        />
-                                    </label>
-
-                                    <div className="flex justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={() => saveEvaluationBlock('Síntesis de acuerdos')}
-                                            disabled={isLocked}
-                                            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
-                                        >
-                                            Guardar síntesis
-                                        </button>
-                                    </div>
-                                </section>
-
-                                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-900">Estado de la evaluación</h3>
-                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                                                Pendiente si faltan rúbricas del mentor, autoevaluación del líder o síntesis final. Completado cuando el
-                                                cierre deja decisiones, evidencia y acuerdos listos para seguimiento.
-                                            </p>
-                                        </div>
-
-                                        <span
-                                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
-                                                evaluationComplete
-                                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                                                    : 'border-amber-300 bg-amber-50 text-amber-700'
-                                            }`}
-                                        >
-                                            {evaluationComplete ? 'Completado' : 'Pendiente'}
-                                        </span>
-                                    </div>
-
-                                    <div className="grid gap-3 md:grid-cols-3">
-                                        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-                                            <p className="font-semibold text-slate-900">Mentor</p>
-                                            <p className="mt-1">{mentorCompletedRows}/{state.evaluation.mentorRows.length} criterios completos</p>
-                                        </div>
-                                        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-                                            <p className="font-semibold text-slate-900">Líder</p>
-                                            <p className="mt-1">{leaderCompletedRows}/{state.evaluation.leaderRows.length} respuestas completas</p>
-                                        </div>
-                                        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-                                            <p className="font-semibold text-slate-900">Decisión global</p>
-                                            <p className="mt-1">{state.evaluation.mentorGlobalDecision || 'Pendiente'}</p>
-                                        </div>
-                                    </div>
-                                </section>
+                                    </section>
+                                )}
                             </article>
                         )}
 

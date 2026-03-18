@@ -44,8 +44,8 @@ async function extractDocxText(filePath: string) {
         .trim()
 }
 
-async function importWorkbook(workbooksRoot: string, workbookCode: string) {
-    const workbookDir = path.join(workbooksRoot, workbookCode)
+async function importWorkbook(workbooksRoot: string, workbookCode: string, sourceDirName?: string) {
+    const workbookDir = path.join(workbooksRoot, sourceDirName || workbookCode)
     const dirEntries = await fs.readdir(workbookDir, { withFileTypes: true })
     const docxFile = dirEntries.find((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.docx'))
 
@@ -114,7 +114,8 @@ async function importWorkbook(workbooksRoot: string, workbookCode: string) {
 async function main() {
     const workbooksRoot = process.argv[2] || '/Users/andrestabla/Documents/4Shinebuilder/Workbooksfinales'
     const workbookCode = process.argv[3] || 'WB1'
-    const result = await importWorkbook(workbooksRoot, workbookCode)
+    const sourceDirName = process.argv[4]
+    const result = await importWorkbook(workbooksRoot, workbookCode, sourceDirName)
     console.log(JSON.stringify(result, null, 2))
 }
 

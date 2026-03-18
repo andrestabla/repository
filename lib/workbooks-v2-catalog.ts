@@ -99,5 +99,15 @@ export const WORKBOOKS_V2_CATALOG: WorkbookV2CatalogItem[] = [
         statusLabel: 'Edición premium activa',
         progress: 100,
         summary: 'Edición premium completa con propósito integrado, marca ejecutiva, valores, arquetipo de liderazgo y LinkedIn optimizado dentro de una experiencia guiada y exportable.'
+    },
+    {
+        id: 'wb10',
+        slug: 'wb10',
+        code: 'WB10',
+        title: 'Visión Estratégica Personal',
+        pillar: 'Shine Beyond',
+        statusLabel: 'Edición premium activa',
+        progress: 100,
+        summary: 'Edición premium completa con visión a 3 años, objetivos por área de vida, prioridades, compromisos, indicadores y One Strategic Page Plan en una experiencia guiada y exportable.'
     }
 ]
