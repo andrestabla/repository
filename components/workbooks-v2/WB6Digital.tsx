@@ -3,6 +3,11 @@
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
+import {
+    AdaptiveWorkbookAssistPanel,
+    mergeStructuredData,
+    useWorkbookPageAssist
+} from '@/components/workbooks-v2/page-assist'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
 type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
@@ -306,6 +311,7 @@ const STORAGE_KEY = 'workbooks-v2-wb6-state'
 const PAGE_STORAGE_KEY = 'workbooks-v2-wb6-active-page'
 const VISITED_STORAGE_KEY = 'workbooks-v2-wb6-visited'
 const INTRO_SEEN_KEY = 'workbooks-v2-wb6-presentation-seen'
+const PAGE_ASSIST_STORAGE_KEY = 'workbooks-v2-wb6-page-assist-mode'
 
 const BASELINE_DIMENSIONS = [
     'Base / apoyo',
@@ -3527,6 +3533,78 @@ export function WB6Digital() {
     const printMetaLabel = `Líder: ${state.identification.leaderName || 'Sin nombre'} · Rol: ${state.identification.role || 'Sin rol'}`
 
     const isPageVisible = (pageId: WorkbookPageId) => isExportingAll || activePage === pageId
+    const currentAssistContext =
+        activePage === 3
+            ? {
+                  currentData: state.bodyLanguageSection,
+                  applyData: (payload: unknown) => {
+                      setState((prev) => ({
+                          ...prev,
+                          bodyLanguageSection: mergeStructuredData(prev.bodyLanguageSection, payload)
+                      }))
+                  }
+              }
+            : activePage === 4
+              ? {
+                    currentData: state.objectionHandlingSection,
+                    applyData: (payload: unknown) => {
+                        setState((prev) => ({
+                            ...prev,
+                            objectionHandlingSection: mergeStructuredData(prev.objectionHandlingSection, payload)
+                        }))
+                    }
+                }
+              : activePage === 5
+                ? {
+                      currentData: state.voiceToneSection,
+                      applyData: (payload: unknown) => {
+                          setState((prev) => ({
+                              ...prev,
+                              voiceToneSection: mergeStructuredData(prev.voiceToneSection, payload)
+                          }))
+                      }
+                  }
+                : activePage === 6
+                  ? {
+                        currentData: state.pressureCommunicationSection,
+                        applyData: (payload: unknown) => {
+                            setState((prev) => ({
+                                ...prev,
+                                pressureCommunicationSection: mergeStructuredData(prev.pressureCommunicationSection, payload)
+                            }))
+                        }
+                    }
+                  : activePage === 7
+                    ? {
+                          currentData: state.highLevelMeetingsSection,
+                          applyData: (payload: unknown) => {
+                              setState((prev) => ({
+                                  ...prev,
+                                  highLevelMeetingsSection: mergeStructuredData(prev.highLevelMeetingsSection, payload)
+                              }))
+                          }
+                      }
+                    : activePage === 8
+                      ? {
+                            currentData: state.coherenceAlignmentSection,
+                            applyData: (payload: unknown) => {
+                                setState((prev) => ({
+                                    ...prev,
+                                    coherenceAlignmentSection: mergeStructuredData(prev.coherenceAlignmentSection, payload)
+                                }))
+                            }
+                        }
+                      : null
+    const pageAssist = useWorkbookPageAssist({
+        workbookId: 'wb6',
+        storageKey: PAGE_ASSIST_STORAGE_KEY,
+        activePage,
+        pageTitle: PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || '',
+        currentData: currentAssistContext?.currentData ?? null,
+        enabled: !!currentAssistContext && !isExportingAll,
+        disabled: isLocked || isExporting || !isHydrated,
+        onApplyData: (payload) => currentAssistContext?.applyData(payload)
+    })
 
     return (
         <div className={WORKBOOK_V2_EDITORIAL.classes.shell}>
@@ -3595,6 +3673,20 @@ export function WB6Digital() {
                     </aside>
 
                     <section className="space-y-6">
+                        {!isExportingAll && currentAssistContext && (
+                            <AdaptiveWorkbookAssistPanel
+                                pageTitle={PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || ''}
+                                stepSummaries={pageAssist.stepSummaries}
+                                mode={pageAssist.mode}
+                                status={pageAssist.status}
+                                disabled={isLocked || isExporting || !isHydrated}
+                                canUseAssistant={pageAssist.canUseAssistant}
+                                onModeChange={pageAssist.onModeChange}
+                                onAssist={pageAssist.onAssist}
+                                onToggleRecording={pageAssist.onToggleRecording}
+                            />
+                        )}
+
                         {isPageVisible(1) && (
                             <article
                                 className="wb6-print-page wb6-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
@@ -3743,34 +3835,6 @@ export function WB6Digital() {
                                         </ul>
                                     </article>
                                 </section>
-
-                                <article className="rounded-2xl border border-slate-200 p-5 md:p-7">
-                                    <h3 className="text-base md:text-lg font-bold text-slate-900">
-                                        Conductas observables asociadas (qué se debería ver en tu día a día)
-                                    </h3>
-                                    <p className="mt-3 text-sm text-slate-700">
-                                        Usa estas conductas como referencia para escribir evidencia real (no intención):
-                                    </p>
-                                    <ul className="mt-4 space-y-2.5">
-                                        {[
-                                            'Lee a su audiencia y ajusta su estilo y lenguaje (ej. técnico vs. estratégico) según el interlocutor.',
-                                            'Identifica señales no verbales en los demás y modifica el ritmo o enfoque de su mensaje para mantener la sintonía y asegurar que el mensaje sea aceptado.',
-                                            'Apela a valores e ideales compartidos para generar una voluntad genuina de colaboración en el equipo.',
-                                            'Proyecta la misma gravitas y calidez en videoconferencias que en persona.',
-                                            'Gestiona su reputación y narrativa en plataformas digitales de forma estratégica.',
-                                            'Utiliza persuasión racional basada en datos, hechos y criterio, no en amenaza o imposición.',
-                                            'Trata a los demás con respeto y genera una atmósfera de seguridad conversacional.',
-                                            'Comunica de manera oportuna y honesta, incluso cuando hay tensión o malas noticias.',
-                                            'Deja que otros se expresen sin interrumpir y demuestra con gestos y preguntas que escucha atentamente.',
-                                            'Reconoce la perspectiva del otro, incluso cuando no coincide con la suya.'
-                                        ].map((item) => (
-                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
-                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </article>
 
                                 <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Reglas de oro (para ti)</h3>
@@ -5815,7 +5879,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Usa una situación real de los últimos 20 días (reunión tensa, objeción inesperada, contradicción pública, crisis operativa o
                                             conversación difícil).
@@ -5903,7 +5967,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Identifica dónde se rompe primero tu comunicación bajo presión: síntesis, claridad, secuencia, tono, escucha o decisión.
                                         </p>
@@ -5995,7 +6059,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Diseña una respuesta regulada en cuatro tiempos: pausa, orden interno, reencuadre y fórmula breve de intervención.
                                         </p>
@@ -6085,7 +6149,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Estructura un mensaje mínimo para escenarios críticos: hecho, prioridad, dirección y contención.
                                         </p>
@@ -6175,7 +6239,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Define tu escenario crítico más probable, la señal de entrada en presión, la respuesta regulada que deseas instalar y la
                                             recuperación posterior.
@@ -6266,7 +6330,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Aplica este test sobre una situación real o simulada y evalúa si mantuviste claridad, seguridad tranquila, escucha y
                                             ordenamiento del contexto.
@@ -6451,7 +6515,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Trabaja con una reunión real de alto nivel (comité, sponsor review, junta o reunión con dirección). Antes de hablar,
                                             registra lectura estratégica del entorno.
@@ -6534,7 +6598,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Define cómo vas a estar en la reunión: rol principal, nivel de visibilidad y tipo de contribución esperada.
                                         </p>
@@ -6645,7 +6709,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Prepara tu intervención en cinco partes: apertura breve, tesis central, criterio/evidencia, implicación ejecutiva y cierre
                                             corto.
@@ -6746,7 +6810,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Define qué harás según señal/momento: cuándo entrar, cuándo evitar intervenir, cuándo preguntar, sintetizar u ordenar.
                                         </p>
@@ -6820,7 +6884,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Evalúa tu reunión más reciente para identificar cómo entraste, cómo sostuviste el espacio, qué aportaste y qué impresión
                                             probable dejaste.
@@ -6901,7 +6965,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Aplica el test a una reunión real o simulada y evalúa lectura de sala, timing, valor de intervención, seguridad tranquila y
                                             huella ejecutiva.
@@ -7083,7 +7147,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Usa una situación real reciente (reunión clave, comité, conversación difícil, presentación o respuesta a objeción).
                                         </p>
@@ -7167,7 +7231,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Identifica al menos cuatro contradicciones entre lo que dices y la señal no verbal/vocal que puede estar restando credibilidad.
                                         </p>
@@ -7269,7 +7333,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Elige tres frases ejecutivas que usas con frecuencia y diseña cómo deben sonar y verse para sostener coherencia.
                                         </p>
@@ -7376,7 +7440,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Clasifica señales en Verde, Amarillo o Rojo según cuánto refuerzan o contradicen tu mensaje en momentos exigentes.
                                         </p>
@@ -7477,7 +7541,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Diseña tu secuencia de reparación cuando detectes incoherencia: señal de alerta, corrección corporal, corrección vocal,
                                             frase de reordenamiento e idea a reinstalar.
@@ -7578,7 +7642,7 @@ export function WB6Digital() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Instrucciones del paso</h4>
+                                        <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Claves del paso</h4>
                                         <p className="text-sm text-slate-700 leading-relaxed">
                                             Evalúa una reunión reciente, una grabación o una simulación para verificar si forma y contenido estuvieron alineados.
                                         </p>

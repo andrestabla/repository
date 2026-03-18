@@ -3,6 +3,11 @@
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
+import {
+    AdaptiveWorkbookAssistPanel,
+    mergeStructuredData,
+    useWorkbookPageAssist
+} from '@/components/workbooks-v2/page-assist'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
 type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
@@ -243,6 +248,7 @@ const STORAGE_KEY = 'workbooks-v2-wb7-state'
 const PAGE_STORAGE_KEY = 'workbooks-v2-wb7-active-page'
 const VISITED_STORAGE_KEY = 'workbooks-v2-wb7-visited'
 const INTRO_SEEN_KEY = 'workbooks-v2-wb7-presentation-seen'
+const PAGE_ASSIST_STORAGE_KEY = 'workbooks-v2-wb7-page-assist-mode'
 
 const INVENTORY_ROWS = 10
 const SPONSOR_ROWS = 6
@@ -2564,6 +2570,68 @@ export function WB7Digital() {
     const printMetaLabel = `Líder: ${state.identification.leaderName || 'Sin nombre'} · Rol: ${state.identification.role || 'Sin rol'}`
 
     const isPageVisible = (pageId: WorkbookPageId) => isExportingAll || activePage === pageId
+    const currentAssistContext =
+        activePage === 3
+            ? {
+                  currentData: state.stakeholderMappingSection,
+                  applyData: (payload: unknown) => {
+                      setState((prev) => ({
+                          ...prev,
+                          stakeholderMappingSection: mergeStructuredData(prev.stakeholderMappingSection, payload)
+                      }))
+                  }
+              }
+            : activePage === 4
+              ? {
+                    currentData: state.sponsorIdentificationSection,
+                    applyData: (payload: unknown) => {
+                        setState((prev) => ({
+                            ...prev,
+                            sponsorIdentificationSection: mergeStructuredData(prev.sponsorIdentificationSection, payload)
+                        }))
+                    }
+                }
+              : activePage === 5
+                ? {
+                      currentData: state.highValueNetworkSection,
+                      applyData: (payload: unknown) => {
+                          setState((prev) => ({
+                              ...prev,
+                              highValueNetworkSection: mergeStructuredData(prev.highValueNetworkSection, payload)
+                          }))
+                      }
+                  }
+                : activePage === 6
+                  ? {
+                        currentData: state.consciousNetworkingSection,
+                        applyData: (payload: unknown) => {
+                            setState((prev) => ({
+                                ...prev,
+                                consciousNetworkingSection: mergeStructuredData(prev.consciousNetworkingSection, payload)
+                            }))
+                        }
+                    }
+                  : activePage === 7
+                    ? {
+                          currentData: state.strategicVisibilitySection,
+                          applyData: (payload: unknown) => {
+                              setState((prev) => ({
+                                  ...prev,
+                                  strategicVisibilitySection: mergeStructuredData(prev.strategicVisibilitySection, payload)
+                              }))
+                          }
+                      }
+                    : null
+    const pageAssist = useWorkbookPageAssist({
+        workbookId: 'wb7',
+        storageKey: PAGE_ASSIST_STORAGE_KEY,
+        activePage,
+        pageTitle: PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || '',
+        currentData: currentAssistContext?.currentData ?? null,
+        enabled: !!currentAssistContext && !isExportingAll,
+        disabled: isLocked || isExporting || !isHydrated,
+        onApplyData: (payload) => currentAssistContext?.applyData(payload)
+    })
 
     return (
         <div className={WORKBOOK_V2_EDITORIAL.classes.shell}>
@@ -2632,6 +2700,20 @@ export function WB7Digital() {
                     </aside>
 
                     <section className="space-y-6">
+                        {!isExportingAll && currentAssistContext && (
+                            <AdaptiveWorkbookAssistPanel
+                                pageTitle={PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || ''}
+                                stepSummaries={pageAssist.stepSummaries}
+                                mode={pageAssist.mode}
+                                status={pageAssist.status}
+                                disabled={isLocked || isExporting || !isHydrated}
+                                canUseAssistant={pageAssist.canUseAssistant}
+                                onModeChange={pageAssist.onModeChange}
+                                onAssist={pageAssist.onAssist}
+                                onToggleRecording={pageAssist.onToggleRecording}
+                            />
+                        )}
+
                         {isPageVisible(1) && (
                             <article
                                 className="wb7-print-page wb7-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
@@ -2795,30 +2877,6 @@ export function WB7Digital() {
                                     </article>
                                 </section>
 
-                                <article className="rounded-2xl border border-slate-200 p-5 md:p-7">
-                                    <h3 className="text-base md:text-lg font-bold text-slate-900">
-                                        Conductas observables asociadas (qué se debería ver en tu día a día)
-                                    </h3>
-                                    <p className="mt-3 text-sm text-slate-700">Usa estas conductas como referencia para escribir evidencia real (no intención):</p>
-                                    <ul className="mt-4 space-y-2.5">
-                                        {[
-                                            'Conecta activamente a su equipo con otras áreas para derribar silos y fomentar la colaboración interdepartamental.',
-                                            'Participa en eventos de la industria y mantiene vínculos con stakeholders externos (clientes, proveedores) para detectar tendencias.',
-                                            'Actúa como un "tejedor" de relaciones, facilitando el acceso a recursos y conocimientos críticos para el equipo a través de su red de contactos.',
-                                            'Utiliza su capital social para apoyar a su equipo y abrir puertas a nuevas oportunidades de negocio o desarrollo.',
-                                            'Se posiciona no solo como experto técnico, sino como un referente que aporta valor en comités y espacios de decisión.',
-                                            'Construye relaciones basadas en la reciprocidad y el valor mutuo, no solo en la necesidad inmediata (transaccional).',
-                                            'Identifica y cultiva activamente sponsors que hablen de él/ella en mesas de decisión.',
-                                            'Mapea las dinámicas de poder informales en la organización para destrabar proyectos.'
-                                        ].map((item) => (
-                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
-                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </article>
-
                                 <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Reglas de oro</h3>
                                     <ul className="mt-4 space-y-2.5">
@@ -2917,7 +2975,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Trabaja con tu contexto real de los últimos 30 a 60 días.',
@@ -2994,7 +3052,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Nivel 1: relación directa, frecuente e impacto inmediato.',
@@ -3139,7 +3197,7 @@ export function WB7Digital() {
                                         estratégico subdesarrollado.
                                     </p>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Poder/influencia: cuánto puede mover decisiones, recursos, reputación o acceso.',
@@ -3277,7 +3335,7 @@ export function WB7Digital() {
                                         Identifica al menos un vacío relacional crítico y define una acción mínima para activarlo en el corto plazo.
                                     </p>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Detecta qué actor debería estar en tu mapa y hoy no está suficientemente conectado.',
@@ -3379,7 +3437,7 @@ export function WB7Digital() {
                                         relaciones críticas/frágiles y vínculos a activar.
                                     </p>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Centro: escribe tu rol actual para anclar el mapa en tu contexto real.',
@@ -3571,7 +3629,7 @@ export function WB7Digital() {
                                         Verifica si tu red está diseñada con criterio estratégico y si el mapa ya orienta decisiones concretas de relacionamiento.
                                     </p>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Marca Sí o No con honestidad para cada pregunta del test.',
@@ -3757,7 +3815,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Lista actores con influencia real y acceso a decisiones.',
@@ -3833,7 +3891,7 @@ export function WB7Digital() {
                                         Califica cada sponsor posible de 1 a 5 y usa el tipo automático para distinguir natural, potencial, lejano o improbable.
                                     </p>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Influencia/acceso: capacidad de abrir puertas o mover decisiones.',
@@ -3945,7 +4003,7 @@ export function WB7Digital() {
                                         Evalúa tu preparación para recibir patrocinio real con evidencia observable, no solo intención.
                                     </p>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Selecciona Bajo/Medio/Alto por cada factor de patrocinabilidad.',
@@ -4045,7 +4103,7 @@ export function WB7Digital() {
                                         Define qué valor aportar primero antes de solicitar respaldo para evitar un acercamiento oportunista.
                                     </p>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Selecciona sponsors prioritarios sobre los que puedas construir relación real.',
@@ -4163,7 +4221,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Elige un sponsor prioritario realista para los próximos 15 días.',
@@ -4299,7 +4357,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Responde Sí/No desde hechos observables y recientes.',
@@ -4485,7 +4543,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Selecciona entre 8 y 12 relaciones estratégicamente relevantes hoy.',
@@ -4636,7 +4694,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Valora cada relación de 1 a 5 en valor estratégico, confianza actual y acceso/amplificación.',
@@ -4795,7 +4853,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Asigna a cada relación un segmento principal: núcleo, puente, multiplicadora, aprendizaje, a reactivar o a profundizar.',
@@ -4977,7 +5035,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Selecciona tres relaciones clave y define qué valor recibes y qué valor aportas.',
@@ -5110,7 +5168,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define por relación si debes mantener, reactivar, expandir o despriorizar.',
@@ -5225,7 +5283,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Responde Sí/No con base en evidencia real de tus relaciones actuales.',
@@ -5415,7 +5473,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define el objetivo estratégico que quieres apoyar con tu red en este momento.',
@@ -5531,7 +5589,7 @@ export function WB7Digital() {
                                         Traduce la intención en una lógica accionable: objetivo, actor, valor aportado primero, movimiento inicial y señal de avance.
                                     </p>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Completa las 3 filas con focos relacionales concretos.',
@@ -5656,7 +5714,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Diseña al menos 6 movimientos distribuidos entre activar, nutrir, profundizar, expandir, amplificar y reciprocar.',
@@ -5772,7 +5830,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define una cadencia mínima por relación (mensual, bimensual, trimestral o por hito).',
@@ -5894,7 +5952,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Califica cada dimensión en Bajo, Medio o Alto con evidencia concreta.',
@@ -5989,7 +6047,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define 3 relaciones a nutrir, 2 a reactivar y 2 nuevas a explorar.',
@@ -6205,7 +6263,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Haz una lectura real de tu visibilidad actual antes de diseñar el plan.',
@@ -6301,7 +6359,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define para cada audiencia clave el valor visible que quieres instalar.',
@@ -6450,7 +6508,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define una señal principal clara que quieras instalar en tu reputación visible.',
@@ -6561,7 +6619,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Trabaja las 4 superficies propuestas (ya cargadas) y define qué mostrarás en cada una.',
@@ -6677,7 +6735,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'En 30 días define una visibilidad mínima viable.',
@@ -6793,7 +6851,7 @@ export function WB7Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Responde Sí/No basado en evidencia de diseño real del plan.',

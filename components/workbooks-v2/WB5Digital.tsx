@@ -3,6 +3,11 @@
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
+import {
+    AdaptiveWorkbookAssistPanel,
+    mergeStructuredData,
+    useWorkbookPageAssist
+} from '@/components/workbooks-v2/page-assist'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
 type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -193,6 +198,7 @@ const STORAGE_KEY = 'workbooks-v2-wb5-state'
 const PAGE_STORAGE_KEY = 'workbooks-v2-wb5-active-page'
 const VISITED_STORAGE_KEY = 'workbooks-v2-wb5-visited'
 const INTRO_SEEN_KEY = 'workbooks-v2-wb5-presentation-seen'
+const PAGE_ASSIST_STORAGE_KEY = 'workbooks-v2-wb5-page-assist-mode'
 const EXECUTIVE_TEST_QUESTIONS = [
     '¿La idea principal aparece rápido?',
     '¿La lógica del mensaje se sostiene?',
@@ -1643,6 +1649,58 @@ export function WB5Digital() {
     const printMetaLabel = `Líder: ${state.identification.leaderName || 'Sin nombre'} · Rol: ${state.identification.role || 'Sin rol'}`
 
     const isPageVisible = (pageId: WorkbookPageId) => isExportingAll || activePage === pageId
+    const currentAssistContext =
+        activePage === 3
+            ? {
+                  currentData: state.executiveMessageSection,
+                  applyData: (payload: unknown) => {
+                      setState((prev) => ({
+                          ...prev,
+                          executiveMessageSection: mergeStructuredData(prev.executiveMessageSection, payload)
+                      }))
+                  }
+              }
+            : activePage === 4
+              ? {
+                    currentData: state.languageEngineeringSection,
+                    applyData: (payload: unknown) => {
+                        setState((prev) => ({
+                            ...prev,
+                            languageEngineeringSection: mergeStructuredData(prev.languageEngineeringSection, payload)
+                        }))
+                    }
+                }
+              : activePage === 5
+                ? {
+                      currentData: state.influenceCommunicationSection,
+                      applyData: (payload: unknown) => {
+                          setState((prev) => ({
+                              ...prev,
+                              influenceCommunicationSection: mergeStructuredData(prev.influenceCommunicationSection, payload)
+                          }))
+                      }
+                  }
+                : activePage === 6
+                  ? {
+                        currentData: state.strategicConversationSection,
+                        applyData: (payload: unknown) => {
+                            setState((prev) => ({
+                                ...prev,
+                                strategicConversationSection: mergeStructuredData(prev.strategicConversationSection, payload)
+                            }))
+                        }
+                    }
+                  : null
+    const pageAssist = useWorkbookPageAssist({
+        workbookId: 'wb5',
+        storageKey: PAGE_ASSIST_STORAGE_KEY,
+        activePage,
+        pageTitle: PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || '',
+        currentData: currentAssistContext?.currentData ?? null,
+        enabled: !!currentAssistContext && !isExportingAll,
+        disabled: isLocked || isExporting || !isHydrated,
+        onApplyData: (payload) => currentAssistContext?.applyData(payload)
+    })
 
     return (
         <div className={WORKBOOK_V2_EDITORIAL.classes.shell}>
@@ -1712,6 +1770,20 @@ export function WB5Digital() {
                     </aside>
 
                     <section className="space-y-6">
+                        {!isExportingAll && currentAssistContext && (
+                            <AdaptiveWorkbookAssistPanel
+                                pageTitle={PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || ''}
+                                stepSummaries={pageAssist.stepSummaries}
+                                mode={pageAssist.mode}
+                                status={pageAssist.status}
+                                disabled={isLocked || isExporting || !isHydrated}
+                                canUseAssistant={pageAssist.canUseAssistant}
+                                onModeChange={pageAssist.onModeChange}
+                                onAssist={pageAssist.onAssist}
+                                onToggleRecording={pageAssist.onToggleRecording}
+                            />
+                        )}
+
                         {isPageVisible(1) && (
                             <article
                                 className="wb5-print-page wb5-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
@@ -1872,35 +1944,6 @@ export function WB5Digital() {
                                     </article>
                                 </section>
 
-                                <article className="rounded-2xl border border-slate-200 p-5 md:p-7">
-                                    <h3 className="text-base md:text-lg font-bold text-slate-900">
-                                        Conductas observables asociadas (qué se debería ver en tu día a día)
-                                    </h3>
-                                    <p className="mt-3 text-sm text-slate-700">
-                                        Usa estas conductas como referencia para escribir evidencia real (no intención):
-                                    </p>
-                                    <ul className="mt-4 space-y-2.5">
-                                        {[
-                                            'Presta atención plena (mindfulness) cuando un colaborador habla, parafraseando para confirmar entendimiento y validando los aportes.',
-                                            'Se "pone en los zapatos" de sus colegas para construir relaciones de confianza y seguridad psicológica.',
-                                            'Lee a su audiencia y ajusta su estilo y lenguaje (ej. técnico vs. estratégico) según el interlocutor.',
-                                            'Identifica señales no verbales en los demás y modifica el ritmo o enfoque de su mensaje para mantener la sintonía y asegurar que el mensaje sea aceptado.',
-                                            'Comparte información relevante de manera oportuna y honesta (transparencia), incluso las malas noticias.',
-                                            'Admite abiertamente cuando "no sabe" algo y trata a todos con respeto, eliminando el miedo a represalias por reportar problemas.',
-                                            'Apela a valores e ideales compartidos para generar una voluntad genuina de colaboración en el equipo.',
-                                            'Reconoce públicamente los logros y da crédito explícito a los colaboradores por sus contribuciones, fomentando el orgullo colectivo.',
-                                            'Brinda feedback privado, específico y centrado en la conducta (no en la persona) para corregir el rumbo y desarrollar talento.',
-                                            'Hace pedidos impecables (con condiciones de satisfacción y tiempos claros) para evitar retrabajos.',
-                                            'Gestiona sus promesas: si no puede cumplir, revoca o renegocia a tiempo, manteniendo la confianza.'
-                                        ].map((item) => (
-                                            <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
-                                                <span className="mt-1 h-2 w-2 rounded-full bg-slate-500 shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </article>
-
                                 <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Reglas de oro (para ti)</h3>
                                     <ul className="mt-4 space-y-2.5">
@@ -1988,7 +2031,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1 — BLUF ejecutivo (Bottom Line Up Front)</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2099,7 +2142,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2 — Pirámide ejecutiva 1–3–3</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2248,7 +2291,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3 — SCQA ejecutivo</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2333,7 +2376,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4 — Test de claridad, lógica y accionabilidad</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2517,7 +2560,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1 — Canvas del pedido impecable</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2668,7 +2711,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2 — Matriz de calibración del pedido</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2752,7 +2795,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3 — Tablero de promesas y riesgos</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2872,7 +2915,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4 — Protocolo de renegociación anticipada</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -2967,7 +3010,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 5 — Test de trazabilidad conversacional</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3138,7 +3181,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1 — Matriz Racional – Emocional – Decisional</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3220,7 +3263,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2 — Mapa de palancas de influencia</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3295,7 +3338,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3 — Diseño de mensaje dual (cabeza + corazón)</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3377,7 +3420,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4 — Chequeo de influencia ética</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3549,7 +3592,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 1 — Brief de conversación estratégica</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3652,7 +3695,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 2 — Mapa posición–interés–riesgo–movimiento</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3758,7 +3801,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 3 — Arquitectura conversacional</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3894,7 +3937,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 4 — Secuencia de actos del habla</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -3966,7 +4009,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 5 — Matriz de objeciones y respuestas</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -4060,7 +4103,7 @@ export function WB5Digital() {
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <h3 className="text-lg font-bold text-slate-900">Paso 6 — Acta de cierre y compromisos</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
+                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Claves del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"

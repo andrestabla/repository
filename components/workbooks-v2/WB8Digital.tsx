@@ -3,6 +3,11 @@
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
+import {
+    AdaptiveWorkbookAssistPanel,
+    mergeStructuredData,
+    useWorkbookPageAssist
+} from '@/components/workbooks-v2/page-assist'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
 type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -248,6 +253,7 @@ const STORAGE_KEY = 'workbooks-v2-wb8-state'
 const PAGE_STORAGE_KEY = 'workbooks-v2-wb8-active-page'
 const VISITED_STORAGE_KEY = 'workbooks-v2-wb8-visited'
 const INTRO_SEEN_KEY = 'workbooks-v2-wb8-presentation-seen'
+const PAGE_ASSIST_STORAGE_KEY = 'workbooks-v2-wb8-page-assist-mode'
 
 const ASSETS_ROWS = 8
 const MATRIX_ROWS = 3
@@ -2625,6 +2631,58 @@ export function WB8Digital() {
 
     const currentPage = PAGES[currentPageIndex]
     const isPageVisible = (pageId: WorkbookPageId) => isExportingAll || activePage === pageId
+    const currentAssistContext =
+        activePage === 3
+            ? {
+                  currentData: state.valueLadderSection,
+                  applyData: (payload: unknown) => {
+                      setState((prev) => ({
+                          ...prev,
+                          valueLadderSection: mergeStructuredData(prev.valueLadderSection, payload)
+                      }))
+                  }
+              }
+            : activePage === 4
+              ? {
+                    currentData: state.businessModelSection,
+                    applyData: (payload: unknown) => {
+                        setState((prev) => ({
+                            ...prev,
+                            businessModelSection: mergeStructuredData(prev.businessModelSection, payload)
+                        }))
+                    }
+                }
+              : activePage === 5
+                ? {
+                      currentData: state.visibilityStrategySection,
+                      applyData: (payload: unknown) => {
+                          setState((prev) => ({
+                              ...prev,
+                              visibilityStrategySection: mergeStructuredData(prev.visibilityStrategySection, payload)
+                          }))
+                      }
+                  }
+                : activePage === 6
+                  ? {
+                        currentData: state.controlBoardSection,
+                        applyData: (payload: unknown) => {
+                            setState((prev) => ({
+                                ...prev,
+                                controlBoardSection: mergeStructuredData(prev.controlBoardSection, payload)
+                            }))
+                        }
+                    }
+                  : null
+    const pageAssist = useWorkbookPageAssist({
+        workbookId: 'wb8',
+        storageKey: PAGE_ASSIST_STORAGE_KEY,
+        activePage,
+        pageTitle: PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || '',
+        currentData: currentAssistContext?.currentData ?? null,
+        enabled: !!currentAssistContext && !isExportingAll,
+        disabled: isLocked || isExporting || !isHydrated,
+        onApplyData: (payload) => currentAssistContext?.applyData(payload)
+    })
 
     if (!isHydrated) {
         return <div className="p-6 text-sm text-slate-500">Cargando workbook...</div>
@@ -2698,6 +2756,20 @@ export function WB8Digital() {
                     </aside>
 
                     <section className="space-y-6">
+                        {!isExportingAll && currentAssistContext && (
+                            <AdaptiveWorkbookAssistPanel
+                                pageTitle={PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || ''}
+                                stepSummaries={pageAssist.stepSummaries}
+                                mode={pageAssist.mode}
+                                status={pageAssist.status}
+                                disabled={isLocked || isExporting || !isHydrated}
+                                canUseAssistant={pageAssist.canUseAssistant}
+                                onModeChange={pageAssist.onModeChange}
+                                onAssist={pageAssist.onAssist}
+                                onToggleRecording={pageAssist.onToggleRecording}
+                            />
+                        )}
+
                         {isPageVisible(1) && (
                             <article
                                 className="wb8-print-page wb8-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
@@ -2846,38 +2918,6 @@ export function WB8Digital() {
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
-                                    <h3 className="text-lg font-bold text-slate-900">Conductas observables asociadas (qué se debería ver en tu día a día)</h3>
-                                    <p className="text-sm text-slate-700">Usa estas conductas como referencia para escribir evidencia real (no intención):</p>
-                                    <ul className="space-y-2">
-                                        {[
-                                            'Analiza tendencias macroeconómicas, tecnológicas y de la industria para anticipar impactos internos y externos.',
-                                            'No se limita a apagar fuegos a corto plazo; dedica tiempo a planificación e iniciativas de largo alcance.',
-                                            'Articula un escenario futuro aspiracional y moviliza visión compartida en el equipo.',
-                                            'Comunica el por qué detrás de las metas para dar sentido y propósito al trabajo diario.',
-                                            'Traduce la visión abstracta en objetivos SMART y planes de acción concretos.',
-                                            'Asegura línea de vista entre tareas cotidianas, metas de corto plazo y estrategia general.',
-                                            'Reúne datos y consulta expertos, pero decide a tiempo aun con información incompleta.',
-                                            'Asume responsabilidad por las consecuencias de sus decisiones sin buscar culpables externos.',
-                                            'Investiga causa raíz y evita quedarse en síntomas superficiales.',
-                                            'Cuestiona suposiciones para reducir sesgos antes de decidir.',
-                                            'Ajusta estrategia ante cambios tecnológicos o regulatorios, abandonando ideas que ya no funcionan.',
-                                            'Fomenta una cultura donde el cambio se vive como oportunidad y no como amenaza.',
-                                            'Desafía el statu quo y promueve nuevas formas de trabajo.',
-                                            'Impulsa pilotos y pruebas de concepto antes de escalar soluciones.',
-                                            'Respalda al equipo cuando un experimento falla y orienta el aprendizaje.',
-                                            'Reduce el factor miedo y habilita riesgos calculados orientados a innovación.',
-                                            'Promueve adopción de herramientas digitales cuidando el bienestar del equipo.',
-                                            'Traduce conceptos tecnológicos complejos a decisiones estratégicas de negocio.'
-                                        ].map((item) => (
-                                            <li key={item} className="text-sm text-slate-700 flex items-start gap-2">
-                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-700 shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </section>
-
-                                <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-lg font-bold text-slate-900">Reglas de oro</h3>
                                     <ul className="space-y-2">
                                         {[
@@ -2968,7 +3008,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Lista activos reales: conocimientos, experiencias transferibles, metodologías, formatos y resultados que ya sabes producir.',
@@ -3042,7 +3082,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Conecta cada problema que sabes resolver con una transformación concreta.',
@@ -3157,7 +3197,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Diseña 3 niveles mínimos: Entrada, Núcleo y Escalamiento.',
@@ -3306,7 +3346,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Verifica si cada nivel resuelve un problema claro.',
@@ -3401,7 +3441,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Evalúa cada oferta por claridad del problema, capacidad real de entrega, diferenciación, facilidad de adopción y retorno esperado.',
@@ -3520,7 +3560,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Confirma que identificaste activos reales y que los conectaste con problemas y transformaciones concretas.',
@@ -3734,7 +3774,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Primero mapea rutas posibles de captura de valor, no precios.',
@@ -3833,7 +3873,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Completa el carril interno y externo con una lógica comparable de oferta, problema, resultado y captura.',
@@ -3924,7 +3964,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Evalúa cada unidad de valor con criterios comparables de 1 a 5.',
@@ -4028,7 +4068,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Ubica cada oferta/ruta según facilidad de activación y valor capturable.',
@@ -4226,7 +4266,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Formula una hipótesis principal para tu ruta prioritaria.',
@@ -4343,7 +4383,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Verifica si ya diferencias monetización interna y externa.',
@@ -4559,7 +4599,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Identifica temas donde tengas experiencia real, diferencial y conexión con tu oferta.',
@@ -4665,7 +4705,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define para cada audiencia su tensión principal y el mensaje estratégico a instalar.',
@@ -4796,7 +4836,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define 3 pilares de contenido para sostener reputación temática.',
@@ -4940,7 +4980,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Asigna a cada canal un rol principal (automático según canal seleccionado).',
@@ -5077,7 +5117,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Construye mínimo 8 piezas con tema, pilar, objetivo, canal, formato, señal de valor y prioridad.',
@@ -5249,7 +5289,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define cadencia mínima y bloques operativos de creación, distribución y revisión.',
@@ -5358,7 +5398,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Verifica alineación entre pilares, oferta, canales, backlog y cadencia.',
@@ -5582,7 +5622,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define qué decisión estratégica quieres habilitar con el tablero.',
@@ -5694,7 +5734,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define qué significa cada etapa del embudo en tu contexto real.',
@@ -5809,7 +5849,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Selecciona entre 1 y 2 KPIs por categoría sin exceder un conjunto manejable.',
@@ -5917,7 +5957,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define al menos 4 fichas de KPI con nombre, fórmula, fuente, umbrales y decisión asociada.',
@@ -6100,7 +6140,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Registra línea base actual y metas a 30 y 90 días por KPI.',
@@ -6235,7 +6275,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Consolida una vista ejecutiva por KPI con valor actual, tendencia, meta, estado, lectura y decisión.',
@@ -6398,7 +6438,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Define qué revisarás semanalmente y qué revisarás mensualmente.',
@@ -6500,7 +6540,7 @@ export function WB8Digital() {
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-sm text-slate-700 leading-relaxed">Instrucciones del paso:</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">Claves del paso:</p>
                                         <ul className="space-y-1.5">
                                             {[
                                                 'Verifica que el tablero responda preguntas estratégicas y no solo describa actividad.',

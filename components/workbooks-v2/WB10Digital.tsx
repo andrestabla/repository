@@ -4,6 +4,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer, Sparkles } from 'lucide-react'
+import {
+    AdaptiveWorkbookAssistPanel,
+    mergeStructuredData,
+    useWorkbookPageAssist
+} from '@/components/workbooks-v2/page-assist'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
 type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
@@ -307,6 +312,7 @@ const STORAGE_KEY = 'workbooks-v2-wb10-state'
 const PAGE_STORAGE_KEY = 'workbooks-v2-wb10-active-page'
 const VISITED_STORAGE_KEY = 'workbooks-v2-wb10-visited'
 const INTRO_SEEN_KEY = 'workbooks-v2-wb10-presentation-seen'
+const PAGE_ASSIST_STORAGE_KEY = 'workbooks-v2-wb10-page-assist-mode'
 
 const WORKBOOK_TITLE = 'Visión Estratégica Personal'
 const WORKBOOK_NUMBER = 'Workbook 10'
@@ -3172,6 +3178,78 @@ export function WB10Digital() {
     const progressPercent = Math.round((completedPages / PAGES.length) * 100)
     const printMetaLabel = `Líder: ${state.identification.leaderName || 'Sin nombre'} · Rol: ${state.identification.role || 'Sin rol'}`
     const isPageVisible = (pageId: WorkbookPageId) => isExportingAll || activePage === pageId
+    const currentAssistContext =
+        activePage === 3
+            ? {
+                  currentData: state.vision3Years,
+                  applyData: (payload: unknown) => {
+                      setState((prev) => ({
+                          ...prev,
+                          vision3Years: mergeStructuredData(prev.vision3Years, payload)
+                      }))
+                  }
+              }
+            : activePage === 4
+              ? {
+                    currentData: state.areaGoals,
+                    applyData: (payload: unknown) => {
+                        setState((prev) => ({
+                            ...prev,
+                            areaGoals: mergeStructuredData(prev.areaGoals, payload)
+                        }))
+                    }
+                }
+              : activePage === 5
+                ? {
+                      currentData: state.priorities,
+                      applyData: (payload: unknown) => {
+                          setState((prev) => ({
+                              ...prev,
+                              priorities: mergeStructuredData(prev.priorities, payload)
+                          }))
+                      }
+                  }
+                : activePage === 6
+                  ? {
+                        currentData: state.commitments,
+                        applyData: (payload: unknown) => {
+                            setState((prev) => ({
+                                ...prev,
+                                commitments: mergeStructuredData(prev.commitments, payload)
+                            }))
+                        }
+                    }
+                  : activePage === 7
+                    ? {
+                          currentData: state.indicators,
+                          applyData: (payload: unknown) => {
+                              setState((prev) => ({
+                                  ...prev,
+                                  indicators: mergeStructuredData(prev.indicators, payload)
+                              }))
+                          }
+                      }
+                    : activePage === 8
+                      ? {
+                            currentData: state.onePagePlan,
+                            applyData: (payload: unknown) => {
+                                setState((prev) => ({
+                                    ...prev,
+                                    onePagePlan: mergeStructuredData(prev.onePagePlan, payload)
+                                }))
+                            }
+                        }
+                      : null
+    const pageAssist = useWorkbookPageAssist({
+        workbookId: 'wb10',
+        storageKey: PAGE_ASSIST_STORAGE_KEY,
+        activePage,
+        pageTitle: PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || '',
+        currentData: currentAssistContext?.currentData ?? null,
+        enabled: !!currentAssistContext && !isExportingAll,
+        disabled: isLocked || isExporting || !isHydrated,
+        onApplyData: (payload) => currentAssistContext?.applyData(payload)
+    })
 
     return (
         <div className={WORKBOOK_V2_EDITORIAL.classes.shell}>
@@ -3255,6 +3333,20 @@ export function WB10Digital() {
                     </aside>
 
                     <section className="min-w-0 space-y-6">
+                        {!isExportingAll && currentAssistContext && (
+                            <AdaptiveWorkbookAssistPanel
+                                pageTitle={PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || ''}
+                                stepSummaries={pageAssist.stepSummaries}
+                                mode={pageAssist.mode}
+                                status={pageAssist.status}
+                                disabled={isLocked || isExporting || !isHydrated}
+                                canUseAssistant={pageAssist.canUseAssistant}
+                                onModeChange={pageAssist.onModeChange}
+                                onAssist={pageAssist.onAssist}
+                                onToggleRecording={pageAssist.onToggleRecording}
+                            />
+                        )}
+
                         {isPageVisible(1) && (
                             <article
                                 className="wb10-print-page wb10-cover-page overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.07)]"

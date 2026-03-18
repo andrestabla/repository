@@ -17,6 +17,11 @@ import {
     Target,
     Users
 } from 'lucide-react'
+import {
+    AdaptiveWorkbookAssistPanel,
+    mergeStructuredData,
+    useWorkbookPageAssist
+} from '@/components/workbooks-v2/page-assist'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
 type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
@@ -345,6 +350,7 @@ const STORAGE_KEY = 'workbooks-v2-wb9-state'
 const PAGE_STORAGE_KEY = 'workbooks-v2-wb9-active-page'
 const VISITED_STORAGE_KEY = 'workbooks-v2-wb9-visited'
 const INTRO_SEEN_KEY = 'workbooks-v2-wb9-presentation-seen'
+const PAGE_ASSIST_STORAGE_KEY = 'workbooks-v2-wb9-page-assist-mode'
 
 const WORKBOOK_TITLE = 'Latido de marca'
 const WORKBOOK_NUMBER = 'Workbook 9'
@@ -366,31 +372,6 @@ const WORKBOOK_COMPONENTS = [
     'Liderazgo regenerativo',
     'Impacto social y humano',
     'Desarrollo de otros líderes (mentoring & coaching)'
-] as const
-
-const OBSERVABLE_BEHAVIORS = [
-    'Identifica activamente el talento interno y dedica tiempo a formar a sus sucesores para garantizar la continuidad del liderazgo (construcción de pipeline).',
-    'Comparte conocimientos y experiencias sin reservas, actuando como guía para acelerar el aprendizaje de líderes emergentes.',
-    'Comparte el poder delegando autoridad real para la toma de decisiones importantes, no solo tareas operativas, fomentando la autonomía.',
-    'Elimina el micro-management; define el "qué" pero permite al equipo decidir el "cómo", demostrando confianza plena en sus capacidades.',
-    'Asigna proyectos desafiantes (stretch assignments) que obligan a los colaboradores a salir de su zona de confort para desarrollar nuevas habilidades.',
-    'Utiliza el coaching para ayudar a los colaboradores a encontrar sus propias soluciones en lugar de dárselas resueltas.',
-    'Integra consideraciones éticas y de impacto comunitario en la toma de decisiones financieras y estratégicas, priorizando el bien común sobre la ganancia a corto plazo.',
-    'Impulsa iniciativas que aporten valor social (sostenibilidad, diversidad, inclusión) y modela la integridad en todas sus acciones.',
-    'Actúa como un administrador (trustee) de los recursos y las personas, priorizando las necesidades de los colaboradores y la comunidad por encima del interés propio.',
-    'Fomenta un clima de seguridad psicológica donde el bienestar emocional y físico del equipo es una prioridad tangible.',
-    'Promueve activamente la diversidad y crea un entorno inclusivo donde se valoran diferentes perspectivas y antecedentes.',
-    'Trata a todos con justicia e imparcialidad, asegurando equidad en oportunidades y reconocimiento.',
-    'Establece rituales, historias y prácticas que anclan los valores y la visión en el ADN de la organización, asegurando que perduren más allá de su rol temporal como líder.',
-    'Documenta lecciones aprendidas y crea sistemas para que el conocimiento crítico (know-how) permanezca en la empresa.',
-    'Pone los focos sobre su equipo: cuando hay éxito, se aparta para que su equipo brille ("stand back"); cuando hay fracaso, asume la responsabilidad.',
-    'Celebra genuinamente los hitos personales y profesionales de los demás, construyendo una cultura de gratitud y apreciación.',
-    'Ayuda a cada miembro del equipo a descubrir su propio propósito y a conectarlo con la misión de la organización (alineación de propósito).',
-    'Transforma el trabajo rutinario en una misión significativa, recordando constantemente el impacto positivo que el equipo tiene en el mundo.',
-    'Forma deliberadamente equipos con diversidad de pensamiento y antecedentes.',
-    'Detecta y mitiga sesgos inconscientes en la contratación y promoción de talento.',
-    'Conecta los objetivos de negocio con necesidades reales de la comunidad o el medio ambiente.',
-    'Actúa como un "tejedor" de relaciones externas que traen valor social a la empresa.'
 ] as const
 
 const GOLDEN_RULES = [
@@ -3866,6 +3847,88 @@ export function WB9Digital() {
     const progressPercent = Math.round((completedPages / PAGES.length) * 100)
     const printMetaLabel = `Líder: ${state.identification.leaderName || 'Sin nombre'} · Rol: ${state.identification.role || 'Sin rol'}`
     const isPageVisible = (pageId: WorkbookPageId) => isExportingAll || activePage === pageId
+    const currentAssistContext =
+        activePage === 3
+            ? {
+                  currentData: state.purposeIntegrated,
+                  applyData: (payload: unknown) => {
+                      setState((prev) => ({
+                          ...prev,
+                          purposeIntegrated: mergeStructuredData(prev.purposeIntegrated, payload)
+                      }))
+                  }
+              }
+            : activePage === 4
+              ? {
+                    currentData: state.executiveBrand,
+                    applyData: (payload: unknown) => {
+                        setState((prev) => ({
+                            ...prev,
+                            executiveBrand: mergeStructuredData(prev.executiveBrand, payload)
+                        }))
+                    }
+                }
+              : activePage === 5
+                ? {
+                      currentData: state.brandValues,
+                      applyData: (payload: unknown) => {
+                          setState((prev) => ({
+                              ...prev,
+                              brandValues: mergeStructuredData(prev.brandValues, payload)
+                          }))
+                      }
+                  }
+                : activePage === 6
+                  ? {
+                        currentData: state.leadershipArchetype,
+                        applyData: (payload: unknown) => {
+                            setState((prev) => ({
+                                ...prev,
+                                leadershipArchetype: mergeStructuredData(prev.leadershipArchetype, payload)
+                            }))
+                        }
+                    }
+                  : activePage === 7
+                    ? {
+                          currentData: state.linkedInProfile,
+                          applyData: (payload: unknown) => {
+                              setState((prev) => ({
+                                  ...prev,
+                                  linkedInProfile: mergeStructuredData(prev.linkedInProfile, payload)
+                              }))
+                          }
+                      }
+                    : activePage === 8
+                      ? {
+                            currentData: state.socialCause,
+                            applyData: (payload: unknown) => {
+                                setState((prev) => ({
+                                    ...prev,
+                                    socialCause: mergeStructuredData(prev.socialCause, payload)
+                                }))
+                            }
+                        }
+                      : activePage === 9
+                        ? {
+                              currentData: state.contentPlan,
+                              applyData: (payload: unknown) => {
+                                  setState((prev) => ({
+                                      ...prev,
+                                      contentPlan: mergeStructuredData(prev.contentPlan, payload)
+                                  }))
+                              }
+                          }
+                        : null
+    const pageAssist = useWorkbookPageAssist({
+        workbookId: 'wb9',
+        storageKey: PAGE_ASSIST_STORAGE_KEY,
+        activePage,
+        pageTitle: PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || '',
+        currentData: currentAssistContext?.currentData ?? null,
+        enabled: !!currentAssistContext && !isExportingAll,
+        disabled: isLocked || isExporting || !isHydrated,
+        onApplyData: (payload) => currentAssistContext?.applyData(payload)
+    })
 
     return (
         <div className={WORKBOOK_V2_EDITORIAL.classes.shell}>
@@ -3949,6 +4012,20 @@ export function WB9Digital() {
                     </aside>
 
                     <section className="space-y-6">
+                        {!isExportingAll && currentAssistContext && (
+                            <AdaptiveWorkbookAssistPanel
+                                pageTitle={PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || ''}
+                                stepSummaries={pageAssist.stepSummaries}
+                                mode={pageAssist.mode}
+                                status={pageAssist.status}
+                                disabled={isLocked || isExporting || !isHydrated}
+                                canUseAssistant={pageAssist.canUseAssistant}
+                                onModeChange={pageAssist.onModeChange}
+                                onAssist={pageAssist.onAssist}
+                                onToggleRecording={pageAssist.onToggleRecording}
+                            />
+                        )}
+
                         {isPageVisible(1) && (
                             <article
                                 className="wb9-print-page wb9-cover-page rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
@@ -4112,23 +4189,9 @@ export function WB9Digital() {
                                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">Competencia guía</p>
                                         <p className="mt-2 text-xl font-extrabold text-slate-900">Mentoría y sucesión</p>
                                         <p className="mt-3 text-sm leading-relaxed text-slate-700">
-                                            Usa estas conductas como referencia para escribir evidencia real, no intención.
+                                            Esta competencia orienta la huella de mentoría, sucesión y legado que este workbook busca hacer más visible.
                                         </p>
                                     </article>
-                                </section>
-
-                                <section className="space-y-4">
-                                    <h3 className="text-lg font-bold text-slate-900">
-                                        Conductas observables asociadas (qué se debería ver en tu día a día)
-                                    </h3>
-
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        {OBSERVABLE_BEHAVIORS.map((behavior) => (
-                                            <article key={behavior} className="rounded-2xl border border-slate-200 bg-white p-4">
-                                                <p className="text-sm leading-relaxed text-slate-700">{behavior}</p>
-                                            </article>
-                                        ))}
-                                    </div>
                                 </section>
 
                                 <section className="space-y-4">

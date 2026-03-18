@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, ArrowRight, FileText, Lock, Plus, Printer, X, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, LoaderCircle, Lock, Mic, Plus, Printer, Sparkles, Square, Trash2, X } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
 type WB1IdentificationFields = {
@@ -40,6 +40,27 @@ type StoryActHelpKey = 'acto1' | 'acto2' | 'acto3'
 type StoryActFieldKey = 'actOrigin' | 'actBreak' | 'actRebuild'
 type StoryTextFieldKey = 'timelineRange' | 'actOrigin' | 'actBreak' | 'actRebuild'
 type PatternListKey = 'patternDecision' | 'patternTrigger' | 'patternResource'
+type StoryAssistStepKey = 'step1' | 'step2' | 'step3'
+type InstrumentAssistKey =
+    | 'identityWheel'
+    | 'identityMatrix'
+    | 'stakeholderMirror'
+    | 'fundamentalValues'
+    | 'valueDecisionMatrix'
+    | 'noNegotiables'
+    | 'foa'
+    | 'energyMap'
+    | 'beliefAbc'
+    | 'beliefEvidence'
+    | 'beliefImpact'
+    | 'empoweringBeliefs'
+    | 'bridgeExperiment'
+    | 'mantras'
+    | 'futureSelf'
+    | 'backcasting'
+    | 'futureLetter'
+type StoryAssistMode = '' | 'audio' | 'direct'
+type StoryAssistStatusKind = 'idle' | 'loading' | 'recording' | 'success' | 'error'
 type IdentitySegmentKey = 'roles' | 'principios' | 'presion' | 'calma' | 'aporte' | 'evito' | 'triggers' | 'recursos'
 
 type StoryActGuide = {
@@ -54,6 +75,65 @@ type PatternListConfig = {
     key: PatternListKey
     title: string
     example: string
+}
+
+type StoryAssistStatus = {
+    kind: StoryAssistStatusKind
+    message: string
+}
+
+type StoryAssistConfig = {
+    title: string
+    description: string
+    audioInstructions: string[]
+    directInstructions: string[]
+}
+
+type StoryAssistEventPayload = {
+    type?: string
+    approxDate?: string
+    happened?: string
+    interpreted?: string
+    learned?: string
+    belief?: string
+}
+
+type StoryAssistPayload = {
+    timelineRange?: string
+    events?: StoryAssistEventPayload[]
+    actOrigin?: string
+    actBreak?: string
+    actRebuild?: string
+    patternDecision?: string[]
+    patternTrigger?: string[]
+    patternResource?: string[]
+}
+
+type InstrumentAssistPayload = {
+    identityWheel?: Partial<Record<IdentitySegmentKey, string[]>>
+    identityMatrixRows?: IdentityMatrixRow[]
+    stakeholderRows?: StakeholderRow[]
+    fundamentalValues?: Partial<FundamentalValuesFields>
+    valueDecisionRows?: ValueDecisionRow[]
+    noNegotiableRows?: NoNegotiableRow[]
+    foaFields?: Partial<Record<FoaQuadrantKey, string[]>>
+    energyMapRows?: EnergyMapRow[]
+    energyPatternBullets?: string[]
+    energyDoMore?: string
+    energyDoLess?: string
+    energyRedesign?: string
+    beliefAbcRows?: BeliefAbcRow[]
+    beliefEvidenceRows?: BeliefEvidenceRow[]
+    beliefImpactSelected?: string
+    beliefImpactCosts?: string[]
+    beliefImpactLostOpportunities?: string[]
+    beliefImpactAffectedRows?: BeliefImpactAffectedRow[]
+    empoweringBeliefRows?: EmpoweringBeliefRow[]
+    bridgeExperimentRows?: BridgeExperimentRow[]
+    mantraRows?: MantraCardRow[]
+    futureSelfFields?: FutureSelfFields
+    backcastingRows?: BackcastingRow[]
+    futureLetterText?: string
 }
 
 type IdentitySegmentConfig = {
@@ -262,6 +342,9 @@ type PageItem = {
 const ID_STORAGE_KEY = 'workbooks-v2-wb1-identification'
 const STORY_FIELDS_STORAGE_KEY = 'workbooks-v2-wb1-story-fields'
 const STORY_EVENTS_STORAGE_KEY = 'workbooks-v2-wb1-story-events'
+const STORY_ASSIST_NOTES_STORAGE_KEY = 'workbooks-v2-wb1-story-assist-notes'
+const STORY_ASSIST_MODE_STORAGE_KEY = 'workbooks-v2-wb1-story-assist-mode'
+const INSTRUMENT_ASSIST_MODE_STORAGE_KEY = 'workbooks-v2-wb1-instrument-assist-mode'
 const IDENTITY_WHEEL_STORAGE_KEY = 'workbooks-v2-wb1-identity-wheel'
 const IDENTITY_MATRIX_STORAGE_KEY = 'workbooks-v2-wb1-identity-matrix'
 const STAKEHOLDER_MIRROR_STORAGE_KEY = 'workbooks-v2-wb1-stakeholder-mirror'
@@ -352,13 +435,280 @@ const FOURSHINE_COMPETENCIES = [
     'Claridad de propósito y valores (Ikigai como marco)'
 ]
 
-const OBSERVABLE_BEHAVIORS = [
-    'Coherencia: tomas decisiones alineadas con tus valores incluso bajo presión.',
-    'Accountability: asumes públicamente tu parte cuando algo falla y defines correcciones concretas.',
-    'Mindset: identificas una creencia limitante, la cuestionas y ejecutas un reemplazo conductual.',
-    'Autenticidad: sostienes tu estilo sin máscara corporativa y sin perder firmeza.',
-    'Reflexión: conviertes experiencias en aprendizaje (registras, sintetizas y ajustas conducta).'
+const GOLDEN_RULES = [
+    'Responde con hechos: “el martes en reunión X hice Y”, no “soy una persona que…”.',
+    'Si no tienes evidencia, escribe: “No tengo evidencia reciente” y eso ya es un hallazgo.',
+    'No busques quedar bien: este workbook es para desarrollarte, no para evaluarte socialmente.'
 ]
+
+const STORY_ASSIST_CONFIG: Record<StoryAssistStepKey, StoryAssistConfig> = {
+    step1: {
+        title: 'Elige cómo quieres completar este paso',
+        description:
+            'Según tu elección, verás solo las instrucciones necesarias para este paso y la experiencia se adaptará para reducir carga cognitiva.',
+        audioInstructions: [
+            'Habla con calma y recorre la temporalidad que quieres trabajar.',
+            'Menciona momentos clave, quiebres, logros y fechas aproximadas si las recuerdas.',
+            'Cuando detengas el audio, el sistema ubicará la información entre temporalidad y eventos.'
+        ],
+        directInstructions: [
+            'Completa primero la temporalidad y los eventos directamente en los campos de este paso.',
+            'Concéntrate en hechos, decisiones, aprendizajes y creencias observables.',
+            'Si luego quieres ordenar mejor lo que ya cargaste, puedes apoyarte en Asistente IA.'
+        ]
+    },
+    step2: {
+        title: 'Elige cómo quieres completar este paso',
+        description:
+            'Según tu elección, verás solo las instrucciones necesarias para este paso y la experiencia se adaptará para reducir carga cognitiva.',
+        audioInstructions: [
+            'Cuenta la historia como si se la explicaras a tu mentor, en el orden en que ocurrió.',
+            'Incluye contexto, quiebre y lo que cambió en ti después de ese momento.',
+            'Al terminar, el sistema propondrá una primera versión de los 3 actos.'
+        ],
+        directInstructions: [
+            'Completa directamente los tres campos narrativos: origen, quiebre y reconstrucción.',
+            'Prioriza contexto, escena clave y efecto en ti para cada acto.',
+            'Si después quieres pulir el borrador, puedes usar Asistente IA sobre lo que ya escribiste.'
+        ]
+    },
+    step3: {
+        title: 'Elige cómo quieres completar este paso',
+        description:
+            'Según tu elección, verás solo las instrucciones necesarias para este paso y la experiencia se adaptará para reducir carga cognitiva.',
+        audioInstructions: [
+            'Describe qué haces bajo presión, qué te activa y qué te ayuda a responder mejor.',
+            'Habla con ejemplos concretos en lugar de adjetivos generales.',
+            'Cuando termines, el sistema repartirá automáticamente los hallazgos en las 3 listas.'
+        ],
+        directInstructions: [
+            'Llena directamente las listas de patrón, detonante y recurso usando los campos de este paso.',
+            'Escribe comportamientos concretos y evita adjetivos vagos.',
+            'Si luego quieres sintetizar mejor tus respuestas, puedes apoyarte en Asistente IA.'
+        ]
+    }
+}
+
+const STORY_ASSIST_ENDPOINT = '/api/workbooks-v2/wb1/story-assist'
+const INSTRUMENT_ASSIST_ENDPOINT = '/api/workbooks-v2/wb1/instrument-assist'
+const INSTRUMENT_ASSIST_DESCRIPTION =
+    'Según tu elección, verás solo las instrucciones necesarias para este instrumento y la experiencia se adaptará para reducir carga cognitiva.'
+
+function createInstrumentAssistConfig(audioInstructions: string[], directInstructions: string[]): StoryAssistConfig {
+    return {
+        title: 'Elige cómo quieres completar este instrumento',
+        description: INSTRUMENT_ASSIST_DESCRIPTION,
+        audioInstructions,
+        directInstructions
+    }
+}
+
+const INSTRUMENT_ASSIST_CONFIG: Record<InstrumentAssistKey, StoryAssistConfig> = {
+    identityWheel: createInstrumentAssistConfig(
+        [
+            'Describe cómo eres hoy como líder en cada dimensión: lo que sostienes, lo que evitas, lo que te activa y lo que entregas.',
+            'Habla en frases concretas y con ejemplos breves para que el sistema pueda repartir los hallazgos entre los 8 segmentos.',
+            'Cuando termines, el sistema ubicará cada idea en el segmento más coherente de la rueda.'
+        ],
+        [
+            'Completa los bullets de cada segmento directamente en la rueda de identidad.',
+            'Usa frases cortas, específicas y observables en lugar de adjetivos vagos.',
+            'Si luego quieres ordenar mejor lo que ya cargaste, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    identityMatrix: createInstrumentAssistConfig(
+        [
+            'Cuenta frases que dices, hechos recientes que las respaldan o contradicen, y el impacto observable que generan.',
+            'Menciona reuniones, decisiones, mensajes o conversaciones concretas.',
+            'Cuando detengas el audio, el sistema propondrá filas organizadas para la matriz.'
+        ],
+        [
+            'Llena la matriz directamente con mensajes, hechos recientes e impacto observable.',
+            'Procura que cada fila conecte discurso, conducta e impacto en otras personas.',
+            'Si después quieres ordenar mejor las filas ya cargadas, puedes usar Asistente IA.'
+        ]
+    ),
+    stakeholderMirror: createInstrumentAssistConfig(
+        [
+            'Describe tres stakeholders distintos y explica qué fortaleza y qué punto ciego crees que vería cada uno.',
+            'Habla desde hipótesis realistas y en términos de conducta observable.',
+            'El sistema repartirá la información entre persona/rol, fortaleza y punto ciego.'
+        ],
+        [
+            'Completa directamente los campos de cada stakeholder con tu mejor hipótesis.',
+            'Escribe conductas visibles en lugar de etiquetas generales.',
+            'Si luego quieres pulir la formulación, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    fundamentalValues: createInstrumentAssistConfig(
+        [
+            'Nombra los valores que realmente guían tu vida y explica cuáles son los más determinantes y los no negociables.',
+            'Si puedes, menciona ejemplos de presión o decisión para que la priorización sea más precisa.',
+            'El sistema propondrá una selección de 10, una reducción a 5 y una priorización final de 3.'
+        ],
+        [
+            'Selecciona directamente tus 10 valores, luego reduce a 5 y finalmente a 3 no negociables.',
+            'Evita elegir los valores “bonitos”; prioriza los que realmente defiendes bajo presión.',
+            'Si después quieres revisar la coherencia de tu selección, puedes usar Asistente IA.'
+        ]
+    ),
+    valueDecisionMatrix: createInstrumentAssistConfig(
+        [
+            'Describe tus valores determinantes y dos decisiones recientes que demuestren cada uno.',
+            'Incluye fecha aproximada, contexto y la acción concreta que tomaste.',
+            'Al terminar, el sistema propondrá decisiones organizadas por valor.'
+        ],
+        [
+            'Completa directamente las decisiones observables para cada valor determinante.',
+            'Procura que cada decisión pueda verificarse con un hecho, no solo con intención.',
+            'Si luego quieres ordenar mejor la evidencia, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    noNegotiables: createInstrumentAssistConfig(
+        [
+            'Explica qué no harías bajo presión y qué costo aceptarías por sostener ese criterio.',
+            'Habla en comportamientos concretos, no solo en valores abstractos.',
+            'El sistema convertirá tu audio en frases operativas por cada valor no negociable.'
+        ],
+        [
+            'Completa directamente cada frase: “Bajo presión, yo NO... aunque eso implique...”.',
+            'El primer espacio debe ser conducta concreta y el segundo un costo realista.',
+            'Si luego quieres afinar la redacción, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    foa: createInstrumentAssistConfig(
+        [
+            'Describe fortalezas, áreas de oportunidad y amenazas con hechos o señales observables.',
+            'Si puedes, agrega resultados, contexto o evidencia breve.',
+            'Cuando termines, el sistema repartirá tus hallazgos entre los tres cuadrantes.'
+        ],
+        [
+            'Llena directamente los bullets de fortalezas, áreas de oportunidad y amenazas.',
+            'Escribe situaciones concretas y evita adjetivos generales.',
+            'Si después quieres sintetizar mejor el cuadrante, puedes usar Asistente IA.'
+        ]
+    ),
+    energyMap: createInstrumentAssistConfig(
+        [
+            'Recorre tu semana típica: qué actividades te cargan, cuáles te drenan, por qué y qué ajuste harías.',
+            'Menciona también patrones y qué harás más, menos o rediseñarás.',
+            'El sistema organizará la información en filas y en el cierre del instrumento.'
+        ],
+        [
+            'Completa directamente la tabla de actividades y el cierre del instrumento.',
+            'Usa una actividad por fila y registra causa concreta, energía y ajuste.',
+            'Si luego quieres ordenar mejor los patrones y decisiones, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    beliefAbc: createInstrumentAssistConfig(
+        [
+            'Cuenta situaciones recientes donde una creencia afectó tu respuesta.',
+            'Describe activador, creencia interna, emoción con intensidad y conducta observable.',
+            'El sistema organizará cada situación dentro del modelo ABC.'
+        ],
+        [
+            'Llena directamente cada situación del modelo ABC.',
+            'En A registra hechos; en B la frase interna; en C emoción y conducta observable.',
+            'Si después quieres limpiar o estructurar mejor cada caso, puedes usar Asistente IA.'
+        ]
+    ),
+    beliefEvidence: createInstrumentAssistConfig(
+        [
+            'Describe creencias limitantes, hechos que parecen confirmarlas, hechos que las contradicen y un nuevo significado posible.',
+            'Habla con evidencia concreta y fechas aproximadas cuando las recuerdes.',
+            'El sistema organizará la información en la matriz de evidencia.'
+        ],
+        [
+            'Completa directamente la matriz con creencia limitante, evidencia a favor, en contra y nuevo significado.',
+            'Evita opiniones generales y prioriza hechos observables.',
+            'Si luego quieres mejorar la calidad del reencuadre, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    beliefImpact: createInstrumentAssistConfig(
+        [
+            'Explica qué costos te genera una creencia limitante, qué oportunidades pierdes y a quién afecta.',
+            'Habla en consecuencias visibles y concretas.',
+            'El sistema repartirá la información entre costos, oportunidades y personas afectadas.'
+        ],
+        [
+            'Completa directamente los bullets de costos, oportunidades perdidas y afectados.',
+            'Trabaja sobre la creencia seleccionada y usa impacto observable, no explicaciones largas.',
+            'Si luego quieres organizar mejor el análisis, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    empoweringBeliefs: createInstrumentAssistConfig(
+        [
+            'Describe la creencia limitante, la creencia ideal y una creencia puente realista para cada caso.',
+            'Busca formulaciones creíbles hoy, no frases perfectas.',
+            'El sistema organizará cada caso en la tarjeta correspondiente.'
+        ],
+        [
+            'Llena directamente las tarjetas de creencia limitante, ideal y puente.',
+            'Asegúrate de que la creencia puente sea accionable y creíble en este momento.',
+            'Si luego quieres ajustar el reencuadre, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    bridgeExperiment: createInstrumentAssistConfig(
+        [
+            'Explica qué experimento de 7 días harás para probar cada creencia puente.',
+            'Incluye conducta diaria, evidencia observable e indicador medible.',
+            'El sistema organizará la información en las tres tarjetas del experimento.'
+        ],
+        [
+            'Completa directamente cada plan de prueba con conducta mínima, evidencia e indicador.',
+            'Diseña acciones pequeñas, diarias y observables.',
+            'Si luego quieres volver más clara la prueba, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    mantras: createInstrumentAssistConfig(
+        [
+            'Di tus mantras, la situación donde los necesitas, la conducta visible que activan y la señal que usarás como recordatorio.',
+            'Usa frases cortas, concretas y conectadas con tu identidad.',
+            'El sistema convertirá el audio en tarjetas completas de mantra.'
+        ],
+        [
+            'Llena directamente las tarjetas de mantra, situación, conducta visible y señal.',
+            'Mantén la fórmula corta y verificable para que el mantra sea usable bajo presión.',
+            'Si luego quieres afinar la redacción o la conducta, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    futureSelf: createInstrumentAssistConfig(
+        [
+            'Describe tu versión 10X en presente: identidad, valores, hábitos, decisiones, habilidades, entorno, impacto, métricas y riesgos.',
+            'Habla como si ya fueras esa versión y usa ejemplos concretos.',
+            'El sistema repartirá la información entre los nueve bloques del canvas.'
+        ],
+        [
+            'Completa directamente los nueve bloques del Future Self Canvas.',
+            'Escribe en presente y con formulaciones concretas y sostenibles.',
+            'Si luego quieres ordenar mejor el canvas, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    backcasting: createInstrumentAssistConfig(
+        [
+            'Recorre tu línea de tiempo desde Año 10 hasta los próximos 30 días.',
+            'Para cada hito, explica logro, hábito y evidencia concreta.',
+            'El sistema distribuirá la información en la línea de tiempo Backcasting.'
+        ],
+        [
+            'Llena directamente las tarjetas de Año 10, Año 3, Año 1 y 30 días.',
+            'En cada punto define logro, hábito y evidencia específica.',
+            'Si luego quieres ordenar mejor la secuencia, puedes apoyarte en Asistente IA.'
+        ]
+    ),
+    futureLetter: createInstrumentAssistConfig(
+        [
+            'Habla como si estuvieras escribiendo desde tu identidad 10X.',
+            'Incluye qué dejaste de negociar, el hábito que te transformó, la decisión clave y el impacto que generas.',
+            'El sistema convertirá tu audio en un borrador estructurado de la carta.'
+        ],
+        [
+            'Escribe directamente tu carta en el campo del instrumento.',
+            'Mantén la voz en primera persona y en tono concreto, no aspiracional vacío.',
+            'Si luego quieres ordenar mejor el borrador ya escrito, puedes apoyarte en Asistente IA.'
+        ]
+    )
+}
 
 const RESPONSE_RULES = [
     'Responde con bullets concretos.',
@@ -779,6 +1129,237 @@ const defaultEventDraft = (): StoryEventDraft => ({
     learned: '',
     belief: ''
 })
+
+function defaultStoryAssistNotes(): Record<StoryAssistStepKey, string> {
+    return {
+        step1: '',
+        step2: '',
+        step3: ''
+    }
+}
+
+function defaultStoryAssistStatus(): Record<StoryAssistStepKey, StoryAssistStatus> {
+    return {
+        step1: { kind: 'idle', message: '' },
+        step2: { kind: 'idle', message: '' },
+        step3: { kind: 'idle', message: '' }
+    }
+}
+
+function defaultStoryAssistModes(): Record<StoryAssistStepKey, StoryAssistMode> {
+    return {
+        step1: '',
+        step2: '',
+        step3: ''
+    }
+}
+
+function defaultInstrumentAssistStatus(): Record<InstrumentAssistKey, StoryAssistStatus> {
+    return {
+        identityWheel: { kind: 'idle', message: '' },
+        identityMatrix: { kind: 'idle', message: '' },
+        stakeholderMirror: { kind: 'idle', message: '' },
+        fundamentalValues: { kind: 'idle', message: '' },
+        valueDecisionMatrix: { kind: 'idle', message: '' },
+        noNegotiables: { kind: 'idle', message: '' },
+        foa: { kind: 'idle', message: '' },
+        energyMap: { kind: 'idle', message: '' },
+        beliefAbc: { kind: 'idle', message: '' },
+        beliefEvidence: { kind: 'idle', message: '' },
+        beliefImpact: { kind: 'idle', message: '' },
+        empoweringBeliefs: { kind: 'idle', message: '' },
+        bridgeExperiment: { kind: 'idle', message: '' },
+        mantras: { kind: 'idle', message: '' },
+        futureSelf: { kind: 'idle', message: '' },
+        backcasting: { kind: 'idle', message: '' },
+        futureLetter: { kind: 'idle', message: '' }
+    }
+}
+
+function defaultInstrumentAssistModes(): Record<InstrumentAssistKey, StoryAssistMode> {
+    return {
+        identityWheel: '',
+        identityMatrix: '',
+        stakeholderMirror: '',
+        fundamentalValues: '',
+        valueDecisionMatrix: '',
+        noNegotiables: '',
+        foa: '',
+        energyMap: '',
+        beliefAbc: '',
+        beliefEvidence: '',
+        beliefImpact: '',
+        empoweringBeliefs: '',
+        bridgeExperiment: '',
+        mantras: '',
+        futureSelf: '',
+        backcasting: '',
+        futureLetter: ''
+    }
+}
+
+type StoryAssistPanelProps = {
+    config: StoryAssistConfig
+    mode: StoryAssistMode
+    status: StoryAssistStatus
+    disabled: boolean
+    canUseAssistant: boolean
+    onModeChange: (mode: StoryAssistMode) => void
+    onAssist: () => void
+    onToggleRecording: () => void
+}
+
+function StoryAssistPanel({
+    config,
+    mode,
+    status,
+    disabled,
+    canUseAssistant,
+    onModeChange,
+    onAssist,
+    onToggleRecording
+}: StoryAssistPanelProps) {
+    const isRecording = status.kind === 'recording'
+    const isLoading = status.kind === 'loading'
+    const messageTone =
+        status.kind === 'error'
+            ? 'text-red-700'
+            : status.kind === 'success'
+              ? 'text-emerald-700'
+              : status.kind === 'recording'
+                ? 'text-amber-700'
+                : 'text-slate-600'
+
+    return (
+        <aside className="rounded-2xl border border-blue-200 bg-[linear-gradient(135deg,#eff6ff_0%,#f8fafc_100%)] p-4 md:p-5 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                    <h4 className="text-sm md:text-base font-bold text-slate-900">{config.title}</h4>
+                    <p className="text-sm text-slate-700 leading-relaxed">{config.description}</p>
+                </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+                <button
+                    type="button"
+                    onClick={() => onModeChange('audio')}
+                    disabled={disabled || isLoading || isRecording}
+                    className={`rounded-2xl border px-4 py-4 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        mode === 'audio'
+                            ? 'border-blue-500 bg-blue-50 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
+                    }`}
+                >
+                    <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
+                        <Mic size={16} className={mode === 'audio' ? 'text-blue-700' : 'text-slate-600'} />
+                        Grabar audio
+                    </span>
+                    <p className="mt-2 text-sm text-slate-600">
+                        Habla y deja que el sistema ubique la información automáticamente en este paso.
+                    </p>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => onModeChange('direct')}
+                    disabled={disabled || isLoading || isRecording}
+                    className={`rounded-2xl border px-4 py-4 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        mode === 'direct'
+                            ? 'border-blue-500 bg-blue-50 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
+                    }`}
+                >
+                    <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
+                        <Sparkles size={16} className={mode === 'direct' ? 'text-blue-700' : 'text-slate-600'} />
+                        Llenar los campos directamente
+                    </span>
+                    <p className="mt-2 text-sm text-slate-600">
+                        Completa los campos del paso en pantalla y usa Asistente IA solo si necesitas ordenar mejor el contenido.
+                    </p>
+                </button>
+            </div>
+
+            {mode === '' ? (
+                <div className="rounded-xl border border-dashed border-blue-200 bg-white px-4 py-4">
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                        Selecciona una opción para ver únicamente las indicaciones necesarias y mantener la experiencia enfocada.
+                    </p>
+                </div>
+            ) : mode === 'audio' ? (
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 space-y-4">
+                    <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Instrucciones si eliges grabar audio</p>
+                        <ul className="space-y-2">
+                            {config.audioInstructions.map((instruction) => (
+                                <li key={instruction} className="text-sm text-slate-700 leading-relaxed flex items-start gap-2">
+                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-500 shrink-0" />
+                                    <span>{instruction}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onToggleRecording}
+                        disabled={disabled || isLoading}
+                        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isRecording
+                                ? 'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                                : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                        }`}
+                    >
+                        {isRecording ? <Square size={16} /> : <Mic size={16} />}
+                        {isRecording ? 'Detener y procesar audio' : 'Grabar audio'}
+                    </button>
+                </div>
+            ) : (
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 space-y-4">
+                    <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Instrucciones si eliges llenar los campos directamente</p>
+                        <ul className="space-y-2">
+                            {config.directInstructions.map((instruction) => (
+                                <li key={instruction} className="text-sm text-slate-700 leading-relaxed flex items-start gap-2">
+                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-500 shrink-0" />
+                                    <span>{instruction}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                        <p className="text-sm text-slate-600">
+                            Continúa con los campos de este paso. Si ya cargaste suficiente información, puedes pedir apoyo de Asistente IA para ordenarla mejor.
+                        </p>
+                    </div>
+
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={onAssist}
+                            disabled={disabled || isLoading || isRecording || !canUseAssistant}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? <LoaderCircle size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                            {isLoading ? 'Procesando con Asistente IA...' : 'Asistente IA'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 space-y-1.5">
+                <p className="text-xs text-slate-600 leading-relaxed">
+                    El objetivo es ayudarte a capturar información más rápido sin perder estructura ni claridad.
+                </p>
+                {status.message && (
+                    <p className={`text-xs font-semibold leading-relaxed ${messageTone}`} aria-live="polite">
+                        {status.message}
+                    </p>
+                )}
+            </div>
+        </aside>
+    )
+}
 
 function emptyPatternList() {
     return Array.from({ length: PATTERN_LIST_LIMIT }, () => '')
@@ -1863,6 +2444,12 @@ export function WB1Step1Digital() {
         patternResource: emptyPatternList()
     })
     const [storyEvents, setStoryEvents] = useState<StoryEvent[]>([])
+    const [storyAssistMode, setStoryAssistMode] = useState<Record<StoryAssistStepKey, StoryAssistMode>>(defaultStoryAssistModes())
+    const [storyAssistNotes, setStoryAssistNotes] = useState<Record<StoryAssistStepKey, string>>(defaultStoryAssistNotes())
+    const [storyAssistStatus, setStoryAssistStatus] = useState<Record<StoryAssistStepKey, StoryAssistStatus>>(defaultStoryAssistStatus())
+    const [instrumentAssistMode, setInstrumentAssistMode] = useState<Record<InstrumentAssistKey, StoryAssistMode>>(defaultInstrumentAssistModes())
+    const [instrumentAssistStatus, setInstrumentAssistStatus] =
+        useState<Record<InstrumentAssistKey, StoryAssistStatus>>(defaultInstrumentAssistStatus())
     const [identityWheelFields, setIdentityWheelFields] = useState<Record<IdentitySegmentKey, string[]>>(defaultIdentityWheelFields())
     const [identityMatrixRows, setIdentityMatrixRows] = useState<IdentityMatrixRow[]>(defaultIdentityMatrixRows())
     const [stakeholderRows, setStakeholderRows] = useState<StakeholderRow[]>(defaultStakeholderRows())
@@ -1941,6 +2528,12 @@ export function WB1Step1Digital() {
     const [synthesisWeeklyAction, setSynthesisWeeklyAction] = useState('')
     const [synthesisIndicator, setSynthesisIndicator] = useState('')
     const [synthesisIsEditing, setSynthesisIsEditing] = useState(false)
+    const storyRecorderRef = useRef<MediaRecorder | null>(null)
+    const storyStreamRef = useRef<MediaStream | null>(null)
+    const storyChunksRef = useRef<Blob[]>([])
+    const instrumentRecorderRef = useRef<MediaRecorder | null>(null)
+    const instrumentStreamRef = useRef<MediaStream | null>(null)
+    const instrumentChunksRef = useRef<Blob[]>([])
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -2014,6 +2607,110 @@ export function WB1Step1Digital() {
         if (typeof window === 'undefined') return
         window.localStorage.setItem(STORY_EVENTS_STORAGE_KEY, JSON.stringify(storyEvents))
     }, [storyEvents])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(STORY_ASSIST_NOTES_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as Partial<Record<StoryAssistStepKey, unknown>>
+            setStoryAssistNotes({
+                step1: typeof parsed.step1 === 'string' ? parsed.step1 : '',
+                step2: typeof parsed.step2 === 'string' ? parsed.step2 : '',
+                step3: typeof parsed.step3 === 'string' ? parsed.step3 : ''
+            })
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(STORY_ASSIST_NOTES_STORAGE_KEY, JSON.stringify(storyAssistNotes))
+    }, [storyAssistNotes])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(STORY_ASSIST_MODE_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as Partial<Record<StoryAssistStepKey, unknown>>
+            setStoryAssistMode({
+                step1: parsed.step1 === 'audio' || parsed.step1 === 'direct' ? parsed.step1 : '',
+                step2: parsed.step2 === 'audio' || parsed.step2 === 'direct' ? parsed.step2 : '',
+                step3: parsed.step3 === 'audio' || parsed.step3 === 'direct' ? parsed.step3 : ''
+            })
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(STORY_ASSIST_MODE_STORAGE_KEY, JSON.stringify(storyAssistMode))
+    }, [storyAssistMode])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const stored = window.localStorage.getItem(INSTRUMENT_ASSIST_MODE_STORAGE_KEY)
+        if (!stored) return
+
+        try {
+            const parsed = JSON.parse(stored) as Partial<Record<InstrumentAssistKey, unknown>>
+            setInstrumentAssistMode({
+                identityWheel: parsed.identityWheel === 'audio' || parsed.identityWheel === 'direct' ? parsed.identityWheel : '',
+                identityMatrix: parsed.identityMatrix === 'audio' || parsed.identityMatrix === 'direct' ? parsed.identityMatrix : '',
+                stakeholderMirror:
+                    parsed.stakeholderMirror === 'audio' || parsed.stakeholderMirror === 'direct' ? parsed.stakeholderMirror : '',
+                fundamentalValues:
+                    parsed.fundamentalValues === 'audio' || parsed.fundamentalValues === 'direct' ? parsed.fundamentalValues : '',
+                valueDecisionMatrix:
+                    parsed.valueDecisionMatrix === 'audio' || parsed.valueDecisionMatrix === 'direct' ? parsed.valueDecisionMatrix : '',
+                noNegotiables: parsed.noNegotiables === 'audio' || parsed.noNegotiables === 'direct' ? parsed.noNegotiables : '',
+                foa: parsed.foa === 'audio' || parsed.foa === 'direct' ? parsed.foa : '',
+                energyMap: parsed.energyMap === 'audio' || parsed.energyMap === 'direct' ? parsed.energyMap : '',
+                beliefAbc: parsed.beliefAbc === 'audio' || parsed.beliefAbc === 'direct' ? parsed.beliefAbc : '',
+                beliefEvidence:
+                    parsed.beliefEvidence === 'audio' || parsed.beliefEvidence === 'direct' ? parsed.beliefEvidence : '',
+                beliefImpact: parsed.beliefImpact === 'audio' || parsed.beliefImpact === 'direct' ? parsed.beliefImpact : '',
+                empoweringBeliefs:
+                    parsed.empoweringBeliefs === 'audio' || parsed.empoweringBeliefs === 'direct' ? parsed.empoweringBeliefs : '',
+                bridgeExperiment:
+                    parsed.bridgeExperiment === 'audio' || parsed.bridgeExperiment === 'direct' ? parsed.bridgeExperiment : '',
+                mantras: parsed.mantras === 'audio' || parsed.mantras === 'direct' ? parsed.mantras : '',
+                futureSelf: parsed.futureSelf === 'audio' || parsed.futureSelf === 'direct' ? parsed.futureSelf : '',
+                backcasting: parsed.backcasting === 'audio' || parsed.backcasting === 'direct' ? parsed.backcasting : '',
+                futureLetter: parsed.futureLetter === 'audio' || parsed.futureLetter === 'direct' ? parsed.futureLetter : ''
+            })
+        } catch {
+            // Ignore corrupted local storage and keep defaults.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(INSTRUMENT_ASSIST_MODE_STORAGE_KEY, JSON.stringify(instrumentAssistMode))
+    }, [instrumentAssistMode])
+
+    useEffect(() => {
+        return () => {
+            if (storyRecorderRef.current && storyRecorderRef.current.state !== 'inactive') {
+                storyRecorderRef.current.stop()
+            }
+            storyStreamRef.current?.getTracks().forEach((track) => track.stop())
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => {
+            if (instrumentRecorderRef.current && instrumentRecorderRef.current.state !== 'inactive') {
+                instrumentRecorderRef.current.stop()
+            }
+            instrumentStreamRef.current?.getTracks().forEach((track) => track.stop())
+        }
+    }, [])
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -2866,6 +3563,887 @@ export function WB1Step1Digital() {
             actBreak: prev.actBreak.trim(),
             actRebuild: prev.actRebuild.trim()
         }))
+    }
+
+    const selectStoryAssistMode = (step: StoryAssistStepKey, mode: StoryAssistMode) => {
+        if (isLocked || storyAssistBusy) return
+        setStoryAssistMode((prev) => ({ ...prev, [step]: mode }))
+    }
+
+    const setStoryAssistFeedback = (step: StoryAssistStepKey, kind: StoryAssistStatusKind, message: string) => {
+        setStoryAssistStatus((prev) => ({
+            ...prev,
+            [step]: { kind, message }
+        }))
+    }
+
+    const storyAssistBusy = Object.values(storyAssistStatus).some(
+        (item) => item.kind === 'loading' || item.kind === 'recording'
+    )
+
+    const normalizeStoryAssistEventType = (value: unknown): StoryEventType => {
+        if (value === 'logro' || value === 'logro-golpe' || value === 'golpe') return value
+        if (typeof value !== 'string') return 'logro'
+
+        const normalized = value.toLowerCase()
+        if (normalized.includes('golpe') && normalized.includes('logro')) return 'logro-golpe'
+        if (normalized.includes('crisis') || normalized.includes('quiebre') || normalized.includes('golpe')) return 'golpe'
+        return 'logro'
+    }
+
+    const normalizeStoryAssistApproxDate = (value: unknown) => {
+        if (typeof value !== 'string') return ''
+        const trimmed = value.trim()
+        if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed
+        if (/^\d{4}$/.test(trimmed)) return `${trimmed}-01`
+        return ''
+    }
+
+    const normalizeStoryAssistEvent = (value: StoryAssistEventPayload): StoryEvent | null => {
+        const happened = typeof value.happened === 'string' ? value.happened.trim() : ''
+        const interpreted = typeof value.interpreted === 'string' ? value.interpreted.trim() : ''
+        const learned = typeof value.learned === 'string' ? value.learned.trim() : ''
+        const belief = typeof value.belief === 'string' ? value.belief.trim() : ''
+
+        if (!happened || !interpreted || !learned || !belief) return null
+
+        return {
+            id: crypto.randomUUID(),
+            type: normalizeStoryAssistEventType(value.type),
+            approxDate: normalizeStoryAssistApproxDate(value.approxDate),
+            happened,
+            interpreted,
+            learned,
+            belief
+        }
+    }
+
+    const buildStoryAssistContext = (step: StoryAssistStepKey) => {
+        if (step === 'step1') {
+            return {
+                timelineRange: storyFields.timelineRange,
+                events: storyEvents
+            }
+        }
+
+        if (step === 'step2') {
+            return {
+                timelineRange: storyFields.timelineRange,
+                events: storyEvents,
+                actOrigin: storyFields.actOrigin,
+                actBreak: storyFields.actBreak,
+                actRebuild: storyFields.actRebuild
+            }
+        }
+
+        return {
+            timelineRange: storyFields.timelineRange,
+            events: storyEvents,
+            actOrigin: storyFields.actOrigin,
+            actBreak: storyFields.actBreak,
+            actRebuild: storyFields.actRebuild,
+            patternDecision: storyFields.patternDecision,
+            patternTrigger: storyFields.patternTrigger,
+            patternResource: storyFields.patternResource
+        }
+    }
+
+    const hasStoryAssistInput = (step: StoryAssistStepKey) => {
+        const note = storyAssistNotes[step].trim()
+        if (note.length > 0) return true
+
+        if (step === 'step1') {
+            return storyFields.timelineRange.trim().length > 0 || storyEvents.length > 0
+        }
+
+        if (step === 'step2') {
+            return (
+                storyFields.actOrigin.trim().length > 0 ||
+                storyFields.actBreak.trim().length > 0 ||
+                storyFields.actRebuild.trim().length > 0 ||
+                storyEvents.length > 0
+            )
+        }
+
+        return (
+            storyFields.patternDecision.some((item) => item.trim().length > 0) ||
+            storyFields.patternTrigger.some((item) => item.trim().length > 0) ||
+            storyFields.patternResource.some((item) => item.trim().length > 0) ||
+            storyFields.actOrigin.trim().length > 0 ||
+            storyFields.actBreak.trim().length > 0 ||
+            storyFields.actRebuild.trim().length > 0 ||
+            storyEvents.length > 0
+        )
+    }
+
+    const applyStoryAssistPayload = (step: StoryAssistStepKey, payload: StoryAssistPayload) => {
+        if (step === 'step1') {
+            const nextRange = typeof payload.timelineRange === 'string' ? payload.timelineRange.trim() : ''
+            if (nextRange) {
+                setStoryFields((prev) => ({ ...prev, timelineRange: nextRange }))
+            }
+
+            const normalizedEvents = Array.isArray(payload.events)
+                ? payload.events
+                      .map((item) => normalizeStoryAssistEvent(item))
+                      .filter((item): item is StoryEvent => item !== null)
+                      .slice(0, STORY_EVENT_LIMIT)
+                : []
+
+            const existingSignatures = new Set(
+                storyEvents.map((event) => `${event.approxDate}|${event.happened.toLowerCase()}|${event.belief.toLowerCase()}`)
+            )
+            const nextEvents = [...storyEvents]
+            let insertedEvents = 0
+
+            normalizedEvents.forEach((event) => {
+                if (nextEvents.length >= STORY_EVENT_LIMIT) return
+                const signature = `${event.approxDate}|${event.happened.toLowerCase()}|${event.belief.toLowerCase()}`
+                if (existingSignatures.has(signature)) return
+                existingSignatures.add(signature)
+                nextEvents.push(event)
+                insertedEvents += 1
+            })
+
+            if (insertedEvents > 0) {
+                setStoryEvents(nextEvents)
+            }
+
+            if (nextRange && insertedEvents > 0) {
+                return `Listo: actualicé la temporalidad y sumé ${insertedEvents} evento${insertedEvents === 1 ? '' : 's'} al timeline.`
+            }
+
+            if (insertedEvents > 0) {
+                return `Listo: sumé ${insertedEvents} evento${insertedEvents === 1 ? '' : 's'} al timeline.`
+            }
+
+            if (nextRange) {
+                return 'Listo: actualicé la temporalidad de trabajo con tu contexto.'
+            }
+
+            return 'No encontré suficiente detalle para crear eventos nuevos. Prueba con más hechos o fechas aproximadas.'
+        }
+
+        if (step === 'step2') {
+            const nextOrigin = typeof payload.actOrigin === 'string' ? payload.actOrigin.trim() : ''
+            const nextBreak = typeof payload.actBreak === 'string' ? payload.actBreak.trim() : ''
+            const nextRebuild = typeof payload.actRebuild === 'string' ? payload.actRebuild.trim() : ''
+
+            setStoryFields((prev) => ({
+                ...prev,
+                actOrigin: nextOrigin || prev.actOrigin,
+                actBreak: nextBreak || prev.actBreak,
+                actRebuild: nextRebuild || prev.actRebuild
+            }))
+
+            if (nextOrigin || nextBreak || nextRebuild) {
+                return 'Listo: estructuré una primera versión de tu narrativa en 3 actos.'
+            }
+
+            return 'No encontré suficiente material para estructurar los 3 actos. Agrega más contexto o un audio más específico.'
+        }
+
+        const nextDecision = normalizePatternList(payload.patternDecision)
+        const nextTrigger = normalizePatternList(payload.patternTrigger)
+        const nextResource = normalizePatternList(payload.patternResource)
+        const loadedBullets =
+            nextDecision.filter((item) => item.trim().length > 0).length +
+            nextTrigger.filter((item) => item.trim().length > 0).length +
+            nextResource.filter((item) => item.trim().length > 0).length
+
+        setStoryFields((prev) => ({
+            ...prev,
+            patternDecision: nextDecision.some((item) => item.trim().length > 0) ? nextDecision : prev.patternDecision,
+            patternTrigger: nextTrigger.some((item) => item.trim().length > 0) ? nextTrigger : prev.patternTrigger,
+            patternResource: nextResource.some((item) => item.trim().length > 0) ? nextResource : prev.patternResource
+        }))
+        setPatternEditModes({
+            patternDecision: false,
+            patternTrigger: false,
+            patternResource: false
+        })
+
+        if (loadedBullets > 0) {
+            return 'Listo: organicé tus patrones, detonantes y recursos en bullets más claros.'
+        }
+
+        return 'No logré identificar suficientes patrones concretos. Prueba describiendo comportamientos y detonantes más específicos.'
+    }
+
+    const requestStoryAssist = async (
+        step: StoryAssistStepKey,
+        body: BodyInit,
+        contentType?: string
+    ): Promise<{ data: StoryAssistPayload; sourceText?: string }> => {
+        const response = await fetch(STORY_ASSIST_ENDPOINT, {
+            method: 'POST',
+            headers: contentType ? { 'Content-Type': contentType } : undefined,
+            body
+        })
+
+        const payload = await response.json()
+
+        if (!response.ok) {
+            throw new Error(typeof payload?.error === 'string' ? payload.error : 'No fue posible procesar la solicitud con IA.')
+        }
+
+        return payload as { data: StoryAssistPayload; sourceText?: string }
+    }
+
+    const runStoryAssist = async (step: StoryAssistStepKey) => {
+        if (isLocked || storyAssistBusy) return
+
+        if (!hasStoryAssistInput(step)) {
+            setStoryAssistFeedback(step, 'error', 'Comparte notas, eventos o contexto antes de pedir ayuda a la IA.')
+            return
+        }
+
+        setStoryAssistFeedback(step, 'loading', 'Procesando tu información con Asistente IA...')
+
+        try {
+            const payload = await requestStoryAssist(
+                step,
+                JSON.stringify({
+                    step,
+                    notes: storyAssistNotes[step],
+                    currentData: buildStoryAssistContext(step)
+                }),
+                'application/json'
+            )
+
+            const message = applyStoryAssistPayload(step, payload.data)
+            setStoryAssistFeedback(step, message.startsWith('No ') ? 'error' : 'success', message)
+        } catch (error) {
+            setStoryAssistFeedback(
+                step,
+                'error',
+                error instanceof Error ? error.message : 'No fue posible completar el paso con IA en este momento.'
+            )
+        }
+    }
+
+    const processRecordedStoryAudio = async (step: StoryAssistStepKey, blob: Blob) => {
+        setStoryAssistFeedback(step, 'loading', 'Transcribiendo y ubicando tu audio en el paso correcto...')
+
+        try {
+            const formData = new FormData()
+            const extension = blob.type.includes('mp4') ? 'm4a' : 'webm'
+            formData.append('step', step)
+            formData.append('currentData', JSON.stringify(buildStoryAssistContext(step)))
+            formData.append('audio', new File([blob], `wb1-${step}.${extension}`, { type: blob.type || 'audio/webm' }))
+
+            const payload = await requestStoryAssist(step, formData)
+
+            if (payload.sourceText) {
+                setStoryAssistNotes((prev) => ({ ...prev, [step]: payload.sourceText }))
+            }
+
+            const message = applyStoryAssistPayload(step, payload.data)
+            setStoryAssistFeedback(step, message.startsWith('No ') ? 'error' : 'success', message)
+        } catch (error) {
+            setStoryAssistFeedback(
+                step,
+                'error',
+                error instanceof Error ? error.message : 'No fue posible procesar el audio en este momento.'
+            )
+        }
+    }
+
+    const toggleStoryRecording = async (step: StoryAssistStepKey) => {
+        if (isLocked) return
+
+        if (storyRecorderRef.current && storyAssistStatus[step].kind === 'recording') {
+            storyRecorderRef.current.stop()
+            return
+        }
+
+        if (storyAssistBusy) return
+
+        if (
+            typeof window === 'undefined' ||
+            typeof navigator === 'undefined' ||
+            typeof MediaRecorder === 'undefined' ||
+            !navigator.mediaDevices?.getUserMedia
+        ) {
+            setStoryAssistFeedback(step, 'error', 'Tu navegador no soporta grabación de audio en este momento.')
+            return
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const preferredMimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : ''
+            const recorder = preferredMimeType ? new MediaRecorder(stream, { mimeType: preferredMimeType }) : new MediaRecorder(stream)
+
+            storyStreamRef.current = stream
+            storyRecorderRef.current = recorder
+            storyChunksRef.current = []
+
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    storyChunksRef.current.push(event.data)
+                }
+            }
+
+            recorder.onstop = async () => {
+                const audioBlob = new Blob(storyChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+                storyRecorderRef.current = null
+                storyChunksRef.current = []
+                storyStreamRef.current?.getTracks().forEach((track) => track.stop())
+                storyStreamRef.current = null
+                await processRecordedStoryAudio(step, audioBlob)
+            }
+
+            recorder.start()
+            setStoryAssistFeedback(step, 'recording', 'Grabando... cuando termines, vuelve a tocar el botón para procesar el audio.')
+        } catch (error) {
+            setStoryAssistFeedback(
+                step,
+                'error',
+                error instanceof Error ? error.message : 'No pude acceder al micrófono. Revisa permisos e intenta de nuevo.'
+            )
+            storyStreamRef.current?.getTracks().forEach((track) => track.stop())
+            storyStreamRef.current = null
+            storyRecorderRef.current = null
+            storyChunksRef.current = []
+        }
+    }
+
+    const selectInstrumentAssistMode = (key: InstrumentAssistKey, mode: StoryAssistMode) => {
+        if (isLocked || storyAssistBusy || instrumentAssistBusy) return
+        setInstrumentAssistMode((prev) => ({ ...prev, [key]: mode }))
+    }
+
+    const setInstrumentAssistFeedback = (key: InstrumentAssistKey, kind: StoryAssistStatusKind, message: string) => {
+        setInstrumentAssistStatus((prev) => ({
+            ...prev,
+            [key]: { kind, message }
+        }))
+    }
+
+    const instrumentAssistBusy = Object.values(instrumentAssistStatus).some(
+        (item) => item.kind === 'loading' || item.kind === 'recording'
+    )
+
+    const buildInstrumentAssistContext = (key: InstrumentAssistKey) => {
+        switch (key) {
+            case 'identityWheel':
+                return { identityWheel: identityWheelFields }
+            case 'identityMatrix':
+                return { identityMatrixRows }
+            case 'stakeholderMirror':
+                return { stakeholderRows }
+            case 'fundamentalValues':
+                return { fundamentalValues }
+            case 'valueDecisionMatrix':
+                return {
+                    selectedValues: fundamentalValues.selected5,
+                    valueDecisionRows
+                }
+            case 'noNegotiables':
+                return {
+                    selectedValues: fundamentalValues.selected3,
+                    noNegotiableRows
+                }
+            case 'foa':
+                return { foaFields }
+            case 'energyMap':
+                return {
+                    energyMapRows,
+                    energyPatternBullets,
+                    energyDoMore,
+                    energyDoLess,
+                    energyRedesign
+                }
+            case 'beliefAbc':
+                return { beliefAbcRows }
+            case 'beliefEvidence':
+                return { beliefEvidenceRows }
+            case 'beliefImpact':
+                return {
+                    selectedBelief: beliefImpactSelected,
+                    availableBeliefs: limitingBeliefOptions,
+                    beliefImpactCosts,
+                    beliefImpactLostOpportunities,
+                    beliefImpactAffectedRows,
+                    beliefEvidenceRows
+                }
+            case 'empoweringBeliefs':
+                return {
+                    empoweringBeliefRows,
+                    limitingBeliefOptions
+                }
+            case 'bridgeExperiment':
+                return {
+                    bridgeExperimentRows,
+                    bridgeBeliefOptions,
+                    empoweringBeliefRows
+                }
+            case 'mantras':
+                return { mantraRows }
+            case 'futureSelf':
+                return { futureSelfFields }
+            case 'backcasting':
+                return {
+                    backcastingRows,
+                    futureSelfFields
+                }
+            case 'futureLetter':
+                return {
+                    futureLetterText,
+                    futureSelfFields,
+                    backcastingRows
+                }
+            default:
+                return {}
+        }
+    }
+
+    const hasInstrumentAssistInput = (key: InstrumentAssistKey) => {
+        switch (key) {
+            case 'identityWheel':
+                return Object.values(identityWheelFields).some((items) => items.some((item) => item.trim().length > 0))
+            case 'identityMatrix':
+                return identityMatrixRows.some((row) => row.say.trim() || row.do.trim() || row.impact.trim())
+            case 'stakeholderMirror':
+                return stakeholderRows.some((row) => row.personRole.trim() || row.strength.trim() || row.blindspot.trim())
+            case 'fundamentalValues':
+                return (
+                    fundamentalValues.selected10.length > 0 || fundamentalValues.selected5.length > 0 || fundamentalValues.selected3.length > 0
+                )
+            case 'valueDecisionMatrix':
+                return (
+                    fundamentalValues.selected5.length > 0 ||
+                    valueDecisionRows.some((row) => row.value.trim() || row.decision1.trim() || row.decision2.trim())
+                )
+            case 'noNegotiables':
+                return (
+                    fundamentalValues.selected3.length > 0 ||
+                    noNegotiableRows.some((row) => row.value.trim() || row.behavior.trim() || row.implication.trim())
+                )
+            case 'foa':
+                return Object.values(foaFields).some((items) => items.some((item) => item.trim().length > 0))
+            case 'energyMap':
+                return (
+                    energyMapRows.some(
+                        (row) => row.activity.trim() || row.sign.trim() || row.energy.trim() || row.reason.trim() || row.adjust.trim()
+                    ) ||
+                    energyPatternBullets.some((item) => item.trim().length > 0) ||
+                    energyDoMore.trim().length > 0 ||
+                    energyDoLess.trim().length > 0 ||
+                    energyRedesign.trim().length > 0
+                )
+            case 'beliefAbc':
+                return beliefAbcRows.some((row) => row.activator.trim() || row.belief.trim() || row.emotion.trim() || row.action.trim())
+            case 'beliefEvidence':
+                return beliefEvidenceRows.some(
+                    (row) => row.limitingBelief.trim() || row.evidenceFor.trim() || row.evidenceAgainst.trim() || row.newMeaning.trim()
+                )
+            case 'beliefImpact':
+                return (
+                    beliefImpactSelected.trim().length > 0 ||
+                    beliefImpactCosts.some((item) => item.trim().length > 0) ||
+                    beliefImpactLostOpportunities.some((item) => item.trim().length > 0) ||
+                    beliefImpactAffectedRows.some((row) => row.person.trim() || row.impact.trim())
+                )
+            case 'empoweringBeliefs':
+                return empoweringBeliefRows.some((row) => row.limitingBelief.trim() || row.idealBelief.trim() || row.bridgeBelief.trim())
+            case 'bridgeExperiment':
+                return bridgeExperimentRows.some(
+                    (row) => row.bridgeBelief.trim() || row.dailyBehavior.trim() || row.evidence.trim() || row.indicator.trim()
+                )
+            case 'mantras':
+                return mantraRows.some((row) => row.mantra.trim() || row.situation.trim() || row.behavior.trim() || row.signal.trim())
+            case 'futureSelf':
+                return (
+                    Object.values(futureSelfFields).some((value) => {
+                        if (Array.isArray(value)) return value.some((item) => (typeof item === 'string' ? item.trim().length > 0 : false))
+                        if (value && typeof value === 'object') {
+                            return Object.values(value).some((nested) => {
+                                if (Array.isArray(nested)) {
+                                    return nested.some((item) =>
+                                        typeof item === 'object' && item
+                                            ? Object.values(item).some((field) => typeof field === 'string' && field.trim().length > 0)
+                                            : typeof item === 'string' && item.trim().length > 0
+                                    )
+                                }
+                                return typeof nested === 'string' && nested.trim().length > 0
+                            })
+                        }
+                        return false
+                    })
+                )
+            case 'backcasting':
+                return backcastingRows.some((row) => row.achievement.trim() || row.habit.trim() || row.evidence.trim())
+            case 'futureLetter':
+                return futureLetterText.trim().length > 0
+            default:
+                return false
+        }
+    }
+
+    const applyInstrumentAssistPayload = (key: InstrumentAssistKey, payload: InstrumentAssistPayload) => {
+        switch (key) {
+            case 'identityWheel': {
+                const source = payload.identityWheel ?? {}
+                const nextFields: Record<IdentitySegmentKey, string[]> = {
+                    roles: normalizeIdentityList(source.roles),
+                    principios: normalizeIdentityList(source.principios),
+                    presion: normalizeIdentityList(source.presion),
+                    calma: normalizeIdentityList(source.calma),
+                    aporte: normalizeIdentityList(source.aporte),
+                    evito: normalizeIdentityList(source.evito),
+                    triggers: normalizeIdentityList(source.triggers),
+                    recursos: normalizeIdentityList(source.recursos)
+                }
+                const filled = Object.values(nextFields).filter((items) => items.some((item) => item.trim().length > 0)).length
+                if (filled === 0) return 'No encontré suficiente detalle para completar la rueda de identidad.'
+                setIdentityWheelFields(nextFields)
+                setIdentityEditModes({
+                    roles: false,
+                    principios: false,
+                    presion: false,
+                    calma: false,
+                    aporte: false,
+                    evito: false,
+                    triggers: false,
+                    recursos: false
+                })
+                return `Listo: organicé ${filled} segmento${filled === 1 ? '' : 's'} de tu rueda de identidad.`
+            }
+            case 'identityMatrix': {
+                const nextRows = normalizeIdentityMatrixRows(payload.identityMatrixRows)
+                const filled = nextRows.filter((row) => row.say.trim() || row.do.trim() || row.impact.trim()).length
+                if (filled === 0) return 'No encontré suficiente evidencia para completar la matriz de identidad.'
+                setIdentityMatrixRows(nextRows)
+                return `Listo: organicé ${filled} fila${filled === 1 ? '' : 's'} en la matriz de discurso, conducta e impacto.`
+            }
+            case 'stakeholderMirror': {
+                const nextRows = normalizeStakeholderRows(payload.stakeholderRows)
+                const filled = nextRows.filter((row) => row.personRole.trim() || row.strength.trim() || row.blindspot.trim()).length
+                if (filled === 0) return 'No encontré suficiente detalle para completar el espejo de stakeholders.'
+                setStakeholderRows(nextRows)
+                return `Listo: organicé ${filled} lectura${filled === 1 ? '' : 's'} de stakeholders.`
+            }
+            case 'fundamentalValues': {
+                const nextValues = payload.fundamentalValues ?? {}
+                const selected10 = normalizeFundamentalValuesList(nextValues.selected10, 10)
+                const selected5 = normalizeFundamentalValuesList(
+                    Array.isArray(nextValues.selected5) ? nextValues.selected5.filter((value) => selected10.includes(value)) : [],
+                    5
+                )
+                const selected3 = normalizeFundamentalValuesList(
+                    Array.isArray(nextValues.selected3) ? nextValues.selected3.filter((value) => selected5.includes(value)) : [],
+                    3
+                )
+                if (selected10.length === 0) return 'No encontré suficiente claridad para proponer tu selección de valores.'
+                setFundamentalValues({ selected10, selected5, selected3 })
+                return `Listo: propuse ${selected10.length} valores base, ${selected5.length} determinantes y ${selected3.length} no negociables.`
+            }
+            case 'valueDecisionMatrix': {
+                const normalizedRows = normalizeValueDecisionRows(payload.valueDecisionRows)
+                const nextRows = normalizedRows.map((row, index) => ({
+                    ...row,
+                    value: fundamentalValues.selected5[index] || row.value
+                }))
+                const filled = nextRows.filter((row) => row.decision1.trim() || row.decision2.trim()).length
+                if (filled === 0) return 'No encontré suficiente evidencia para completar la matriz valores-decisiones.'
+                setValueDecisionRows(nextRows)
+                return `Listo: organicé evidencia para ${filled} valor${filled === 1 ? '' : 'es'} determinante${filled === 1 ? '' : 's'}.`
+            }
+            case 'noNegotiables': {
+                const normalizedRows = normalizeNoNegotiableRows(payload.noNegotiableRows)
+                const nextRows = normalizedRows.map((row, index) => ({
+                    ...row,
+                    value: fundamentalValues.selected3[index] || row.value
+                }))
+                const filled = nextRows.filter((row) => row.behavior.trim() || row.implication.trim()).length
+                if (filled === 0) return 'No encontré suficiente claridad para formular los no negociables.'
+                setNoNegotiableRows(nextRows)
+                setNoNegotiableEditModes(Array.from({ length: NO_NEGOTIABLE_ROWS }, () => false))
+                return `Listo: estructuré ${filled} no negociable${filled === 1 ? '' : 's'} en formato operativo.`
+            }
+            case 'foa': {
+                const source = payload.foaFields ?? {}
+                const nextFields: Record<FoaQuadrantKey, string[]> = {
+                    strengths: normalizeFoaList(source.strengths),
+                    opportunities: normalizeFoaList(source.opportunities),
+                    threats: normalizeFoaList(source.threats)
+                }
+                const filled =
+                    nextFields.strengths.filter((item) => item.trim().length > 0).length +
+                    nextFields.opportunities.filter((item) => item.trim().length > 0).length +
+                    nextFields.threats.filter((item) => item.trim().length > 0).length
+                if (filled === 0) return 'No encontré suficiente material para completar el F.O.A.'
+                setFoaFields(nextFields)
+                setFoaEditModes({
+                    strengths: false,
+                    opportunities: false,
+                    threats: false
+                })
+                return 'Listo: organicé tu F.O.A. en fortalezas, áreas de oportunidad y amenazas.'
+            }
+            case 'energyMap': {
+                const nextRows = normalizeEnergyMapRows(payload.energyMapRows)
+                const nextPatternBullets = normalizeEnergyPatternList(payload.energyPatternBullets)
+                const filledRows = nextRows.filter(
+                    (row) => row.activity.trim() || row.sign.trim() || row.energy.trim() || row.reason.trim() || row.adjust.trim()
+                ).length
+                const closureCount =
+                    nextPatternBullets.filter((item) => item.trim().length > 0).length +
+                    (typeof payload.energyDoMore === 'string' && payload.energyDoMore.trim().length > 0 ? 1 : 0) +
+                    (typeof payload.energyDoLess === 'string' && payload.energyDoLess.trim().length > 0 ? 1 : 0) +
+                    (typeof payload.energyRedesign === 'string' && payload.energyRedesign.trim().length > 0 ? 1 : 0)
+                if (filledRows === 0 && closureCount === 0) {
+                    return 'No encontré suficiente detalle para completar el mapa de energía.'
+                }
+                setEnergyMapRows(nextRows)
+                setEnergyPatternBullets(nextPatternBullets)
+                setEnergyDoMore(typeof payload.energyDoMore === 'string' ? payload.energyDoMore.trim() : '')
+                setEnergyDoLess(typeof payload.energyDoLess === 'string' ? payload.energyDoLess.trim() : '')
+                setEnergyRedesign(typeof payload.energyRedesign === 'string' ? payload.energyRedesign.trim() : '')
+                return 'Listo: organicé tus actividades, patrones y ajustes del mapa de energía.'
+            }
+            case 'beliefAbc': {
+                const nextRows = normalizeBeliefAbcRows(payload.beliefAbcRows)
+                const filled = nextRows.filter((row) => row.activator.trim() || row.belief.trim() || row.emotion.trim() || row.action.trim()).length
+                if (filled === 0) return 'No encontré suficiente detalle para estructurar el modelo ABC.'
+                setBeliefAbcRows(nextRows)
+                setBeliefAbcEditModes(Array.from({ length: BELIEF_ABC_ROWS }, () => false))
+                return `Listo: organicé ${filled} situación${filled === 1 ? '' : 'es'} en el modelo ABC.`
+            }
+            case 'beliefEvidence': {
+                const nextRows = normalizeBeliefEvidenceRows(payload.beliefEvidenceRows)
+                const filled = nextRows.filter(
+                    (row) => row.limitingBelief.trim() || row.evidenceFor.trim() || row.evidenceAgainst.trim() || row.newMeaning.trim()
+                ).length
+                if (filled === 0) return 'No encontré suficiente evidencia para completar esta matriz.'
+                setBeliefEvidenceRows(nextRows)
+                return `Listo: organicé ${filled} creencia${filled === 1 ? '' : 's'} con evidencia y reencuadre.`
+            }
+            case 'beliefImpact': {
+                const nextCosts = normalizeBeliefImpactBullets(payload.beliefImpactCosts)
+                const nextOpportunities = normalizeBeliefImpactBullets(payload.beliefImpactLostOpportunities)
+                const nextAffected = normalizeBeliefImpactAffectedRows(payload.beliefImpactAffectedRows)
+                const nextSelected = typeof payload.beliefImpactSelected === 'string' ? payload.beliefImpactSelected.trim() : ''
+                const filled =
+                    nextCosts.filter((item) => item.trim().length > 0).length +
+                    nextOpportunities.filter((item) => item.trim().length > 0).length +
+                    nextAffected.filter((row) => row.person.trim() || row.impact.trim()).length
+                if (!nextSelected && filled === 0) return 'No encontré suficiente material para analizar el costo oculto de la creencia.'
+                if (nextSelected) setBeliefImpactSelected(nextSelected)
+                setBeliefImpactCosts(nextCosts)
+                setBeliefImpactLostOpportunities(nextOpportunities)
+                setBeliefImpactAffectedRows(nextAffected)
+                setBeliefImpactIsEditing(false)
+                return 'Listo: organicé los costos, oportunidades perdidas y afectados por esta creencia.'
+            }
+            case 'empoweringBeliefs': {
+                const nextRows = normalizeEmpoweringBeliefRows(payload.empoweringBeliefRows)
+                const filled = nextRows.filter((row) => row.limitingBelief.trim() || row.idealBelief.trim() || row.bridgeBelief.trim()).length
+                if (filled === 0) return 'No encontré suficiente claridad para formular las nuevas creencias.'
+                setEmpoweringBeliefRows(nextRows)
+                setEmpoweringBeliefEditModes(Array.from({ length: EMPOWERING_BELIEF_ROWS }, () => false))
+                return `Listo: organicé ${filled} creencia${filled === 1 ? '' : 's'} limitante${filled === 1 ? '' : 's'} con su reencuadre.`
+            }
+            case 'bridgeExperiment': {
+                const nextRows = normalizeBridgeExperimentRows(payload.bridgeExperimentRows)
+                const filled = nextRows.filter(
+                    (row) => row.bridgeBelief.trim() || row.dailyBehavior.trim() || row.evidence.trim() || row.indicator.trim()
+                ).length
+                if (filled === 0) return 'No encontré suficiente detalle para estructurar el plan de prueba.'
+                setBridgeExperimentRows(nextRows)
+                setBridgeExperimentEditModes(Array.from({ length: BRIDGE_EXPERIMENT_ROWS }, () => false))
+                return `Listo: organicé ${filled} experimento${filled === 1 ? '' : 's'} de 7 días.`
+            }
+            case 'mantras': {
+                const nextRows = normalizeMantraRows(payload.mantraRows)
+                const filled = nextRows.filter((row) => row.mantra.trim() || row.situation.trim() || row.behavior.trim() || row.signal.trim()).length
+                if (filled === 0) return 'No encontré suficiente detalle para estructurar tus mantras.'
+                setMantraRows(nextRows)
+                setMantraSuggestions(nextRows.map((row) => getMantraSuggestions(row)))
+                setMantraEditModes(Array.from({ length: MANTRA_ROWS }, () => false))
+                return `Listo: organicé ${filled} tarjeta${filled === 1 ? '' : 's'} de mantra.`
+            }
+            case 'futureSelf': {
+                const nextFields = normalizeFutureSelfFields(payload.futureSelfFields)
+                const blockSuggestions: Record<FutureSelfBlockKey, string[]> = {
+                    identity: getFutureSelfBlockSuggestions('identity', nextFields),
+                    values: getFutureSelfBlockSuggestions('values', nextFields),
+                    habits: getFutureSelfBlockSuggestions('habits', nextFields),
+                    decisions: getFutureSelfBlockSuggestions('decisions', nextFields),
+                    skills: getFutureSelfBlockSuggestions('skills', nextFields),
+                    environment: getFutureSelfBlockSuggestions('environment', nextFields),
+                    impact: getFutureSelfBlockSuggestions('impact', nextFields),
+                    metrics: getFutureSelfBlockSuggestions('metrics', nextFields),
+                    risks: getFutureSelfBlockSuggestions('risks', nextFields)
+                }
+                const filledBlocks = FUTURE_SELF_BLOCK_ORDER.filter((block) => isFutureSelfBlockComplete(block, nextFields)).length
+                if (filledBlocks === 0) return 'No encontré suficiente material para completar tu Future Self Canvas.'
+                setFutureSelfFields(nextFields)
+                setFutureSelfSuggestions(blockSuggestions)
+                setFutureSelfEditModes({
+                    identity: false,
+                    values: false,
+                    habits: false,
+                    decisions: false,
+                    skills: false,
+                    environment: false,
+                    impact: false,
+                    metrics: false,
+                    risks: false
+                })
+                return `Listo: organicé ${filledBlocks} bloque${filledBlocks === 1 ? '' : 's'} de tu Future Self Canvas.`
+            }
+            case 'backcasting': {
+                const nextRows = normalizeBackcastingRows(payload.backcastingRows)
+                const filled = nextRows.filter((row) => row.achievement.trim() || row.habit.trim() || row.evidence.trim()).length
+                if (filled === 0) return 'No encontré suficiente detalle para construir el Backcasting.'
+                setBackcastingRows(nextRows)
+                setBackcastingEditModes(Array.from({ length: BACKCASTING_ROWS }, () => false))
+                return `Listo: organicé ${filled} hito${filled === 1 ? '' : 's'} en tu línea de tiempo Backcasting.`
+            }
+            case 'futureLetter': {
+                const nextText = typeof payload.futureLetterText === 'string' ? payload.futureLetterText.trim() : ''
+                if (!nextText) return 'No encontré suficiente material para redactar la carta desde tu futuro.'
+                setFutureLetterText(nextText)
+                setFutureLetterIsEditing(false)
+                return 'Listo: preparé un borrador estructurado para tu carta desde el futuro.'
+            }
+            default:
+                return 'No fue posible aplicar la ayuda de IA en este instrumento.'
+        }
+    }
+
+    const requestInstrumentAssist = async (
+        key: InstrumentAssistKey,
+        body: BodyInit,
+        contentType?: string
+    ): Promise<{ data: InstrumentAssistPayload; sourceText?: string }> => {
+        const response = await fetch(INSTRUMENT_ASSIST_ENDPOINT, {
+            method: 'POST',
+            headers: contentType ? { 'Content-Type': contentType } : undefined,
+            body
+        })
+
+        const payload = await response.json()
+
+        if (!response.ok) {
+            throw new Error(typeof payload?.error === 'string' ? payload.error : 'No fue posible procesar la solicitud con IA.')
+        }
+
+        return payload as { data: InstrumentAssistPayload; sourceText?: string }
+    }
+
+    const runInstrumentAssist = async (key: InstrumentAssistKey) => {
+        if (isLocked || storyAssistBusy || instrumentAssistBusy) return
+
+        if (!hasInstrumentAssistInput(key)) {
+            setInstrumentAssistFeedback(key, 'error', 'Completa primero algo en este instrumento antes de pedir apoyo de Asistente IA.')
+            return
+        }
+
+        setInstrumentAssistFeedback(key, 'loading', 'Procesando tu información con Asistente IA...')
+
+        try {
+            const payload = await requestInstrumentAssist(
+                key,
+                JSON.stringify({
+                    step: key,
+                    currentData: buildInstrumentAssistContext(key)
+                }),
+                'application/json'
+            )
+
+            const message = applyInstrumentAssistPayload(key, payload.data)
+            setInstrumentAssistFeedback(key, message.startsWith('No ') ? 'error' : 'success', message)
+        } catch (error) {
+            setInstrumentAssistFeedback(
+                key,
+                'error',
+                error instanceof Error ? error.message : 'No fue posible completar este instrumento con IA en este momento.'
+            )
+        }
+    }
+
+    const processRecordedInstrumentAudio = async (key: InstrumentAssistKey, blob: Blob) => {
+        setInstrumentAssistFeedback(key, 'loading', 'Transcribiendo y ubicando tu audio en el instrumento correcto...')
+
+        try {
+            const formData = new FormData()
+            const extension = blob.type.includes('mp4') ? 'm4a' : 'webm'
+            formData.append('step', key)
+            formData.append('currentData', JSON.stringify(buildInstrumentAssistContext(key)))
+            formData.append('audio', new File([blob], `wb1-${key}.${extension}`, { type: blob.type || 'audio/webm' }))
+
+            const payload = await requestInstrumentAssist(key, formData)
+            const message = applyInstrumentAssistPayload(key, payload.data)
+            setInstrumentAssistFeedback(key, message.startsWith('No ') ? 'error' : 'success', message)
+        } catch (error) {
+            setInstrumentAssistFeedback(
+                key,
+                'error',
+                error instanceof Error ? error.message : 'No fue posible procesar el audio en este momento.'
+            )
+        }
+    }
+
+    const toggleInstrumentRecording = async (key: InstrumentAssistKey) => {
+        if (isLocked) return
+
+        if (instrumentRecorderRef.current && instrumentAssistStatus[key].kind === 'recording') {
+            instrumentRecorderRef.current.stop()
+            return
+        }
+
+        if (storyAssistBusy || instrumentAssistBusy) return
+
+        if (
+            typeof window === 'undefined' ||
+            typeof navigator === 'undefined' ||
+            typeof MediaRecorder === 'undefined' ||
+            !navigator.mediaDevices?.getUserMedia
+        ) {
+            setInstrumentAssistFeedback(key, 'error', 'Tu navegador no soporta grabación de audio en este momento.')
+            return
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const preferredMimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : ''
+            const recorder = preferredMimeType ? new MediaRecorder(stream, { mimeType: preferredMimeType }) : new MediaRecorder(stream)
+
+            instrumentStreamRef.current = stream
+            instrumentRecorderRef.current = recorder
+            instrumentChunksRef.current = []
+
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    instrumentChunksRef.current.push(event.data)
+                }
+            }
+
+            recorder.onstop = async () => {
+                const audioBlob = new Blob(instrumentChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+                instrumentRecorderRef.current = null
+                instrumentChunksRef.current = []
+                instrumentStreamRef.current?.getTracks().forEach((track) => track.stop())
+                instrumentStreamRef.current = null
+                await processRecordedInstrumentAudio(key, audioBlob)
+            }
+
+            recorder.start()
+            setInstrumentAssistFeedback(key, 'recording', 'Grabando... cuando termines, vuelve a tocar el botón para procesar el audio.')
+        } catch (error) {
+            setInstrumentAssistFeedback(
+                key,
+                'error',
+                error instanceof Error ? error.message : 'No pude acceder al micrófono. Revisa permisos e intenta de nuevo.'
+            )
+            instrumentStreamRef.current?.getTracks().forEach((track) => track.stop())
+            instrumentStreamRef.current = null
+            instrumentRecorderRef.current = null
+            instrumentChunksRef.current = []
+        }
     }
 
     const saveIdentityMatrix = () => {
@@ -3975,14 +5553,14 @@ export function WB1Step1Digital() {
                                     </article>
                                 </section>
 
-                                <article className="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-7">
+                                <article className="rounded-2xl border border-amber-200 bg-amber-50 p-5 md:p-7">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">
-                                        Conductas observables asociadas (que deberías ver en tu día a día)
+                                        Reglas de oro (para ti)
                                     </h3>
                                     <ul className="mt-4 space-y-2.5">
-                                        {OBSERVABLE_BEHAVIORS.map((item) => (
+                                        {GOLDEN_RULES.map((item) => (
                                             <li key={item} className="text-sm md:text-[15px] text-slate-700 leading-relaxed flex items-start gap-3">
-                                                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                                <span className="mt-1 h-2 w-2 rounded-full bg-amber-500 shrink-0" />
                                                 <span>{item}</span>
                                             </li>
                                         ))}
@@ -4005,7 +5583,6 @@ export function WB1Step1Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 1. Línea de vida (Timeline)</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <p className="text-sm text-slate-700">
                                         Define una temporalidad y, en este lapso, identifica:
                                     </p>
@@ -4016,6 +5593,16 @@ export function WB1Step1Digital() {
                                             </li>
                                         ))}
                                     </ul>
+                                    <StoryAssistPanel
+                                        config={STORY_ASSIST_CONFIG.step1}
+                                        mode={storyAssistMode.step1}
+                                        status={storyAssistStatus.step1}
+                                        disabled={isLocked || (storyAssistBusy && storyAssistStatus.step1.kind !== 'recording')}
+                                        canUseAssistant={hasStoryAssistInput('step1')}
+                                        onModeChange={(mode) => selectStoryAssistMode('step1', mode)}
+                                        onAssist={() => runStoryAssist('step1')}
+                                        onToggleRecording={() => toggleStoryRecording('step1')}
+                                    />
                                     <label className="block space-y-1">
                                         <span className="text-xs uppercase tracking-[0.14em] text-slate-500">Temporalidad de trabajo</span>
                                         <input
@@ -4174,7 +5761,6 @@ export function WB1Step1Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 2. Narrativa en 3 actos</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <p className="text-sm text-slate-700">
                                         Convierte tu historia en una narrativa útil para el liderazgo. Descúbrete en 3 actos:
                                     </p>
@@ -4196,6 +5782,16 @@ export function WB1Step1Digital() {
                                             ))}
                                         </ol>
                                     </aside>
+                                    <StoryAssistPanel
+                                        config={STORY_ASSIST_CONFIG.step2}
+                                        mode={storyAssistMode.step2}
+                                        status={storyAssistStatus.step2}
+                                        disabled={isLocked || (storyAssistBusy && storyAssistStatus.step2.kind !== 'recording')}
+                                        canUseAssistant={hasStoryAssistInput('step2')}
+                                        onModeChange={(mode) => selectStoryAssistMode('step2', mode)}
+                                        onAssist={() => runStoryAssist('step2')}
+                                        onToggleRecording={() => toggleStoryRecording('step2')}
+                                    />
 
                                     <div className="space-y-5">
                                         {STEP2_ACT_GUIDES.map((guide) => (
@@ -4254,7 +5850,6 @@ export function WB1Step1Digital() {
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
                                     <h3 className="text-base md:text-lg font-bold text-slate-900">Paso 3. Patrones</h3>
-                                    <p className="mt-2 w-full basis-full text-sm text-slate-700 leading-relaxed">Instrucciones del paso: completa este bloque con hechos observables, evita generalidades y registra evidencia concreta. Si no tienes evidencia, escribe "No tengo evidencia reciente".</p>
                                     <p className="text-sm text-slate-700">
                                         Extrae 3 conclusiones operativas: tu patrón, tu mayor detonante y tu recurso más confiable.
                                     </p>
@@ -4269,6 +5864,16 @@ export function WB1Step1Digital() {
                                             ))}
                                         </ul>
                                     </aside>
+                                    <StoryAssistPanel
+                                        config={STORY_ASSIST_CONFIG.step3}
+                                        mode={storyAssistMode.step3}
+                                        status={storyAssistStatus.step3}
+                                        disabled={isLocked || (storyAssistBusy && storyAssistStatus.step3.kind !== 'recording')}
+                                        canUseAssistant={hasStoryAssistInput('step3')}
+                                        onModeChange={(mode) => selectStoryAssistMode('step3', mode)}
+                                        onAssist={() => runStoryAssist('step3')}
+                                        onToggleRecording={() => toggleStoryRecording('step3')}
+                                    />
 
                                     <article className="rounded-xl border border-blue-200 bg-blue-50 p-4 md:p-5">
                                         <p className="text-sm font-extrabold text-slate-900">Ejemplo (ilustración)</p>
@@ -4340,7 +5945,7 @@ export function WB1Step1Digital() {
                                                             ))}
                                                         </ul>
                                                     ) : (
-                                                        <p className="text-sm text-slate-500">Sin registros en esta lista. Presiona "Editar" para comenzar.</p>
+                                                        <p className="text-sm text-slate-500">Sin registros en esta lista. Presiona &quot;Editar&quot; para comenzar.</p>
                                                     )}
                                                 </article>
                                             )
@@ -4410,6 +6015,17 @@ export function WB1Step1Digital() {
                                             </div>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.identityWheel}
+                                        mode={instrumentAssistMode.identityWheel}
+                                        status={instrumentAssistStatus.identityWheel}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.identityWheel.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('identityWheel')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('identityWheel', mode)}
+                                        onAssist={() => runInstrumentAssist('identityWheel')}
+                                        onToggleRecording={() => toggleInstrumentRecording('identityWheel')}
+                                    />
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-6">
@@ -4553,7 +6169,7 @@ export function WB1Step1Digital() {
                                                             ))}
                                                         </ul>
                                                     ) : (
-                                                        <p className="text-sm text-slate-500">Sin registros en este segmento. Presiona "Editar" para comenzar.</p>
+                                                        <p className="text-sm text-slate-500">Sin registros en este segmento. Presiona &quot;Editar&quot; para comenzar.</p>
                                                     )}
                                                 </article>
                                             )
@@ -4565,7 +6181,7 @@ export function WB1Step1Digital() {
                                     <div className="flex flex-wrap items-start justify-between gap-3">
                                         <div>
                                             <h3 className="text-base md:text-lg font-bold text-slate-900">
-                                                Instrumento 2 - Matriz "Lo que digo / hago / impacto"
+                                                Instrumento 2 - Matriz &quot;Lo que digo / hago / impacto&quot;
                                             </h3>
                                             <p className="mt-1 text-sm text-slate-700">Completa 10 filas con evidencia reciente y observable.</p>
                                         </div>
@@ -4589,7 +6205,7 @@ export function WB1Step1Digital() {
 
                                     <aside className="rounded-xl border border-slate-300 bg-slate-100 p-4">
                                         <p className="text-sm font-semibold text-slate-900">
-                                            Regla de calidad: "Lo que hago" debe poder comprobarse con un ejemplo concreto (reunión X, mensaje Y, decisión Z).
+                                            Regla de calidad: &quot;Lo que hago&quot; debe poder comprobarse con un ejemplo concreto (reunión X, mensaje Y, decisión Z).
                                         </p>
                                     </aside>
 
@@ -4607,7 +6223,7 @@ export function WB1Step1Digital() {
                                                     </thead>
                                                     <tbody>
                                                         <tr className="bg-white">
-                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">"Valoro la transparencia"</td>
+                                                            <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">&quot;Valoro la transparencia&quot;</td>
                                                             <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
                                                                 En la reunión del lunes compartí riesgos del proyecto y dije qué NO estaba resuelto, proponiendo opciones.
                                                             </td>
@@ -4620,6 +6236,17 @@ export function WB1Step1Digital() {
                                             </div>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.identityMatrix}
+                                        mode={instrumentAssistMode.identityMatrix}
+                                        status={instrumentAssistStatus.identityMatrix}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.identityMatrix.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('identityMatrix')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('identityMatrix', mode)}
+                                        onAssist={() => runInstrumentAssist('identityMatrix')}
+                                        onToggleRecording={() => toggleInstrumentRecording('identityMatrix')}
+                                    />
 
                                     <p className="text-xs text-slate-500">
                                         Filas con contenido:{' '}
@@ -4751,10 +6378,10 @@ export function WB1Step1Digital() {
                                                         <tr className="bg-white">
                                                             <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">Jefe / sponsor</td>
                                                             <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
-                                                                "Resuelve rápido y convierte problemas difusos en plan."
+                                                                &quot;Resuelve rápido y convierte problemas difusos en plan.&quot;
                                                             </td>
                                                             <td className="px-3 py-2 text-sm text-slate-700 border-b border-slate-200">
-                                                                "A veces prioriza velocidad sobre alineación; cierra antes de escuchar."
+                                                                &quot;A veces prioriza velocidad sobre alineación; cierra antes de escuchar.&quot;
                                                             </td>
                                                         </tr>
                                                     </tbody>
@@ -4762,6 +6389,19 @@ export function WB1Step1Digital() {
                                             </div>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.stakeholderMirror}
+                                        mode={instrumentAssistMode.stakeholderMirror}
+                                        status={instrumentAssistStatus.stakeholderMirror}
+                                        disabled={
+                                            isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.stakeholderMirror.kind !== 'recording')
+                                        }
+                                        canUseAssistant={hasInstrumentAssistInput('stakeholderMirror')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('stakeholderMirror', mode)}
+                                        onAssist={() => runInstrumentAssist('stakeholderMirror')}
+                                        onToggleRecording={() => toggleInstrumentRecording('stakeholderMirror')}
+                                    />
 
                                     <p className="text-xs text-slate-500">
                                         Filas con contenido:{' '}
@@ -4853,7 +6493,7 @@ export function WB1Step1Digital() {
                                         Valores fundamentales
                                     </h2>
                                     <p className="text-sm md:text-base text-slate-700 max-w-3xl">
-                                        Convertir "valores" en criterios de decisión.
+                                        Convertir &quot;valores&quot; en criterios de decisión.
                                     </p>
                                 </header>
 
@@ -4871,6 +6511,19 @@ export function WB1Step1Digital() {
                                             Reduce a 3 no negociables (los que defenderías bajo presión).
                                         </li>
                                     </ol>
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.fundamentalValues}
+                                        mode={instrumentAssistMode.fundamentalValues}
+                                        status={instrumentAssistStatus.fundamentalValues}
+                                        disabled={
+                                            isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.fundamentalValues.kind !== 'recording')
+                                        }
+                                        canUseAssistant={hasInstrumentAssistInput('fundamentalValues')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('fundamentalValues', mode)}
+                                        onAssist={() => runInstrumentAssist('fundamentalValues')}
+                                        onToggleRecording={() => toggleInstrumentRecording('fundamentalValues')}
+                                    />
                                 </section>
 
                                 <section className="rounded-2xl border border-slate-200 p-5 md:p-7 space-y-4">
@@ -5080,6 +6733,19 @@ export function WB1Step1Digital() {
                                         </article>
                                     )}
 
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.valueDecisionMatrix}
+                                        mode={instrumentAssistMode.valueDecisionMatrix}
+                                        status={instrumentAssistStatus.valueDecisionMatrix}
+                                        disabled={
+                                            isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.valueDecisionMatrix.kind !== 'recording')
+                                        }
+                                        canUseAssistant={hasInstrumentAssistInput('valueDecisionMatrix')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('valueDecisionMatrix', mode)}
+                                        onAssist={() => runInstrumentAssist('valueDecisionMatrix')}
+                                        onToggleRecording={() => toggleInstrumentRecording('valueDecisionMatrix')}
+                                    />
+
                                     <p className="text-xs text-slate-500">
                                         Filas completas:{' '}
                                         {
@@ -5198,6 +6864,17 @@ export function WB1Step1Digital() {
                                             </p>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.noNegotiables}
+                                        mode={instrumentAssistMode.noNegotiables}
+                                        status={instrumentAssistStatus.noNegotiables}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.noNegotiables.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('noNegotiables')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('noNegotiables', mode)}
+                                        onAssist={() => runInstrumentAssist('noNegotiables')}
+                                        onToggleRecording={() => toggleInstrumentRecording('noNegotiables')}
+                                    />
 
                                     <p className="text-xs text-slate-500">
                                         Frases completas:{' '}
@@ -5362,6 +7039,17 @@ export function WB1Step1Digital() {
                                             </div>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.foa}
+                                        mode={instrumentAssistMode.foa}
+                                        status={instrumentAssistStatus.foa}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.foa.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('foa')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('foa', mode)}
+                                        onAssist={() => runInstrumentAssist('foa')}
+                                        onToggleRecording={() => toggleInstrumentRecording('foa')}
+                                    />
                                 </section>
 
                                 <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -5422,7 +7110,7 @@ export function WB1Step1Digital() {
                                                         ))}
                                                     </ol>
                                                 ) : (
-                                                    <p className="text-sm text-slate-500">Sin registros en este cuadrante. Presiona "Editar" para comenzar.</p>
+                                                    <p className="text-sm text-slate-500">Sin registros en este cuadrante. Presiona &quot;Editar&quot; para comenzar.</p>
                                                 )}
                                             </article>
                                         )
@@ -5519,6 +7207,17 @@ export function WB1Step1Digital() {
                                             </div>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.energyMap}
+                                        mode={instrumentAssistMode.energyMap}
+                                        status={instrumentAssistStatus.energyMap}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.energyMap.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('energyMap')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('energyMap', mode)}
+                                        onAssist={() => runInstrumentAssist('energyMap')}
+                                        onToggleRecording={() => toggleInstrumentRecording('energyMap')}
+                                    />
 
                                     <p className="text-xs text-slate-500">
                                         Actividades registradas: {energyRowsWithActivity} / {ENERGY_MAP_ROWS} (mínimo recomendado: 12)
@@ -5731,6 +7430,17 @@ export function WB1Step1Digital() {
                                             </p>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.beliefAbc}
+                                        mode={instrumentAssistMode.beliefAbc}
+                                        status={instrumentAssistStatus.beliefAbc}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.beliefAbc.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('beliefAbc')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('beliefAbc', mode)}
+                                        onAssist={() => runInstrumentAssist('beliefAbc')}
+                                        onToggleRecording={() => toggleInstrumentRecording('beliefAbc')}
+                                    />
                                 </section>
 
                                 <p className="text-xs text-slate-500">
@@ -5907,6 +7617,19 @@ export function WB1Step1Digital() {
                                         </article>
                                     )}
 
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.beliefEvidence}
+                                        mode={instrumentAssistMode.beliefEvidence}
+                                        status={instrumentAssistStatus.beliefEvidence}
+                                        disabled={
+                                            isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.beliefEvidence.kind !== 'recording')
+                                        }
+                                        canUseAssistant={hasInstrumentAssistInput('beliefEvidence')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('beliefEvidence', mode)}
+                                        onAssist={() => runInstrumentAssist('beliefEvidence')}
+                                        onToggleRecording={() => toggleInstrumentRecording('beliefEvidence')}
+                                    />
+
                                     <p className="text-xs text-slate-500">
                                         Filas completas: {completedBeliefEvidenceRows} / {BELIEF_EVIDENCE_ROWS}
                                     </p>
@@ -6039,6 +7762,17 @@ export function WB1Step1Digital() {
                                             </div>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.beliefImpact}
+                                        mode={instrumentAssistMode.beliefImpact}
+                                        status={instrumentAssistStatus.beliefImpact}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.beliefImpact.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('beliefImpact')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('beliefImpact', mode)}
+                                        onAssist={() => runInstrumentAssist('beliefImpact')}
+                                        onToggleRecording={() => toggleInstrumentRecording('beliefImpact')}
+                                    />
 
                                     <article className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
                                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-end">
@@ -6220,6 +7954,19 @@ export function WB1Step1Digital() {
                                             </p>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.empoweringBeliefs}
+                                        mode={instrumentAssistMode.empoweringBeliefs}
+                                        status={instrumentAssistStatus.empoweringBeliefs}
+                                        disabled={
+                                            isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.empoweringBeliefs.kind !== 'recording')
+                                        }
+                                        canUseAssistant={hasInstrumentAssistInput('empoweringBeliefs')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('empoweringBeliefs', mode)}
+                                        onAssist={() => runInstrumentAssist('empoweringBeliefs')}
+                                        onToggleRecording={() => toggleInstrumentRecording('empoweringBeliefs')}
+                                    />
                                 </section>
 
                                 <p className="text-xs text-slate-500">
@@ -6376,6 +8123,19 @@ export function WB1Step1Digital() {
                                             </p>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.bridgeExperiment}
+                                        mode={instrumentAssistMode.bridgeExperiment}
+                                        status={instrumentAssistStatus.bridgeExperiment}
+                                        disabled={
+                                            isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.bridgeExperiment.kind !== 'recording')
+                                        }
+                                        canUseAssistant={hasInstrumentAssistInput('bridgeExperiment')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('bridgeExperiment', mode)}
+                                        onAssist={() => runInstrumentAssist('bridgeExperiment')}
+                                        onToggleRecording={() => toggleInstrumentRecording('bridgeExperiment')}
+                                    />
                                 </section>
 
                                 <p className="text-xs text-slate-500">
@@ -6568,6 +8328,17 @@ export function WB1Step1Digital() {
                                             </p>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.mantras}
+                                        mode={instrumentAssistMode.mantras}
+                                        status={instrumentAssistStatus.mantras}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.mantras.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('mantras')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('mantras', mode)}
+                                        onAssist={() => runInstrumentAssist('mantras')}
+                                        onToggleRecording={() => toggleInstrumentRecording('mantras')}
+                                    />
                                 </section>
 
                                 <p className="text-xs text-slate-500">
@@ -6767,6 +8538,17 @@ export function WB1Step1Digital() {
                                             </p>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.futureSelf}
+                                        mode={instrumentAssistMode.futureSelf}
+                                        status={instrumentAssistStatus.futureSelf}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.futureSelf.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('futureSelf')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('futureSelf', mode)}
+                                        onAssist={() => runInstrumentAssist('futureSelf')}
+                                        onToggleRecording={() => toggleInstrumentRecording('futureSelf')}
+                                    />
                                 </section>
 
                                 <p className="text-xs text-slate-500">
@@ -7478,6 +9260,17 @@ export function WB1Step1Digital() {
                                             </p>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.backcasting}
+                                        mode={instrumentAssistMode.backcasting}
+                                        status={instrumentAssistStatus.backcasting}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.backcasting.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('backcasting')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('backcasting', mode)}
+                                        onAssist={() => runInstrumentAssist('backcasting')}
+                                        onToggleRecording={() => toggleInstrumentRecording('backcasting')}
+                                    />
                                 </section>
 
                                 <p className="text-xs text-slate-500">
@@ -7668,6 +9461,17 @@ export function WB1Step1Digital() {
                                             </div>
                                         </article>
                                     )}
+
+                                    <StoryAssistPanel
+                                        config={INSTRUMENT_ASSIST_CONFIG.futureLetter}
+                                        mode={instrumentAssistMode.futureLetter}
+                                        status={instrumentAssistStatus.futureLetter}
+                                        disabled={isLocked || storyAssistBusy || (instrumentAssistBusy && instrumentAssistStatus.futureLetter.kind !== 'recording')}
+                                        canUseAssistant={hasInstrumentAssistInput('futureLetter')}
+                                        onModeChange={(mode) => selectInstrumentAssistMode('futureLetter', mode)}
+                                        onAssist={() => runInstrumentAssist('futureLetter')}
+                                        onToggleRecording={() => toggleInstrumentRecording('futureLetter')}
+                                    />
 
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <span
