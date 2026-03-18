@@ -160,6 +160,16 @@ type LinkedInOptimizationCheckRow = {
     adjustment: string
 }
 
+type LinkedInAuditApiResponse = {
+    audit?: Array<{
+        dimension?: string
+        response?: string
+    }>
+    publicEvidenceStatus?: 'sufficient' | 'partial' | 'insufficient'
+    note?: string
+    error?: string
+}
+
 type SocialCauseLegitimacyRow = {
     possibleCause: string
     storyConnection: RatingValue
@@ -2073,6 +2083,9 @@ export function WB9Digital() {
     const [showEvaluationHelp, setShowEvaluationHelp] = useState(false)
     const [evaluationStage, setEvaluationStage] = useState<EvaluationStageKey>('mentor')
     const [showEvaluationLevelReference, setShowEvaluationLevelReference] = useState(false)
+    const [isLinkedInAuditLoading, setIsLinkedInAuditLoading] = useState(false)
+    const [linkedInAuditMessage, setLinkedInAuditMessage] = useState('')
+    const [linkedInAuditError, setLinkedInAuditError] = useState('')
     const saveFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
@@ -2697,6 +2710,8 @@ export function WB9Digital() {
 
     const updateLinkedInProfileUrl = (value: string) => {
         if (isLocked) return
+        setLinkedInAuditError('')
+        setLinkedInAuditMessage('')
         setState((prev) => ({
             ...prev,
             linkedInProfile: {
@@ -3137,28 +3152,65 @@ export function WB9Digital() {
         setEvaluationStage(EVALUATION_STAGES[currentIndex + 1].key)
     }
 
-    const assistLinkedInAudit = () => {
-        const context = getLinkedInContext()
-        const suggestions = [
-            `El perfil deja una impresión de experiencia sólida en ${context.role.toLowerCase()}, pero todavía puede traducir con más claridad ${context.signal.toLowerCase()} en una señal digital más estratégica.`,
-            `Comunica capacidad para ${context.problem.toLowerCase()} y convertirla en ${context.transformation.toLowerCase()}.`,
-            'Las secciones más débiles suelen ser Headline, Banner y “Acerca de” cuando dependen demasiado del cargo y no de la propuesta de valor.',
-            `La señal de autoridad aparece en ${context.results.toLowerCase()} y en un tono ${context.tone.toLowerCase()}.`,
-            `Podría abrir conversaciones con ${context.audience.toLowerCase()} alrededor de ${context.transformation.toLowerCase()}.`,
-            `Probablemente está perdiendo oportunidades donde buscan ${context.signal.toLowerCase()} y no lo leen con suficiente rapidez en el perfil.`
-        ]
+    const assistLinkedInAudit = async () => {
+        if (isLocked || isLinkedInAuditLoading) return
 
-        setState((prev) => ({
-            ...prev,
-            linkedInProfile: {
-                ...prev.linkedInProfile,
-                audit: LINKEDIN_AUDIT_DIMENSIONS.map((dimension, index) => ({
-                    dimension,
-                    response: suggestions[index]
-                }))
+        const profileUrl = state.linkedInProfile.profileUrl.trim()
+        if (!profileUrl) {
+            setLinkedInAuditError('Agrega una URL pública de LinkedIn para analizar este bloque.')
+            setLinkedInAuditMessage('')
+            return
+        }
+
+        try {
+            setIsLinkedInAuditLoading(true)
+            setLinkedInAuditError('')
+
+            const response = await fetch('/api/workbooks-v2/wb9/linkedin-audit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    profileUrl,
+                    currentAudit: state.linkedInProfile.audit
+                })
+            })
+
+            const payload = (await response.json()) as LinkedInAuditApiResponse
+            if (!response.ok) {
+                throw new Error(payload.error || 'No fue posible analizar esta URL de LinkedIn en este momento.')
             }
-        }))
-        announceSave('Borrador IA para la auditoría de LinkedIn listo.')
+
+            const orderedAudit = LINKEDIN_AUDIT_DIMENSIONS.map((dimension) => {
+                const match = payload.audit?.find((row) => row.dimension === dimension)
+                return {
+                    dimension,
+                    response: typeof match?.response === 'string' ? match.response : ''
+                }
+            })
+
+            setState((prev) => ({
+                ...prev,
+                linkedInProfile: {
+                    ...prev.linkedInProfile,
+                    audit: orderedAudit
+                }
+            }))
+
+            setLinkedInAuditMessage(payload.note || '')
+            announceSave(
+                payload.publicEvidenceStatus === 'partial'
+                    ? 'Análisis IA listo con evidencia pública parcial.'
+                    : 'Análisis IA del perfil de LinkedIn listo.'
+            )
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'No fue posible analizar esta URL de LinkedIn en este momento.'
+            setLinkedInAuditError(message)
+            setLinkedInAuditMessage('')
+        } finally {
+            setIsLinkedInAuditLoading(false)
+        }
     }
 
     const assistLinkedInHeadline = () => {
@@ -6498,23 +6550,26 @@ export function WB9Digital() {
                                     </article>
                                 </section>
 
-                                <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                <section
+                                    data-step-assist-disabled="true"
+                                    className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5"
+                                >
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <div>
                                             <h3 className="text-lg font-bold text-slate-900">Bloque 1 — Auditoría estratégica del perfil</h3>
                                             <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                                                Agrega tu URL de LinkedIn y analiza el perfil como lo leería un recruiter, sponsor, aliado o stakeholder de
-                                                alto nivel.
+                                                Agrega tu URL de LinkedIn y deja que el Asistente IA revise la señal pública del perfil para completar la
+                                                auditoría estratégica como la leería un recruiter, sponsor, aliado o stakeholder de alto nivel.
                                             </p>
                                         </div>
 
                                         <button
                                             type="button"
                                             onClick={assistLinkedInAudit}
-                                            disabled={isLocked}
+                                            disabled={isLocked || isLinkedInAuditLoading || state.linkedInProfile.profileUrl.trim().length === 0}
                                             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                                         >
-                                            Asistente IA
+                                            {isLinkedInAuditLoading ? 'Analizando...' : 'Asistente IA'}
                                         </button>
                                     </div>
 
@@ -6532,13 +6587,25 @@ export function WB9Digital() {
                                             <button
                                                 type="button"
                                                 onClick={assistLinkedInAudit}
-                                                disabled={isLocked}
+                                                disabled={isLocked || isLinkedInAuditLoading || state.linkedInProfile.profileUrl.trim().length === 0}
                                                 className="rounded-xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
                                             >
-                                                Analizar
+                                                {isLinkedInAuditLoading ? 'Analizando...' : 'Analizar URL'}
                                             </button>
                                         </div>
                                     </div>
+
+                                    {linkedInAuditError ? (
+                                        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                                            {linkedInAuditError}
+                                        </div>
+                                    ) : null}
+
+                                    {linkedInAuditMessage ? (
+                                        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                                            {linkedInAuditMessage}
+                                        </div>
+                                    ) : null}
 
                                     <div className="overflow-x-auto">
                                         <table className="min-w-[760px] w-full rounded-2xl border border-slate-200 overflow-hidden">
@@ -6556,7 +6623,7 @@ export function WB9Digital() {
                                                             <textarea
                                                                 value={row.response}
                                                                 onChange={(event) => updateLinkedInAuditRow(index, event.target.value)}
-                                                                placeholder="Escribe la lectura estratégica del perfil."
+                                                                placeholder="El análisis del Asistente IA completará aquí la lectura estratégica del perfil."
                                                                 disabled={isLocked}
                                                                 rows={3}
                                                                 className={TEXTAREA_CLASS}

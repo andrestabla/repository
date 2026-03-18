@@ -93,6 +93,9 @@ function ensureStepAssistHosts(activePage: number) {
 
     return Array.from(article.querySelectorAll('section'))
         .map((section) => {
+            if (!(section instanceof HTMLElement)) return null
+            if (section.dataset.stepAssistDisabled === 'true') return null
+
             const heading = Array.from(section.querySelectorAll('h3')).find((candidate) => /^(Paso|Bloque)\b/i.test(normalizeText(candidate.textContent || '', 140)))
             if (!(heading instanceof HTMLElement)) return null
 
