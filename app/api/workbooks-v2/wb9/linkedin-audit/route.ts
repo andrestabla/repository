@@ -293,7 +293,7 @@ function normalizePublicEvidenceStatus(value: unknown): 'sufficient' | 'partial'
     return 'partial'
 }
 
-async function analyzeWithPublicEvidence(client: OpenAI, profileUrl: string, evidenceSnapshot: string, currentAudit: unknown) {
+async function analyzeWithPublicEvidence(client: OpenAI, profileUrl: string, evidenceSnapshot: string) {
     const prompt = `
 Eres un asistente de marca ejecutiva para 4Shine.
 
@@ -303,15 +303,15 @@ REGLAS:
 - Responde en español.
 - No inventes información no visible en la evidencia pública.
 - Si la evidencia es parcial, dilo con claridad.
+- Debes completar los 6 campos desde cero con la mejor lectura posible a partir de la evidencia disponible.
+- Si existe un título público del perfil o un extracto indexado, no respondas con mensajes vacíos de falta de acceso.
+- Identifica también qué parte del perfil parece más genérica o menos desarrollada a partir de lo que sí se ve.
 - Devuelve solo JSON válido.
 
 URL objetivo: ${profileUrl}
 
 EVIDENCIA PÚBLICA DISPONIBLE:
 ${evidenceSnapshot}
-
-CONTEXTO ACTUAL DEL WORKBOOK:
-${JSON.stringify(currentAudit ?? {}, null, 2).slice(0, 6000)}
 
 Devuelve este JSON exacto:
 {
@@ -356,8 +356,6 @@ export async function POST(request: NextRequest) {
     try {
         const body = (await request.json()) as LinkedInAuditPayload
         const profileUrl = normalizeLinkedInProfileUrl(body.profileUrl)
-        const currentAudit = Array.isArray(body.currentAudit) ? body.currentAudit : []
-
         const client = await createOpenAIClient()
         const directRead = await readPublicProfileSnapshot(profileUrl)
         const braveRead = await readBraveSearchSnapshot(profileUrl)
@@ -371,9 +369,9 @@ export async function POST(request: NextRequest) {
         const combinedEvidence = [braveRead.snapshot, directRead.snapshot].filter(Boolean).join('\n\n').slice(0, 12000)
 
         if (braveRead.found) {
-            analysis = await analyzeWithPublicEvidence(client, profileUrl, combinedEvidence, currentAudit)
+            analysis = await analyzeWithPublicEvidence(client, profileUrl, combinedEvidence)
         } else if (directRead.meaningful) {
-            analysis = await analyzeWithPublicEvidence(client, profileUrl, directRead.snapshot, currentAudit)
+            analysis = await analyzeWithPublicEvidence(client, profileUrl, directRead.snapshot)
         } else {
             analysis = {
                 audit: normalizeAuditRows(
