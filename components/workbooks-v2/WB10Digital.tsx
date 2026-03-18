@@ -6,12 +6,15 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer, Sparkles } from 'lucide-react'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
-type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+type WorkbookPageId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 type YesNoAnswer = '' | 'yes' | 'no'
 type RatingValue = '' | '1' | '2' | '3' | '4' | '5'
 type ObjectiveType = '' | 'Sostén' | 'Expansión' | 'Legado'
 type GoalFunction = '' | 'Sostener' | 'Expandir' | 'Trascender'
-type HelpModalKey = null | 'vision' | 'areaGoals' | 'priorities' | 'commitments' | 'indicators' | 'onePage'
+type MentorLevel = '' | 'N1' | 'N2' | 'N3' | 'N4'
+type MentorDecision = '' | 'Consolidado' | 'En desarrollo' | 'Prioritario'
+type EvaluationStageKey = 'mentor' | 'leader' | 'synthesis' | 'final'
+type HelpModalKey = null | 'vision' | 'areaGoals' | 'priorities' | 'commitments' | 'indicators' | 'onePage' | 'evaluation'
 
 type WorkbookPage = {
     id: WorkbookPageId
@@ -209,6 +212,20 @@ type FinalOnePagePlan = {
     adjustmentCriteria: string
 }
 
+type EvaluationMentorRow = {
+    criterion: string
+    level: MentorLevel
+    evidence: string
+    decision: MentorDecision
+}
+
+type EvaluationLeaderRow = {
+    question: string
+    response: string
+    evidence: string
+    action: string
+}
+
 type WB10State = {
     identification: {
         leaderName: string
@@ -265,6 +282,13 @@ type WB10State = {
         finalPlan: FinalOnePagePlan
         finalChecks: CheckRow[]
     }
+    evaluation: {
+        mentorRows: EvaluationMentorRow[]
+        mentorGeneralNotes: string
+        mentorGlobalDecision: MentorDecision
+        leaderRows: EvaluationLeaderRow[]
+        agreementsSynthesis: string
+    }
 }
 
 const PAGES: WorkbookPage[] = [
@@ -275,7 +299,8 @@ const PAGES: WorkbookPage[] = [
     { id: 5, label: '5. Prioridades estratégicas', shortLabel: 'Prioridades' },
     { id: 6, label: '6. Compromisos de acción inmediata', shortLabel: 'Compromisos' },
     { id: 7, label: '7. Indicadores de avance', shortLabel: 'Indicadores' },
-    { id: 8, label: '8. One Strategic Page Plan', shortLabel: 'One Page Plan' }
+    { id: 8, label: '8. One Strategic Page Plan', shortLabel: 'One Page Plan' },
+    { id: 9, label: '9. Evaluación', shortLabel: 'Evaluación' }
 ]
 
 const STORAGE_KEY = 'workbooks-v2-wb10-state'
@@ -486,6 +511,54 @@ const ONE_PAGE_CONCEPTS = [
     'Plan vivo: documento que se revisa, ajusta y usa.'
 ] as const
 
+const WB10_MENTOR_INSTRUCTIONS = [
+    'Evalúa cada criterio con base en evidencia observable (idealmente de los últimos 30 días).',
+    'Marca un solo nivel por criterio (N1, N2, N3 o N4).',
+    'Registra comentario u observación concreta por criterio (hechos, conversación o conducta observada).',
+    'Define decisión por criterio: Consolidado, En desarrollo o Prioritario.',
+    'Cierra el WB con observaciones generales y una decisión global de seguimiento.'
+] as const
+
+const WB10_MENTOR_LEVEL_REFERENCE = [
+    { level: 'Nivel 1 - Declarativo', descriptor: 'Plan abstracto o dependiente de decisiones individuales.' },
+    { level: 'Nivel 2 - Consciente', descriptor: 'Existe intención estratégica; estructura aún frágil.' },
+    { level: 'Nivel 3 - Integrado', descriptor: 'Plan estructurado con responsables y métricas claras.' },
+    { level: 'Nivel 4 - Alineación Estratégica', descriptor: 'Sistema institucionalizado; crecimiento independiente del líder.' }
+] as const
+
+const WB10_MENTOR_EVALUATION_CRITERIA = [
+    'Claridad del plan estratégico 3–5 años',
+    'Integración sistémica del crecimiento',
+    'Capacidad de institucionalizar cultura',
+    'Conciencia de impacto comunitario',
+    'Diseño consciente de legado'
+] as const
+
+const WB10_LEADER_INSTRUCTIONS = [
+    'Responde cada pregunta desde hechos concretos y recientes, no desde intención.',
+    'Incluye al menos un ejemplo o evidencia por respuesta.',
+    'Define una acción o compromiso de 30 días para cada respuesta clave.',
+    'Usa este bloque como insumo para acordar el plan de desarrollo con el mentor.'
+] as const
+
+const WB10_LEADER_EVALUATION_QUESTIONS = [
+    '¿Qué legado quiero dejar más allá de mi rol actual?',
+    '¿Mi crecimiento es sostenible o depende exclusivamente de mí?',
+    '¿Estoy diseñando trascendencia o éxito temporal?',
+    '¿Qué elemento cultural debo institucionalizar?',
+    '¿Qué debo soltar para escalar estratégicamente?'
+] as const
+
+const MENTOR_LEVEL_OPTIONS: MentorLevel[] = ['N1', 'N2', 'N3', 'N4']
+const MENTOR_DECISION_OPTIONS: MentorDecision[] = ['Consolidado', 'En desarrollo', 'Prioritario']
+
+const EVALUATION_STAGES: Array<{ key: EvaluationStageKey; label: string }> = [
+    { key: 'mentor', label: 'Pantalla 1 - Mentor' },
+    { key: 'leader', label: 'Pantalla 2 - Líder' },
+    { key: 'synthesis', label: 'Pantalla 3 - Síntesis' },
+    { key: 'final', label: 'Cierre' }
+]
+
 const VISION_CLOSURE = [
     'Qué vida y qué liderazgo quieres haber construido en 3 años.',
     'Qué parte de esa visión ya habla de legado.',
@@ -533,6 +606,30 @@ const ONE_PAGE_CLOSURE = [
     'Qué estructura sostendrá el rumbo en los próximos meses.',
     'Si realmente estás diseñando trascendencia y no solo éxito temporal.'
 ] as const
+
+const createDefaultEvaluationData = (): WB10State['evaluation'] => ({
+    mentorRows: WB10_MENTOR_EVALUATION_CRITERIA.map((criterion) => ({
+        criterion,
+        level: '' as MentorLevel,
+        evidence: '',
+        decision: '' as MentorDecision
+    })),
+    mentorGeneralNotes: '',
+    mentorGlobalDecision: '' as MentorDecision,
+    leaderRows: WB10_LEADER_EVALUATION_QUESTIONS.map((question) => ({
+        question,
+        response: '',
+        evidence: '',
+        action: ''
+    })),
+    agreementsSynthesis: ''
+})
+
+const isMentorEvaluationRowComplete = (row: EvaluationMentorRow): boolean =>
+    row.level !== '' && row.evidence.trim().length > 0 && row.decision !== ''
+
+const isLeaderEvaluationRowComplete = (row: EvaluationLeaderRow): boolean =>
+    row.response.trim().length > 0 && row.evidence.trim().length > 0 && row.action.trim().length > 0
 
 const HELP_MODAL_CONTENT: Record<Exclude<HelpModalKey, null>, { title: string; paragraphs: string[]; principle: string; reminders: string[]; example: string }> = {
     vision: {
@@ -626,6 +723,22 @@ const HELP_MODAL_CONTENT: Record<Exclude<HelpModalKey, null>, { title: string; p
         ],
         example:
             'Visión clara, 5 objetivos integradores, 5 prioridades maestras, 5 compromisos, 5 indicadores críticos y una frecuencia de revisión usable.'
+    },
+    evaluation: {
+        title: 'Ayuda — Evaluación',
+        paragraphs: [
+            'La evaluación final no busca opinión general, sino evidencia observable reciente sobre claridad estratégica, crecimiento, cultura, impacto y legado.',
+            'El mentor debe marcar un solo nivel por criterio, registrar evidencia concreta y cerrar con una decisión por criterio y una decisión global.',
+            'La autoevaluación del líder debe aterrizarse en hechos, ejemplos y acciones de 30 días para facilitar un plan de desarrollo útil.'
+        ],
+        principle: 'La evaluación cierra WB10 cuando estrategia, evidencia y seguimiento quedan conectados en acuerdos concretos.',
+        reminders: [
+            'Usa evidencia observable de los últimos 30 días.',
+            'Evita respuestas declarativas sin ejemplo o sin compromiso.',
+            'La síntesis final debe dejar acuerdos accionables entre mentor y líder.'
+        ],
+        example:
+            'Un cierre útil deja niveles por criterio, observaciones concretas, una decisión global y compromisos de 30 días que ya pueden seguirse.'
     }
 }
 
@@ -826,7 +939,8 @@ const createDefaultState = (): WB10State => ({
             adjustmentCriteria: ''
         },
         finalChecks: createCheckRows(ONE_PAGE_FINAL_QUESTIONS)
-    }
+    },
+    evaluation: createDefaultEvaluationData()
 })
 
 const DEFAULT_STATE = createDefaultState()
@@ -1521,6 +1635,7 @@ export function WB10Digital() {
     const [state, setState] = useState<WB10State>(DEFAULT_STATE)
     const [activePage, setActivePage] = useState<WorkbookPageId>(1)
     const [visitedPages, setVisitedPages] = useState<WorkbookPageId[]>([1])
+    const [evaluationStage, setEvaluationStage] = useState<EvaluationStageKey>('mentor')
     const [hasSeenPresentationOnce, setHasSeenPresentationOnce] = useState(false)
     const [isLocked, setIsLocked] = useState(false)
     const [isHydrated, setIsHydrated] = useState(false)
@@ -1528,6 +1643,7 @@ export function WB10Digital() {
     const [isExportingAll, setIsExportingAll] = useState(false)
     const [saveFeedback, setSaveFeedback] = useState('')
     const [activeHelpModal, setActiveHelpModal] = useState<HelpModalKey>(null)
+    const [showEvaluationLevelReference, setShowEvaluationLevelReference] = useState(false)
     const saveFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
@@ -2273,6 +2389,120 @@ export function WB10Digital() {
     const saveCommitmentsBlock = (label: string) => savePage(6, `${label} guardado.`)
     const saveIndicatorsBlock = (label: string) => savePage(7, `${label} guardado.`)
     const saveOnePageBlock = (label: string) => savePage(8, `${label} guardado.`)
+    const saveEvaluationBlock = (label: string) => savePage(9, `${label} guardado.`)
+
+    const updateEvaluationMentorRow = (
+        index: number,
+        field: keyof Omit<EvaluationMentorRow, 'criterion'>,
+        value: string
+    ) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorRows: prev.evaluation.mentorRows.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]:
+                                  field === 'level'
+                                      ? ((MENTOR_LEVEL_OPTIONS.includes(value as MentorLevel) ? value : '') as MentorLevel)
+                                      : field === 'decision'
+                                        ? ((MENTOR_DECISION_OPTIONS.includes(value as MentorDecision) ? value : '') as MentorDecision)
+                                        : value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const setEvaluationMentorEvidence = (index: number, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorRows: prev.evaluation.mentorRows.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              evidence: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const setEvaluationMentorGeneralNotes = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGeneralNotes: value
+            }
+        }))
+    }
+
+    const setEvaluationMentorGlobalDecision = (value: string) => {
+        if (isLocked) return
+        const safeDecision = MENTOR_DECISION_OPTIONS.includes(value as MentorDecision) ? (value as MentorDecision) : ''
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                mentorGlobalDecision: safeDecision
+            }
+        }))
+    }
+
+    const updateEvaluationLeaderRow = (index: number, field: keyof Omit<EvaluationLeaderRow, 'question'>, value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                leaderRows: prev.evaluation.leaderRows.map((row, rowIndex) =>
+                    rowIndex === index
+                        ? {
+                              ...row,
+                              [field]: value
+                          }
+                        : row
+                )
+            }
+        }))
+    }
+
+    const setEvaluationAgreementsSynthesis = (value: string) => {
+        if (isLocked) return
+        setState((prev) => ({
+            ...prev,
+            evaluation: {
+                ...prev.evaluation,
+                agreementsSynthesis: value
+            }
+        }))
+    }
+
+    const changeEvaluationStage = (stage: EvaluationStageKey) => {
+        setEvaluationStage(stage)
+    }
+
+    const goPrevEvaluationStage = () => {
+        const currentIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+        if (currentIndex <= 0) return
+        setEvaluationStage(EVALUATION_STAGES[currentIndex - 1].key)
+    }
+
+    const goNextEvaluationStage = () => {
+        const currentIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+        if (currentIndex < 0 || currentIndex >= EVALUATION_STAGES.length - 1) return
+        setEvaluationStage(EVALUATION_STAGES[currentIndex + 1].key)
+    }
 
     const assistAreaObjectiveMatrix = () => {
         const suggestedAreas = [...state.areaGoals.prioritization]
@@ -2835,6 +3065,32 @@ export function WB10Digital() {
     const showOnePageReviewSuggestion =
         state.onePagePlan.finalPlan.reviewFrequency.trim().length === 0 || state.onePagePlan.finalPlan.adjustmentCriteria.trim().length === 0
 
+    const mentorCompletedRows = state.evaluation.mentorRows.filter(isMentorEvaluationRowComplete).length
+    const leaderCompletedRows = state.evaluation.leaderRows.filter(isLeaderEvaluationRowComplete).length
+    const evaluationMentorComplete =
+        mentorCompletedRows === state.evaluation.mentorRows.length &&
+        state.evaluation.mentorGeneralNotes.trim().length > 0 &&
+        state.evaluation.mentorGlobalDecision !== ''
+    const evaluationLeaderComplete = leaderCompletedRows === state.evaluation.leaderRows.length
+    const evaluationSynthesisComplete = state.evaluation.agreementsSynthesis.trim().length > 0
+    const evaluationComplete = evaluationMentorComplete && evaluationLeaderComplete && evaluationSynthesisComplete
+    const evaluationStageIndex = EVALUATION_STAGES.findIndex((stage) => stage.key === evaluationStage)
+    const hasPrevEvaluationStage = evaluationStageIndex > 0
+    const hasNextEvaluationStage = evaluationStageIndex >= 0 && evaluationStageIndex < EVALUATION_STAGES.length - 1
+    const evaluationStageCompletionMap: Record<EvaluationStageKey, boolean> = {
+        mentor: evaluationMentorComplete,
+        leader: evaluationLeaderComplete,
+        synthesis: evaluationSynthesisComplete,
+        final: evaluationComplete
+    }
+
+    const showEvaluationMentorEvidenceSuggestion = state.evaluation.mentorRows.some(
+        (row) => (row.level !== '' || row.decision !== '') && row.evidence.trim().length === 0
+    )
+    const showEvaluationLeaderActionSuggestion = state.evaluation.leaderRows.some(
+        (row) => (row.response.trim().length > 0 || row.evidence.trim().length > 0) && row.action.trim().length === 0
+    )
+
     const visionLifeScores = state.vision3Years.lifeMap.map((row) => buildDefinitionScore(row.vision))
     const lifeWheelSize = 360
     const lifeWheelCenter = 180
@@ -2908,7 +3164,8 @@ export function WB10Digital() {
         5: prioritiesSectionComplete,
         6: commitmentsSectionComplete,
         7: indicatorsSectionComplete,
-        8: onePageSectionComplete
+        8: onePageSectionComplete,
+        9: evaluationComplete
     }
 
     const completedPages = PAGES.filter((page) => pageCompletionMap[page.id]).length
@@ -3001,7 +3258,7 @@ export function WB10Digital() {
                         {isPageVisible(1) && (
                             <article
                                 className="wb10-print-page wb10-cover-page overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
-                                data-print-page="Página 1 de 8"
+                                data-print-page="Página 1 de 9"
                                 data-print-title="Portada e identificación"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3104,7 +3361,7 @@ export function WB10Digital() {
                         {isPageVisible(2) && (
                             <article
                                 className="wb10-print-page rounded-3xl border border-slate-200/90 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-6 md:p-8"
-                                data-print-page="Página 2 de 8"
+                                data-print-page="Página 2 de 9"
                                 data-print-title="Presentación del workbook"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3174,7 +3431,7 @@ export function WB10Digital() {
                         {isPageVisible(3) && (
                             <article
                                 className="wb10-print-page space-y-8 rounded-3xl border border-slate-200/90 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-6 md:p-8"
-                                data-print-page="Página 3 de 8"
+                                data-print-page="Página 3 de 9"
                                 data-print-title="Visión a 3 años"
                                 data-print-meta={printMetaLabel}
                             >
@@ -3569,7 +3826,7 @@ export function WB10Digital() {
                         {isPageVisible(4) && (
                             <article
                                 className="wb10-print-page space-y-8 rounded-3xl border border-slate-200/90 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-6 md:p-8"
-                                data-print-page="Página 4 de 8"
+                                data-print-page="Página 4 de 9"
                                 data-print-title="Objetivos por área de vida"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4046,7 +4303,7 @@ export function WB10Digital() {
                         {isPageVisible(5) && (
                             <article
                                 className="wb10-print-page space-y-8 rounded-3xl border border-slate-200/90 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-6 md:p-8"
-                                data-print-page="Página 5 de 8"
+                                data-print-page="Página 5 de 9"
                                 data-print-title="Prioridades estratégicas"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4417,7 +4674,7 @@ export function WB10Digital() {
                         {isPageVisible(6) && (
                             <article
                                 className="wb10-print-page space-y-8 rounded-3xl border border-slate-200/90 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-6 md:p-8"
-                                data-print-page="Página 6 de 8"
+                                data-print-page="Página 6 de 9"
                                 data-print-title="Compromisos de acción inmediata"
                                 data-print-meta={printMetaLabel}
                             >
@@ -4768,7 +5025,7 @@ export function WB10Digital() {
                         {isPageVisible(7) && (
                             <article
                                 className="wb10-print-page space-y-8 rounded-3xl border border-slate-200/90 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-6 md:p-8"
-                                data-print-page="Página 7 de 8"
+                                data-print-page="Página 7 de 9"
                                 data-print-title="Indicadores de avance"
                                 data-print-meta={printMetaLabel}
                             >
@@ -5250,7 +5507,7 @@ export function WB10Digital() {
                         {isPageVisible(8) && (
                             <article
                                 className="wb10-print-page space-y-8 rounded-3xl border border-slate-200/90 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-6 md:p-8"
-                                data-print-page="Página 8 de 8"
+                                data-print-page="Página 8 de 9"
                                 data-print-title="One Strategic Page Plan"
                                 data-print-meta={printMetaLabel}
                             >
@@ -5550,6 +5807,494 @@ export function WB10Digital() {
                                 </section>
 
                                 <ClosureCard items={ONE_PAGE_CLOSURE} />
+                            </article>
+                        )}
+
+                        {isPageVisible(9) && (
+                            <article
+                                className="wb10-print-page rounded-3xl border border-slate-200/90 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.07)] sm:p-6 md:p-8 space-y-8"
+                                data-print-page="Página 9 de 9"
+                                data-print-title="Evaluación"
+                                data-print-meta={printMetaLabel}
+                            >
+                                <header className="space-y-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">Página 9</p>
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h2 className="text-2xl font-extrabold leading-[1.08] tracking-tight text-slate-900 md:text-4xl">
+                                                Evaluación
+                                            </h2>
+                                            <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-600 md:text-base">
+                                                Objetivo: permitir que mentor y líder evalúen con evidencia, definan decisiones por criterio y
+                                                cierren con una síntesis de seguimiento del WB10.
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveHelpModal('evaluation')}
+                                            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+                                        >
+                                            Ayuda / Ver ejemplo
+                                        </button>
+                                    </div>
+                                </header>
+
+                                {!isExportingAll && (
+                                    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5 space-y-4">
+                                        <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                                            {EVALUATION_STAGES.map((stage) => {
+                                                const isActive = evaluationStage === stage.key
+                                                const isComplete = evaluationStageCompletionMap[stage.key]
+
+                                                return (
+                                                    <button
+                                                        key={`wb10-evaluation-stage-${stage.key}`}
+                                                        type="button"
+                                                        onClick={() => changeEvaluationStage(stage.key)}
+                                                        className={`rounded-xl border px-3 py-2 text-left text-xs font-semibold transition-colors md:text-sm ${
+                                                            isActive
+                                                                ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                                                        }`}
+                                                    >
+                                                        <p>{stage.label}</p>
+                                                        <p className={`mt-1 text-[11px] ${isComplete ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                                            {isComplete ? 'Completado' : 'Pendiente'}
+                                                        </p>
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={goPrevEvaluationStage}
+                                                disabled={!hasPrevEvaluationStage}
+                                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                                Atrás
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={goNextEvaluationStage}
+                                                disabled={!hasNextEvaluationStage}
+                                                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                                Siguiente
+                                            </button>
+                                        </div>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'mentor' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-base font-bold text-slate-900 md:text-lg">A) Instrucciones para el mentor (rúbricas)</h3>
+                                                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                        Evalúa cada criterio con evidencia observable reciente y cierra con una decisión global del workbook.
+                                                    </p>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="text-xs text-slate-500">
+                                                        Criterios completos: {mentorCompletedRows}/{state.evaluation.mentorRows.length}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowEvaluationLevelReference((current) => !current)}
+                                                        className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                                                    >
+                                                        {showEvaluationLevelReference ? 'Ocultar referencia' : 'Ver referencia de niveles'}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <ul className="space-y-2 text-sm leading-relaxed text-slate-700">
+                                                {WB10_MENTOR_INSTRUCTIONS.map((instruction) => (
+                                                    <li key={instruction} className="flex items-start gap-2">
+                                                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-700" />
+                                                        <span>{instruction}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+
+                                            {(showEvaluationLevelReference || isExportingAll) && (
+                                                <article className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                                    <p className="text-sm font-semibold text-slate-900">Referencia de niveles (1-4)</p>
+                                                    <div className="mt-4 overflow-x-auto">
+                                                        <table className="w-full min-w-[520px] overflow-hidden rounded-lg border border-blue-200 bg-white">
+                                                            <thead>
+                                                                <tr className="bg-blue-100">
+                                                                    <th className="border-b border-blue-200 px-3 py-2 text-left text-xs font-bold text-blue-800">Nivel</th>
+                                                                    <th className="border-b border-blue-200 px-3 py-2 text-left text-xs font-bold text-blue-800">Descriptor</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {WB10_MENTOR_LEVEL_REFERENCE.map((item) => (
+                                                                    <tr key={item.level} className="odd:bg-white even:bg-blue-50/40">
+                                                                        <td className="border-b border-blue-100 px-3 py-2 text-sm font-semibold text-slate-900">{item.level}</td>
+                                                                        <td className="border-b border-blue-100 px-3 py-2 text-sm text-slate-700">{item.descriptor}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </article>
+                                            )}
+                                        </article>
+
+                                        <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-900">Formato de evaluación del mentor</h3>
+                                                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                        Marca un nivel por criterio, registra evidencia observable y define la decisión de seguimiento.
+                                                    </p>
+                                                </div>
+
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        evaluationMentorComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {evaluationMentorComplete ? 'Completado' : 'Pendiente'}
+                                                </span>
+                                            </div>
+
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full min-w-[880px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1180px]">
+                                                    <thead className="bg-slate-100">
+                                                        <tr>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Criterio</th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nivel</th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Comentario / evidencia observable</th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Decisión del mentor</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {state.evaluation.mentorRows.map((row, index) => (
+                                                            <tr key={row.criterion} className="border-t border-slate-200 align-top">
+                                                                <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.criterion}</td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {MENTOR_LEVEL_OPTIONS.map((level) => (
+                                                                            <button
+                                                                                key={`${row.criterion}-${level}`}
+                                                                                type="button"
+                                                                                onClick={() => updateEvaluationMentorRow(index, 'level', level)}
+                                                                                disabled={isLocked}
+                                                                                className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                                                                    row.level === level
+                                                                                        ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                                                                            >
+                                                                                {level}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <textarea
+                                                                        value={row.evidence}
+                                                                        onChange={(event) => setEvaluationMentorEvidence(index, event.target.value)}
+                                                                        placeholder="Hechos, conversaciones o conductas observadas en los últimos 30 días."
+                                                                        disabled={isLocked}
+                                                                        rows={4}
+                                                                        className={TEXTAREA_CLASS}
+                                                                    />
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex flex-col gap-2">
+                                                                        {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                                            <button
+                                                                                key={`${row.criterion}-${decision}`}
+                                                                                type="button"
+                                                                                onClick={() => updateEvaluationMentorRow(index, 'decision', decision)}
+                                                                                disabled={isLocked}
+                                                                                className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                                                                                    row.decision === decision
+                                                                                        ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                                                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                                                                            >
+                                                                                {decision}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_300px] [&>*]:min-w-0">
+                                                <TextareaField
+                                                    label="Observaciones generales del mentor"
+                                                    value={state.evaluation.mentorGeneralNotes}
+                                                    onChange={setEvaluationMentorGeneralNotes}
+                                                    placeholder="Lectura general del WB10, riesgos, fortalezas y foco de seguimiento."
+                                                    disabled={isLocked}
+                                                    rows={5}
+                                                />
+
+                                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                                                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Decisión global del WB</p>
+                                                    <div className="flex flex-col gap-2">
+                                                        {MENTOR_DECISION_OPTIONS.map((decision) => (
+                                                            <button
+                                                                key={`wb10-global-${decision}`}
+                                                                type="button"
+                                                                onClick={() => setEvaluationMentorGlobalDecision(decision)}
+                                                                disabled={isLocked}
+                                                                className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                                                                    state.evaluation.mentorGlobalDecision === decision
+                                                                        ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                                                            >
+                                                                {decision}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {showEvaluationMentorEvidenceSuggestion && (
+                                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                                    Agrega evidencia observable antes de cerrar el criterio o la decisión del mentor.
+                                                </div>
+                                            )}
+
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => saveEvaluationBlock('Pantalla 1 - Mentor')}
+                                                    disabled={isLocked}
+                                                    className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                                >
+                                                    Guardar mentor
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'leader' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div>
+                                                <h3 className="text-base font-bold text-slate-900 md:text-lg">B) Instrucciones para el líder (autoevaluación)</h3>
+                                                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                    Responde con hechos concretos, evidencia visible y una acción de 30 días por cada punto clave.
+                                                </p>
+                                            </div>
+
+                                            <ul className="space-y-2 text-sm leading-relaxed text-slate-700">
+                                                {WB10_LEADER_INSTRUCTIONS.map((instruction) => (
+                                                    <li key={instruction} className="flex items-start gap-2">
+                                                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-700" />
+                                                        <span>{instruction}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </article>
+
+                                        <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-900">Preguntas de autoevaluación del líder</h3>
+                                                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                        Responde desde hechos, incluye evidencia y define un compromiso claro para los próximos 30 días.
+                                                    </p>
+                                                </div>
+
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        evaluationLeaderComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {evaluationLeaderComplete ? 'Completado' : 'Pendiente'}
+                                                </span>
+                                            </div>
+
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full min-w-[880px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1180px]">
+                                                    <thead className="bg-slate-100">
+                                                        <tr>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pregunta</th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Respuesta del líder</th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Evidencia / ejemplo</th>
+                                                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Acción o compromiso (30 días)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {state.evaluation.leaderRows.map((row, index) => (
+                                                            <tr key={row.question} className="border-t border-slate-200 align-top">
+                                                                <td className="px-4 py-3 text-sm font-semibold text-slate-900">{row.question}</td>
+                                                                <td className="px-4 py-3">
+                                                                    <textarea
+                                                                        value={row.response}
+                                                                        onChange={(event) => updateEvaluationLeaderRow(index, 'response', event.target.value)}
+                                                                        placeholder="Respuesta concreta y reciente."
+                                                                        disabled={isLocked}
+                                                                        rows={4}
+                                                                        className={TEXTAREA_CLASS}
+                                                                    />
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <textarea
+                                                                        value={row.evidence}
+                                                                        onChange={(event) => updateEvaluationLeaderRow(index, 'evidence', event.target.value)}
+                                                                        placeholder="Hecho, ejemplo, conversación o dato."
+                                                                        disabled={isLocked}
+                                                                        rows={4}
+                                                                        className={TEXTAREA_CLASS}
+                                                                    />
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                    <textarea
+                                                                        value={row.action}
+                                                                        onChange={(event) => updateEvaluationLeaderRow(index, 'action', event.target.value)}
+                                                                        placeholder="Acción o compromiso concreto para 30 días."
+                                                                        disabled={isLocked}
+                                                                        rows={4}
+                                                                        className={TEXTAREA_CLASS}
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {showEvaluationLeaderActionSuggestion && (
+                                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                                    Convierte cada reflexión del líder en un compromiso visible para los próximos 30 días.
+                                                </div>
+                                            )}
+
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => saveEvaluationBlock('Pantalla 2 - Líder')}
+                                                    disabled={isLocked}
+                                                    className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                                >
+                                                    Guardar líder
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'synthesis' || isExportingAll) && (
+                                    <section className="space-y-5">
+                                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-4">
+                                            <div>
+                                                <h3 className="text-base font-bold text-slate-900 md:text-lg">C) Síntesis de acuerdos Mentor-Líder</h3>
+                                                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                    Cierra la evaluación con acuerdos accionables, responsables visibles y foco de seguimiento.
+                                                </p>
+                                            </div>
+                                        </article>
+
+                                        <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
+                                            <TextareaField
+                                                label="Síntesis de acuerdos Mentor-Líder"
+                                                value={state.evaluation.agreementsSynthesis}
+                                                onChange={setEvaluationAgreementsSynthesis}
+                                                placeholder="Resume acuerdos, foco de desarrollo, decisiones y próximos pasos para el seguimiento del WB10."
+                                                disabled={isLocked}
+                                                rows={8}
+                                            />
+
+                                            <div className="flex justify-between gap-3">
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        evaluationSynthesisComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                                    }`}
+                                                >
+                                                    {evaluationSynthesisComplete ? 'Completado' : 'Pendiente'}
+                                                </span>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => saveEvaluationBlock('Pantalla 3 - Síntesis')}
+                                                    disabled={isLocked}
+                                                    className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                                >
+                                                    Guardar síntesis
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </section>
+                                )}
+
+                                {(evaluationStage === 'final' || isExportingAll) && (
+                                    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6 space-y-5">
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <h3 className="text-lg font-bold text-slate-900">Cierre de evaluación</h3>
+                                                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                    Vista consolidada de avance del mentor, del líder y de la síntesis acordada para el seguimiento.
+                                                </p>
+                                            </div>
+
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    evaluationComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                                }`}
+                                            >
+                                                {evaluationComplete ? 'Completado' : 'Pendiente'}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                                <p className="font-semibold text-slate-900">Pantalla 1 - Mentor</p>
+                                                <p className="mt-1">{mentorCompletedRows}/{state.evaluation.mentorRows.length} criterios completos</p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {evaluationMentorComplete ? 'Listo para seguimiento' : 'Faltan evidencia, notas o decisión global'}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                                <p className="font-semibold text-slate-900">Pantalla 2 - Líder</p>
+                                                <p className="mt-1">{leaderCompletedRows}/{state.evaluation.leaderRows.length} respuestas completas</p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {evaluationLeaderComplete ? 'Autodiagnóstico completo' : 'Faltan respuestas, evidencia o compromisos'}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                                <p className="font-semibold text-slate-900">Pantalla 3 - Síntesis</p>
+                                                <p className="mt-1">{evaluationSynthesisComplete ? 'Síntesis lista' : 'Síntesis pendiente'}</p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {evaluationSynthesisComplete ? 'Hay acuerdos compartidos' : 'Falta cerrar acuerdos y próximos pasos'}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                                                <p className="font-semibold text-slate-900">Decisión global</p>
+                                                <p className="mt-1">{state.evaluation.mentorGlobalDecision || 'Pendiente'}</p>
+                                                <p className="mt-1 text-xs text-slate-500">Estado final del workbook para el seguimiento</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={() => saveEvaluationBlock('Cierre de evaluación')}
+                                                disabled={isLocked}
+                                                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                                            >
+                                                Guardar cierre
+                                            </button>
+                                        </div>
+                                    </section>
+                                )}
                             </article>
                         )}
 
