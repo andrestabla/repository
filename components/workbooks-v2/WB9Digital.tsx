@@ -170,6 +170,33 @@ type LinkedInAuditApiResponse = {
     error?: string
 }
 
+type LinkedInExpertBlockKey = 'headline' | 'banner' | 'about' | 'sections' | 'optimization'
+
+type LinkedInExpertMessageMap = Partial<Record<LinkedInExpertBlockKey, string>>
+
+type LinkedInExpertApiResponse = {
+    strategicHeadline?: string
+    banner?: Partial<LinkedInBannerDesign>
+    aboutMatrix?: Array<{
+        block?: string
+        formulation?: string
+    }>
+    profileSections?: Array<{
+        section?: string
+        communicates?: string
+        missingToday?: string
+        priorityAdjustment?: string
+    }>
+    optimizationChecks?: Array<{
+        question?: string
+        verdict?: YesNoAnswer
+        adjustment?: string
+    }>
+    publicEvidenceStatus?: 'sufficient' | 'partial' | 'insufficient'
+    note?: string
+    error?: string
+}
+
 type SocialCauseLegitimacyRow = {
     possibleCause: string
     storyConnection: RatingValue
@@ -2086,6 +2113,9 @@ export function WB9Digital() {
     const [isLinkedInAuditLoading, setIsLinkedInAuditLoading] = useState(false)
     const [linkedInAuditMessage, setLinkedInAuditMessage] = useState('')
     const [linkedInAuditError, setLinkedInAuditError] = useState('')
+    const [linkedInExpertLoadingBlock, setLinkedInExpertLoadingBlock] = useState<LinkedInExpertBlockKey | ''>('')
+    const [linkedInExpertMessages, setLinkedInExpertMessages] = useState<LinkedInExpertMessageMap>({})
+    const [linkedInExpertErrors, setLinkedInExpertErrors] = useState<LinkedInExpertMessageMap>({})
     const saveFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
@@ -2566,152 +2596,128 @@ export function WB9Digital() {
         savePage(6, `${label} guardado.`)
     }
 
-    const clipWords = (text: string, fallback: string, maxWords = 8) => {
-        const source = text.trim().length > 0 ? text.trim() : fallback
-        return source
-            .split(/\s+/)
-            .filter(Boolean)
-            .slice(0, maxWords)
-            .join(' ')
+    const clearLinkedInExpertFeedback = () => {
+        setLinkedInExpertLoadingBlock('')
+        setLinkedInExpertMessages({})
+        setLinkedInExpertErrors({})
     }
 
-    const getLinkedInContext = () => {
-        const role = state.identification.role.trim() || 'Líder ejecutivo'
-        const professionalIdentity = state.executiveBrand.canvas.professionalIdentity.trim() || role
-        const problem = state.executiveBrand.canvas.mainProblem.trim() || 'operaciones complejas'
-        const transformation =
-            state.executiveBrand.canvas.transformation.trim() || 'ventaja competitiva con impacto sostenible'
-        const differentiator =
-            state.executiveBrand.canvas.differentiator.trim() || 'visión estratégica y capacidad de ejecución'
-        const tone =
-            state.executiveBrand.canvas.tone.trim() || 'estratégico, reflexivo, humano; sereno, firme, claro y confiable'
-        const audience =
-            state.executiveBrand.canvas.audience.trim() || 'organizaciones y líderes que buscan crecer con criterio'
-        const signal =
-            state.executiveBrand.canvas.primarySignal.trim() || 'liderazgo sereno, claridad y visión de futuro'
-        const purpose =
-            state.purposeIntegrated.integratedPurpose.trim() || 'impulsar crecimiento real en personas y organizaciones'
-        const desiredImpact =
-            state.purposeIntegrated.inventory.desiredImpact.trim() || 'dejar una huella positiva en personas y organizaciones'
-        const results =
-            state.executiveBrand.differentiatorMatrix
-                .map((row) => row.proof.trim())
-                .filter(Boolean)
-                .join('; ') ||
-            'trayectoria visible en transformación, continuidad operativa y desarrollo de equipos'
-        const symbol =
-            state.leadershipArchetype.expressiveCode.find((row) => row.dimension === 'Símbolo que lo condensa')?.definition.trim() ||
-            'faro'
-        const archetype =
-            state.leadershipArchetype.centralChoice.primary.trim() || 'liderazgo estratégico'
-        const coreValues =
-            state.brandValues.coreValues
-                .filter((value) => value.trim().length > 0)
-                .slice(0, 3)
-                .join(', ') || 'coherencia, visión y responsabilidad'
+    const buildLinkedInExpertContext = () => ({
+        role: state.identification.role.trim(),
+        purposeIntegrated: state.purposeIntegrated.integratedPurpose.trim(),
+        desiredImpact: state.purposeIntegrated.inventory.desiredImpact.trim(),
+        positioningStatement: state.executiveBrand.positioningStatement.trim(),
+        executiveBrandCanvas: state.executiveBrand.canvas,
+        differentiatorMatrix: state.executiveBrand.differentiatorMatrix,
+        coreValues: state.brandValues.coreValues.filter((value) => value.trim().length > 0),
+        archetype: {
+            primary: state.leadershipArchetype.centralChoice.primary.trim(),
+            secondary: state.leadershipArchetype.centralChoice.secondary.trim(),
+            symbol:
+                state.leadershipArchetype.expressiveCode.find((row) => row.dimension === 'Símbolo que lo condensa')?.definition.trim() || '',
+            expressiveCode: state.leadershipArchetype.expressiveCode
+        },
+        strategicCause: state.socialCause.strategicCause.trim(),
+        linkedInAudit: state.linkedInProfile.audit,
+        currentHeadline: state.linkedInProfile.strategicHeadline,
+        currentBanner: state.linkedInProfile.banner,
+        currentAboutMatrix: state.linkedInProfile.aboutMatrix,
+        currentProfileSections: state.linkedInProfile.profileSections,
+        currentOptimizationChecks: state.linkedInProfile.optimizationChecks
+    })
 
-        return {
-            role,
-            professionalIdentity,
-            problem,
-            transformation,
-            differentiator,
-            tone,
-            audience,
-            signal,
-            purpose,
-            desiredImpact,
-            results,
-            symbol,
-            archetype,
-            coreValues
+    const requestLinkedInExpertBlock = async (block: LinkedInExpertBlockKey) => {
+        if (isLocked || linkedInExpertLoadingBlock) return null
+
+        const profileUrl = state.linkedInProfile.profileUrl.trim()
+        if (!profileUrl) {
+            setLinkedInExpertErrors((prev) => ({
+                ...prev,
+                [block]: 'Agrega una URL pública de LinkedIn para que el Asistente IA use el contexto real del perfil.'
+            }))
+            setLinkedInExpertMessages((prev) => ({
+                ...prev,
+                [block]: ''
+            }))
+            return null
         }
-    }
 
-    const buildSuggestedLinkedInHeadline = () => {
-        const context = getLinkedInContext()
-        return [
-            `Transformo ${clipWords(context.problem, 'operaciones complejas', 5)} en ${clipWords(context.transformation, 'ventaja competitiva sostenible', 5)}`,
-            clipWords(context.professionalIdentity, context.role, 6),
-            clipWords(context.role, 'Líder ejecutivo', 4),
-            clipWords(context.signal, 'criterio, claridad y liderazgo con impacto', 7)
-        ].join(' | ')
-    }
+        try {
+            setLinkedInExpertLoadingBlock(block)
+            setLinkedInExpertErrors((prev) => ({
+                ...prev,
+                [block]: ''
+            }))
+            setLinkedInExpertMessages((prev) => ({
+                ...prev,
+                [block]: ''
+            }))
 
-    const buildSuggestedLinkedInBanner = (): LinkedInBannerDesign => {
-        const context = getLinkedInContext()
-        return {
-            mainPhrase: `Transformo ${context.problem.toLowerCase()} en ${context.transformation.toLowerCase()}.`,
-            subtitle: clipWords(context.tone, 'liderazgo sereno, visión estratégica y decisiones que escalan', 12),
-            visualSignal: `${context.symbol} / ${clipWords(context.signal, 'dirección estratégica y confianza', 6)}`,
-            reinforces: `Que no soy solo ${context.role.toLowerCase()}; también aporto ${context.differentiator.toLowerCase()} y ${context.purpose.toLowerCase()}.`
-        }
-    }
+            const response = await fetch('/api/workbooks-v2/wb9/linkedin-expert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    profileUrl,
+                    block,
+                    context: buildLinkedInExpertContext()
+                })
+            })
 
-    const buildSuggestedLinkedInAbout = () => {
-        const context = getLinkedInContext()
-        return [
-            `Soy ${context.professionalIdentity.toLowerCase()} y hablo desde una trayectoria orientada a ${context.transformation.toLowerCase()}.`,
-            `Me respaldan ${context.results}.`,
-            `Resuelvo ${context.problem.toLowerCase()} para convertirla en ${context.transformation.toLowerCase()}.`,
-            `Pienso y lidero desde ${context.tone.toLowerCase()}, con foco en ${context.coreValues.toLowerCase()}.`,
-            `Quiero impactar a ${context.audience.toLowerCase()}.`,
-            `Estoy construyendo un legado orientado a ${context.desiredImpact.toLowerCase()} desde ${context.archetype.toLowerCase()}.`
-        ]
-    }
-
-    const buildSuggestedLinkedInProfileSections = (): LinkedInProfileSectionRow[] => {
-        const context = getLinkedInContext()
-        return [
-            {
-                section: 'Foto',
-                communicates: 'Presencia ejecutiva, criterio y cercanía confiable.',
-                missingToday: 'Más intención de marca conectada con tu tono.',
-                priorityAdjustment: 'Elegir una foto que proyecte serenidad, claridad y liderazgo humano.'
-            },
-            {
-                section: 'Banner',
-                communicates: `La promesa de valor: ${context.transformation}.`,
-                missingToday: 'Mayor señal estratégica y recordación simbólica.',
-                priorityAdjustment: `Diseñar un banner que use ${context.symbol.toLowerCase()} y refuerce ${context.signal.toLowerCase()}.`
-            },
-            {
-                section: 'Headline',
-                communicates: 'Transformación, especialidad y diferenciador.',
-                missingToday: 'Más foco en propuesta de valor y menos dependencia del cargo.',
-                priorityAdjustment: 'Reescribir con verbo de transformación, territorio y sello de liderazgo.'
-            },
-            {
-                section: 'Acerca de',
-                communicates: 'Trayectoria, problema, valor, pensamiento y visión.',
-                missingToday: 'Más narrativa de credibilidad y menos biografía lineal.',
-                priorityAdjustment: 'Reestructurar en bloques que conecten experiencia, resultados, criterio y legado.'
-            },
-            {
-                section: 'Experiencia',
-                communicates: 'Resultados, contexto e impacto visible.',
-                missingToday: 'Más evidencia concreta y menos descripción de funciones.',
-                priorityAdjustment: `Reescribir cargos con foco en ${context.results.toLowerCase()}.`
-            },
-            {
-                section: 'Destacados',
-                communicates: 'Prueba reputacional y pensamiento visible.',
-                missingToday: 'Pocas piezas estratégicas que refuercen tu autoridad.',
-                priorityAdjustment: 'Subir casos, artículos, entrevistas o logros que prueben criterio y transformación.'
-            },
-            {
-                section: 'Actividad',
-                communicates: 'Pensamiento propio, criterio y consistencia.',
-                missingToday: 'Baja frecuencia de visibilidad por ideas.',
-                priorityAdjustment: 'Activar una presencia mínima por pensamiento, no solo por historial.'
+            const payload = (await response.json()) as LinkedInExpertApiResponse
+            if (!response.ok) {
+                throw new Error(payload.error || 'No fue posible generar esta recomendación experta en este momento.')
             }
-        ]
+
+            setLinkedInExpertMessages((prev) => ({
+                ...prev,
+                [block]: payload.note || ''
+            }))
+
+            return payload
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : 'No fue posible generar esta recomendación experta en este momento.'
+            setLinkedInExpertErrors((prev) => ({
+                ...prev,
+                [block]: message
+            }))
+            setLinkedInExpertMessages((prev) => ({
+                ...prev,
+                [block]: ''
+            }))
+            return null
+        } finally {
+            setLinkedInExpertLoadingBlock('')
+        }
+    }
+
+    const renderLinkedInExpertFeedback = (block: LinkedInExpertBlockKey) => {
+        if (linkedInExpertErrors[block]) {
+            return (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {linkedInExpertErrors[block]}
+                </div>
+            )
+        }
+
+        if (linkedInExpertMessages[block]) {
+            return (
+                <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                    {linkedInExpertMessages[block]}
+                </div>
+            )
+        }
+
+        return null
     }
 
     const updateLinkedInProfileUrl = (value: string) => {
         if (isLocked) return
         setLinkedInAuditError('')
         setLinkedInAuditMessage('')
+        clearLinkedInExpertFeedback()
         setState((prev) => ({
             ...prev,
             linkedInProfile: {
@@ -3213,110 +3219,118 @@ export function WB9Digital() {
         }
     }
 
-    const assistLinkedInHeadline = () => {
-        updateLinkedInHeadline(buildSuggestedLinkedInHeadline())
-        announceSave('Borrador IA para el Headline listo.')
+    const assistLinkedInHeadline = async () => {
+        const payload = await requestLinkedInExpertBlock('headline')
+        if (!payload) return
+
+        updateLinkedInHeadline(
+            typeof payload.strategicHeadline === 'string' ? payload.strategicHeadline : state.linkedInProfile.strategicHeadline
+        )
+        announceSave('Borrador experto para el Headline listo.')
     }
 
-    const assistLinkedInBanner = () => {
-        const suggestion = buildSuggestedLinkedInBanner()
-        setState((prev) => ({
-            ...prev,
-            linkedInProfile: {
-                ...prev.linkedInProfile,
-                banner: suggestion
-            }
-        }))
-        announceSave('Borrador IA para el banner listo.')
-    }
-
-    const assistLinkedInAbout = () => {
-        const suggestions = buildSuggestedLinkedInAbout()
-        setState((prev) => ({
-            ...prev,
-            linkedInProfile: {
-                ...prev.linkedInProfile,
-                aboutMatrix: LINKEDIN_ABOUT_BLOCKS.map((block, index) => ({
-                    block,
-                    formulation: suggestions[index]
-                }))
-            }
-        }))
-        announceSave('Borrador IA para el “Acerca de” listo.')
-    }
-
-    const assistLinkedInProfileSections = () => {
-        setState((prev) => ({
-            ...prev,
-            linkedInProfile: {
-                ...prev.linkedInProfile,
-                profileSections: buildSuggestedLinkedInProfileSections()
-            }
-        }))
-        announceSave('Borrador IA para las secciones críticas del perfil listo.')
-    }
-
-    const assistLinkedInOptimization = () => {
-        const headline = state.linkedInProfile.strategicHeadline.trim()
-        const bannerFilled = Object.values(state.linkedInProfile.banner).every((value) => value.trim().length > 0)
-        const aboutFilled = state.linkedInProfile.aboutMatrix.every((row) => row.formulation.trim().length > 0)
-        const thoughtVisible =
-            state.linkedInProfile.profileSections.find((row) => row.section === 'Actividad')?.priorityAdjustment.trim().length ?? 0
-        const proofVisible =
-            state.linkedInProfile.aboutMatrix[1]?.formulation.trim().length > 0 ||
-            state.linkedInProfile.profileSections.find((row) => row.section === 'Experiencia')?.communicates.trim().length
-
-        const suggestions: Array<{ verdict: YesNoAnswer; adjustment: string }> = [
-            {
-                verdict: headline.trim().length > 0 && /(transform|conviert|impuls|ventaja|liderazgo|estrateg)/i.test(headline) ? 'yes' : 'no',
-                adjustment: headline.trim().length > 0 && /(transform|conviert|impuls|ventaja|liderazgo|estrateg)/i.test(headline)
-                    ? 'Mantener foco en transformación y evitar que el cargo vuelva a ocupar todo el espacio.'
-                    : 'Reescribe el Headline para que comunique transformación, especialidad o diferenciador.'
-            },
-            {
-                verdict: bannerFilled ? 'yes' : 'no',
-                adjustment: bannerFilled
-                    ? 'Asegura que el banner refuerce promesa de valor y símbolo de marca.'
-                    : 'Define banner con promesa principal, subtítulo y señal simbólica.'
-            },
-            {
-                verdict: aboutFilled ? 'yes' : 'no',
-                adjustment: aboutFilled
-                    ? 'Revisa que cada bloque conecte experiencia, problema, valor y visión sin sonar biográfico.'
-                    : 'Conecta más trayectoria con problema, valor y visión.'
-            },
-            {
-                verdict: thoughtVisible ? 'yes' : 'no',
-                adjustment: thoughtVisible
-                    ? 'Mantén una presencia mínima que haga visible tu pensamiento con regularidad.'
-                    : 'Activa una presencia mínima por pensamiento, no solo por historial.'
-            },
-            {
-                verdict: proofVisible ? 'yes' : 'no',
-                adjustment: proofVisible
-                    ? 'Haz que la prueba reputacional esté visible en experiencia, destacados o actividad.'
-                    : 'Incluye resultados, casos o señales de credibilidad.'
-            },
-            {
-                verdict: bannerFilled && aboutFilled && headline.trim().length > 0 ? 'yes' : 'no',
-                adjustment: bannerFilled && aboutFilled && headline.trim().length > 0
-                    ? 'Sigue reforzando coherencia entre propuesta de valor, tono y evidencia.'
-                    : 'Completa las piezas críticas para que el perfil pueda abrir oportunidades reales.'
-            }
-        ]
+    const assistLinkedInBanner = async () => {
+        const payload = await requestLinkedInExpertBlock('banner')
+        if (!payload) return
 
         setState((prev) => ({
             ...prev,
             linkedInProfile: {
                 ...prev.linkedInProfile,
-                optimizationChecks: LINKEDIN_OPTIMIZATION_QUESTIONS.map((question, index) => ({
-                    question,
-                    verdict: suggestions[index].verdict,
-                    adjustment: suggestions[index].adjustment
-                }))
+                banner: {
+                    ...prev.linkedInProfile.banner,
+                    mainPhrase:
+                        typeof payload.banner?.mainPhrase === 'string'
+                            ? payload.banner.mainPhrase
+                            : prev.linkedInProfile.banner.mainPhrase,
+                    subtitle:
+                        typeof payload.banner?.subtitle === 'string'
+                            ? payload.banner.subtitle
+                            : prev.linkedInProfile.banner.subtitle,
+                    visualSignal:
+                        typeof payload.banner?.visualSignal === 'string'
+                            ? payload.banner.visualSignal
+                            : prev.linkedInProfile.banner.visualSignal,
+                    reinforces:
+                        typeof payload.banner?.reinforces === 'string'
+                            ? payload.banner.reinforces
+                            : prev.linkedInProfile.banner.reinforces
+                }
             }
         }))
-        announceSave('Borrador IA para el test de optimización listo.')
+        announceSave('Borrador experto para el banner listo.')
+    }
+
+    const assistLinkedInAbout = async () => {
+        const payload = await requestLinkedInExpertBlock('about')
+        if (!payload) return
+
+        setState((prev) => ({
+            ...prev,
+            linkedInProfile: {
+                ...prev.linkedInProfile,
+                aboutMatrix: LINKEDIN_ABOUT_BLOCKS.map((block) => {
+                    const match = payload.aboutMatrix?.find((row) => row.block === block)
+                    const fallback = prev.linkedInProfile.aboutMatrix.find((row) => row.block === block)?.formulation || ''
+                    return {
+                        block,
+                        formulation: typeof match?.formulation === 'string' ? match.formulation : fallback
+                    }
+                })
+            }
+        }))
+        announceSave('Borrador experto para el “Acerca de” listo.')
+    }
+
+    const assistLinkedInProfileSections = async () => {
+        const payload = await requestLinkedInExpertBlock('sections')
+        if (!payload) return
+
+        setState((prev) => ({
+            ...prev,
+            linkedInProfile: {
+                ...prev.linkedInProfile,
+                profileSections: LINKEDIN_PROFILE_SECTIONS.map((section) => {
+                    const match = payload.profileSections?.find((row) => row.section === section)
+                    const fallback = prev.linkedInProfile.profileSections.find((row) => row.section === section)
+                    return {
+                        section,
+                        communicates: typeof match?.communicates === 'string' ? match.communicates : fallback?.communicates || '',
+                        missingToday: typeof match?.missingToday === 'string' ? match.missingToday : fallback?.missingToday || '',
+                        priorityAdjustment:
+                            typeof match?.priorityAdjustment === 'string'
+                                ? match.priorityAdjustment
+                                : fallback?.priorityAdjustment || ''
+                    }
+                })
+            }
+        }))
+        announceSave('Borrador experto para las secciones críticas del perfil listo.')
+    }
+
+    const assistLinkedInOptimization = async () => {
+        const payload = await requestLinkedInExpertBlock('optimization')
+        if (!payload) return
+
+        setState((prev) => ({
+            ...prev,
+            linkedInProfile: {
+                ...prev.linkedInProfile,
+                optimizationChecks: LINKEDIN_OPTIMIZATION_QUESTIONS.map((question) => {
+                    const match = payload.optimizationChecks?.find((row) => row.question === question)
+                    const fallback = prev.linkedInProfile.optimizationChecks.find((row) => row.question === question)
+                    return {
+                        question,
+                        verdict:
+                            match?.verdict === 'yes' || match?.verdict === 'no'
+                                ? match.verdict
+                                : fallback?.verdict || '',
+                        adjustment: typeof match?.adjustment === 'string' ? match.adjustment : fallback?.adjustment || ''
+                    }
+                })
+            }
+        }))
+        announceSave('Lectura experta para el test de optimización lista.')
     }
 
     const currentPageIndex = PAGES.findIndex((page) => page.id === activePage)
@@ -6666,12 +6680,14 @@ export function WB9Digital() {
                                         <button
                                             type="button"
                                             onClick={assistLinkedInHeadline}
-                                            disabled={isLocked}
+                                            disabled={isLocked || linkedInExpertLoadingBlock === 'headline' || state.linkedInProfile.profileUrl.trim().length === 0}
                                             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                                         >
-                                            Asistente IA
+                                            {linkedInExpertLoadingBlock === 'headline' ? 'Analizando...' : 'Asistente IA'}
                                         </button>
                                     </div>
+
+                                    {renderLinkedInExpertFeedback('headline')}
 
                                     <TextAreaField
                                         label="Mi Headline estratégico"
@@ -6724,12 +6740,14 @@ export function WB9Digital() {
                                         <button
                                             type="button"
                                             onClick={assistLinkedInBanner}
-                                            disabled={isLocked}
+                                            disabled={isLocked || linkedInExpertLoadingBlock === 'banner' || state.linkedInProfile.profileUrl.trim().length === 0}
                                             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                                         >
-                                            Asistente IA
+                                            {linkedInExpertLoadingBlock === 'banner' ? 'Analizando...' : 'Asistente IA'}
                                         </button>
                                     </div>
+
+                                    {renderLinkedInExpertFeedback('banner')}
 
                                     <div className="grid gap-4 md:grid-cols-2">
                                         {LINKEDIN_BANNER_FIELDS.map((field) => (
@@ -6787,12 +6805,14 @@ export function WB9Digital() {
                                         <button
                                             type="button"
                                             onClick={assistLinkedInAbout}
-                                            disabled={isLocked}
+                                            disabled={isLocked || linkedInExpertLoadingBlock === 'about' || state.linkedInProfile.profileUrl.trim().length === 0}
                                             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                                         >
-                                            Asistente IA
+                                            {linkedInExpertLoadingBlock === 'about' ? 'Analizando...' : 'Asistente IA'}
                                         </button>
                                     </div>
+
+                                    {renderLinkedInExpertFeedback('about')}
 
                                     <div className="overflow-x-auto">
                                         <table className="min-w-[760px] w-full rounded-2xl border border-slate-200 overflow-hidden">
@@ -6881,12 +6901,14 @@ export function WB9Digital() {
                                         <button
                                             type="button"
                                             onClick={assistLinkedInProfileSections}
-                                            disabled={isLocked}
+                                            disabled={isLocked || linkedInExpertLoadingBlock === 'sections' || state.linkedInProfile.profileUrl.trim().length === 0}
                                             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                                         >
-                                            Asistente IA
+                                            {linkedInExpertLoadingBlock === 'sections' ? 'Analizando...' : 'Asistente IA'}
                                         </button>
                                     </div>
+
+                                    {renderLinkedInExpertFeedback('sections')}
 
                                     <div className="overflow-x-auto">
                                         <table className="min-w-[1120px] w-full rounded-2xl border border-slate-200 overflow-hidden">
@@ -7007,12 +7029,14 @@ export function WB9Digital() {
                                         <button
                                             type="button"
                                             onClick={assistLinkedInOptimization}
-                                            disabled={isLocked}
+                                            disabled={isLocked || linkedInExpertLoadingBlock === 'optimization' || state.linkedInProfile.profileUrl.trim().length === 0}
                                             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                                         >
-                                            Asistente IA
+                                            {linkedInExpertLoadingBlock === 'optimization' ? 'Analizando...' : 'Asistente IA'}
                                         </button>
                                     </div>
+
+                                    {renderLinkedInExpertFeedback('optimization')}
 
                                     <div className="overflow-x-auto">
                                         <table className="min-w-[840px] w-full rounded-2xl border border-slate-200 overflow-hidden">
