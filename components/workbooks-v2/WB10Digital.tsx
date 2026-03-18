@@ -632,7 +632,7 @@ const HELP_MODAL_CONTENT: Record<Exclude<HelpModalKey, null>, { title: string; p
 const TEXT_INPUT_CLASS =
     'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:ring-2 focus:ring-amber-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed'
 const TEXTAREA_CLASS =
-    'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:ring-2 focus:ring-amber-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed'
+    'w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-relaxed text-slate-900 outline-none transition focus:ring-2 focus:ring-amber-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed min-h-[96px]'
 const SELECT_CLASS =
     'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:ring-2 focus:ring-amber-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed'
 
@@ -1416,7 +1416,7 @@ function CheckTable({
 }) {
     return (
         <div className="overflow-x-auto">
-            <table className="min-w-[920px] w-full overflow-hidden rounded-2xl border border-slate-200">
+            <table className="w-full min-w-[760px] overflow-hidden rounded-2xl border border-slate-200 md:min-w-[920px]">
                 <thead className="bg-slate-100">
                     <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pregunta</th>
@@ -1478,8 +1478,8 @@ function HelpModal({
     const content = HELP_MODAL_CONTENT[helpKey]
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-900/55 px-4 py-8 backdrop-blur-sm">
-            <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/55 px-4 py-8 backdrop-blur-sm">
+            <div className="mx-auto max-h-[calc(100vh-4rem)] max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <h3 className="text-xl font-bold text-slate-900">{content.title}</h3>
                     <button
@@ -2960,7 +2960,7 @@ export function WB10Digital() {
                 </div>
             </header>
 
-            <main className="mx-auto max-w-[1280px] overflow-x-hidden px-2 py-5 sm:px-5 md:px-8 md:py-8">
+            <main className="mx-auto max-w-[1280px] px-2 py-5 sm:px-5 md:px-8 md:py-8">
                 <div className={`grid items-start gap-6 ${isExportingAll ? 'grid-cols-1 min-w-0' : 'grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] min-w-0'}`}>
                     <aside className={`wb10-sidebar ${WORKBOOK_V2_EDITORIAL.classes.sidebar} ${isExportingAll ? 'hidden' : ''}`}>
                         <p className={WORKBOOK_V2_EDITORIAL.classes.sidebarTitle}>{WORKBOOK_V2_EDITORIAL.labels.index}</p>
@@ -2997,7 +2997,7 @@ export function WB10Digital() {
                         </nav>
                     </aside>
 
-                    <section className="space-y-6">
+                    <section className="min-w-0 space-y-6">
                         {isPageVisible(1) && (
                             <article
                                 className="wb10-print-page wb10-cover-page overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.07)]"
@@ -3116,7 +3116,7 @@ export function WB10Digital() {
                                     <p className="max-w-4xl text-sm leading-relaxed text-slate-600 md:text-base">{PRESENTATION_OBJECTIVE}</p>
                                 </header>
 
-                                <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                                <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] [&>*]:min-w-0">
                                     <section className="space-y-6">
                                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6">
                                             <h3 className="text-lg font-bold text-slate-900">Qué vas a lograr en este workbook</h3>
@@ -3274,7 +3274,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[860px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[720px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[860px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dimensión</th>
@@ -3340,7 +3340,7 @@ export function WB10Digital() {
                                         ))}
                                     </div>
 
-                                    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+                                    <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] [&>*]:min-w-0">
                                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                             <p className="text-sm font-semibold text-slate-900">Lectura visual de integración</p>
                                             <p className="mt-2 text-sm text-slate-600">
@@ -3431,7 +3431,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[1180px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[880px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1180px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dimensión</th>
@@ -3477,7 +3477,7 @@ export function WB10Digital() {
                                     </div>
                                 </section>
 
-                                <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+                                <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                         <div className="flex items-center justify-between gap-3">
                                             <div>
@@ -3607,7 +3607,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[980px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[760px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[980px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Área de vida</th>
@@ -3698,7 +3698,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[1180px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[880px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1180px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Área</th>
@@ -3757,7 +3757,7 @@ export function WB10Digital() {
                                     </div>
                                 </section>
 
-                                <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+                                <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                         <div className="flex flex-wrap items-center justify-between gap-3">
                                             <div>
@@ -3775,7 +3775,7 @@ export function WB10Digital() {
                                         </div>
 
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-[920px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[760px] overflow-hidden rounded-2xl border border-slate-200 md:min-w-[920px]">
                                                 <thead className="bg-slate-100">
                                                     <tr>
                                                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Objetivo</th>
@@ -3931,7 +3931,7 @@ export function WB10Digital() {
                                         </div>
                                     )}
 
-                                    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+                                    <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] [&>*]:min-w-0">
                                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                             <p className="text-sm font-semibold text-slate-900">Rueda del estado actual</p>
                                             <p className="mt-2 text-sm text-slate-600">
@@ -4120,7 +4120,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[1180px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[880px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1180px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Frente estratégico</th>
@@ -4201,7 +4201,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[1100px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[860px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1100px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Prioridad maestra</th>
@@ -4270,7 +4270,7 @@ export function WB10Digital() {
                                     </div>
                                 </section>
 
-                                <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+                                <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                         <div className="flex flex-wrap items-center justify-between gap-3">
                                             <div>
@@ -4335,7 +4335,7 @@ export function WB10Digital() {
                                         </div>
 
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-[920px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[760px] overflow-hidden rounded-2xl border border-slate-200 md:min-w-[920px]">
                                                 <thead className="bg-slate-100">
                                                     <tr>
                                                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Qué debo soltar o reducir</th>
@@ -4497,7 +4497,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[1100px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[860px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1100px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Compromiso inmediato</th>
@@ -4557,7 +4557,7 @@ export function WB10Digital() {
                                     </div>
                                 </section>
 
-                                <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+                                <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                         <div className="flex items-center justify-between gap-3">
                                             <div>
@@ -4570,7 +4570,7 @@ export function WB10Digital() {
                                         </div>
 
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-[980px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                            <table className="w-full min-w-[760px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[980px]">
                                                 <thead className="bg-slate-100">
                                                     <tr>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Compromiso</th>
@@ -4639,7 +4639,7 @@ export function WB10Digital() {
                                         </div>
 
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-[920px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                            <table className="w-full min-w-[760px] overflow-hidden rounded-2xl border border-slate-200 md:min-w-[920px]">
                                                 <thead className="bg-slate-100">
                                                     <tr>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Compromiso</th>
@@ -4692,7 +4692,7 @@ export function WB10Digital() {
                                     </div>
                                 </section>
 
-                                <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+                                <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                         <div className="flex items-center justify-between gap-3">
                                             <div>
@@ -4853,7 +4853,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[1080px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[860px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1080px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dimensión</th>
@@ -4908,7 +4908,7 @@ export function WB10Digital() {
                                     </div>
                                 </section>
 
-                                <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+                                <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                         <div className="flex flex-wrap items-center justify-between gap-3">
                                             <div>
@@ -4926,7 +4926,7 @@ export function WB10Digital() {
                                         </div>
 
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-[920px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                            <table className="w-full min-w-[760px] overflow-hidden rounded-2xl border border-slate-200 md:min-w-[920px]">
                                                 <thead className="bg-slate-100">
                                                     <tr>
                                                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Indicador</th>
@@ -4994,7 +4994,7 @@ export function WB10Digital() {
                                         </div>
 
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-[1080px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                            <table className="w-full min-w-[860px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1080px]">
                                                 <thead className="bg-slate-100">
                                                     <tr>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Indicador</th>
@@ -5051,7 +5051,7 @@ export function WB10Digital() {
                                     </div>
                                 </section>
 
-                                <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+                                <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                         <div className="flex flex-wrap items-center justify-between gap-3">
                                             <div>
@@ -5144,7 +5144,7 @@ export function WB10Digital() {
                                         </div>
 
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-[1180px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                            <table className="w-full min-w-[880px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[1180px]">
                                                 <thead className="bg-slate-100">
                                                     <tr>
                                                         <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Indicador</th>
@@ -5324,7 +5324,7 @@ export function WB10Digital() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-[900px] w-full overflow-hidden rounded-2xl border border-slate-200">
+                                        <table className="w-full min-w-[720px] overflow-hidden rounded-2xl border border-slate-200 xl:min-w-[900px]">
                                             <thead className="bg-slate-100">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Bloque del plan</th>
@@ -5356,7 +5356,7 @@ export function WB10Digital() {
                                     </div>
                                 </section>
 
-                                <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+                                <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 space-y-5">
                                         <div className="flex flex-wrap items-center justify-between gap-3">
                                             <div>
