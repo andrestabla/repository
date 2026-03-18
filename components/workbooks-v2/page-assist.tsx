@@ -2,120 +2,49 @@
 
 import { LoaderCircle, Mic, Sparkles, Square } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
-export type PageAssistMode = '' | 'audio' | 'direct'
-export type PageAssistStatusKind = 'idle' | 'recording' | 'loading' | 'error' | 'success'
+export type StepAssistMode = '' | 'audio' | 'direct'
+export type StepAssistStatusKind = 'idle' | 'recording' | 'loading' | 'error' | 'success'
 
-export type PageAssistStatus = {
-    kind: PageAssistStatusKind
+export type StepAssistStatus = {
+    kind: StepAssistStatusKind
     message: string
 }
 
-export type PageAssistStepSummary = {
-    title: string
-    detail: string
+type StepTarget = {
+    stepId: string
+    stepTitle: string
+    host: HTMLElement
 }
 
-type UseWorkbookPageAssistArgs<T> = {
+type AdaptiveWorkbookStepAssistPanelProps = {
+    workbookId: string
+    storageKey: string
+    pageId: number
+    pageTitle: string
+    stepId: string
+    stepTitle: string
+    currentData: unknown
+    disabled: boolean
+    onApplyData: (data: unknown) => void
+}
+
+type AdaptiveWorkbookStepAssistPortalsProps = {
     workbookId: string
     storageKey: string
     activePage: number
     pageTitle: string
-    currentData: T | null
+    currentData: unknown
     enabled: boolean
     disabled: boolean
     onApplyData: (data: unknown) => void
 }
 
-type UseWorkbookPageAssistResult = {
-    mode: PageAssistMode
-    status: PageAssistStatus
-    stepSummaries: PageAssistStepSummary[]
-    canUseAssistant: boolean
-    onModeChange: (mode: PageAssistMode) => void
-    onAssist: () => Promise<void>
-    onToggleRecording: () => Promise<void>
-}
+const IDLE_STATUS: StepAssistStatus = { kind: 'idle', message: '' }
 
-type AdaptiveWorkbookAssistPanelProps = {
-    pageTitle: string
-    stepSummaries: PageAssistStepSummary[]
-    mode: PageAssistMode
-    status: PageAssistStatus
-    disabled: boolean
-    canUseAssistant: boolean
-    onModeChange: (mode: PageAssistMode) => void
-    onAssist: () => void
-    onToggleRecording: () => void
-}
-
-const IDLE_STATUS: PageAssistStatus = { kind: 'idle', message: '' }
-
-function normalizeStepText(value: string, max = 240) {
+function normalizeText(value: string, max = 240) {
     return value.replace(/\s+/g, ' ').trim().slice(0, max)
-}
-
-function buildFallbackStepDetail(title: string) {
-    const lowered = title.toLowerCase()
-
-    if (lowered.includes('test') || lowered.includes('coherencia') || lowered.includes('calidad')) {
-        return 'Usa este paso para comprobar consistencia, detectar brechas y decidir qué ajustar antes de cerrar la página.'
-    }
-
-    if (lowered.includes('matriz') || lowered.includes('mapa') || lowered.includes('canvas')) {
-        return 'Baja tus ideas a una estructura concreta y completa este paso con criterios, decisiones y ejemplos verificables.'
-    }
-
-    if (lowered.includes('fórmula') || lowered.includes('declaración') || lowered.includes('frase')) {
-        return 'Sintetiza aquí lo esencial de la página con una formulación clara, específica y conectada con tu experiencia real.'
-    }
-
-    return 'Completa este paso con hechos, lenguaje claro y señales observables para que la información quede accionable y fácil de revisar.'
-}
-
-export function extractAssistStepSummariesForVisiblePage(activePage: number) {
-    if (typeof document === 'undefined') return [] as PageAssistStepSummary[]
-
-    const article = document.querySelector(`[data-print-page^="Página ${activePage} de"]`)
-    if (!(article instanceof HTMLElement)) return [] as PageAssistStepSummary[]
-
-    const seen = new Set<string>()
-    const summaries: PageAssistStepSummary[] = []
-    const headings = Array.from(article.querySelectorAll('h3'))
-
-    headings.forEach((heading) => {
-        const title = normalizeStepText(heading.textContent || '', 140)
-        if (!title || !/^(Paso|Bloque)\b/i.test(title) || seen.has(title)) return
-
-        const section = heading.closest('section')
-        const paragraphs = section ? Array.from(section.querySelectorAll('p')) : []
-        let detail = ''
-
-        for (const paragraph of paragraphs) {
-            const text = normalizeStepText(paragraph.textContent || '')
-            if (!text || text === title || /^Página \d+/i.test(text)) continue
-            if (/^(Completado|Pendiente)$/i.test(text)) continue
-            detail = text
-            break
-        }
-
-        seen.add(title)
-        summaries.push({
-            title,
-            detail: detail || buildFallbackStepDetail(title)
-        })
-    })
-
-    return summaries
-}
-
-export function hasMeaningfulStructuredData(value: unknown) {
-    const serialized = JSON.stringify(value ?? {})
-    return serialized.replace(/[{}\[\]",:\s]/g, '').length > 0
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-    return !!value && typeof value === 'object' && !Array.isArray(value)
 }
 
 function sanitizeStructuredValue(value: unknown): unknown {
@@ -125,6 +54,88 @@ function sanitizeStructuredValue(value: unknown): unknown {
         return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, sanitizeStructuredValue(entry)]))
     }
     return value
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function slugifyStepTitle(value: string) {
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 72)
+}
+
+function buildStorageModeKey(storageKey: string, pageId: number, stepId: string) {
+    return `${storageKey}-${pageId}-${stepId}`
+}
+
+function readStoredMode(storageKey: string, pageId: number, stepId: string): StepAssistMode {
+    if (typeof window === 'undefined') return ''
+
+    try {
+        const stored = window.localStorage.getItem(buildStorageModeKey(storageKey, pageId, stepId))
+        return stored === 'audio' || stored === 'direct' ? stored : ''
+    } catch {
+        return ''
+    }
+}
+
+function ensureStepAssistHosts(activePage: number) {
+    if (typeof document === 'undefined') return [] as StepTarget[]
+
+    const article = document.querySelector(`[data-print-page^="Página ${activePage} de"]`)
+    if (!(article instanceof HTMLElement)) return [] as StepTarget[]
+
+    return Array.from(article.querySelectorAll('section'))
+        .map((section) => {
+            const heading = Array.from(section.querySelectorAll('h3')).find((candidate) => /^(Paso|Bloque)\b/i.test(normalizeText(candidate.textContent || '', 140)))
+            if (!(heading instanceof HTMLElement)) return null
+
+            const stepTitle = normalizeText(heading.textContent || '', 140)
+            const stepId = slugifyStepTitle(stepTitle)
+            const directChildren = Array.from(section.children)
+            const headerIndex = directChildren.findIndex((child) => child === heading || child.contains(heading))
+            if (headerIndex === -1) return null
+
+            let anchorIndex = headerIndex
+            for (let index = headerIndex + 1; index < directChildren.length; index += 1) {
+                const tagName = directChildren[index].tagName
+                if (tagName === 'P' || tagName === 'UL' || tagName === 'OL') {
+                    anchorIndex = index
+                    continue
+                }
+                break
+            }
+
+            const anchor = directChildren[anchorIndex]
+            if (!(anchor instanceof HTMLElement)) return null
+
+            const hostId = `wb-step-assist-${activePage}-${stepId}`
+            let host = section.querySelector(`[data-step-assist-host="${hostId}"]`) as HTMLElement | null
+            if (!(host instanceof HTMLElement)) {
+                host = document.createElement('div')
+                host.dataset.stepAssistHost = hostId
+                host.className = 'mt-4'
+                anchor.insertAdjacentElement('afterend', host)
+            }
+
+            return {
+                stepId,
+                stepTitle,
+                host
+            } satisfies StepTarget
+        })
+        .filter((target): target is StepTarget => !!target)
+}
+
+export function hasMeaningfulStructuredData(value: unknown) {
+    const serialized = JSON.stringify(value ?? {})
+    return serialized.replace(/[{}\[\]",:\s]/g, '').length > 0
 }
 
 export function mergeStructuredData<T>(currentValue: T, incomingValue: unknown): T {
@@ -151,54 +162,38 @@ export function mergeStructuredData<T>(currentValue: T, incomingValue: unknown):
     return sanitizeStructuredValue(incomingValue) as T
 }
 
-export function useWorkbookPageAssist<T>({
+function AdaptiveWorkbookStepAssistPanel({
     workbookId,
     storageKey,
-    activePage,
+    pageId,
     pageTitle,
+    stepId,
+    stepTitle,
     currentData,
-    enabled,
     disabled,
     onApplyData
-}: UseWorkbookPageAssistArgs<T>): UseWorkbookPageAssistResult {
-    const [modes, setModes] = useState<Record<string, PageAssistMode>>(() => {
-        if (typeof window === 'undefined') return {}
-
-        try {
-            const raw = window.localStorage.getItem(storageKey)
-            if (!raw) return {}
-
-            const parsed = JSON.parse(raw)
-            return parsed && typeof parsed === 'object' ? (parsed as Record<string, PageAssistMode>) : {}
-        } catch {
-            return {}
-        }
-    })
-    const [statuses, setStatuses] = useState<Record<string, PageAssistStatus>>({})
-    const [stepSummaries, setStepSummaries] = useState<PageAssistStepSummary[]>([])
+}: AdaptiveWorkbookStepAssistPanelProps) {
+    const [mode, setMode] = useState<StepAssistMode>(() => readStoredMode(storageKey, pageId, stepId))
+    const [status, setStatus] = useState<StepAssistStatus>(IDLE_STATUS)
     const recorderRef = useRef<MediaRecorder | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const chunksRef = useRef<Blob[]>([])
-    const pageKey = String(activePage)
-
-    const mode: PageAssistMode = modes[pageKey] || ''
-    const status = statuses[pageKey] || IDLE_STATUS
-    const canUseAssistant = !!currentData && hasMeaningfulStructuredData(currentData)
+    const isRecording = status.kind === 'recording'
+    const isLoading = status.kind === 'loading'
+    const canUseAssistant = hasMeaningfulStructuredData(currentData)
+    const messageTone =
+        status.kind === 'error'
+            ? 'text-red-700'
+            : status.kind === 'success'
+              ? 'text-emerald-700'
+              : status.kind === 'recording'
+                ? 'text-amber-700'
+                : 'text-slate-600'
 
     useEffect(() => {
         if (typeof window === 'undefined') return
-        window.localStorage.setItem(storageKey, JSON.stringify(modes))
-    }, [modes, storageKey])
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return
-
-        const frame = window.requestAnimationFrame(() => {
-            setStepSummaries(enabled ? extractAssistStepSummariesForVisiblePage(activePage) : [])
-        })
-
-        return () => window.cancelAnimationFrame(frame)
-    }, [activePage, enabled, pageTitle])
+        window.localStorage.setItem(buildStorageModeKey(storageKey, pageId, stepId), mode)
+    }, [mode, pageId, stepId, storageKey])
 
     useEffect(() => {
         return () => {
@@ -206,24 +201,6 @@ export function useWorkbookPageAssist<T>({
             streamRef.current?.getTracks().forEach((track) => track.stop())
         }
     }, [])
-
-    const setStatus = (nextStatus: PageAssistStatus) => {
-        setStatuses((prev) => ({
-            ...prev,
-            [pageKey]: nextStatus
-        }))
-    }
-
-    const onModeChange = (nextMode: PageAssistMode) => {
-        if (disabled) return
-
-        setModes((prev) => ({
-            ...prev,
-            [pageKey]: nextMode
-        }))
-
-        setStatus(IDLE_STATUS)
-    }
 
     const requestAssist = async (body: BodyInit, contentType?: string) => {
         const response = await fetch('/api/workbooks-v2/page-assist', {
@@ -242,12 +219,12 @@ export function useWorkbookPageAssist<T>({
     }
 
     const runAssist = async () => {
-        if (!enabled || disabled || !currentData) return
+        if (disabled) return
 
         if (!canUseAssistant) {
             setStatus({
                 kind: 'error',
-                message: 'Completa primero algo en esta página antes de pedir apoyo de Asistente IA.'
+                message: 'Completa primero algo en este paso antes de pedir apoyo de Asistente IA.'
             })
             return
         }
@@ -261,9 +238,10 @@ export function useWorkbookPageAssist<T>({
             const payload = await requestAssist(
                 JSON.stringify({
                     workbookId,
-                    pageId: activePage,
+                    pageId,
                     pageTitle,
-                    stepSummaries,
+                    stepId,
+                    stepTitle,
                     currentData
                 }),
                 'application/json'
@@ -272,7 +250,7 @@ export function useWorkbookPageAssist<T>({
             onApplyData(payload.data)
             setStatus({
                 kind: 'success',
-                message: 'Asistente IA ordenó y mejoró la información de esta página.'
+                message: 'Asistente IA ordenó y mejoró la información de este paso.'
             })
         } catch (error) {
             setStatus({
@@ -283,11 +261,9 @@ export function useWorkbookPageAssist<T>({
     }
 
     const processRecordedAudio = async (blob: Blob) => {
-        if (!currentData) return
-
         setStatus({
             kind: 'loading',
-            message: 'Transcribiendo y ubicando tu audio en los pasos correctos...'
+            message: 'Transcribiendo y ubicando tu audio en este paso...'
         })
 
         try {
@@ -295,17 +271,18 @@ export function useWorkbookPageAssist<T>({
             const extension = blob.type.includes('mp4') ? 'm4a' : 'webm'
 
             formData.append('workbookId', workbookId)
-            formData.append('pageId', String(activePage))
+            formData.append('pageId', String(pageId))
             formData.append('pageTitle', pageTitle)
-            formData.append('stepSummaries', JSON.stringify(stepSummaries))
+            formData.append('stepId', stepId)
+            formData.append('stepTitle', stepTitle)
             formData.append('currentData', JSON.stringify(currentData))
-            formData.append('audio', new File([blob], `${workbookId}-page-${activePage}.${extension}`, { type: blob.type || 'audio/webm' }))
+            formData.append('audio', new File([blob], `${workbookId}-${pageId}-${stepId}.${extension}`, { type: blob.type || 'audio/webm' }))
 
             const payload = await requestAssist(formData)
             onApplyData(payload.data)
             setStatus({
                 kind: 'success',
-                message: 'Tu audio quedó organizado dentro de esta página.'
+                message: 'Tu audio quedó organizado dentro de este paso.'
             })
         } catch (error) {
             setStatus({
@@ -316,7 +293,7 @@ export function useWorkbookPageAssist<T>({
     }
 
     const onToggleRecording = async () => {
-        if (!enabled || disabled) return
+        if (disabled) return
 
         if (recorderRef.current && status.kind === 'recording') {
             recorderRef.current.stop()
@@ -377,193 +354,179 @@ export function useWorkbookPageAssist<T>({
         }
     }
 
-    return {
-        mode,
-        status,
-        stepSummaries,
-        canUseAssistant,
-        onModeChange,
-        onAssist: runAssist,
-        onToggleRecording
-    }
-}
-
-export function AdaptiveWorkbookAssistPanel({
-    pageTitle,
-    stepSummaries,
-    mode,
-    status,
-    disabled,
-    canUseAssistant,
-    onModeChange,
-    onAssist,
-    onToggleRecording
-}: AdaptiveWorkbookAssistPanelProps) {
-    const isRecording = status.kind === 'recording'
-    const isLoading = status.kind === 'loading'
-    const messageTone =
-        status.kind === 'error'
-            ? 'text-red-700'
-            : status.kind === 'success'
-              ? 'text-emerald-700'
-              : status.kind === 'recording'
-                ? 'text-amber-700'
-                : 'text-slate-600'
-
     return (
-        <aside className="rounded-3xl border border-blue-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_100%)] p-5 shadow-[0_14px_36px_rgba(59,130,246,0.08)] md:p-6">
-            <div className="space-y-5">
-                <div className="space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700">Asistente de página</p>
-                    <h3 className="text-lg font-extrabold text-slate-900 md:text-xl">Trabaja {pageTitle} con una sola ruta a la vez</h3>
-                    <p className="text-sm leading-relaxed text-slate-700">
-                        Primero revisa las instrucciones generales de esta página. Luego elige cómo quieres completarla para que la experiencia se adapte y
-                        reduzca la carga cognitiva.
+        <aside className="rounded-2xl border border-blue-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_100%)] p-4 md:p-5 space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
+                <button
+                    type="button"
+                    onClick={() => setMode('audio')}
+                    disabled={disabled || isLoading || isRecording}
+                    className={`rounded-2xl border px-4 py-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        mode === 'audio'
+                            ? 'border-blue-500 bg-blue-50 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
+                    }`}
+                >
+                    <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
+                        <Mic size={16} className={mode === 'audio' ? 'text-blue-700' : 'text-slate-600'} />
+                        Grabar audio
+                    </span>
+                    <p className="mt-2 text-sm text-slate-600">
+                        Recorre este paso con tu voz y deja que el sistema ubique la información automáticamente en el lugar correcto.
+                    </p>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setMode('direct')}
+                    disabled={disabled || isLoading || isRecording}
+                    className={`rounded-2xl border px-4 py-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        mode === 'direct'
+                            ? 'border-blue-500 bg-blue-50 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
+                    }`}
+                >
+                    <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
+                        <Sparkles size={16} className={mode === 'direct' ? 'text-blue-700' : 'text-slate-600'} />
+                        Llenar los campos directamente
+                    </span>
+                    <p className="mt-2 text-sm text-slate-600">
+                        Completa los campos de este paso y usa Asistente IA solo si necesitas ordenar o mejorar lo que ya cargaste.
+                    </p>
+                </button>
+            </div>
+
+            {mode === '' ? (
+                <div className="rounded-xl border border-dashed border-blue-200 bg-white px-4 py-4">
+                    <p className="text-sm leading-relaxed text-slate-600">
+                        Selecciona una ruta para ver solo las indicaciones necesarias y mantener este paso enfocado.
                     </p>
                 </div>
-
-                {stepSummaries.length > 0 && (
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Instrucciones generales por paso</p>
-                        <div className="mt-4 grid gap-3">
-                            {stepSummaries.map((summary) => (
-                                <article key={summary.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                    <p className="text-sm font-bold text-slate-900">{summary.title}</p>
-                                    <p className="mt-2 text-sm leading-relaxed text-slate-700">{summary.detail}</p>
-                                </article>
+            ) : mode === 'audio' ? (
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 space-y-4">
+                    <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Si eliges grabar audio</p>
+                        <ul className="space-y-2">
+                            {[
+                                `Habla siguiendo solo el alcance de ${stepTitle.toLowerCase()}.`,
+                                'Describe hechos, decisiones, ejemplos y evidencia concreta para que el sistema distribuya mejor la información.',
+                                'Si necesitas más claridad, nombra explícitamente el campo o el subtema que estás respondiendo.'
+                            ].map((instruction) => (
+                                <li key={instruction} className="flex items-start gap-2 text-sm leading-relaxed text-slate-700">
+                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500" />
+                                    <span>{instruction}</span>
+                                </li>
                             ))}
-                        </div>
+                        </ul>
                     </div>
-                )}
-
-                <div className="grid gap-3 md:grid-cols-2">
-                    <button
-                        type="button"
-                        onClick={() => onModeChange('audio')}
-                        disabled={disabled || isLoading || isRecording}
-                        className={`rounded-2xl border px-4 py-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                            mode === 'audio'
-                                ? 'border-blue-500 bg-blue-50 shadow-sm'
-                                : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
-                        }`}
-                    >
-                        <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
-                            <Mic size={16} className={mode === 'audio' ? 'text-blue-700' : 'text-slate-600'} />
-                            Grabar audio
-                        </span>
-                        <p className="mt-2 text-sm text-slate-600">
-                            Recorre esta página hablando paso a paso y deja que el sistema ubique cada idea donde corresponde.
-                        </p>
-                    </button>
 
                     <button
                         type="button"
-                        onClick={() => onModeChange('direct')}
-                        disabled={disabled || isLoading || isRecording}
-                        className={`rounded-2xl border px-4 py-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                            mode === 'direct'
-                                ? 'border-blue-500 bg-blue-50 shadow-sm'
-                                : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
+                        onClick={onToggleRecording}
+                        disabled={disabled || isLoading}
+                        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                            isRecording
+                                ? 'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                                : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
                         }`}
                     >
-                        <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
-                            <Sparkles size={16} className={mode === 'direct' ? 'text-blue-700' : 'text-slate-600'} />
-                            Llenar los campos directamente
-                        </span>
-                        <p className="mt-2 text-sm text-slate-600">
-                            Completa los campos en pantalla y usa Asistente IA para ordenar o mejorar lo que ya cargaste.
-                        </p>
+                        {isRecording ? <Square size={16} /> : <Mic size={16} />}
+                        {isRecording ? 'Detener y procesar audio' : 'Grabar audio'}
                     </button>
                 </div>
+            ) : (
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 space-y-4">
+                    <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Si eliges llenar los campos directamente</p>
+                        <ul className="space-y-2">
+                            {[
+                                'Completa este paso con lenguaje claro, evidencia real y el nivel de detalle que ya piden sus campos.',
+                                'Si un campo sigue borroso, deja primero una versión breve y luego pide apoyo para ordenarla mejor.',
+                                'Asistente IA no reemplaza tu criterio: solo ayuda a estructurar y limpiar lo que ya registraste.'
+                            ].map((instruction) => (
+                                <li key={instruction} className="flex items-start gap-2 text-sm leading-relaxed text-slate-700">
+                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500" />
+                                    <span>{instruction}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
 
-                {mode === '' ? (
-                    <div className="rounded-2xl border border-dashed border-blue-200 bg-white px-4 py-4">
-                        <p className="text-sm leading-relaxed text-slate-600">
-                            Selecciona una ruta para ver solo las indicaciones necesarias y trabajar esta página con más foco.
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                        <p className="text-sm text-slate-600">
+                            Continúa con los campos de este paso. Si ya cargaste suficiente información, puedes pedir apoyo de Asistente IA para ordenarla mejor.
                         </p>
                     </div>
-                ) : mode === 'audio' ? (
-                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 space-y-4">
-                        <div className="space-y-2">
-                            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Si eliges grabar audio</p>
-                            <ul className="space-y-2">
-                                {[
-                                    'Habla siguiendo el orden de los pasos o bloques que aparecen arriba.',
-                                    'Menciona hechos, decisiones, ejemplos y evidencias concretas para que el sistema pueda ubicar mejor la información.',
-                                    'Si cambias de paso, dilo explícitamente para que la transcripción se distribuya con más claridad.'
-                                ].map((instruction) => (
-                                    <li key={instruction} className="flex items-start gap-2 text-sm leading-relaxed text-slate-700">
-                                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500" />
-                                        <span>{instruction}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
 
+                    <div className="flex justify-end">
                         <button
                             type="button"
-                            onClick={onToggleRecording}
-                            disabled={disabled || isLoading}
-                            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                                isRecording
-                                    ? 'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                                    : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                            }`}
+                            onClick={runAssist}
+                            disabled={disabled || isLoading || isRecording || !canUseAssistant}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {isRecording ? <Square size={16} /> : <Mic size={16} />}
-                            {isRecording ? 'Detener y procesar audio' : 'Grabar audio'}
+                            {isLoading ? <LoaderCircle size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                            {isLoading ? 'Procesando con Asistente IA...' : 'Asistente IA'}
                         </button>
                     </div>
-                ) : (
-                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 space-y-4">
-                        <div className="space-y-2">
-                            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Si eliges llenar los campos directamente</p>
-                            <ul className="space-y-2">
-                                {[
-                                    'Completa primero los campos que ya tengas claros para esta página.',
-                                    'Cuando haya suficiente material, usa Asistente IA para ordenar, sintetizar o mejorar lo ya escrito.',
-                                    'Revisa el resultado final y ajusta cualquier matiz personal antes de guardar.'
-                                ].map((instruction) => (
-                                    <li key={instruction} className="flex items-start gap-2 text-sm leading-relaxed text-slate-700">
-                                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500" />
-                                        <span>{instruction}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-sm text-slate-600">
-                                Esta ruta solo activa la ayuda cuando ya existe contenido en la página, para que Asistente IA trabaje sobre material real y no
-                                invente información.
-                            </p>
-                        </div>
-
-                        <div className="flex justify-end">
-                            <button
-                                type="button"
-                                onClick={onAssist}
-                                disabled={disabled || isLoading || isRecording || !canUseAssistant}
-                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isLoading ? <LoaderCircle size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                                {isLoading ? 'Procesando con Asistente IA...' : 'Asistente IA'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                    <p className="text-xs leading-relaxed text-slate-600">
-                        El objetivo es ayudarte a registrar información de calidad con menos fricción y mejor estructura.
-                    </p>
-                    {status.message && (
-                        <p className={`mt-1.5 text-xs font-semibold leading-relaxed ${messageTone}`} aria-live="polite">
-                            {status.message}
-                        </p>
-                    )}
                 </div>
+            )}
+
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 space-y-1.5">
+                <p className="text-xs leading-relaxed text-slate-600">El objetivo es ayudarte a completar este paso con más claridad y menor carga cognitiva.</p>
+                {status.message && (
+                    <p className={`text-xs font-semibold leading-relaxed ${messageTone}`} aria-live="polite">
+                        {status.message}
+                    </p>
+                )}
             </div>
         </aside>
+    )
+}
+
+export function AdaptiveWorkbookStepAssistPortals({
+    workbookId,
+    storageKey,
+    activePage,
+    pageTitle,
+    currentData,
+    enabled,
+    disabled,
+    onApplyData
+}: AdaptiveWorkbookStepAssistPortalsProps) {
+    const [targets, setTargets] = useState<StepTarget[]>([])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+
+        const frame = window.requestAnimationFrame(() => {
+            setTargets(enabled ? ensureStepAssistHosts(activePage) : [])
+        })
+
+        return () => window.cancelAnimationFrame(frame)
+    }, [activePage, enabled, pageTitle])
+
+    if (!enabled || targets.length === 0) return null
+
+    return (
+        <>
+            {targets.map((target) =>
+                createPortal(
+                    <AdaptiveWorkbookStepAssistPanel
+                        workbookId={workbookId}
+                        storageKey={storageKey}
+                        pageId={activePage}
+                        pageTitle={pageTitle}
+                        stepId={target.stepId}
+                        stepTitle={target.stepTitle}
+                        currentData={currentData}
+                        disabled={disabled}
+                        onApplyData={onApplyData}
+                    />,
+                    target.host,
+                    `${activePage}-${target.stepId}`
+                )
+            )}
+        </>
     )
 }

@@ -4,9 +4,8 @@ import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, FileText, Lock, Printer } from 'lucide-react'
 import {
-    AdaptiveWorkbookAssistPanel,
-    mergeStructuredData,
-    useWorkbookPageAssist
+    AdaptiveWorkbookStepAssistPortals,
+    mergeStructuredData
 } from '@/components/workbooks-v2/page-assist'
 import { WORKBOOK_V2_EDITORIAL } from '@/lib/workbooks-v2-editorial'
 
@@ -3595,16 +3594,6 @@ export function WB6Digital() {
                             }
                         }
                       : null
-    const pageAssist = useWorkbookPageAssist({
-        workbookId: 'wb6',
-        storageKey: PAGE_ASSIST_STORAGE_KEY,
-        activePage,
-        pageTitle: PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || '',
-        currentData: currentAssistContext?.currentData ?? null,
-        enabled: !!currentAssistContext && !isExportingAll,
-        disabled: isLocked || isExporting || !isHydrated,
-        onApplyData: (payload) => currentAssistContext?.applyData(payload)
-    })
 
     return (
         <div className={WORKBOOK_V2_EDITORIAL.classes.shell}>
@@ -3674,16 +3663,15 @@ export function WB6Digital() {
 
                     <section className="space-y-6">
                         {!isExportingAll && currentAssistContext && (
-                            <AdaptiveWorkbookAssistPanel
+                            <AdaptiveWorkbookStepAssistPortals
+                                workbookId="wb6"
+                                storageKey={PAGE_ASSIST_STORAGE_KEY}
+                                activePage={activePage}
                                 pageTitle={PAGES.find((page) => page.id === activePage)?.label.replace(/^\d+\.\s*/, '') || ''}
-                                stepSummaries={pageAssist.stepSummaries}
-                                mode={pageAssist.mode}
-                                status={pageAssist.status}
+                                currentData={currentAssistContext.currentData}
+                                enabled={!!currentAssistContext && !isExportingAll}
                                 disabled={isLocked || isExporting || !isHydrated}
-                                canUseAssistant={pageAssist.canUseAssistant}
-                                onModeChange={pageAssist.onModeChange}
-                                onAssist={pageAssist.onAssist}
-                                onToggleRecording={pageAssist.onToggleRecording}
+                                onApplyData={(payload) => currentAssistContext.applyData(payload)}
                             />
                         )}
 

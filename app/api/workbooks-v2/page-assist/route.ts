@@ -7,11 +7,6 @@ import { SystemSettingsService } from '@/lib/settings'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
 
-type PageAssistStepSummary = {
-    title?: string
-    detail?: string
-}
-
 function sanitizeText(value: unknown, max = 2400) {
     if (typeof value !== 'string') return ''
     return value.replace(/\s+/g, ' ').trim().slice(0, max)
@@ -28,18 +23,6 @@ function sanitizeStructuredValue(value: unknown, depth = 0): unknown {
         )
     }
     return value
-}
-
-function sanitizeStepSummaries(value: unknown) {
-    if (!Array.isArray(value)) return [] as Array<{ title: string; detail: string }>
-
-    return value
-        .map((entry) => ({
-            title: sanitizeText((entry as PageAssistStepSummary)?.title, 160),
-            detail: sanitizeText((entry as PageAssistStepSummary)?.detail, 480)
-        }))
-        .filter((entry) => entry.title)
-        .slice(0, 20)
 }
 
 async function createOpenAIClient() {
@@ -63,43 +46,40 @@ function buildPrompt({
     workbookId,
     pageId,
     pageTitle,
-    stepSummaries,
+    stepId,
+    stepTitle,
     currentData,
     sourceText
 }: {
     workbookId: string
     pageId: number
     pageTitle: string
-    stepSummaries: Array<{ title: string; detail: string }>
+    stepId: string
+    stepTitle: string
     currentData: unknown
     sourceText: string
 }) {
-    const stepsText =
-        stepSummaries.length > 0
-            ? stepSummaries.map((step) => `- ${step.title}: ${step.detail}`).join('\n')
-            : '- Usa la estructura ya cargada de la página para organizar la respuesta.'
-
     return `
 Eres un Asistente IA de escritura ejecutiva para 4Shine.
 
 OBJETIVO:
-Ayudar a completar una página de workbook con información concreta, clara y accionable, manteniendo la estructura actual del ejercicio.
+Ayudar a completar un paso específico de un workbook con información concreta, clara y accionable, manteniendo la estructura actual del ejercicio.
 
 REGLAS:
 - Responde siempre en español.
 - Usa solo la información del insumo principal y del contexto ya cargado.
 - No inventes hechos, fechas, logros, métricas, nombres ni decisiones.
 - Mantén la misma estructura JSON del CONTEXTO ACTUAL.
-- Devuelve el JSON completo de la página, no solo un fragmento.
+- Devuelve el JSON completo del contexto recibido, no solo un fragmento.
 - Si algo no está soportado por el insumo, consérvalo como está o déjalo vacío.
+- Prioriza únicamente el paso actual y modifica solo los campos que claramente pertenezcan a ese paso.
+- No reescribas otros bloques o pasos si el insumo no los menciona.
 - No agregues markdown, comentarios ni explicaciones.
 - Responde únicamente con JSON válido.
 
 WORKBOOK: ${workbookId}
 PÁGINA: ${pageTitle} (id ${pageId})
-
-PASOS DETECTADOS:
-${stepsText}
+PASO ACTUAL: ${stepTitle} (${stepId})
 
 CONTEXTO ACTUAL (estructura a respetar):
 ${JSON.stringify(currentData ?? {}, null, 2).slice(0, 20000)}
@@ -134,7 +114,8 @@ export async function POST(request: NextRequest) {
         let workbookId = ''
         let pageId = 0
         let pageTitle = ''
-        let stepSummaries: Array<{ title: string; detail: string }> = []
+        let stepId = ''
+        let stepTitle = ''
         let currentData: unknown = {}
         let sourceText = ''
 
@@ -149,7 +130,8 @@ export async function POST(request: NextRequest) {
             workbookId = sanitizeText(formData.get('workbookId'), 40)
             pageId = Number(formData.get('pageId')) || 0
             pageTitle = sanitizeText(formData.get('pageTitle'), 180)
-            stepSummaries = sanitizeStepSummaries(JSON.parse(String(formData.get('stepSummaries') || '[]')))
+            stepId = sanitizeText(formData.get('stepId'), 120)
+            stepTitle = sanitizeText(formData.get('stepTitle'), 180)
             currentData = JSON.parse(String(formData.get('currentData') || '{}'))
             sourceText = await transcribeAudio(client, audio)
         } else {
@@ -157,21 +139,23 @@ export async function POST(request: NextRequest) {
             workbookId = sanitizeText(body?.workbookId, 40)
             pageId = typeof body?.pageId === 'number' ? body.pageId : Number(body?.pageId) || 0
             pageTitle = sanitizeText(body?.pageTitle, 180)
-            stepSummaries = sanitizeStepSummaries(body?.stepSummaries)
+            stepId = sanitizeText(body?.stepId, 120)
+            stepTitle = sanitizeText(body?.stepTitle, 180)
             currentData = body?.currentData ?? {}
             sourceText =
                 'Ordena, sintetiza y mejora la claridad del contexto ya cargado sin inventar información nueva ni alterar el sentido de lo que el usuario ya registró.'
         }
 
-        if (!workbookId || !pageId || !pageTitle) {
-            return NextResponse.json({ error: 'Faltan datos para procesar esta página.' }, { status: 400 })
+        if (!workbookId || !pageId || !pageTitle || !stepId || !stepTitle) {
+            return NextResponse.json({ error: 'Faltan datos para procesar este paso.' }, { status: 400 })
         }
 
         const data = await extractStructuredPageData(client, {
             workbookId,
             pageId,
             pageTitle,
-            stepSummaries,
+            stepId,
+            stepTitle,
             currentData,
             sourceText
         })
